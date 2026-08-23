@@ -48,7 +48,7 @@ const sz = computed(() => sizeMap[props.size] || sizeMap.md);
       <i v-if="opt.icon" :class="opt.icon" class="text-[11px]"></i>
       <span>{{ opt.label }}</span>
       <span v-if="opt.count !== undefined"
-        class="ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono"
+        class="ml-1 px-1.5 py-0.5 rounded-md text-micro font-mono"
         :class="modelValue === opt.value
           ? 'bg-accent-soft text-accent'
           : 'bg-line/50 text-ink-subtle'">

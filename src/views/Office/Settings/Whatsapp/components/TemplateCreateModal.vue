@@ -206,7 +206,7 @@ const applyPreset = (p) => {
     <div class="space-y-5">
       <!-- Atalhos para os 4 templates do NotificationService -->
       <div>
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
           Atalhos: templates do sistema
         </p>
         <div class="flex flex-wrap gap-2">
@@ -249,23 +249,23 @@ const applyPreset = (p) => {
           class="w-full px-3 py-2 rounded-md border border-line bg-surface-raised text-sm text-ink
                  focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring/20 resize-y"></textarea>
         <div class="flex items-center justify-between gap-2 mt-1">
-          <p class="text-[11px] text-ink-subtle">
+          <p class="text-micro text-ink-subtle">
             Use <code class="font-mono" v-pre>{{1}}</code>, <code class="font-mono" v-pre>{{2}}</code>... para variáveis.
             Negrito <code class="font-mono">*texto*</code>, itálico <code class="font-mono">_texto_</code>.
           </p>
-          <p class="text-[11px] text-ink-subtle whitespace-nowrap">
+          <p class="text-micro text-ink-subtle whitespace-nowrap">
             <span class="font-mono">{{ wordCount }}</span> palavras
             <span v-if="variables.length"> · <span class="font-mono">{{ variables.length }}</span> var{{ variables.length === 1 ? '' : 's' }}</span>
           </p>
         </div>
-        <p v-if="ratioWarning" class="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+        <p v-if="ratioWarning" class="text-micro text-amber-600 dark:text-amber-400 mt-1">
           <i class="fas fa-triangle-exclamation mr-1"></i>{{ ratioWarning }}
         </p>
       </div>
 
       <!-- Exemplos -->
       <div v-if="variables.length">
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
           Exemplos das variáveis (obrigatório)
         </p>
         <div class="space-y-2">
@@ -281,15 +281,15 @@ const applyPreset = (p) => {
       <!-- Botões Quick Reply -->
       <div>
         <div class="flex items-center justify-between mb-2">
-          <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle">
             Botões de resposta rápida (opcional, até 3)
           </p>
           <button v-if="form.buttons.length < 3" type="button" @click="addButton"
-            class="text-[11px] text-accent hover:underline">
+            class="text-micro text-accent hover:underline">
             <i class="fas fa-plus text-[9px] mr-1"></i>Adicionar botão
           </button>
         </div>
-        <p class="text-[11px] text-ink-subtle mb-2">
+        <p class="text-micro text-ink-subtle mb-2">
           Quando o usuário toca o botão, ele envia o texto exato como resposta.
           Pra alertas: use <code class="font-mono">SIM</code> e <code class="font-mono">NÃO</code>.
         </p>
@@ -319,7 +319,7 @@ const applyPreset = (p) => {
 
       <!-- Preview -->
       <div class="rounded-xl border border-line bg-surface-sunken/40 p-3">
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Preview</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Preview</p>
         <div class="rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3 text-sm text-ink whitespace-pre-wrap">
           <p v-if="form.headerText" class="font-bold mb-1">{{ form.headerText }}</p>
           <p>{{ previewBody || 'Digite o corpo para ver a prévia.' }}</p>

@@ -142,7 +142,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Busca (mobile) -->
       <div class="md:hidden sm:col-span-2">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-magnifying-glass text-[10px] mr-1 text-ink-subtle"></i>Buscar
         </label>
         <Input :model-value="filtros.q"
@@ -153,7 +153,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Status -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-circle-dot text-[10px] mr-1 text-ink-subtle"></i>Status do lead
         </label>
         <MultiSelector v-model="statusSelected" :options="statusOptions"
@@ -162,7 +162,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Canal -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-broadcast-tower text-[10px] mr-1 text-ink-subtle"></i>Canal de entrada
         </label>
         <MultiSelector v-model="channelSelected" :options="channelOptions"
@@ -171,7 +171,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Origem CV -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-tags text-[10px] mr-1 text-ink-subtle"></i>Origem (CV)
         </label>
         <MultiSelector v-model="cvOrigemSelected" :options="cvOrigemUnionOptions"
@@ -180,7 +180,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Campanha -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-bullhorn text-[10px] mr-1 text-ink-subtle"></i>Campanha (Meta)
         </label>
         <MultiSelector v-model="campaignSelected" :options="campaignLabels"
@@ -189,7 +189,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Mídia -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-hashtag text-[10px] mr-1 text-ink-subtle"></i>Mídia (slug)
         </label>
         <MultiSelector :model-value="filtros.midia_slug"
@@ -199,13 +199,13 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Datas -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-calendar-day text-[10px] mr-1 text-ink-subtle"></i>Entrada Office (de)
         </label>
         <Input v-model="periodStart" type="date" size="sm" />
       </div>
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-calendar-check text-[10px] mr-1 text-ink-subtle"></i>Entrada Office (até)
         </label>
         <Input v-model="periodEnd" type="date" size="sm" />
@@ -213,7 +213,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Sort -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-arrow-down-wide-short text-[10px] mr-1 text-ink-subtle"></i>Ordenar por
         </label>
         <MultiSelector v-model="sortSelected" :options="sortOptions"

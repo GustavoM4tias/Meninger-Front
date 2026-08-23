@@ -242,7 +242,7 @@ function parseRestoreActivity(tail) {
                 <p class="font-semibold text-ink text-sm sm:text-base truncate">
                     Backup em execução - {{ currentStageInfo.label }}
                 </p>
-                <p class="text-[11px] sm:text-xs text-ink-muted mt-0.5">
+                <p class="text-micro sm:text-xs text-ink-muted mt-0.5">
                     Iniciado em {{ formatDate(log.started_at) }} • atualizando a cada 5s
                 </p>
             </div>
@@ -331,7 +331,7 @@ function parseRestoreActivity(tail) {
                                 </div>
 
                                 <!-- Atividade textual: tabela/item atual -->
-                                <p v-if="restoreCurrentActivity" class="text-[11px] opacity-60 truncate font-mono">
+                                <p v-if="restoreCurrentActivity" class="text-micro opacity-60 truncate font-mono">
                                     {{ restoreCurrentActivity }}
                                 </p>
                             </div>

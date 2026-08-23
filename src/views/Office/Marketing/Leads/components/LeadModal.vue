@@ -458,7 +458,7 @@ const onLimpar = () => {
           <Button size="sm" :variant="filtersOpen ? 'primary' : 'secondary'"
             icon="fas fa-filter" @click="filtersOpen = !filtersOpen">
             <span class="hidden sm:inline">Filtros</span>
-            <span v-if="activeFiltersCount" class="font-mono text-[10px]">{{ activeFiltersCount }}</span>
+            <span v-if="activeFiltersCount" class="font-mono text-micro">{{ activeFiltersCount }}</span>
           </Button>
         </div>
       </div>
@@ -474,22 +474,22 @@ const onLimpar = () => {
         <div v-show="filtersOpen" class="px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/30 space-y-3">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Empreendimento(s)</label>
+              <label class="block text-micro font-medium text-ink-muted mb-1.5">Empreendimento(s)</label>
               <MultiSelector v-model="draftEnterpriseArr" :options="enterpriseOptions"
                 placeholder="Selecione..." :page-size="200" />
             </div>
             <div>
-              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Imobiliária(s)</label>
+              <label class="block text-micro font-medium text-ink-muted mb-1.5">Imobiliária(s)</label>
               <MultiSelector v-model="draftBrokerArr" :options="brokerOptions"
                 placeholder="Selecione..." :page-size="200" />
             </div>
             <div>
-              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Corretor(es)</label>
+              <label class="block text-micro font-medium text-ink-muted mb-1.5">Corretor(es)</label>
               <MultiSelector v-model="draftAgentArr" :options="agentOptions"
                 placeholder="Selecione..." :page-size="200" />
             </div>
             <div>
-              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Situação(ões)</label>
+              <label class="block text-micro font-medium text-ink-muted mb-1.5">Situação(ões)</label>
               <MultiSelector v-model="draftStatusArr" :options="statusOptions"
                 placeholder="Selecione..." :page-size="200" />
             </div>
@@ -540,7 +540,7 @@ const onLimpar = () => {
                   </Badge>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                  <span class="hidden sm:inline text-[10px] text-ink-subtle font-mono">
+                  <span class="hidden sm:inline text-micro text-ink-subtle font-mono">
                     {{ formatDateHour(l.data_cad) }}
                   </span>
                   <a :href="`https://menin.cvcrm.com.br/gestor/comercial/leads/${l.idlead}/administrar?lido=true`"
@@ -556,7 +556,7 @@ const onLimpar = () => {
               </div>
 
               <!-- Mobile: data abaixo do nome -->
-              <p class="sm:hidden mt-1 text-[10px] text-ink-subtle font-mono">{{ formatDateHour(l.data_cad) }}</p>
+              <p class="sm:hidden mt-1 text-micro text-ink-subtle font-mono">{{ formatDateHour(l.data_cad) }}</p>
 
               <!-- Linha 2: Imobiliária / Corretor / Mídia / Empreendimentos -->
               <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">

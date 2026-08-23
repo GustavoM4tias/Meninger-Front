@@ -4,7 +4,7 @@
         <div class="shrink-0">
             <span
                 class="flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 font-bold text-slate-600 dark:text-slate-300"
-                :class="isReply ? 'h-7 w-7 text-[10px]' : 'h-9 w-9 text-xs'">
+                :class="isReply ? 'h-7 w-7 text-micro' : 'h-9 w-9 text-xs'">
                 {{ initials }}
             </span>
         </div>
@@ -16,7 +16,7 @@
                 </span>
                 <span class="text-xs text-slate-400 dark:text-slate-500">{{ fmtDate(comment.createdAt) }}</span>
                 <span v-if="comment.editedAt"
-                    class="text-[10px] italic text-slate-400 dark:text-slate-500">(editado)</span>
+                    class="text-micro italic text-slate-400 dark:text-slate-500">(editado)</span>
             </div>
 
             <!-- Corpo (ou editor) -->

@@ -462,7 +462,7 @@ const sections = computed(() => {
             <span v-if="form?.created_at">· Criado {{ new Date(form.created_at).toLocaleDateString('pt-BR') }}</span>
           </p>
         </div>
-        <span v-if="isEdit" :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-medium',
+        <span v-if="isEdit" :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-micro font-medium',
           form?.active
             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20'
             : 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/20']">
@@ -476,23 +476,23 @@ const sections = computed(() => {
       <!-- KPI bar (só na edição) -->
       <div v-if="isEdit" class="grid grid-cols-2 sm:grid-cols-5 gap-2 px-5 py-3 border-b border-line bg-surface-sunken/30 shrink-0">
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Total</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Total</div>
           <div class="text-lg font-semibold text-ink">{{ stats.total }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Últimos 30d</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Últimos 30d</div>
           <div class="text-lg font-semibold text-ink">{{ stats.last_30d }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Entregues</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Entregues</div>
           <div class="text-lg font-semibold text-emerald-600 dark:text-emerald-300">{{ stats.delivered }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Pendentes</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Pendentes</div>
           <div class="text-lg font-semibold text-amber-600 dark:text-amber-300">{{ stats.held }}</div>
         </div>
         <div class="text-center col-span-2 sm:col-span-1">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Último lead</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Último lead</div>
           <div class="text-sm font-medium text-ink">{{ fmtRelative(stats.last_lead_at) }}</div>
         </div>
       </div>
@@ -534,7 +534,7 @@ const sections = computed(() => {
 
           <div>
             <label class="text-sm font-medium text-ink block mb-1">Descrição interna</label>
-            <p class="text-[11px] text-ink-subtle mb-1.5">Notas pra equipe. Não vai pro lead nem pro CV.</p>
+            <p class="text-micro text-ink-subtle mb-1.5">Notas pra equipe. Não vai pro lead nem pro CV.</p>
             <textarea v-model="data.description" rows="2"
               placeholder="Ex: LP do lançamento Mond — campanha out/2026"
               class="w-full rounded border border-line bg-surface px-3 py-2 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 resize-y" />
@@ -559,13 +559,13 @@ const sections = computed(() => {
               <label class="text-sm font-medium text-ink block mb-1">Data de início</label>
               <input v-model="data.start_date" type="date"
                 class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40" />
-              <p class="text-[11px] text-ink-subtle mt-1">Informativo — usado em filtros/relatórios.</p>
+              <p class="text-micro text-ink-subtle mt-1">Informativo — usado em filtros/relatórios.</p>
             </div>
             <div>
               <label class="text-sm font-medium text-ink block mb-1">Data de encerramento</label>
               <input v-model="data.end_date" type="date"
                 class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40" />
-              <p class="text-[11px] text-ink-subtle mt-1">Após essa data o form passa a rejeitar submissões automaticamente.</p>
+              <p class="text-micro text-ink-subtle mt-1">Após essa data o form passa a rejeitar submissões automaticamente.</p>
             </div>
           </div>
         </section>
@@ -657,10 +657,10 @@ const sections = computed(() => {
           <!-- Pré-visualização ao vivo -->
           <div class="rounded-lg border border-line overflow-hidden">
             <div class="flex items-center justify-between px-3 py-1.5 border-b border-line bg-surface-sunken/30">
-              <span class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+              <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle">
                 <i class="fas fa-eye mr-1"></i>Pré-visualização ao vivo
               </span>
-              <span class="text-[10px] text-ink-subtle">atualiza conforme você edita</span>
+              <span class="text-micro text-ink-subtle">atualiza conforme você edita</span>
             </div>
             <div class="p-5 sm:p-8 flex bg-slate-900" :class="cardJustifyClass(previewConfig)" :style="previewBg">
               <div :class="['w-full pointer-events-none select-none', cardWidthClass(previewConfig)]">
@@ -693,7 +693,7 @@ const sections = computed(() => {
           <!-- Layout -->
           <div class="pt-3 border-t border-line/60">
             <div class="text-sm font-medium text-ink mb-1">Layout</div>
-            <p class="text-[11px] text-ink-subtle mb-2">
+            <p class="text-micro text-ink-subtle mb-2">
               "Padrão" mantém o visual default — a chave nem é salva na config.
             </p>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -721,13 +721,13 @@ const sections = computed(() => {
                 <label class="text-xs font-medium text-ink block mb-1">Recorte do logo (px)</label>
                 <input v-model="data.page.logo_trim" type="number" min="0" max="80" step="1" placeholder="0"
                   class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
-                <p class="text-[10px] text-ink-subtle mt-0.5">Corta espaço transparente em cima/embaixo do PNG.</p>
+                <p class="text-micro text-ink-subtle mt-0.5">Corta espaço transparente em cima/embaixo do PNG.</p>
               </div>
               <div>
                 <label class="text-xs font-medium text-ink block mb-1">Distância logo → título (px)</label>
                 <input v-model="data.page.logo_gap" type="number" min="0" max="96" step="1" placeholder="auto"
                   class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
-                <p class="text-[10px] text-ink-subtle mt-0.5">Vazio = segue o espaçamento geral. 0 = colado.</p>
+                <p class="text-micro text-ink-subtle mt-0.5">Vazio = segue o espaçamento geral. 0 = colado.</p>
               </div>
               <div>
                 <label class="text-xs font-medium text-ink block mb-1">Alinhamento do texto</label>
@@ -796,7 +796,7 @@ const sections = computed(() => {
                 <label class="text-xs font-medium text-ink block mb-1">Overlay da imagem (%)</label>
                 <input v-model="data.page.overlay_opacity" type="number" min="0" max="95" step="5" placeholder="55"
                   class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
-                <p class="text-[10px] text-ink-subtle mt-0.5">Escurecimento sobre a imagem de fundo.</p>
+                <p class="text-micro text-ink-subtle mt-0.5">Escurecimento sobre a imagem de fundo.</p>
               </div>
             </div>
           </div>
@@ -814,17 +814,17 @@ const sections = computed(() => {
           <!-- Campos do form -->
           <div class="pt-3 border-t border-line/60">
             <div class="text-sm font-medium text-ink mb-1">Campos do formulário</div>
-            <p class="text-[11px] text-ink-subtle mb-2">
+            <p class="text-micro text-ink-subtle mb-2">
               Escolha quais campos pedir e quais são obrigatórios. Sistema sempre exige no mínimo e-mail OU telefone válido.
             </p>
             <div class="overflow-x-auto rounded border border-line/60">
               <table class="w-full text-sm">
                 <thead class="bg-surface-sunken/30">
                   <tr class="border-b border-line">
-                    <th class="text-left   text-[10px] font-mono uppercase tracking-wider text-ink-subtle py-1.5 px-2">Campo</th>
-                    <th class="text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle py-1.5 w-16">Pedir</th>
-                    <th class="text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle py-1.5 w-24">Obrigatório</th>
-                    <th class="text-left   text-[10px] font-mono uppercase tracking-wider text-ink-subtle py-1.5 px-2">Label personalizado</th>
+                    <th class="text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle py-1.5 px-2">Campo</th>
+                    <th class="text-center text-micro font-mono uppercase tracking-wider text-ink-subtle py-1.5 w-16">Pedir</th>
+                    <th class="text-center text-micro font-mono uppercase tracking-wider text-ink-subtle py-1.5 w-24">Obrigatório</th>
+                    <th class="text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle py-1.5 px-2">Label personalizado</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -901,7 +901,7 @@ const sections = computed(() => {
             <div class="text-xs text-ink-muted mb-1">
               Incorporar em site externo com o <strong>mesmo visual da LP</strong> (iframe, altura automática):
             </div>
-            <pre class="text-[11px] font-mono bg-surface border border-line rounded p-3 overflow-x-auto max-h-72 whitespace-pre">{{ iframeSnippet }}</pre>
+            <pre class="text-micro font-mono bg-surface border border-line rounded p-3 overflow-x-auto max-h-72 whitespace-pre">{{ iframeSnippet }}</pre>
             <div class="mt-2 flex justify-end">
               <Button variant="secondary" size="sm" icon="fas fa-copy" @click="copy(iframeSnippet, 'HTML do iframe')">Copiar iframe</Button>
             </div>
@@ -909,7 +909,7 @@ const sections = computed(() => {
 
           <div>
             <div class="text-xs text-ink-muted mb-1">Snippet HTML sem estilo (pra estilizar direto no site de destino):</div>
-            <pre class="text-[11px] font-mono bg-surface border border-line rounded p-3 overflow-x-auto max-h-72 whitespace-pre">{{ htmlSnippet }}</pre>
+            <pre class="text-micro font-mono bg-surface border border-line rounded p-3 overflow-x-auto max-h-72 whitespace-pre">{{ htmlSnippet }}</pre>
             <div class="mt-2 flex justify-end">
               <Button variant="ghost" size="sm" icon="fas fa-copy" @click="copy(htmlSnippet, 'HTML')">Copiar HTML</Button>
             </div>
@@ -929,22 +929,22 @@ const sections = computed(() => {
             <table class="min-w-full text-sm">
               <thead class="bg-surface-sunken/30 border-b border-line">
                 <tr>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Quando</th>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Contato</th>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
-                  <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Quando</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Contato</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
+                  <th class="px-3 py-2 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-line/60">
                 <tr v-for="l in recentLeads" :key="l.id" class="hover:bg-surface-hover/40">
-                  <td class="px-3 py-2 text-[11px] text-ink-subtle whitespace-nowrap">{{ fmtRelative(l.created_at) }}</td>
+                  <td class="px-3 py-2 text-micro text-ink-subtle whitespace-nowrap">{{ fmtRelative(l.created_at) }}</td>
                   <td class="px-3 py-2">
                     <div class="text-ink text-xs">{{ l.nome || '—' }}</div>
-                    <div class="text-[10px] text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
+                    <div class="text-micro text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
                   </td>
-                  <td class="px-3 py-2 text-[11px] font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
+                  <td class="px-3 py-2 text-micro font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
                   <td class="px-3 py-2 text-center">
-                    <span :class="['text-[11px] font-medium', statusColor(l.status)]">{{ l.status }}</span>
+                    <span :class="['text-micro font-medium', statusColor(l.status)]">{{ l.status }}</span>
                   </td>
                 </tr>
               </tbody>

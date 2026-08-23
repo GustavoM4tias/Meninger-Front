@@ -33,7 +33,7 @@ const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR') : '—';
       <div v-for="log in store.logs" :key="log.id"
         class="rounded-lg border border-line bg-surface-raised px-3 py-2.5 text-sm">
         <div class="flex items-center justify-between gap-3">
-          <span :class="['text-[11px] px-2 py-0.5 rounded border', STATUS_CLS[log.status] || '']">
+          <span :class="['text-micro px-2 py-0.5 rounded border', STATUS_CLS[log.status] || '']">
             {{ log.status }}
           </span>
           <span class="text-xs text-ink-muted">{{ fmt(log.fired_at) }}</span>

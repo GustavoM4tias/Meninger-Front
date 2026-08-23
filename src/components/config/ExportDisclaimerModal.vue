@@ -99,7 +99,7 @@ const autorLinha = computed(() => {
 
       <!-- Quem está exportando -->
       <div class="p-3 rounded-xl bg-accent-soft/40 border border-accent/20">
-        <p class="text-[11px] uppercase tracking-wider font-semibold text-ink-subtle mb-1">
+        <p class="text-micro uppercase tracking-wider font-semibold text-ink-subtle mb-1">
           Exportando como
         </p>
         <p class="text-sm font-medium text-ink break-all">{{ autorLinha }}</p>

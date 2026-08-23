@@ -16,7 +16,7 @@
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
           <!-- Empreendimento -->
           <div class="md:col-span-4">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+            <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-city text-accent text-[10px]"></i>
               Empreendimento / Centro de Custo
             </label>
@@ -26,7 +26,7 @@
 
           <!-- Data Inicial -->
           <div class="md:col-span-2">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+            <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-calendar-day text-accent text-[10px]"></i>
               Data Inicial
             </label>
@@ -35,7 +35,7 @@
 
           <!-- Data Final -->
           <div class="md:col-span-2">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+            <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-calendar-check text-accent text-[10px]"></i>
               Data Final
             </label>
@@ -44,7 +44,7 @@
 
           <!-- Departamentos -->
           <div class="md:col-span-2">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+            <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-sitemap text-accent text-[10px]"></i>
               Departamento(s)
             </label>
@@ -66,7 +66,7 @@
 
         <!-- Busca livre -->
         <div class="mt-4">
-          <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
+          <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 flex items-center gap-1.5">
             <i class="fas fa-magnifying-glass text-accent text-[10px]"></i>
             Buscar
           </label>
@@ -131,7 +131,7 @@
             <thead class="bg-surface-sunken/60 border-b border-line">
               <tr>
                 <th v-for="col in columns" :key="col.key"
-                  class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle select-none cursor-pointer hover:text-ink transition-colors"
+                  class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-subtle select-none cursor-pointer hover:text-ink transition-colors"
                   :class="col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'"
                   @click="store.setSort(col.key)">
                   <span class="inline-flex items-center gap-1.5"
@@ -153,7 +153,7 @@
                     <div class="text-sm font-semibold text-ink truncate">
                       {{ bill.creditor_json ? (bill.creditor_json.tradeName || bill.creditor_json.name || 'Sem nome') : '—' }}
                     </div>
-                    <div v-if="bill.creditor_json?.cnpj" class="text-[10px] text-ink-subtle truncate font-mono">
+                    <div v-if="bill.creditor_json?.cnpj" class="text-micro text-ink-subtle truncate font-mono">
                       CNPJ: {{ bill.creditor_json.cnpj }}
                     </div>
                   </div>
@@ -165,8 +165,8 @@
                     <div class="text-xs font-medium text-ink-muted">
                       {{ bill.document_identification_id }} {{ bill.document_number }}
                     </div>
-                    <div class="text-[10px] text-ink-subtle font-mono">#{{ bill.id }}</div>
-                    <div v-if="bill.notes" class="text-[10px] text-ink-subtle truncate max-w-40" :title="bill.notes">
+                    <div class="text-micro text-ink-subtle font-mono">#{{ bill.id }}</div>
+                    <div v-if="bill.notes" class="text-micro text-ink-subtle truncate max-w-40" :title="bill.notes">
                       {{ bill.notes }}
                     </div>
                   </div>

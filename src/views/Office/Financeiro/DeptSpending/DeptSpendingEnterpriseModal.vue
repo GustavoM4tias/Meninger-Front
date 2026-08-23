@@ -34,7 +34,7 @@
                 </div>
                 <textarea v-model="releaseNotes" rows="2" placeholder="Observação da liberação (opcional)"
                     class="mt-3 w-full px-3 py-2 text-sm border border-line rounded-lg bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring/30"></textarea>
-                <p v-if="releasedInfo" class="mt-1.5 text-[11px] text-ink-subtle">
+                <p v-if="releasedInfo" class="mt-1.5 text-micro text-ink-subtle">
                     <i class="fas fa-clock-rotate-left mr-1"></i>{{ releasedInfo }}
                 </p>
             </div>
@@ -78,7 +78,7 @@
                         class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-line">
                         <span class="text-sm text-ink">
                             {{ d }}
-                            <span class="text-[10px] text-ink-subtle">(global: {{ adminStore.isMarketing(d) ? 'acompanhado' : 'não' }})</span>
+                            <span class="text-micro text-ink-subtle">(global: {{ adminStore.isMarketing(d) ? 'acompanhado' : 'não' }})</span>
                         </span>
                         <select v-model="overrideState[d]"
                             class="h-8 px-2 text-xs border border-line rounded-lg bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring/30">

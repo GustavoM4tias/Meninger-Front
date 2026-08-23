@@ -168,11 +168,11 @@ const ticketsCards = computed(() => [
           <i :class="k.icon"></i>
         </span>
         <div class="min-w-0 flex-1">
-          <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
+          <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
           <p class="text-2xl font-semibold text-ink tabular-nums tracking-tight leading-tight mt-0.5 truncate">
             {{ k.value }}
           </p>
-          <p class="text-[11px] text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
+          <p class="text-micro text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
         </div>
       </div>
     </div>
@@ -187,11 +187,11 @@ const ticketsCards = computed(() => [
           <i :class="k.icon"></i>
         </span>
         <div class="min-w-0 flex-1">
-          <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
+          <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
           <p class="text-2xl font-semibold text-ink tabular-nums tracking-tight leading-tight mt-0.5 truncate">
             {{ k.value }}
           </p>
-          <p class="text-[11px] text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
+          <p class="text-micro text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
         </div>
       </div>
     </div>

@@ -51,7 +51,7 @@ const temDados = computed(() => matriz.value.some(r => r.some(v => v > 0)));
   <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient p-4">
     <div class="flex items-start justify-between gap-3 mb-3 flex-wrap">
       <div class="min-w-0">
-        <h2 class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle flex items-center gap-2">
+        <h2 class="text-micro font-semibold uppercase tracking-wider text-ink-subtle flex items-center gap-2">
           <i class="fas fa-clock text-accent"></i>Melhores horários de captação
         </h2>
         <p class="text-xs text-ink-muted mt-1">
@@ -59,7 +59,7 @@ const temDados = computed(() => matriz.value.some(r => r.some(v => v > 0)));
         </p>
       </div>
       <!-- Legenda -->
-      <div class="flex items-center gap-1.5 text-[10px] text-ink-subtle shrink-0">
+      <div class="flex items-center gap-1.5 text-micro text-ink-subtle shrink-0">
         <span>menos</span>
         <span v-for="a in [0.12, 0.4, 0.7, 1]" :key="a"
           class="h-3 w-3 rounded-[3px]"
@@ -71,7 +71,7 @@ const temDados = computed(() => matriz.value.some(r => r.some(v => v > 0)));
     <div v-if="temDados" class="overflow-x-auto no-scrollbar">
       <div class="min-w-[460px]">
         <div v-for="row in rows" :key="row.label" class="flex items-center gap-2 mb-[3px]">
-          <span class="w-8 shrink-0 text-[10px] text-ink-subtle text-right">{{ row.label }}</span>
+          <span class="w-8 shrink-0 text-micro text-ink-subtle text-right">{{ row.label }}</span>
           <div class="flex-1 grid gap-[3px]" :style="cols">
             <span v-for="(v, h) in row.cells" :key="h"
               class="aspect-square rounded-[3px]"
@@ -85,7 +85,7 @@ const temDados = computed(() => matriz.value.some(r => r.some(v => v > 0)));
           <span class="w-8 shrink-0"></span>
           <div class="flex-1 grid" :style="cols">
             <span v-for="h in HOURS" :key="h"
-              class="text-[10px] text-ink-subtle font-mono"
+              class="text-micro text-ink-subtle font-mono"
               :style="hourStyle(h)">
               {{ String(h).padStart(2, '0') }}h
             </span>

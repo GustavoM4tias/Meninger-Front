@@ -235,7 +235,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
         >
           <img src="/Mlogotext.png" alt="Menin" class="h-7 w-auto dark:invert-0 invert" />
         </a>
-        <span v-if="data?.publishedAt" class="ml-auto text-[11px] text-ink-subtle">Publicado em {{ fmtDate(data.publishedAt) }}</span>
+        <span v-if="data?.publishedAt" class="ml-auto text-micro text-ink-subtle">Publicado em {{ fmtDate(data.publishedAt) }}</span>
 
         <!-- Exportar: mesmas opções da visualização interna -->
         <div v-if="data" ref="menuEl" class="relative flex-shrink-0" :class="data?.publishedAt ? '' : 'ml-auto'">
@@ -266,7 +266,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
               <i :class="`fas ${opt.icon}`" class="text-ink-subtle w-4 text-center" />
               <span class="min-w-0">
                 <span class="block text-sm text-ink leading-tight">{{ opt.label }}</span>
-                <span class="block text-[11px] text-ink-subtle leading-tight">{{ opt.hint }}</span>
+                <span class="block text-micro text-ink-subtle leading-tight">{{ opt.hint }}</span>
               </span>
             </button>
           </div>
@@ -355,7 +355,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
       </template>
     </main>
 
-    <footer v-if="data" class="pb-8 text-center text-[11px] text-ink-subtle">
+    <footer v-if="data" class="pb-8 text-center text-micro text-ink-subtle">
       Relatório gerado pela Eme · Menin Office
     </footer>
 

@@ -395,7 +395,7 @@ async function saveUser() {
 
       <!-- Identidade -->
       <section>
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2.5">Identidade</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2.5">Identidade</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input v-model="editableUser.username" label="Nome" placeholder="Nome completo"
             iconLeft="fas fa-user" required class="sm:col-span-2" />
@@ -408,7 +408,7 @@ async function saveUser() {
 
       <!-- Acesso (só criação) -->
       <section v-if="!isEdit">
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2.5">Acesso</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2.5">Acesso</p>
         <div class="grid grid-cols-2 gap-3">
           <Input v-model="password" type="password" label="Senha"
             placeholder="Mín. 6 caracteres" iconLeft="fas fa-lock" required />
@@ -419,7 +419,7 @@ async function saveUser() {
 
       <!-- Cargo e localização -->
       <section>
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2.5">Cargo e localização</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2.5">Cargo e localização</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <UiSelect v-model="editableUser.position" :options="positionsOptions"
             label="Cargo" placeholder="Selecione o cargo" />
@@ -443,7 +443,7 @@ async function saveUser() {
 
       <!-- Configurações -->
       <section>
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2.5">Configurações</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2.5">Configurações</p>
         <div class="space-y-2">
 
           <div v-if="isAdmin && isEdit"
@@ -605,7 +605,7 @@ async function saveUser() {
 
         <!-- Alçadas padrão do departamento -->
         <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
             Alçadas de visualização aplicadas
             <span v-if="activationProfile" class="normal-case font-sans text-ink-muted">
               ({{ activationProfile.name }})

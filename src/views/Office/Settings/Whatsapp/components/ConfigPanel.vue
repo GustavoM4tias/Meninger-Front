@@ -189,7 +189,7 @@ const onTestSend = async () => {
 
       <div class="border-t border-line pt-5">
         <h3 class="text-xs font-mono uppercase tracking-wider text-ink-subtle mb-2">Secrets</h3>
-        <p class="text-[11px] text-ink-muted mb-3">
+        <p class="text-micro text-ink-muted mb-3">
           Os campos abaixo só são gravados quando preenchidos. Para limpar um secret existente, digite <code>__CLEAR__</code>.
         </p>
         <div class="grid grid-cols-1 gap-3">
@@ -202,7 +202,7 @@ const onTestSend = async () => {
             placeholder="qualquer string que você cadastrou na Meta"
             type="password" />
         </div>
-        <p class="text-[11px] text-ink-subtle mt-3 rounded-md border border-line bg-surface-sunken/40 px-3 py-2">
+        <p class="text-micro text-ink-subtle mt-3 rounded-md border border-line bg-surface-sunken/40 px-3 py-2">
           <i class="fas fa-key mr-1 text-[#0866FF]"></i>
           O <b>App Secret</b> e a <b>versão da Graph API</b> são compartilhados com o Lead Ads e ficam em
           <RouterLink to="/meta?tab=credenciais" class="text-accent underline">Central Meta › Credenciais</RouterLink>.
@@ -238,7 +238,7 @@ const onTestSend = async () => {
           :disabled="!canTest" icon="fas fa-mobile-screen-button" @click="onRegisterPhone">
           Registrar número
         </Button>
-        <span v-if="testHint" class="text-[11px] text-ink-subtle">{{ testHint }}</span>
+        <span v-if="testHint" class="text-micro text-ink-subtle">{{ testHint }}</span>
       </div>
     </section>
 
@@ -252,17 +252,17 @@ const onTestSend = async () => {
       <section class="rounded-xl border border-line bg-surface-raised p-5 shadow-soft">
         <h3 class="text-sm font-semibold text-ink mb-2">Webhook URL</h3>
         <p class="text-xs text-ink-muted mb-2">Configure essa URL no Meta Business → WhatsApp → Webhooks.</p>
-        <code class="block text-[11px] font-mono break-all p-2 bg-surface-sunken rounded-md border border-line">
+        <code class="block text-micro font-mono break-all p-2 bg-surface-sunken rounded-md border border-line">
           {{ webhookUrl }}
         </code>
-        <p class="text-[11px] text-ink-subtle mt-2">
+        <p class="text-micro text-ink-subtle mt-2">
           Use o <em>Verify Token</em> cadastrado acima como verify token na Meta.
         </p>
       </section>
 
       <section class="rounded-xl border border-line bg-surface-raised p-5 shadow-soft space-y-3">
         <h3 class="text-sm font-semibold text-ink">Envio de teste</h3>
-        <p class="text-[11px] text-ink-muted">
+        <p class="text-micro text-ink-muted">
           Use <code class="font-mono">hello_world</code> em <code class="font-mono">en_US</code> sem variáveis pra testar agora — esse template já vem aprovado.
         </p>
         <Input v-model="testForm.to"           label="Para (E.164)"   placeholder="+5511999999999" size="sm" />

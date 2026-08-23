@@ -139,7 +139,7 @@ function onClick(k) {
             <span class="h-7 w-7 rounded-lg grid place-items-center text-xs" :class="item.accent">
               <i :class="item.icon"></i>
             </span>
-            <span class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle truncate" :title="item.sub">
+            <span class="text-micro uppercase tracking-wider font-mono text-ink-subtle truncate" :title="item.sub">
               {{ item.sub }}
             </span>
           </div>

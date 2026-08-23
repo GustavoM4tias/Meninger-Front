@@ -14,7 +14,7 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
 
 const TA = 'w-full rounded-lg border border-line bg-surface-sunken px-3 py-2.5 text-[12.5px] leading-relaxed text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring/30 focus:border-accent/40 transition resize-y'
-const LABEL = 'block text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5'
+const LABEL = 'block text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5'
 
 const tab = ref('conversations')
 const busy = ref(false)
@@ -488,7 +488,7 @@ onMounted(loadConversations)
                     <div class="max-w-[75%] rounded-xl px-3 py-2 text-[12.5px] leading-relaxed"
                       :class="m.direction === 'out' ? 'bg-accent/10 text-ink' : 'bg-surface-raised border border-line text-ink'">
                       <p class="whitespace-pre-wrap break-words">{{ m.body }}</p>
-                      <p class="mt-1 text-[10px] text-ink-subtle text-right">
+                      <p class="mt-1 text-micro text-ink-subtle text-right">
                         {{ fmt(m.created_at || m.createdAt) }} ·
                         <span :class="m.status === 'failed' ? 'text-red-500' : ''">{{ m.status }}</span>
                       </p>
@@ -546,8 +546,8 @@ onMounted(loadConversations)
                   label="Empreendimento no site (fonte do contexto)"
                   @change="(v) => f.site_slug = v || null" />
 
-                <p v-if="siteState.loading" class="text-[11px] text-ink-subtle">Lendo o site…</p>
-                <p v-else-if="siteState.error" class="text-[11px] text-red-600 dark:text-red-400">
+                <p v-if="siteState.loading" class="text-micro text-ink-subtle">Lendo o site…</p>
+                <p v-else-if="siteState.error" class="text-micro text-red-600 dark:text-red-400">
                   Não consegui ler o site: {{ siteState.error }}
                 </p>
 
@@ -556,17 +556,17 @@ onMounted(loadConversations)
                     {{ f.site_snapshot.images?.length || 0 }} imagem(ns)
                   </Badge>
                   <Badge v-if="f.site_snapshot?.book" variant="neutral" size="sm">book em PDF</Badge>
-                  <span class="text-[11px] text-ink-subtle">
+                  <span class="text-micro text-ink-subtle">
                     {{ f.site_synced_at ? `Atualizado do site em ${fmt(f.site_synced_at)}` : 'Ainda não sincronizado' }}
                   </span>
                   <Button variant="secondary" size="sm" icon="fas fa-rotate"
                     :loading="siteState.syncing === f.id" @click="syncFlowSite(f)">Atualizar agora</Button>
                 </div>
 
-                <p v-if="f.site_sync_error" class="text-[11px] text-amber-600 dark:text-amber-400">
+                <p v-if="f.site_sync_error" class="text-micro text-amber-600 dark:text-amber-400">
                   Último sync falhou: {{ f.site_sync_error }}. A Eme segue com o conteúdo anterior.
                 </p>
-                <p v-if="f.site_slug" class="text-[11px] text-ink-subtle">
+                <p v-if="f.site_slug" class="text-micro text-ink-subtle">
                   O conteúdo é atualizado sozinho todo dia às 4h40. Preço e condição não vêm do site,
                   então a Eme não vai afirmar valor nenhum - fica com o consultor.
                 </p>
@@ -585,10 +585,10 @@ onMounted(loadConversations)
 
               <!-- Override parcial dos padrões: campo em branco herda o geral. -->
               <div class="rounded-lg border border-line bg-surface-sunken px-3 py-3">
-                <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+                <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
                   Padrão de atendimento deste empreendimento
                 </p>
-                <p class="text-[11px] text-ink-subtle mb-3">
+                <p class="text-micro text-ink-subtle mb-3">
                   Em branco = herda de Config › Regras gerais. Preencha só o que muda aqui.
                 </p>
                 <div class="grid sm:grid-cols-2 gap-3">
@@ -608,12 +608,12 @@ onMounted(loadConversations)
               <div class="flex items-center gap-2">
                 <Button variant="secondary" size="sm" icon="fas fa-layer-group" :loading="rulesPreview.running"
                   @click="previewRules(f)">Ver regras montadas</Button>
-                <span class="text-[11px] text-ink-subtle">Mostra exatamente o que a IA vai ler</span>
+                <span class="text-micro text-ink-subtle">Mostra exatamente o que a IA vai ler</span>
               </div>
               <div v-if="rulesPreview.flowId === f.id && rulesPreview.text"
                 class="rounded-lg border border-line bg-surface-sunken px-3 py-3">
                 <pre class="text-[11.5px] leading-relaxed text-ink whitespace-pre-wrap font-sans">{{ rulesPreview.text }}</pre>
-                <p class="mt-2 pt-2 border-t border-line text-[11px] text-ink-subtle">
+                <p class="mt-2 pt-2 border-t border-line text-micro text-ink-subtle">
                   Depois disso ainda entram: contexto do negócio, imagens, dados do lead e as regras inegociáveis
                   (fixas no código: não inventar valor, não prometer em nome da empresa).
                 </p>
@@ -663,7 +663,7 @@ onMounted(loadConversations)
             @click="toggleSiteSyncs()">
             <i class="fas fa-clock-rotate-left text-ink-subtle text-xs"></i>
             <h2 class="text-base font-semibold text-ink">Atualizações do site</h2>
-            <span class="text-[11px] text-ink-subtle">todo dia às 4h40</span>
+            <span class="text-micro text-ink-subtle">todo dia às 4h40</span>
             <i class="fas ml-auto text-ink-subtle text-xs"
               :class="siteSyncsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
           </button>
@@ -726,7 +726,7 @@ onMounted(loadConversations)
               <Badge v-if="l.temperatura" :variant="TEMP_VARIANT[l.temperatura] || 'neutral'" size="sm">
                 <i class="fas mr-1" :class="TEMP_ICON[l.temperatura]"></i>{{ l.temperatura }}
               </Badge>
-              <span v-if="l.score != null" class="text-[11px] font-mono text-ink-subtle"
+              <span v-if="l.score != null" class="text-micro font-mono text-ink-subtle"
                 v-tippy="'Pontuação do lead, calculada pelo que ele declarou e pelo que fez na conversa'">{{ l.score }}</span>
               <span class="text-sm font-semibold text-ink">{{ l.name || 'Sem nome' }}</span>
               <Badge size="sm" variant="neutral">{{ ESTAGIO_LABEL[l.estagio] || l.estagio }}</Badge>
@@ -748,7 +748,7 @@ onMounted(loadConversations)
                 <div v-if="leadDetail.qualificacao && Object.keys(leadDetail.qualificacao).length"
                   class="mb-3 flex flex-wrap gap-1.5">
                   <span v-for="(v, k) in leadDetail.qualificacao" :key="k"
-                    class="text-[11px] px-2 py-0.5 rounded-md border border-line bg-surface-sunken text-ink-muted">
+                    class="text-micro px-2 py-0.5 rounded-md border border-line bg-surface-sunken text-ink-muted">
                     {{ k.replace(/_/g, ' ') }}: <strong class="text-ink">{{ v }}</strong>
                   </span>
                 </div>
@@ -779,14 +779,14 @@ onMounted(loadConversations)
               <Switch :model-value="settings.active" @change="(v) => settings.active = v" />
               <div>
                 <p class="text-sm font-semibold text-ink">Eme Atende ativa</p>
-                <p class="text-[11px] text-ink-subtle">Desligada = webhook 100% no comportamento atual</p>
+                <p class="text-micro text-ink-subtle">Desligada = webhook 100% no comportamento atual</p>
               </div>
             </div>
             <div class="flex items-center gap-3 rounded-lg border border-line bg-surface-sunken px-3 py-3">
               <Switch :model-value="settings.dry_run" @change="(v) => settings.dry_run = v" />
               <div>
                 <p class="text-sm font-semibold text-ink">Modo sombra (dry run)</p>
-                <p class="text-[11px] text-ink-subtle">Loga as respostas sem enviar - desligue só após testar</p>
+                <p class="text-micro text-ink-subtle">Loga as respostas sem enviar - desligue só após testar</p>
               </div>
             </div>
             <Input :model-value="String(settings.debounce_seconds)" type="number" label="Debounce (s) - junta mensagens picadas" @update:model-value="(v) => settings.debounce_seconds = Number(v)" />
@@ -795,7 +795,7 @@ onMounted(loadConversations)
               <Switch :model-value="settings.typing_simulado" @change="(v) => settings.typing_simulado = v" />
               <div>
                 <p class="text-sm font-semibold text-ink">Mostrar "digitando…"</p>
-                <p class="text-[11px] text-ink-subtle">Espera proporcional ao tamanho da resposta (1,2s a 7s). Resposta instantânea entrega que é robô.</p>
+                <p class="text-micro text-ink-subtle">Espera proporcional ao tamanho da resposta (1,2s a 7s). Resposta instantânea entrega que é robô.</p>
               </div>
             </div>
           </div>
@@ -825,7 +825,7 @@ onMounted(loadConversations)
             </div>
 
             <div class="rounded-lg border border-line bg-surface-sunken px-3 py-3">
-              <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-3">Padrão de conversa</p>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-3">Padrão de conversa</p>
               <div class="grid sm:grid-cols-2 gap-3">
                 <Select :model-value="settings.standards.formality" :options="formalityOpts" label="Tom"
                   @change="(v) => settings.standards.formality = v" />
@@ -882,10 +882,10 @@ onMounted(loadConversations)
           <div class="flex flex-wrap items-center gap-2 mb-4">
             <Button variant="secondary" size="sm" icon="fas fa-vial" :loading="sourceTest.running"
               @click="testSiteSource">Testar leitura</Button>
-            <span v-if="sourceTest.total" class="text-[11px] text-ink-muted">
+            <span v-if="sourceTest.total" class="text-micro text-ink-muted">
               {{ sourceTest.total }} empreendimento(s) lido(s), {{ sourceTest.campos.length }} campo(s) disponível(is)
             </span>
-            <span v-if="sourceTest.error" class="text-[11px] text-red-600 dark:text-red-400">{{ sourceTest.error }}</span>
+            <span v-if="sourceTest.error" class="text-micro text-red-600 dark:text-red-400">{{ sourceTest.error }}</span>
           </div>
 
           <template v-if="sourceTest.campos.length">
@@ -909,7 +909,7 @@ onMounted(loadConversations)
               </div>
             </div>
           </template>
-          <p v-else class="text-[11px] text-ink-subtle mb-4">
+          <p v-else class="text-micro text-ink-subtle mb-4">
             Clique em <b>Testar leitura</b> para carregar os campos que o site publica - o de-para
             aparece com eles, em vez de você digitar nome de campo no escuro.
           </p>
@@ -919,7 +919,7 @@ onMounted(loadConversations)
             <div v-for="b in siteSource.blocos" :key="b.chave"
               class="flex items-center gap-3 rounded-lg border border-line bg-surface-sunken px-3 py-2">
               <Switch :model-value="b.ativo" size="sm" @change="(v) => b.ativo = v" />
-              <code class="font-mono text-[11px] text-ink-subtle w-24 shrink-0">{{ b.chave }}</code>
+              <code class="font-mono text-micro text-ink-subtle w-24 shrink-0">{{ b.chave }}</code>
               <input v-model="b.titulo" :disabled="!b.ativo"
                 class="flex-1 min-w-0 rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink
                        disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-accent/20" />
@@ -928,7 +928,7 @@ onMounted(loadConversations)
 
           <label :class="LABEL">Observação final do contexto</label>
           <textarea v-model="siteSource.observacao_final" :class="TA" rows="3"></textarea>
-          <p class="mt-1 mb-4 text-[11px] text-ink-subtle">
+          <p class="mt-1 mb-4 text-micro text-ink-subtle">
             É a frase que segura a Eme longe de preço. Esvaziar tira uma camada - a trava
             anti-invenção continua, mas ela passa a ser a única.
           </p>
@@ -961,7 +961,7 @@ onMounted(loadConversations)
             <Switch :model-value="settings.test_mode" @change="(v) => settings.test_mode = v" />
             <div>
               <p class="text-sm font-semibold text-ink">Só números de teste</p>
-              <p class="text-[11px] text-ink-subtle">Nenhum lead real é atendido enquanto isso estiver ligado</p>
+              <p class="text-micro text-ink-subtle">Nenhum lead real é atendido enquanto isso estiver ligado</p>
             </div>
           </div>
           <label class="block text-xs font-medium text-ink-muted mb-1.5">Números liberados (um por linha, com DDD)</label>
@@ -972,7 +972,7 @@ onMounted(loadConversations)
             class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink
                    font-mono placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent/20"></textarea>
           <p v-if="settings.test_mode && !settings.test_phones?.length"
-            class="mt-2 text-[11px] text-amber-600 dark:text-amber-400">
+            class="mt-2 text-micro text-amber-600 dark:text-amber-400">
             Modo teste ligado sem nenhum número: a Eme não vai atender ninguém.
           </p>
           <div class="mt-4">
@@ -1041,16 +1041,16 @@ onMounted(loadConversations)
                  o que a trava pegaria antes de ligar o atendimento. -->
             <div v-if="sandbox.validation && sandbox.validation.level !== 'off'"
               class="mt-3 pt-3 border-t border-line">
-              <p v-if="sandbox.validation.ok" class="text-[11px] text-emerald-600 dark:text-emerald-400">
+              <p v-if="sandbox.validation.ok" class="text-micro text-emerald-600 dark:text-emerald-400">
                 <i class="fas fa-check mr-1"></i> Nenhum valor sem respaldo no contexto.
               </p>
               <template v-else>
-                <p class="text-[11px] text-red-600 dark:text-red-400 mb-1">
+                <p class="text-micro text-red-600 dark:text-red-400 mb-1">
                   <i class="fas fa-triangle-exclamation mr-1"></i>
                   Valores sem respaldo no contexto:
                   <span class="font-mono">{{ sandbox.validation.suspicious.join(' · ') }}</span>
                 </p>
-                <p class="text-[11px] text-ink-subtle">{{ sandbox.validation.note }}</p>
+                <p class="text-micro text-ink-subtle">{{ sandbox.validation.note }}</p>
               </template>
             </div>
           </div>

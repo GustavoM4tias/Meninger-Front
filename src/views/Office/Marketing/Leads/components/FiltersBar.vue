@@ -92,7 +92,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
       style="overflow: visible;">
 
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
             <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
           </label>
           <MultiSelector :model-value="filtros.empreendimento"
@@ -101,7 +101,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
         </div>
 
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
             <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>Imobiliária
           </label>
           <MultiSelector :model-value="filtros.imobiliaria"
@@ -110,7 +110,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
         </div>
 
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
             <i class="fas fa-user-tie text-[10px] mr-1 text-ink-subtle"></i>Corretor
           </label>
           <MultiSelector :model-value="filtros.corretor"
@@ -119,7 +119,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
         </div>
 
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
             <i class="fas fa-bullhorn text-[10px] mr-1 text-ink-subtle"></i>Mídia Principal
           </label>
           <MultiSelector :model-value="filtros.midia_principal"
@@ -128,7 +128,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
         </div>
 
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
             <i class="fas fa-chart-pie text-[10px] mr-1 text-ink-subtle"></i>Situação
           </label>
           <MultiSelector :model-value="filtros.situacao_nome"
@@ -137,7 +137,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
         </div>
 
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">
             <i class="fas fa-compass text-[10px] mr-1 text-ink-subtle"></i>Origem
           </label>
           <MultiSelector :model-value="filtros.origem"

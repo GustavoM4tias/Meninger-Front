@@ -58,7 +58,7 @@ function fmtRate(v) {
     <!-- Aviso vendida=S -->
     <div
       v-if="a.vendida > 0"
-      class="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 rounded-xl px-3 py-2 text-[11px] flex items-start gap-2"
+      class="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 rounded-xl px-3 py-2 text-micro flex items-start gap-2"
     >
       <i class="fas fa-circle-info mt-0.5" />
       <span>
@@ -75,12 +75,12 @@ function fmtRate(v) {
         class="bg-slate-50 dark:bg-slate-800/60 ring-1 ring-inset rounded-xl p-3"
         :class="colorMap[k.color]"
       >
-        <div class="flex items-center gap-2 text-[10px] uppercase tracking-wide font-medium opacity-80">
+        <div class="flex items-center gap-2 text-micro uppercase tracking-wide font-medium opacity-80">
           <i :class="k.icon" />
           {{ k.label }}
         </div>
         <p class="text-xl font-bold tabular-nums mt-1">{{ fmtNum(k.value) }}</p>
-        <p v-if="k.sub" class="text-[10px] opacity-70 mt-0.5">{{ k.sub }}</p>
+        <p v-if="k.sub" class="text-micro opacity-70 mt-0.5">{{ k.sub }}</p>
       </div>
     </div>
 
@@ -93,7 +93,7 @@ function fmtRate(v) {
         :class="colorMap[r.color]"
         :title="r.tooltip"
       >
-        <p class="text-[10px] uppercase tracking-wide font-medium opacity-80">{{ r.label }}</p>
+        <p class="text-micro uppercase tracking-wide font-medium opacity-80">{{ r.label }}</p>
         <p class="text-xl font-bold tabular-nums mt-1">
           {{ fmtRate(r.value) }}<span class="text-sm font-normal opacity-70">{{ r.suffix }}</span>
         </p>
@@ -109,7 +109,7 @@ function fmtRate(v) {
         :class="colorMap[t.color]"
         :title="t.tooltip"
       >
-        <p class="text-[10px] uppercase tracking-wide font-medium opacity-80">{{ t.label }}</p>
+        <p class="text-micro uppercase tracking-wide font-medium opacity-80">{{ t.label }}</p>
         <p class="text-base font-semibold tabular-nums mt-1">
           {{ t.value != null ? `${fmtRate(t.value)} dias` : '—' }}
         </p>

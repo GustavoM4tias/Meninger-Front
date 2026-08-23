@@ -108,7 +108,7 @@ watch(open, (v) => {
                         </div>
                     </div>
                     <span
-                        class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
+                        class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-2.5 py-1 text-micro font-semibold text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
                         <i class="fa-solid fa-id-badge text-[10px]"></i>
                         {{ roleLabel }}
                     </span>

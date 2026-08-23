@@ -190,7 +190,7 @@ onMounted(fetchWeather);
             <span v-for="chip in stageChips.slice(1)" :key="chip"
               class="inline-flex items-center px-2 py-0.5 rounded-md
                      bg-white/15 backdrop-blur-md border border-white/20
-                     text-white/90 text-[11px] font-medium">
+                     text-white/90 text-micro font-medium">
               {{ chip }}
             </span> 
           </div>
@@ -224,7 +224,7 @@ onMounted(fetchWeather);
                 </span>
                 <div class="min-w-0">
                   <p class="text-2xl font-semibold text-ink tabular-nums leading-none">{{ k.value }}</p>
-                  <p class="text-[11px] uppercase tracking-wider font-mono text-ink-subtle mt-1">{{ k.label }}</p>
+                  <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle mt-1">{{ k.label }}</p>
                 </div>
               </div>
             </div>
@@ -248,25 +248,25 @@ onMounted(fetchWeather);
               </div>
               <div class="space-y-2">
                 <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Empresa</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Empresa</p>
                   <p class="text-sm font-semibold text-ink truncate">{{ building.nome_empresa || '—' }}</p>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                    <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">ID Empresa</p>
+                    <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">ID Empresa</p>
                     <p class="text-base font-bold text-accent tabular-nums">{{ building.idempresa_int || '—' }}</p>
                   </div>
                   <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                    <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">CDC Sienge</p>
+                    <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">CDC Sienge</p>
                     <p class="text-base font-bold text-accent tabular-nums">{{ building.idempreendimento_int || '—' }}</p>
                   </div>
                 </div>
                 <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Matrícula</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Matrícula</p>
                   <p class="text-sm text-ink font-mono truncate">{{ building.matricula || '—' }}</p>
                 </div>
                 <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">CNPJ</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">CNPJ</p>
                   <p class="text-sm text-ink font-mono truncate">{{ building.cnpj_empesa || '—' }}</p>
                 </div>
               </div>
@@ -323,13 +323,13 @@ onMounted(fetchWeather);
               </div>
               <div class="space-y-2">
                 <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Previsão de entrega</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Previsão de entrega</p>
                   <p class="text-base font-bold text-amber-500 dark:text-amber-300 tabular-nums">
                     {{ formatDate(building.data_entrega) }}
                   </p>
                 </div>
                 <div v-if="building.periodo_venda_inicio" class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Início das vendas</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Início das vendas</p>
                   <p class="text-sm font-semibold text-ink font-mono">{{ formatDate(building.periodo_venda_inicio) }}</p>
                 </div>
               </div>
@@ -344,11 +344,11 @@ onMounted(fetchWeather);
                   </Badge>
                 </div>
                 <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Nome</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Nome</p>
                   <p class="text-sm font-semibold text-ink truncate">{{ building.tabela.nome }}</p>
                 </div>
                 <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Vigência</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Vigência</p>
                   <p class="text-xs text-ink font-mono">
                     {{ building.tabela.data_vigencia_de }} <span class="text-ink-subtle">→</span> {{ building.tabela.data_vigencia_ate }}
                   </p>
@@ -379,7 +379,7 @@ onMounted(fetchWeather);
                     class="text-base shrink-0"></i>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-ink truncate group-hover:text-accent transition-colors">{{ mat.nome }}</p>
-                    <p class="text-[11px] text-ink-subtle font-mono">
+                    <p class="text-micro text-ink-subtle font-mono">
                       {{ mat.tipo }}<span v-if="mat.tamanho > 0"> · {{ (mat.tamanho / 1024 / 1024).toFixed(2) }} MB</span>
                     </p>
                   </div>
@@ -465,7 +465,7 @@ onMounted(fetchWeather);
                             <div class="flex items-start justify-between gap-2">
                               <div class="flex-1 min-w-0">
                                 <p class="text-sm font-semibold text-ink">{{ unidade.nome }}</p>
-                                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-ink-muted">
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-micro text-ink-muted">
                                   <span v-if="unidade.area_privativa" class="inline-flex items-center gap-1 font-mono">
                                     <i class="fas fa-ruler-combined text-[9px] text-ink-subtle"></i>
                                     {{ parseFloat(unidade.area_privativa).toFixed(2) }} m²
@@ -483,7 +483,7 @@ onMounted(fetchWeather);
                                   {{ fmtMoney(unidade.valor) }}
                                 </p>
                               </div>
-                              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0"
+                              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium border shrink-0"
                                 :class="getUnitStatus(unidade).cls">
                                 <span class="h-1.5 w-1.5 rounded-full" :class="getUnitStatus(unidade).dot"></span>
                                 {{ getUnitStatus(unidade).text }}

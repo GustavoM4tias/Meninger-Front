@@ -450,12 +450,12 @@ onMounted(async () => {
           </span>
           <span class="min-w-0 flex-1 text-left">
             <span class="block text-sm font-medium text-ink">{{ opt.label }}</span>
-            <span class="block text-[11px] text-ink-subtle leading-snug">{{ opt.hint }}</span>
+            <span class="block text-micro text-ink-subtle leading-snug">{{ opt.hint }}</span>
           </span>
           <i class="fas fa-download text-[11px] text-ink-subtle"></i>
         </button>
 
-        <ul class="text-[11px] text-ink-subtle leading-relaxed space-y-1 pt-1 border-t border-line/60">
+        <ul class="text-micro text-ink-subtle leading-relaxed space-y-1 pt-1 border-t border-line/60">
           <li><i class="fas fa-check text-accent mr-1.5"></i>Sai a árvore inteira, sem depender do zoom ou do tamanho da tela.</li>
           <li><i class="fas fa-check text-accent mr-1.5"></i>Fundo claro e resolução 3x - dá para ampliar sem borrar.</li>
           <li><i class="fas fa-check text-accent mr-1.5"></i>Rodapé com quem gerou, data/hora e o sistema.</li>
@@ -476,7 +476,7 @@ onMounted(async () => {
           </div>
           <span v-if="editMode"
             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-soft text-accent
-                   text-[10px] font-medium border border-accent/20 shrink-0">
+                   text-micro font-medium border border-accent/20 shrink-0">
             <i class="fas fa-pen-ruler text-[9px]"></i> Editando
           </span>
         </div>
@@ -484,7 +484,7 @@ onMounted(async () => {
 
       <!-- Modo edição: ajustes do organograma -->
       <div v-if="editMode" class="space-y-3">
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Ajustes do organograma</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Ajustes do organograma</p>
 
         <div>
           <label class="text-xs text-ink-muted">Posicionar no grupo de</label>
@@ -516,7 +516,7 @@ onMounted(async () => {
           </button>
         </div>
 
-        <p class="text-[11px] text-ink-subtle leading-relaxed pt-2 border-t border-line/60">
+        <p class="text-micro text-ink-subtle leading-relaxed pt-2 border-t border-line/60">
           <i class="fas fa-hand-pointer text-accent"></i>
           Arraste o card no organograma para posicioná-lo livremente.
         </p>

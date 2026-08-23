@@ -507,9 +507,9 @@ const onViewChange = (mode) => {
 
       <!-- Ordenação no mobile (no desktop é o cabeçalho da tabela) -->
       <div class="md:hidden flex items-center gap-1.5 flex-wrap">
-        <span class="text-[10px] text-ink-subtle uppercase tracking-wider font-mono mr-0.5">Ordenar</span>
+        <span class="text-micro text-ink-subtle uppercase tracking-wider font-mono mr-0.5">Ordenar</span>
         <button v-for="col in sortColumns" :key="col.key" @click="handleSort(col.key)"
-          class="px-2 py-1 text-[11px] rounded-lg border transition-colors inline-flex items-center gap-1"
+          class="px-2 py-1 text-micro rounded-lg border transition-colors inline-flex items-center gap-1"
           :class="sortConfig.key === col.key
             ? 'border-accent/40 text-accent bg-accent-soft/40'
             : 'border-line text-ink-muted hover:bg-surface-hover'">
@@ -543,7 +543,7 @@ const onViewChange = (mode) => {
             <i class="fas fa-chevron-right text-xs text-ink-subtle mt-1 shrink-0"></i>
           </div>
 
-          <div class="flex items-center gap-3 mt-1.5 flex-wrap text-[11px]">
+          <div class="flex items-center gap-3 mt-1.5 flex-wrap text-micro">
             <span class="text-ink-muted font-mono">
               <span class="text-ink font-semibold">{{ realizedCount(enterprise) }}</span> venda(s)
               <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
@@ -564,11 +564,11 @@ const onViewChange = (mode) => {
               {{ formatCurrency(baseValue(enterprise)) }}
             </span>
             <span v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
-              class="text-[11px] text-emerald-500 font-mono tabular-nums">
+              class="text-micro text-emerald-500 font-mono tabular-nums">
               +{{ formatCurrency(appendedValue(enterprise)) }}
             </span>
           </div>
-          <p class="text-[10px] text-ink-subtle font-mono mt-0.5">
+          <p class="text-micro text-ink-subtle font-mono mt-0.5">
             ticket {{ formatCurrency(ticketMedio(enterprise)) }}
           </p>
         </div>
@@ -585,18 +585,18 @@ const onViewChange = (mode) => {
                 class="accent-accent" />
             </th>
             <th @click="handleSort('name')"
-              class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
+              class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
               <span class="inline-flex items-center gap-1">
                 {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
                 <i :class="sortIcon('name')"></i>
               </span>
             </th>
             <th @click="handleSort('count')"
-              class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
+              class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
               <span class="inline-flex items-center gap-1">Vendas <i :class="sortIcon('count')"></i></span>
             </th>
             <th @click="handleSort('value')"
-              class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
+              class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
               <span class="inline-flex items-center gap-1">
                 Valor total
                 <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
@@ -604,14 +604,14 @@ const onViewChange = (mode) => {
               </span>
             </th>
             <th @click="handleSort('ticket')"
-              class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
+              class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
               <span class="inline-flex items-center gap-1">
                 Ticket médio
                 <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
                 <i :class="sortIcon('ticket')"></i>
               </span>
             </th>
-            <th class="px-4 py-2.5 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Ações
+            <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Ações
             </th>
           </tr>
         </thead>
@@ -655,13 +655,13 @@ const onViewChange = (mode) => {
                 {{ realizedCount(enterprise) }}
 
                 <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
-                  class="absolute -top-3 -right-2 text-[10px] font-bold text-emerald-500 font-mono"
+                  class="absolute -top-3 -right-2 text-micro font-bold text-emerald-500 font-mono"
                   v-tippy="'Projeção'">
                   +{{ enterprise.proj_count }}
                 </span>
 
                 <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
-                  class="absolute -bottom-3 -right-2 text-[10px] font-bold text-amber-500 font-mono"
+                  class="absolute -bottom-3 -right-2 text-micro font-bold text-amber-500 font-mono"
                   v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
                   <i class="fas fa-file-circle-xmark text-[9px]"></i>{{ distratoCount(enterprise) }}
                 </span>
@@ -674,11 +674,11 @@ const onViewChange = (mode) => {
                 {{ formatCurrency(baseValue(enterprise)) }}
               </div>
               <div v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
-                class="text-[11px] text-emerald-500 font-mono tabular-nums">
+                class="text-micro text-emerald-500 font-mono tabular-nums">
                 +{{ formatCurrency(appendedValue(enterprise)) }}
               </div>
               <div v-if="!enterprise.onlyProjectionRow && distratoValue(enterprise) > 0"
-                class="text-[11px] text-amber-500 font-mono tabular-nums"
+                class="text-micro text-amber-500 font-mono tabular-nums"
                 v-tippy="'Valor de vendas distratadas — incluído no total'">
                 <i class="fas fa-file-circle-xmark text-[9px]"></i> {{ formatCurrency(distratoValue(enterprise)) }}
               </div>

@@ -78,7 +78,7 @@ const showUnitTotal = computed(() => unidades.value.total > 0 && (focus.value ==
     <!-- Unidades completo (breakdown por status) -->
     <div v-if="showUnitsBreakdown" class="rounded-2xl bg-white/[.02] border border-white/5 p-3">
       <div class="flex items-center justify-between mb-2.5">
-        <span class="text-[11px] text-slate-500 uppercase tracking-wide font-medium">
+        <span class="text-micro text-slate-500 uppercase tracking-wide font-medium">
           Unidades · {{ unidades.total }} total
         </span>
         <a
@@ -99,7 +99,7 @@ const showUnitTotal = computed(() => unidades.value.total > 0 && (focus.value ==
           :class="colorMap[stat.color]"
         >
           <span class="text-base font-semibold leading-none">{{ stat.value }}</span>
-          <span class="text-[10px] mt-1 opacity-70">{{ stat.label }}</span>
+          <span class="text-micro mt-1 opacity-70">{{ stat.label }}</span>
         </div>
       </div>
     </div>

@@ -52,7 +52,7 @@
 
                         <div class="md:col-span-12">
                             <DepartmentSelector v-model="form.departmentIds" />
-                            <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                            <p class="mt-2 text-micro text-slate-500 dark:text-slate-400">
                                 <i class="fa-solid fa-circle-info mr-1"></i>
                                 Cada artigo vinculado precisa cobrir TODOS os públicos selecionados aqui.
                                 Caso contrário, o sistema bloqueia o vínculo.
@@ -72,7 +72,7 @@
                                 class="mt-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 px-3 py-2 text-sm font-mono text-slate-700 dark:text-slate-200">
                                 {{ initialSlug || '-' }}
                             </div>
-                            <div class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                            <div class="mt-1 text-micro text-slate-400 dark:text-slate-500">
                                 Slug não é editável.
                             </div>
                         </div>

@@ -23,11 +23,11 @@ const TONES = {
         <i :class="item.icon"></i>
       </div>
       <div class="min-w-0">
-        <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">{{ item.label }}</p>
+        <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">{{ item.label }}</p>
         <p class="text-lg sm:text-xl font-semibold text-ink tabular-nums leading-tight mt-0.5 truncate">
           {{ item.value }}
         </p>
-        <p v-if="item.hint" class="text-[11px] text-ink-muted mt-0.5 truncate">{{ item.hint }}</p>
+        <p v-if="item.hint" class="text-micro text-ink-muted mt-0.5 truncate">{{ item.hint }}</p>
       </div>
     </div>
   </div>

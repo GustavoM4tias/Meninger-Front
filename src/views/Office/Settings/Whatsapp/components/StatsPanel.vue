@@ -82,19 +82,19 @@ const usdToBrl = computed(() => store.stats?.rates?.usdToBrl);
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div v-for="c in costCards" :key="c.label"
           class="rounded-xl border border-line bg-surface-raised shadow-soft p-4">
-          <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">{{ c.label }}</p>
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle">{{ c.label }}</p>
           <p :class="['text-2xl font-semibold mt-1', c.accent]">{{ c.value }}</p>
-          <p class="text-[11px] text-ink-subtle mt-0.5">{{ c.hint }}</p>
+          <p class="text-micro text-ink-subtle mt-0.5">{{ c.hint }}</p>
         </div>
       </div>
 
       <!-- Por categoria de cobrança -->
       <div v-if="categories.length" class="rounded-xl border border-line bg-surface-raised overflow-hidden">
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle px-4 pt-4 pb-2">Por categoria de cobrança</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle px-4 pt-4 pb-2">Por categoria de cobrança</p>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle border-y border-line">
+              <tr class="text-micro font-mono uppercase tracking-wider text-ink-subtle border-y border-line">
                 <th class="text-left font-medium px-4 py-2">Categoria</th>
                 <th class="text-right font-medium px-4 py-2">Total</th>
                 <th class="text-right font-medium px-4 py-2">Cobradas</th>
@@ -113,18 +113,18 @@ const usdToBrl = computed(() => store.stats?.rates?.usdToBrl);
             </tbody>
           </table>
         </div>
-        <p v-if="cost?.unknownCount" class="text-[11px] text-ink-subtle px-4 py-2 border-t border-line">
+        <p v-if="cost?.unknownCount" class="text-micro text-ink-subtle px-4 py-2 border-t border-line">
           {{ int(cost.unknownCount) }} mensagem(ns) ainda sem categoria confirmada pela Meta (status pendente do webhook) — não somadas ao custo.
         </p>
       </div>
 
       <!-- Entrega -->
       <div>
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Entrega</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Entrega</p>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div v-for="c in deliveryCards" :key="c.label"
             class="rounded-xl border border-line bg-surface-raised p-3">
-            <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">{{ c.label }}</p>
+            <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle">{{ c.label }}</p>
             <p class="text-xl font-semibold mt-1 text-ink">{{ c.value }}</p>
           </div>
         </div>

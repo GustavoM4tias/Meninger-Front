@@ -49,23 +49,23 @@ const officeToCv = computed(() => (officeMs.value && cvMs.value)
 <template>
   <div :class="compact ? 'space-y-0.5' : 'space-y-1'">
     <!-- Meta -->
-    <div class="flex items-center gap-1.5 text-[11px]">
+    <div class="flex items-center gap-1.5 text-micro">
       <i class="fab fa-meta text-violet-500 w-3"></i>
       <span class="font-mono tabular-nums" :class="metaMs ? 'text-ink' : 'text-ink-subtle'">{{ fmt(metaAt) }}</span>
-      <span v-if="metaToOffice" class="text-[10px] text-ink-subtle font-mono"
+      <span v-if="metaToOffice" class="text-micro text-ink-subtle font-mono"
         :title="`Meta → Office em ${metaToOffice}`">+{{ metaToOffice }}</span>
     </div>
 
     <!-- Office -->
-    <div class="flex items-center gap-1.5 text-[11px]">
+    <div class="flex items-center gap-1.5 text-micro">
       <i class="fas fa-database text-indigo-500 w-3"></i>
       <span class="font-mono tabular-nums" :class="officeMs ? 'text-ink' : 'text-ink-subtle'">{{ fmt(officeAt) }}</span>
-      <span v-if="officeToCv" class="text-[10px] text-ink-subtle font-mono"
+      <span v-if="officeToCv" class="text-micro text-ink-subtle font-mono"
         :title="`Office → CV em ${officeToCv}`">+{{ officeToCv }}</span>
     </div>
 
     <!-- CV -->
-    <div class="flex items-center gap-1.5 text-[11px]">
+    <div class="flex items-center gap-1.5 text-micro">
       <i class="fas fa-check-double text-emerald-500 w-3"></i>
       <span class="font-mono tabular-nums" :class="cvMs ? 'text-ink' : 'text-ink-subtle'">{{ fmt(cvAt) }}</span>
     </div>

@@ -389,25 +389,25 @@ onMounted(() => {
         <div v-show="isExpanded"
           class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in">
           <div class="sm:col-span-2 lg:col-span-1">
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-magnifying-glass text-[10px] mr-1 text-ink-subtle"></i>Buscar
             </label>
             <Input v-model="searchQuery" placeholder="Nome ou cidade…" @keyup.enter="buscar(true)" />
           </div>
           <div>
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-link text-[10px] mr-1 text-ink-subtle"></i>Pareamento
             </label>
             <Select v-model="filterStatus" :options="statusOptions" />
           </div>
           <div>
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>Empresa
             </label>
             <Select v-model="filterCompany" :options="companyOptions" />
           </div>
           <div>
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-toggle-on text-[10px] mr-1 text-ink-subtle"></i>Situação
             </label>
             <Select v-model="filterActive" :options="activeOptions" />
@@ -470,26 +470,26 @@ onMounted(() => {
                     @change="toggleAllVisible" />
                 </th>
                 <th @click="handleSort('name')"
-                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[28%]">
+                  class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[28%]">
                   <span class="inline-flex items-center gap-1">Empreendimento <i :class="sortIcon('name')"></i></span>
                 </th>
-                <th class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle w-[18%]">
+                <th class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle w-[18%]">
                   Empresa
                 </th>
                 <th @click="handleSort('city')"
-                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[14%]">
+                  class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[14%]">
                   <span class="inline-flex items-center gap-1">Cidade <i :class="sortIcon('city')"></i></span>
                 </th>
                 <th @click="handleSort('cv_id')"
-                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[8%]">
+                  class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[8%]">
                   <span class="inline-flex items-center gap-1">CV <i :class="sortIcon('cv_id')"></i></span>
                 </th>
                 <th @click="handleSort('erp_cost_center_id')"
-                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[10%]">
+                  class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[10%]">
                   <span class="inline-flex items-center gap-1">CC Sienge <i :class="sortIcon('erp_cost_center_id')"></i></span>
                 </th>
                 <th @click="handleSort('pair_status')"
-                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[10%]">
+                  class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors w-[10%]">
                   <span class="inline-flex items-center gap-1">Status <i :class="sortIcon('pair_status')"></i></span>
                 </th>
                 <th class="px-4 py-2.5 w-44"></th>
@@ -589,7 +589,7 @@ onMounted(() => {
       </template>
 
       <Select v-model="bulkCompanyValue" :options="companyPickOptions" label="Empresa (Sienge)" />
-      <p class="text-[11px] text-ink-muted mt-2">
+      <p class="text-micro text-ink-muted mt-2">
         Escolher "(sem empresa)" desvincula a empresa dos selecionados.
       </p>
 
@@ -625,7 +625,7 @@ onMounted(() => {
             @click="confirmPair(c)">
             <div class="min-w-0">
               <p class="text-sm text-ink font-medium truncate">{{ c.name || '—' }}</p>
-              <p class="text-[11px] text-ink-subtle font-mono">
+              <p class="text-micro text-ink-subtle font-mono">
                 {{ c.cv_id ? `CV ${c.cv_id}` : `CC ${c.erp_cost_center_id}` }} · {{ c.city || 'sem cidade' }}
               </p>
             </div>

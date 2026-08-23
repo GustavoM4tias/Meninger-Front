@@ -43,7 +43,7 @@
 
         <div v-show="filtersExpanded" class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div class="lg:col-span-2">
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
             </label>
             <MultiSelector :model-value="selectedEnterpriseLabels" @update:modelValue="onEnterprisesChange"
@@ -51,14 +51,14 @@
           </div>
 
           <div>
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-magnifying-glass text-[10px] mr-1 text-ink-subtle"></i>Busca geral
             </label>
             <Input v-model="store.q" placeholder="Cliente, contrato, unidade ou nº CEF" @keyup.enter="apply" />
           </div>
 
           <div>
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-hashtag text-[10px] mr-1 text-ink-subtle"></i>Nº CEF
             </label>
             <Select v-model="store.cef" :options="CEF_OPTIONS" />
@@ -79,18 +79,18 @@
       <!-- Resumo -->
       <div v-if="store.searched" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
         <Surface variant="raised" padding="md" class="surface-gradient">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Contratos</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1">Contratos</div>
           <div class="text-xl font-bold text-ink font-mono tabular-nums">{{ num(store.summary.total) }}</div>
-          <div class="text-[10px] text-ink-subtle mt-0.5">no recorte atual</div>
+          <div class="text-micro text-ink-subtle mt-0.5">no recorte atual</div>
         </Surface>
         <Surface variant="raised" padding="md" class="border-emerald-500/30 bg-emerald-500/10 surface-gradient">
-          <div class="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-300 font-mono mb-1 flex items-center gap-1">
+          <div class="text-micro uppercase tracking-wider text-emerald-700 dark:text-emerald-300 font-mono mb-1 flex items-center gap-1">
             <i class="fas fa-circle-check text-[10px]"></i> Com nº CEF
           </div>
           <div class="text-xl font-bold text-emerald-700 dark:text-emerald-200 font-mono tabular-nums">{{ num(store.summary.withCef) }}</div>
         </Surface>
         <Surface variant="raised" padding="md" class="border-amber-500/30 bg-amber-500/10 surface-gradient">
-          <div class="text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-300 font-mono mb-1 flex items-center gap-1">
+          <div class="text-micro uppercase tracking-wider text-amber-700 dark:text-amber-300 font-mono mb-1 flex items-center gap-1">
             <i class="fas fa-circle-minus text-[10px]"></i> Sem nº CEF
           </div>
           <div class="text-xl font-bold text-amber-700 dark:text-amber-200 font-mono tabular-nums">{{ num(store.summary.withoutCef) }}</div>
@@ -120,7 +120,7 @@
                 <div class="min-w-0">
                   <div class="text-sm font-semibold text-ink truncate">{{ r.customer_name || 'Sem cliente' }}</div>
                   <div class="text-xs text-ink-muted truncate mt-0.5">{{ r.enterprise_name }}</div>
-                  <div class="text-[11px] text-ink-subtle mt-0.5">
+                  <div class="text-micro text-ink-subtle mt-0.5">
                     Contrato <span class="font-mono">{{ r.number }}</span>
                     <template v-if="r.unit_name"> · Unid. {{ r.unit_name }}</template>
                   </div>
@@ -130,11 +130,11 @@
 
               <div class="mt-3 flex items-center justify-between gap-2 rounded-xl border border-line bg-surface-sunken/50 px-3 py-2">
                 <div class="min-w-0">
-                  <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Nº CEF</div>
+                  <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Nº CEF</div>
                   <div class="text-sm font-mono tabular-nums truncate" :class="r.financial_institution_number ? 'text-ink font-semibold' : 'text-ink-subtle'">
                     {{ r.financial_institution_number || 'Sem número' }}
                   </div>
-                  <div v-if="r.financial_institution_date" class="text-[10px] text-ink-subtle font-mono mt-0.5">
+                  <div v-if="r.financial_institution_date" class="text-micro text-ink-subtle font-mono mt-0.5">
                     em {{ dataBR(r.financial_institution_date) }}
                   </div>
                 </div>
@@ -155,7 +155,7 @@
                 <tr>
                   <th v-for="col in columns" :key="col.key"
                     @click="col.sortable && store.setSort(col.key)"
-                    class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap"
+                    class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap"
                     :class="[col.align === 'center' ? 'text-center' : 'text-left',
                              col.sortable ? 'cursor-pointer hover:text-ink transition-colors' : '']">
                     <span class="inline-flex items-center gap-1.5">
@@ -219,7 +219,7 @@
         </div>
       </Surface>
 
-      <p class="text-[10px] text-ink-subtle font-mono mt-3 text-right">
+      <p class="text-micro text-ink-subtle font-mono mt-3 text-right">
         Contratos sincronizados do Sienge (atualização automática de hora em hora)
       </p>
 

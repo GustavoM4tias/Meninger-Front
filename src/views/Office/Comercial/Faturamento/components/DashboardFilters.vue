@@ -244,7 +244,7 @@ onMounted(async () => {
       <Input v-model="localFilters.endDate" type="date" label="Data fim" />
 
       <div v-if="groupsOptions.length">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-diagram-project text-[10px] mr-1 text-ink-subtle"></i>Grupos workflow (projeção)
         </label>
         <MultiSelector :model-value="localFilters.groupIds"
@@ -253,7 +253,7 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empresa(s)
         </label>
         <MultiSelector :model-value="localFilters.selectedCompanyNames"
@@ -262,7 +262,7 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-location-dot text-[10px] mr-1 text-ink-subtle"></i>Cidade(s)
         </label>
         <MultiSelector :model-value="localFilters.selectedCities"
@@ -271,7 +271,7 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block cursor-pointer text-[11px] font-medium text-ink-muted mb-1.5" :title="`VGV+DC inclui despesas de comercialização. Aplica na hora, sem filtrar.`">
+        <label class="block cursor-pointer text-micro font-medium text-ink-muted mb-1.5" :title="`VGV+DC inclui despesas de comercialização. Aplica na hora, sem filtrar.`">
           <i class="fas fa-coins text-[10px] mr-1 text-ink-subtle"></i>Modo de valor
         </label>
         <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="md" block /> 

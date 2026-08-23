@@ -77,7 +77,7 @@
                                 <textarea v-model="context" rows="8"
                                     placeholder="Cole aqui notas, transcrição, descrição livre do procedimento, regras, exemplos. Quanto mais detalhado, melhor o resultado."
                                     class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60" />
-                                <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-500">
+                                <p class="mt-1 text-micro text-slate-500 dark:text-slate-500">
                                     Quando faltar informação, a IA marca com
                                     <code class="rounded bg-slate-100 px-1 dark:bg-slate-800">[ ! confirmar ]</code>
                                     em vez de chutar.
@@ -95,25 +95,25 @@
                         <div v-else class="space-y-3">
                             <div class="flex flex-wrap items-center gap-2">
                                 <span
-                                    class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                    class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-micro font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                                     <i class="fa-solid fa-circle-check text-[9px]"></i> rascunho gerado
                                 </span>
                                 <span v-if="result.model"
-                                    class="rounded-full bg-slate-100 px-2.5 py-1 font-mono text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                    class="rounded-full bg-slate-100 px-2.5 py-1 font-mono text-micro text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                                     {{ result.model }}
                                 </span>
                             </div>
 
                             <div
                                 class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
-                                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <div class="text-micro font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                     Título
                                 </div>
                                 <div class="mt-1 text-base font-bold text-slate-900 dark:text-white">
                                     {{ result.title }}
                                 </div>
                                 <div v-if="result.suggestedCategorySlug" class="mt-2">
-                                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <span class="text-micro font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                         Categoria sugerida:
                                     </span>
                                     <span
@@ -125,7 +125,7 @@
 
                             <div
                                 class="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-                                <div class="border-b border-slate-100 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                                <div class="border-b border-slate-100 px-4 py-2.5 text-micro font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:text-slate-400">
                                     Pré-visualização do corpo
                                 </div>
                                 <div class="prose prose-slate max-w-none p-5 text-sm dark:prose-invert">

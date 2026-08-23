@@ -60,7 +60,7 @@
                     <span class="text-lg">{{ b.icon || '🏅' }}</span>
                     <div class="leading-tight">
                         <div class="text-xs font-bold">{{ b.title }}</div>
-                        <div class="text-[10px] opacity-70">{{ rarityLabel(b.rarity) }}</div>
+                        <div class="text-micro opacity-70">{{ rarityLabel(b.rarity) }}</div>
                     </div>
                 </div>
             </div>

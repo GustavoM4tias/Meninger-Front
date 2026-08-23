@@ -83,7 +83,7 @@ const channelDefs = [
     <div class="space-y-5">
       <!-- Destinatário -->
       <section>
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
           01 · para quem
         </p>
 
@@ -106,12 +106,12 @@ const channelDefs = [
               :class="['w-full flex items-center gap-3 px-3 py-2 text-left transition-colors',
                        form.to_user_id === u.id ? 'bg-accent-soft' : 'hover:bg-surface-sunken']">
               <span class="h-7 w-7 shrink-0 grid place-items-center rounded-full bg-surface-sunken
-                           text-[11px] font-semibold text-ink-muted uppercase">
+                           text-micro font-semibold text-ink-muted uppercase">
                 {{ (u.username || '?').slice(0, 2) }}
               </span>
               <span class="flex-1 min-w-0">
                 <span class="block text-sm text-ink truncate">{{ u.username }}</span>
-                <span v-if="u.position" class="block text-[11px] text-ink-subtle truncate">{{ u.position }}</span>
+                <span v-if="u.position" class="block text-micro text-ink-subtle truncate">{{ u.position }}</span>
               </span>
               <i v-if="form.to_user_id === u.id" class="fas fa-circle-check text-accent text-sm"></i>
             </button>
@@ -121,7 +121,7 @@ const channelDefs = [
 
       <!-- Nota -->
       <section>
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
           02 · mensagem (opcional)
         </p>
         <textarea v-model="form.note" rows="2" maxlength="1000"
@@ -132,7 +132,7 @@ const channelDefs = [
 
       <!-- Canais -->
       <section>
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
           03 · avisar por
         </p>
         <div class="grid grid-cols-3 gap-2">
@@ -147,7 +147,7 @@ const channelDefs = [
             </span>
           </label>
         </div>
-        <p v-if="form.channels.whatsapp" class="mt-2 text-[11px] text-ink-subtle flex items-start gap-1.5">
+        <p v-if="form.channels.whatsapp" class="mt-2 text-micro text-ink-subtle flex items-start gap-1.5">
           <i class="fas fa-circle-info mt-0.5"></i>
           O WhatsApp só é enviado se o destinatário tiver telefone no perfil e o template estiver
           aprovado; caso contrário, o convite continua valendo pelo sino e e-mail.

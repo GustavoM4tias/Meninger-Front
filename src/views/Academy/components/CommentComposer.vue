@@ -15,7 +15,7 @@
                         ? 'bg-slate-100 dark:bg-slate-800'
                         : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'"
                     @click="pickMention(u)">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-micro font-bold text-slate-600 dark:text-slate-300">
                         {{ initials(u.username) }}
                     </span>
                     <span class="font-medium text-slate-900 dark:text-slate-100">{{ u.username }}</span>

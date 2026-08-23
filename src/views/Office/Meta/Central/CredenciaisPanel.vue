@@ -206,7 +206,7 @@ async function copyWebhook() {
           icon="fas fa-heart-pulse" @click="onTest">
           Testar App Secret
         </Button>
-        <span v-if="dirty && store.config?.has_meta_app_secret" class="text-[11px] text-ink-subtle">Salve antes de testar.</span>
+        <span v-if="dirty && store.config?.has_meta_app_secret" class="text-micro text-ink-subtle">Salve antes de testar.</span>
       </div>
 
       <!-- Resultado do teste -->
@@ -225,7 +225,7 @@ async function copyWebhook() {
         </div>
       </div>
 
-      <p class="text-[11px] text-ink-subtle">Último teste: {{ lastTest }}</p>
+      <p class="text-micro text-ink-subtle">Último teste: {{ lastTest }}</p>
     </section>
 
     <!-- ══ Gestão de Campanhas (token admin — enxerga todas as contas/BMs) ══ -->
@@ -294,7 +294,7 @@ async function copyWebhook() {
         </div>
       </details>
 
-      <p class="text-[11px] text-ink-subtle">
+      <p class="text-micro text-ink-subtle">
         O login abre em outra aba. Se o App pedir para cadastrar a URL de redirecionamento (Facebook Login →
         URIs de redirecionamento OAuth válidos), use
         <code class="font-mono">https://menin.up.railway.app/api/meta-app-oauth/campaigns/callback</code>.
@@ -340,7 +340,7 @@ async function copyWebhook() {
           @click="showSecrets.verify_token = !showSecrets.verify_token" />
       </div>
       <button v-if="mktCfg.has_meta_verify_token" type="button" @click="clearSecret('verify_token')"
-        class="mt-1 text-[11px] text-red-500 hover:underline">
+        class="mt-1 text-micro text-red-500 hover:underline">
         Remover salvo
       </button>
     </Surface>
@@ -372,7 +372,7 @@ async function copyWebhook() {
           @click="showSecrets.access_token = !showSecrets.access_token" />
       </div>
       <button v-if="mktCfg.has_meta_access_token" type="button" @click="clearSecret('access_token')"
-        class="mt-1 text-[11px] text-red-500 hover:underline">
+        class="mt-1 text-micro text-red-500 hover:underline">
         Remover salvo
       </button>
 
@@ -410,8 +410,8 @@ async function copyWebhook() {
             <strong>{{ test.pages.length }}</strong> página(s) acessível(eis):
             <ul class="mt-1 space-y-0.5">
               <li v-for="p in test.pages" :key="p.id" class="ml-3">
-                • <strong>{{ p.name }}</strong> <span class="font-mono text-[10px] text-ink-subtle">#{{ p.id }}</span>
-                <span v-if="!p.has_page_token" class="text-amber-600 dark:text-amber-300 text-[10px] ml-1">(sem page token)</span>
+                • <strong>{{ p.name }}</strong> <span class="font-mono text-micro text-ink-subtle">#{{ p.id }}</span>
+                <span v-if="!p.has_page_token" class="text-amber-600 dark:text-amber-300 text-micro ml-1">(sem page token)</span>
               </li>
             </ul>
           </div>
@@ -429,7 +429,7 @@ async function copyWebhook() {
             Token válido (conta {{ test.identity?.name }}), mas <strong>sem permissão de Páginas</strong>
           </div>
           <div class="mt-1 text-xs text-ink-muted">{{ test.hint }}</div>
-          <div class="mt-1 text-[11px] font-mono text-ink-subtle">{{ test.accounts_error }}</div>
+          <div class="mt-1 text-micro font-mono text-ink-subtle">{{ test.accounts_error }}</div>
         </div>
 
         <!-- Falha -->

@@ -98,7 +98,7 @@
                             <td class="px-5 py-3 text-slate-600 dark:text-slate-300">{{ row.user.city || '—' }}</td>
                             <td class="px-5 py-3">
                                 <span :class="statusClass(row.status)"
-                                    class="inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold">
+                                    class="inline-block rounded-full border px-2.5 py-0.5 text-micro font-semibold">
                                     {{ statusLabel(row.status) }}
                                 </span>
                             </td>

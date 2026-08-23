@@ -32,7 +32,7 @@ onMounted(async () => {
 
 <template>
     <section v-if="data?.items?.length">
-        <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
             Itens previstos
             <span class="ml-1 normal-case font-sans text-ink-muted">(do Plano de Eventos)</span>
         </p>

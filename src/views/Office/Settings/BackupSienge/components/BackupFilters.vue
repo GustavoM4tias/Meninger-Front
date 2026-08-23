@@ -98,28 +98,28 @@ function apply() {
         :error="invalidRange ? 'A data final é anterior à inicial' : ''" />
 
       <div v-if="statusLabels.length">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-flag text-[10px] mr-1 text-ink-subtle"></i>Status
         </label>
         <MultiSelector v-model="selectedStatus" :options="statusLabels" placeholder="Todos" />
       </div>
 
       <div v-if="importLabels.length">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-database text-[10px] mr-1 text-ink-subtle"></i>Restore
         </label>
         <MultiSelector v-model="selectedImport" :options="importLabels" placeholder="Todos" />
       </div>
 
       <div v-if="triggerLabels.length">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-bolt text-[10px] mr-1 text-ink-subtle"></i>Disparo
         </label>
         <MultiSelector v-model="selectedTrigger" :options="triggerLabels" placeholder="Todos" />
       </div>
 
       <div v-if="stageLabels.length">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-list-check text-[10px] mr-1 text-ink-subtle"></i>Etapa final
         </label>
         <MultiSelector v-model="selectedStage" :options="stageLabels" placeholder="Todas" />

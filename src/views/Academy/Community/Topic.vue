@@ -39,12 +39,12 @@
             class="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-[0_2px_20px_-12px_rgb(15_23_42/0.18)] dark:border-slate-800 dark:bg-slate-900">
             <div class="flex flex-wrap items-center gap-2">
                 <span
-                    class="rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                    class="rounded-full bg-indigo-100 px-2.5 py-1 text-micro font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
                     {{ topic?.type || 'topic' }}
                 </span>
 
                 <span v-if="topic?.categorySlug"
-                    class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                    class="rounded-full bg-slate-100 px-2.5 py-1 text-micro font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                     {{ categoryLabel }}
                 </span>
 
@@ -157,7 +157,7 @@
                                     </span>
 
                                     <span v-if="isAccepted(p)"
-                                        class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                        class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-micro font-bold uppercase tracking-tight text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                                         <i class="fa-solid fa-circle-check text-[9px]"></i> solução aceita
                                     </span>
                                 </div>

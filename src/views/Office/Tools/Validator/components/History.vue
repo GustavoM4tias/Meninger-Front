@@ -28,7 +28,7 @@ onMounted(() => aiStore.fetchValidatorHistory());
   <Button variant="secondary" size="sm" icon="fas fa-clock-rotate-left" @click="open = true">
     <span class="hidden sm:inline">Histórico</span>
     <span v-if="total"
-      class="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-accent-soft text-accent">
+      class="font-mono text-micro px-1.5 py-0.5 rounded-md bg-accent-soft text-accent">
       {{ total }}
     </span>
   </Button>

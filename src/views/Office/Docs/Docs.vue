@@ -43,7 +43,7 @@
             <h2 class="text-base sm:text-xl font-semibold text-ink tracking-tight">
               Atualizações futuras
             </h2>
-            <p class="hidden sm:block text-[11px] text-ink-subtle leading-snug">
+            <p class="hidden sm:block text-micro text-ink-subtle leading-snug">
               Próximas inovações em andamento
             </p>
           </div>
@@ -59,8 +59,8 @@
 
             <div class="p-4 flex flex-col gap-2 grow">
               <div class="flex items-center gap-2">
-                <span class="font-mono text-[11px] text-ink-subtle">{{ milestone.version }}</span>
-                <span v-if="milestone.date" class="ml-auto text-[11px] text-ink-subtle font-mono">
+                <span class="font-mono text-micro text-ink-subtle">{{ milestone.version }}</span>
+                <span v-if="milestone.date" class="ml-auto text-micro text-ink-subtle font-mono">
                   {{ formatDate(milestone.date) }}
                 </span>
                 <Badge v-else variant="warning" size="sm" class="ml-auto shrink-0">Em programação</Badge>
@@ -77,7 +77,7 @@
               <p v-if="milestone.impact"
                  class="text-sm font-semibold text-accent tabular-nums tracking-tight">
                 {{ milestone.impact }}
-                <span class="text-[11px] font-normal text-ink-subtle">de economia estimada</span>
+                <span class="text-micro font-normal text-ink-subtle">de economia estimada</span>
               </p>
             </div>
 
@@ -85,7 +85,7 @@
                  mesmo com resumos de tamanhos diferentes. -->
             <div class="mt-auto px-4 pb-3 pt-2 border-t border-line flex items-center gap-2 flex-wrap">
               <span v-for="feature in milestone.features" :key="feature"
-                class="text-[10px] px-2 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line">
+                class="text-micro px-2 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line">
                 {{ feature }}
               </span>
               <button type="button" @click="selectedMilestone = milestone"
@@ -114,7 +114,7 @@
         <!-- Filtros. No celular os três seletores ficam lado a lado: empilhados,
              viravam uma parede de controles antes do primeiro item da lista. -->
         <aside class="lg:sticky lg:top-4 lg:self-start space-y-3">
-          <p class="hidden lg:block text-[11px] font-mono uppercase tracking-wider text-ink-subtle">
+          <p class="hidden lg:block text-micro font-mono uppercase tracking-wider text-ink-subtle">
             Filtrar
           </p>
 
@@ -150,7 +150,7 @@
               <h2 class="text-base sm:text-xl font-semibold text-ink tracking-tight">
                 Histórico
               </h2>
-              <span class="ml-auto shrink-0 text-[11px] text-ink-subtle font-mono tabular-nums">
+              <span class="ml-auto shrink-0 text-micro text-ink-subtle font-mono tabular-nums">
                 {{ filteredReleases.length }} de {{ releases.length }}
               </span>
             </header>
@@ -172,7 +172,7 @@
                   </div>
                   <div class="text-right">
                     <p class="text-xs text-ink-muted">{{ formatDate(release.date) }}</p>
-                    <p class="text-[10px] text-ink-subtle font-mono">{{ getRelativeTime(release.date) }}</p>
+                    <p class="text-micro text-ink-subtle font-mono">{{ getRelativeTime(release.date) }}</p>
                   </div>
                 </div>
 
@@ -258,7 +258,7 @@
                     </button>
                     <div class="flex flex-wrap gap-1.5">
                       <span v-for="category in release.categories" :key="category"
-                        class="text-[10px] px-2 py-0.5 rounded-full font-medium border"
+                        class="text-micro px-2 py-0.5 rounded-full font-medium border"
                         :class="getCategoryClass(category)">
                         {{ getCategoryLabel(category) }}
                       </span>
@@ -315,7 +315,7 @@
 
         <div class="flex flex-wrap gap-1.5 pt-1">
           <span v-for="feature in selectedMilestone.features" :key="feature"
-            class="text-[10px] px-2 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line">
+            class="text-micro px-2 py-0.5 rounded-full bg-surface-sunken text-ink-muted border border-line">
             {{ feature }}
           </span>
         </div>

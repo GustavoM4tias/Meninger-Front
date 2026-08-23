@@ -57,7 +57,7 @@
                                     <p class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate leading-tight" :title="suggestedTitle">
                                         {{ suggestedTitle }}
                                     </p>
-                                    <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                                    <p class="text-micro text-gray-500 dark:text-gray-400 truncate">
                                         Emitido por {{ issuerName }}
                                     </p>
                                 </div>
@@ -66,7 +66,7 @@
                             <!-- Filtros aplicados (chips inline) -->
                             <div v-if="normalizedFilters.length" class="flex flex-wrap gap-1">
                                 <span v-for="f in normalizedFilters" :key="f.label"
-                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-200 text-[11px]"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-200 text-micro"
                                     :title="`${f.label}: ${f.value}`">
                                     <span class="opacity-70">{{ f.label }}:</span>
                                     <span class="max-w-[140px] truncate font-medium">{{ f.value }}</span>
@@ -99,13 +99,13 @@
                             <!-- Opções avançadas -->
                             <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
                                 <button type="button" @click="showAdvanced = !showAdvanced"
-                                    class="text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 focus:outline-none">
+                                    class="text-micro font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 focus:outline-none">
                                     <i :class="['fas', showAdvanced ? 'fa-chevron-down' : 'fa-chevron-right', 'mr-1 text-[10px]']"></i>
                                     Opções avançadas
                                 </button>
                                 <div v-show="showAdvanced" class="mt-3 grid grid-cols-1 gap-3">
                                     <div>
-                                        <label for="exp-array-mode" class="flex items-center gap-1 text-[11px] font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                        <label for="exp-array-mode" class="flex items-center gap-1 text-micro font-medium text-gray-600 dark:text-gray-300 mb-1">
                                             O que fazer com listas?
                                             <span class="text-gray-400" title="Quando um campo é uma lista (ex.: várias parcelas), define como apresentar os valores no relatório.">
                                                 <i class="fas fa-circle-info text-[10px]"></i>
@@ -121,12 +121,12 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label for="exp-filename" class="block text-[11px] font-medium text-gray-600 dark:text-gray-300 mb-1">Nome do arquivo</label>
+                                        <label for="exp-filename" class="block text-micro font-medium text-gray-600 dark:text-gray-300 mb-1">Nome do arquivo</label>
                                         <input id="exp-filename" v-model="baseFilename" type="text" :placeholder="suggestedFilename"
                                             class="w-full px-2 py-1.5 border rounded-md bg-transparent text-sm text-gray-700 dark:text-gray-100 border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500" />
                                     </div>
                                     <div>
-                                        <label for="exp-delimiter" class="block text-[11px] font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                        <label for="exp-delimiter" class="block text-micro font-medium text-gray-600 dark:text-gray-300 mb-1">
                                             Delimitador do CSV
                                         </label>
                                         <select id="exp-delimiter" v-model="delimiter"
@@ -143,7 +143,7 @@
 
                         <!-- Footer: status + ações -->
                         <div class="flex flex-col gap-2 border-t border-gray-200 dark:border-gray-700 pt-3">
-                            <p aria-live="polite" class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between gap-2">
+                            <p aria-live="polite" class="text-micro text-gray-500 dark:text-gray-400 flex items-center justify-between gap-2">
                                 <span>
                                     <span class="font-semibold text-gray-700 dark:text-gray-200">{{ selection.size }}</span> campos
                                 </span>
@@ -162,7 +162,7 @@
                                 <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>
                                 <span>{{ exporting ? 'Gerando…' : 'Exportar Excel' }}</span>
                             </button>
-                            <div class="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+                            <div class="flex items-center justify-center gap-1.5 text-micro text-gray-400 dark:text-gray-500">
                                 <span>ou exportar como</span>
                                 <button type="button" @click="pedirExport('csv')" :disabled="!selection.size || exporting"
                                     class="hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-40 focus:outline-none focus:underline underline-offset-2">
@@ -1452,15 +1452,15 @@ const FieldNode = defineComponent({
                     h(
                         'div',
                         {
-                            class: 'flex-1 font-mono text-[11px] break-all select-text',
+                            class: 'flex-1 font-mono text-micro break-all select-text',
                             title: n.path
                         },
                         props.showFullPaths ? n.path : n.label
                     ),
-                    h('div', { class: 'text-[11px] text-right w-14 shrink-0' }, `${cov}%`),
+                    h('div', { class: 'text-micro text-right w-14 shrink-0' }, `${cov}%`),
                     h(
                         'div',
-                        { class: 'text-[11px] text-gray-500 dark:text-gray-400 w-32 shrink-0 truncate' },
+                        { class: 'text-micro text-gray-500 dark:text-gray-400 w-32 shrink-0 truncate' },
                         types
                     )
                 ]

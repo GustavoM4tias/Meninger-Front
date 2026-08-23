@@ -117,7 +117,7 @@ const handleRemove = (e, n) => { e.preventDefault(); e.stopPropagation(); store.
 
         <div class="flex flex-col min-w-0 flex-1 justify-center">
           <div class="flex items-center gap-2">
-            <span :class="['text-[10px] font-medium uppercase tracking-wide', metaOf(n.type).accent]">
+            <span :class="['text-micro font-medium uppercase tracking-wide', metaOf(n.type).accent]">
               {{ metaOf(n.type).label }}
             </span>
             <span v-if="!n.read_at" class="h-1.5 w-1.5 rounded-full bg-accent shrink-0"></span>
@@ -126,7 +126,7 @@ const handleRemove = (e, n) => { e.preventDefault(); e.stopPropagation(); store.
             {{ n.title }}
           </h4>
           <p v-if="n.body" class="text-xs text-ink-muted line-clamp-2">{{ n.body }}</p>
-          <p class="text-[11px] text-ink-subtle mt-0.5">{{ formatFull(n.created_at) }}</p>
+          <p class="text-micro text-ink-subtle mt-0.5">{{ formatFull(n.created_at) }}</p>
         </div>
 
         <button type="button" @click="(e) => handleRemove(e, n)"

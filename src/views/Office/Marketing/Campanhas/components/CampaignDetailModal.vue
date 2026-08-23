@@ -536,7 +536,7 @@ function onFormEditorSaved() {
             <span v-if="campaign.objective">· {{ campaign.objective }}</span>
           </p>
         </div>
-        <span v-if="campaign" :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-medium', statusBadge.cls]">
+        <span v-if="campaign" :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge.cls]">
           {{ statusBadge.label }}
         </span>
         <button @click="close" class="shrink-0 text-ink-subtle hover:text-ink p-1">
@@ -547,29 +547,29 @@ function onFormEditorSaved() {
       <!-- KPI bar -->
       <div v-if="kpis" class="grid grid-cols-2 sm:grid-cols-6 gap-2 px-5 py-3 border-b border-line bg-surface-sunken/30 shrink-0">
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Gasto</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
           <div class="text-lg font-semibold text-ink">{{ fmtMoney(kpis.spend, campaign?.currency) }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (base)</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads (base)</div>
           <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.leads) }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle" title="Custo por lead">CAC</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle" title="Custo por lead">CAC</div>
           <div class="text-lg font-semibold" :class="kpis.cac ? 'text-ink' : 'text-ink-subtle'">
             {{ kpis.cac ? fmtMoney(kpis.cac, campaign?.currency) : '—' }}
           </div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Impressões</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Impressões</div>
           <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.impressions) }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Cliques</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Cliques</div>
           <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.clicks) }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">CTR</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">CTR</div>
           <div class="text-lg font-semibold text-ink">{{ fmtPct(kpis.ctr) }}</div>
         </div>
       </div>
@@ -603,29 +603,29 @@ function onFormEditorSaved() {
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <!-- Total gasto -->
               <div>
-                <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Gasto total</div>
+                <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto total</div>
                 <div class="text-2xl font-semibold text-blue-600 dark:text-blue-300 leading-tight">
                   {{ fmtMoney(campaign.spend, campaign.currency) }}
                 </div>
-                <div v-if="campaign.daily_avg_spend != null" class="text-[10px] text-ink-subtle">
+                <div v-if="campaign.daily_avg_spend != null" class="text-micro text-ink-subtle">
                   ~{{ fmtMoney(campaign.daily_avg_spend, campaign.currency) }}/dia
                 </div>
               </div>
 
               <!-- Dias rodando -->
               <div>
-                <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Rodando há</div>
+                <div class="text-micro uppercase tracking-wider text-ink-subtle">Rodando há</div>
                 <div class="text-2xl font-semibold text-ink leading-tight">
                   {{ campaign.days_running ?? '—' }}<span v-if="campaign.days_running" class="text-base text-ink-subtle ml-1">{{ campaign.days_running === 1 ? 'dia' : 'dias' }}</span>
                 </div>
-                <div class="text-[10px] text-ink-subtle">
+                <div class="text-micro text-ink-subtle">
                   desde {{ campaign.start_time ? fmtDate(campaign.start_time) : '—' }}
                 </div>
               </div>
 
               <!-- Dias restantes -->
               <div>
-                <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Encerra em</div>
+                <div class="text-micro uppercase tracking-wider text-ink-subtle">Encerra em</div>
                 <div class="text-2xl font-semibold leading-tight"
                   :class="campaign.days_remaining === 0 ? 'text-red-500' : campaign.days_remaining != null && campaign.days_remaining <= 3 ? 'text-amber-500' : 'text-ink'">
                   <template v-if="campaign.days_remaining != null">
@@ -635,7 +635,7 @@ function onFormEditorSaved() {
                     <span class="text-emerald-600 dark:text-emerald-300 text-base">em andamento</span>
                   </template>
                 </div>
-                <div class="text-[10px] text-ink-subtle">
+                <div class="text-micro text-ink-subtle">
                   <template v-if="campaign.stop_time">até {{ fmtDate(campaign.stop_time) }}</template>
                   <template v-else>sem data de fim</template>
                 </div>
@@ -643,7 +643,7 @@ function onFormEditorSaved() {
 
               <!-- Ritmo -->
               <div>
-                <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Ritmo de gasto</div>
+                <div class="text-micro uppercase tracking-wider text-ink-subtle">Ritmo de gasto</div>
                 <template v-if="campaign.spend_pace && pacingBadge(campaign.spend_pace)">
                   <div class="mt-1">
                     <span :class="['inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium', pacingBadge(campaign.spend_pace).cls]">
@@ -651,13 +651,13 @@ function onFormEditorSaved() {
                       {{ pacingBadge(campaign.spend_pace).label }}
                     </span>
                   </div>
-                  <div class="text-[10px] text-ink-subtle mt-1">
+                  <div class="text-micro text-ink-subtle mt-1">
                     Diário Meta: {{ fmtMoney(campaign.daily_budget, campaign.currency) }}
                   </div>
                 </template>
                 <template v-else>
                   <div class="text-base text-ink-subtle italic mt-1">sem budget diário</div>
-                  <div v-if="campaign.lifetime_budget" class="text-[10px] text-ink-subtle">
+                  <div v-if="campaign.lifetime_budget" class="text-micro text-ink-subtle">
                     Total: {{ fmtMoney(campaign.lifetime_budget, campaign.currency) }}
                   </div>
                 </template>
@@ -667,7 +667,7 @@ function onFormEditorSaved() {
             <!-- Barra de consumo do budget lifetime -->
             <div v-if="campaign.lifetime_budget && campaign.budget_consumed_pct != null"
               class="mt-4 pt-3 border-t border-line/60">
-              <div class="flex justify-between text-[10px] text-ink-subtle mb-1">
+              <div class="flex justify-between text-micro text-ink-subtle mb-1">
                 <span>Consumo do orçamento total</span>
                 <span class="font-mono">{{ campaign.budget_consumed_pct }}% · {{ fmtMoney(campaign.spend, campaign.currency) }} / {{ fmtMoney(campaign.lifetime_budget, campaign.currency) }}</span>
               </div>
@@ -681,7 +681,7 @@ function onFormEditorSaved() {
 
             <!-- Projeção (se tem stop_time) -->
             <div v-if="campaign.projected_total_spend != null && campaign.days_total"
-              class="mt-3 text-[11px] text-ink-subtle flex items-center gap-1.5">
+              class="mt-3 text-micro text-ink-subtle flex items-center gap-1.5">
               <i class="fas fa-chart-line text-accent"></i>
               <span>
                 Projeção (no ritmo atual): <b class="text-ink">{{ fmtMoney(campaign.projected_total_spend, campaign.currency) }}</b>
@@ -693,31 +693,31 @@ function onFormEditorSaved() {
           <!-- ── KPIs de performance ──────────────────────────────────── -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (base)</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads (base)</div>
               <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.leads) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">CAC</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">CAC</div>
               <div class="text-lg font-semibold text-ink">{{ kpis.cac != null ? fmtMoney(kpis.cac, campaign.currency) : '—' }}</div>
-              <div class="text-[10px] text-ink-subtle">
+              <div class="text-micro text-ink-subtle">
                 <span><i class="fab fa-meta"></i> fonte Meta</span>
               </div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Impressões / Cliques</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Impressões / Cliques</div>
               <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.impressions) }} <span class="text-ink-subtle text-base">/ {{ fmtInt(kpis.clicks) }}</span></div>
-              <div class="text-[10px] text-ink-subtle">CTR: {{ kpis.ctr ? fmtPct(kpis.ctr) : '—' }}</div>
+              <div class="text-micro text-ink-subtle">CTR: {{ kpis.ctr ? fmtPct(kpis.ctr) : '—' }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">CPM / CPC</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">CPM / CPC</div>
               <div class="text-sm font-semibold text-ink">{{ kpis.cpm ? fmtMoney(kpis.cpm, campaign.currency) : '—' }}</div>
-              <div class="text-[10px] text-ink-subtle">CPC: {{ kpis.cpc ? fmtMoney(kpis.cpc, campaign.currency) : '—' }}</div>
+              <div class="text-micro text-ink-subtle">CPC: {{ kpis.cpc ? fmtMoney(kpis.cpc, campaign.currency) : '—' }}</div>
             </div>
           </div>
 
           <!-- ── Funil de conversão ────────────────────────────────────── -->
           <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-            <div class="text-[10px] uppercase tracking-wider text-ink-subtle mb-2">
+            <div class="text-micro uppercase tracking-wider text-ink-subtle mb-2">
               <i class="fas fa-funnel-dollar mr-1 text-accent"></i>Funil de conversão
             </div>
             <div class="space-y-1.5">
@@ -725,7 +725,7 @@ function onFormEditorSaved() {
                 <span class="text-xs text-ink-muted w-24">Impressões</span>
                 <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
                   <div class="h-full bg-blue-500/30" :style="{ width: '100%' }"></div>
-                  <span class="absolute inset-0 flex items-center px-2 text-[11px] font-mono text-ink">{{ fmtInt(kpis.impressions) }}</span>
+                  <span class="absolute inset-0 flex items-center px-2 text-micro font-mono text-ink">{{ fmtInt(kpis.impressions) }}</span>
                 </div>
               </div>
               <div class="flex items-center gap-2">
@@ -733,7 +733,7 @@ function onFormEditorSaved() {
                 <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
                   <div class="h-full bg-sky-500/30"
                     :style="{ width: kpis.impressions > 0 ? Math.max(2, (kpis.clicks / kpis.impressions) * 100) + '%' : '0%' }"></div>
-                  <span class="absolute inset-0 flex items-center px-2 text-[11px] font-mono text-ink">
+                  <span class="absolute inset-0 flex items-center px-2 text-micro font-mono text-ink">
                     {{ fmtInt(kpis.clicks) }}
                     <span v-if="kpis.ctr" class="text-ink-subtle ml-2">({{ fmtPct(kpis.ctr) }})</span>
                   </span>
@@ -744,7 +744,7 @@ function onFormEditorSaved() {
                 <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
                   <div class="h-full bg-emerald-500/30"
                     :style="{ width: kpis.impressions > 0 ? Math.max(2, (kpis.leads / kpis.impressions) * 100) + '%' : '0%' }"></div>
-                  <span class="absolute inset-0 flex items-center px-2 text-[11px] font-mono text-ink">
+                  <span class="absolute inset-0 flex items-center px-2 text-micro font-mono text-ink">
                     {{ fmtInt(kpis.leads) }}
                     <span v-if="kpis.conversionRate != null" class="text-ink-subtle ml-2">({{ fmtPct(kpis.conversionRate) }} dos cliques)</span>
                   </span>
@@ -756,20 +756,20 @@ function onFormEditorSaved() {
           <!-- ── Metadados ────────────────────────────────────────────── -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Objetivo</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Objetivo</div>
               <div class="text-xs font-mono text-ink">{{ campaign.objective || '—' }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Conta</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Conta</div>
               <div class="text-xs text-ink truncate">{{ campaign.account_name || '—' }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Mídia (CV)</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Mídia (CV)</div>
               <div class="text-xs font-mono text-ink">{{ campaign.midia_slug || '— sem vínculo' }}</div>
             </div>
           </div>
 
-          <div class="text-[10px] text-ink-subtle">
+          <div class="text-micro text-ink-subtle">
             Insights de {{ campaign.insights_since }} → {{ campaign.insights_until }}
             · Última sync: {{ fmtRelative(campaign.last_synced_at) }}
           </div>
@@ -793,7 +793,7 @@ function onFormEditorSaved() {
               <input type="checkbox" v-model="vinculo.mapping_active" class="h-4 w-4 rounded border-line accent-emerald-500" />
               <span class="text-sm font-medium text-ink">Roteamento automático ativo</span>
             </label>
-            <p class="text-[11px] text-ink-subtle mt-1 ml-6">
+            <p class="text-micro text-ink-subtle mt-1 ml-6">
               Ativo + mídia preenchida → lead Meta entra direto como <span class="font-mono">routed</span>.
               Sem isso, vira <span class="font-mono">held</span> pra roteamento manual.
             </p>
@@ -834,11 +834,11 @@ function onFormEditorSaved() {
           <details class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
             <summary class="text-xs font-medium text-ink cursor-pointer"><i class="fas fa-tag mr-1.5 text-accent"></i>UTMs default (opcional)</summary>
             <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label class="text-[11px] text-ink-subtle">utm_source</label><input v-model="vinculo.default_utm_source" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
-              <div><label class="text-[11px] text-ink-subtle">utm_medium</label><input v-model="vinculo.default_utm_medium" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
-              <div><label class="text-[11px] text-ink-subtle">utm_campaign</label><input v-model="vinculo.default_utm_campaign" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
-              <div><label class="text-[11px] text-ink-subtle">utm_content</label><input v-model="vinculo.default_utm_content" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
-              <div class="sm:col-span-2"><label class="text-[11px] text-ink-subtle">utm_term</label><input v-model="vinculo.default_utm_term" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
+              <div><label class="text-micro text-ink-subtle">utm_source</label><input v-model="vinculo.default_utm_source" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
+              <div><label class="text-micro text-ink-subtle">utm_medium</label><input v-model="vinculo.default_utm_medium" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
+              <div><label class="text-micro text-ink-subtle">utm_campaign</label><input v-model="vinculo.default_utm_campaign" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
+              <div><label class="text-micro text-ink-subtle">utm_content</label><input v-model="vinculo.default_utm_content" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
+              <div class="sm:col-span-2"><label class="text-micro text-ink-subtle">utm_term</label><input v-model="vinculo.default_utm_term" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
             </div>
           </details>
 
@@ -874,7 +874,7 @@ function onFormEditorSaved() {
         <section v-if="!loading && activeSection === 'structure'" class="space-y-3">
           <!-- Toolbar -->
           <div class="flex items-center justify-between flex-wrap gap-2">
-            <div class="text-[11px] text-ink-subtle">
+            <div class="text-micro text-ink-subtle">
               <i class="fas fa-sitemap mr-1 text-accent"></i>
               <b>{{ adsets.length }}</b> conjunto(s) ·
               <b>{{ ads.length }}</b> anúncio(s) — hierarquia Meta: Conjunto → Anúncio.
@@ -926,20 +926,20 @@ function onFormEditorSaved() {
           <!-- Totais agregados da campanha (refletem o filtro de status) -->
           <div v-if="ads.length" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Anúncios</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Anúncios</div>
               <div class="text-sm font-semibold text-ink">{{ adsTotals.count }}</div>
-              <div class="text-[10px] text-ink-subtle">{{ adsTotals.withForm }} com form</div>
+              <div class="text-micro text-ink-subtle">{{ adsTotals.withForm }} com form</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Gasto</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
               <div class="text-sm font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(adsTotals.spend, campaign?.currency) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads (base)</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads (base)</div>
               <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(adsTotals.leads) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Impr. / Cliques</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Impr. / Cliques</div>
               <div class="text-sm font-semibold text-ink">{{ fmtInt(adsTotals.impressions) }} / {{ fmtInt(adsTotals.clicks) }}</div>
             </div>
           </div>
@@ -974,15 +974,15 @@ function onFormEditorSaved() {
                     <i class="fas fa-folder-tree text-[11px] text-accent"></i>
                     <span class="text-sm font-medium text-ink truncate">{{ group.adset.name || '(sem nome)' }}</span>
                     <span v-if="group.adset.id !== '__orphans__' && (group.adset.effective_status || group.adset.status)"
-                      :class="['inline-flex rounded-md border px-1.5 py-0.5 text-[9px] font-medium',
+                      :class="['inline-flex rounded-md border px-1.5 py-0.5 text-micro font-medium',
                         adStatusBadge(group.adset.effective_status || group.adset.status).cls]">
                       {{ adStatusBadge(group.adset.effective_status || group.adset.status).label }}
                     </span>
-                    <span class="inline-flex rounded bg-slate-500/10 text-slate-600 dark:text-slate-300 border border-slate-500/20 px-1.5 py-0.5 text-[9px] font-medium">
+                    <span class="inline-flex rounded bg-slate-500/10 text-slate-600 dark:text-slate-300 border border-slate-500/20 px-1.5 py-0.5 text-micro font-medium">
                       <i class="fas fa-rectangle-ad text-[8px] mr-1"></i>{{ group.adsCount }} {{ group.adsCount === 1 ? 'ad' : 'ads' }}
                     </span>
                   </div>
-                  <div class="text-[10px] font-mono text-ink-subtle truncate mt-0.5">
+                  <div class="text-micro font-mono text-ink-subtle truncate mt-0.5">
                     <template v-if="group.adset.id !== '__orphans__'">#{{ group.adset.id }}</template>
                     <span v-if="group.adset.optimization_goal"> · {{ group.adset.optimization_goal }}</span>
                     <span v-if="fmtBudget(group.adset)"> · <i class="fas fa-coins text-[8px]"></i> {{ fmtBudget(group.adset) }}</span>
@@ -993,19 +993,19 @@ function onFormEditorSaved() {
                 <!-- Métricas inline do conjunto -->
                 <div class="hidden sm:flex items-center gap-3 shrink-0 text-right">
                   <div>
-                    <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Gasto</div>
+                    <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
                     <div class="text-xs font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(group.totals.spend, campaign?.currency) }}</div>
                   </div>
                   <div>
-                    <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Leads</div>
+                    <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads</div>
                     <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(group.totals.leads) }}</div>
                   </div>
                   <div>
-                    <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Impr.</div>
+                    <div class="text-micro uppercase tracking-wider text-ink-subtle">Impr.</div>
                     <div class="text-xs font-semibold text-ink">{{ fmtInt(group.totals.impressions) }}</div>
                   </div>
                   <div>
-                    <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Cliques</div>
+                    <div class="text-micro uppercase tracking-wider text-ink-subtle">Cliques</div>
                     <div class="text-xs font-semibold text-ink">{{ fmtInt(group.totals.clicks) }}</div>
                   </div>
                 </div>
@@ -1016,7 +1016,7 @@ function onFormEditorSaved() {
                 class="border-t border-line/60 bg-surface-sunken/20 p-3">
 
                 <!-- Sem ads filtrados nesse conjunto -->
-                <div v-if="!group.ads.length" class="text-center py-6 text-[11px] text-ink-subtle italic">
+                <div v-if="!group.ads.length" class="text-center py-6 text-micro text-ink-subtle italic">
                   Nenhum anúncio neste conjunto bate com o filtro atual.
                 </div>
 
@@ -1047,20 +1047,20 @@ function onFormEditorSaved() {
                       </div>
 
                       <!-- Status (top-right) -->
-                      <span :class="['absolute top-2 right-2 inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm', adStatusBadge(ad.effective_status || ad.status).cls]">
+                      <span :class="['absolute top-2 right-2 inline-flex rounded-md border px-2 py-0.5 text-micro font-medium backdrop-blur-sm', adStatusBadge(ad.effective_status || ad.status).cls]">
                         {{ adStatusBadge(ad.effective_status || ad.status).label }}
                       </span>
 
                       <!-- Lead Ad badge (top-left) -->
                       <span v-if="ad.lead_form_id"
-                        class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-md bg-violet-500/40 text-white border border-violet-300/50 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium"
+                        class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-md bg-violet-500/40 text-white border border-violet-300/50 backdrop-blur-sm px-2 py-0.5 text-micro font-medium"
                         title="Lead Ad — form vinculado">
                         <i class="fas fa-file-lines text-[9px]"></i>Lead Ad
                       </span>
 
                       <!-- Tipo (bottom-left) -->
                       <span v-if="ad.creative_object_type || isVideoAd(ad)"
-                        class="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded bg-black/60 text-white/90 backdrop-blur-sm px-1.5 py-0.5 text-[9px] font-mono">
+                        class="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded bg-black/60 text-white/90 backdrop-blur-sm px-1.5 py-0.5 text-micro font-mono">
                         <i :class="isVideoAd(ad) ? 'fas fa-video' : 'fas fa-image'" class="text-[8px]"></i>
                         {{ ad.creative_object_type || (isVideoAd(ad) ? 'VIDEO' : 'PHOTO') }}
                       </span>
@@ -1069,31 +1069,31 @@ function onFormEditorSaved() {
                     <!-- Conteúdo -->
                     <div class="p-3 flex-1 flex flex-col">
                       <div class="text-sm font-medium text-ink leading-tight truncate" :title="ad.name">{{ ad.name || '(sem nome)' }}</div>
-                      <div class="text-[10px] font-mono text-ink-subtle truncate">
+                      <div class="text-micro font-mono text-ink-subtle truncate">
                         #{{ ad.id }}
                       </div>
 
-                      <div v-if="ad.creative_title" class="mt-2 text-[11px] text-ink font-medium truncate" :title="ad.creative_title">
+                      <div v-if="ad.creative_title" class="mt-2 text-micro text-ink font-medium truncate" :title="ad.creative_title">
                         "{{ ad.creative_title }}"
                       </div>
-                      <div v-if="ad.creative_body" class="text-[11px] text-ink-muted line-clamp-2 mt-0.5">{{ ad.creative_body }}</div>
+                      <div v-if="ad.creative_body" class="text-micro text-ink-muted line-clamp-2 mt-0.5">{{ ad.creative_body }}</div>
 
                       <!-- Métricas -->
                       <div class="grid grid-cols-4 gap-1.5 mt-3 pt-2 border-t border-line/60">
                         <div>
-                          <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Gasto</div>
+                          <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
                           <div class="text-xs font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(ad.spend, campaign?.currency) }}</div>
                         </div>
                         <div>
-                          <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Leads</div>
+                          <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads</div>
                           <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(ad.office_leads) }}</div>
                         </div>
                         <div>
-                          <div class="text-[9px] uppercase tracking-wider text-ink-subtle">CTR</div>
+                          <div class="text-micro uppercase tracking-wider text-ink-subtle">CTR</div>
                           <div class="text-xs font-semibold text-ink">{{ fmtPct(ad.ctr) }}</div>
                         </div>
                         <div>
-                          <div class="text-[9px] uppercase tracking-wider text-ink-subtle">CPC</div>
+                          <div class="text-micro uppercase tracking-wider text-ink-subtle">CPC</div>
                           <div class="text-xs font-semibold text-ink">{{ fmtMoney(ad.cpc, campaign?.currency) }}</div>
                         </div>
                       </div>
@@ -1101,7 +1101,7 @@ function onFormEditorSaved() {
                       <!-- Link / form -->
                       <div class="mt-2 flex flex-wrap items-center gap-1.5">
                         <a v-if="ad.creative_link_url" :href="ad.creative_link_url" target="_blank" rel="noopener"
-                          class="inline-flex items-center gap-1 text-[10px] text-accent hover:underline truncate max-w-full"
+                          class="inline-flex items-center gap-1 text-micro text-accent hover:underline truncate max-w-full"
                           :title="ad.creative_link_url">
                           <i class="fas fa-arrow-up-right-from-square"></i>
                           {{ ad.creative_link_url }}
@@ -1109,18 +1109,18 @@ function onFormEditorSaved() {
                         <button v-if="ad.lead_form_id"
                           @click.stop="openFormDetail(ad)"
                           :title="ad.lead_form?.name ? `Ver perguntas do form '${ad.lead_form.name}'` : `Form #${ad.lead_form_id} (não sincronizado)`"
-                          class="inline-flex items-center gap-1 rounded border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300 px-1.5 py-0.5 text-[10px] font-medium hover:bg-violet-500/20 transition-colors max-w-full">
+                          class="inline-flex items-center gap-1 rounded border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300 px-1.5 py-0.5 text-micro font-medium hover:bg-violet-500/20 transition-colors max-w-full">
                           <i class="fas fa-file-lines text-[9px] shrink-0"></i>
                           <span class="truncate">
                             <template v-if="ad.lead_form">{{ ad.lead_form.name || `Form #${ad.lead_form_id}` }}</template>
                             <template v-else>Form #{{ ad.lead_form_id }} <span class="opacity-60">(não sync)</span></template>
                           </span>
-                          <span v-if="ad.lead_form?.questions?.length" class="text-[9px] opacity-70 shrink-0">· {{ ad.lead_form.questions.length }}q</span>
+                          <span v-if="ad.lead_form?.questions?.length" class="text-micro opacity-70 shrink-0">· {{ ad.lead_form.questions.length }}q</span>
                         </button>
                       </div>
 
                       <!-- Última sync -->
-                      <div class="mt-1.5 pt-1.5 border-t border-line/40 text-[9px] text-ink-subtle">
+                      <div class="mt-1.5 pt-1.5 border-t border-line/40 text-micro text-ink-subtle">
                         <i class="fas fa-clock"></i> sync {{ ad.last_synced_at ? fmtRelative(ad.last_synced_at) : '—' }}
                       </div>
                     </div>
@@ -1133,7 +1133,7 @@ function onFormEditorSaved() {
 
         <!-- ── Leads ─────────────────────────────────────────────────────── -->
         <section v-if="!loading && activeSection === 'leads'" class="space-y-2">
-          <div class="text-[11px] text-ink-subtle">
+          <div class="text-micro text-ink-subtle">
             Leads da campanha <template v-if="since && until">no período ({{ scopeLabel }})</template><template v-else>(mais recentes)</template>.
           </div>
           <div v-if="!leads.length" class="text-center py-8 text-ink-subtle text-sm">
@@ -1145,24 +1145,24 @@ function onFormEditorSaved() {
             <table class="min-w-full text-sm">
               <thead class="bg-surface-sunken/30 border-b border-line">
                 <tr>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Quando</th>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Contato</th>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Form</th>
-                  <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Quando</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Contato</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Form</th>
+                  <th class="px-3 py-2 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-line/60">
                 <tr v-for="l in leads" :key="l.id" class="hover:bg-surface-hover/40">
-                  <td class="px-3 py-2 text-[11px] text-ink-subtle whitespace-nowrap">{{ fmtRelative(l.created_at) }}</td>
+                  <td class="px-3 py-2 text-micro text-ink-subtle whitespace-nowrap">{{ fmtRelative(l.created_at) }}</td>
                   <td class="px-3 py-2">
                     <div class="text-ink text-xs">{{ l.nome || '—' }}</div>
-                    <div class="text-[10px] text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
+                    <div class="text-micro text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
                   </td>
-                  <td class="px-3 py-2 text-[11px] font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
-                  <td class="px-3 py-2 text-[10px] font-mono text-ink-subtle">{{ l.meta_form_id || '—' }}</td>
+                  <td class="px-3 py-2 text-micro font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
+                  <td class="px-3 py-2 text-micro font-mono text-ink-subtle">{{ l.meta_form_id || '—' }}</td>
                   <td class="px-3 py-2 text-center">
-                    <span :class="['text-[11px] font-medium', statusColor(l.status)]">{{ l.status }}</span>
+                    <span :class="['text-micro font-medium', statusColor(l.status)]">{{ l.status }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -1172,20 +1172,20 @@ function onFormEditorSaved() {
 
         <!-- ── Dia-a-dia ─────────────────────────────────────────────────── -->
         <section v-if="!loading && activeSection === 'daily'" class="space-y-3">
-          <div class="text-[11px] text-ink-subtle">Período: {{ scopeLabel }} - gasto da Meta (azul) e leads da nossa base (verde).</div>
+          <div class="text-micro text-ink-subtle">Período: {{ scopeLabel }} - gasto da Meta (azul) e leads da nossa base (verde).</div>
 
           <!-- Totais agregados -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Gasto 30d</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto 30d</div>
               <div class="text-sm font-semibold text-blue-600 dark:text-blue-300">{{ fmtMoney(dailyTotals.spend, campaign?.currency) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads na base</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads na base</div>
               <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(dailyTotals.leads) }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Impr. / Cliques</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Impr. / Cliques</div>
               <div class="text-sm font-semibold text-ink">{{ fmtInt(dailyTotals.impressions) }} / {{ fmtInt(dailyTotals.clicks) }}</div>
             </div>
           </div>
@@ -1202,11 +1202,11 @@ function onFormEditorSaved() {
               <table class="min-w-full text-xs">
                 <thead class="bg-surface-sunken/40">
                   <tr>
-                    <th class="px-2 py-1.5 text-left  font-mono uppercase text-[10px] text-ink-subtle">Dia</th>
-                    <th class="px-2 py-1.5 text-right font-mono uppercase text-[10px] text-ink-subtle">Gasto</th>
-                    <th class="px-2 py-1.5 text-right font-mono uppercase text-[10px] text-ink-subtle">Impr.</th>
-                    <th class="px-2 py-1.5 text-right font-mono uppercase text-[10px] text-ink-subtle">Cliques</th>
-                    <th class="px-2 py-1.5 text-right font-mono uppercase text-[10px] text-ink-subtle">Leads</th>
+                    <th class="px-2 py-1.5 text-left  font-mono uppercase text-micro text-ink-subtle">Dia</th>
+                    <th class="px-2 py-1.5 text-right font-mono uppercase text-micro text-ink-subtle">Gasto</th>
+                    <th class="px-2 py-1.5 text-right font-mono uppercase text-micro text-ink-subtle">Impr.</th>
+                    <th class="px-2 py-1.5 text-right font-mono uppercase text-micro text-ink-subtle">Cliques</th>
+                    <th class="px-2 py-1.5 text-right font-mono uppercase text-micro text-ink-subtle">Leads</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-line/40">
@@ -1255,7 +1255,7 @@ function onFormEditorSaved() {
 
       <!-- Footer -->
       <footer class="px-5 py-3 border-t border-line flex items-center justify-between bg-surface-sunken/30 shrink-0">
-        <div class="text-[10px] text-ink-subtle">
+        <div class="text-micro text-ink-subtle">
           Última sync: {{ campaign?.last_synced_at ? new Date(campaign.last_synced_at).toLocaleString('pt-BR') : '—' }}
         </div>
         <Button variant="secondary" size="sm" @click="close">Fechar</Button>
@@ -1287,11 +1287,11 @@ function onFormEditorSaved() {
           <!-- Status do mapping local -->
           <div class="grid grid-cols-2 gap-2">
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Mídia (Office)</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Mídia (Office)</div>
               <div class="text-sm font-mono text-ink">{{ formDetailData.midia_slug || '—' }}</div>
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Roteamento</div>
+              <div class="text-micro uppercase tracking-wider text-ink-subtle">Roteamento</div>
               <div class="text-sm font-medium">
                 <span v-if="formDetailData.mapping_active && formDetailData.midia_slug" class="text-emerald-600 dark:text-emerald-300">
                   <i class="fas fa-bolt text-xs"></i> Auto
@@ -1305,7 +1305,7 @@ function onFormEditorSaved() {
 
           <!-- Perguntas -->
           <div>
-            <div class="text-[10px] uppercase tracking-wider text-ink-subtle mb-2">
+            <div class="text-micro uppercase tracking-wider text-ink-subtle mb-2">
               <i class="fas fa-list-check mr-1"></i>Perguntas do formulário
               <span v-if="formDetailData.questions?.length" class="text-ink">({{ formDetailData.questions.length }})</span>
             </div>
@@ -1317,10 +1317,10 @@ function onFormEditorSaved() {
             <ol v-else class="space-y-1.5 text-sm">
               <li v-for="(q, i) in formDetailData.questions" :key="i"
                 class="flex items-start gap-2 rounded border border-line/60 bg-surface px-2.5 py-1.5">
-                <span class="text-[10px] font-mono text-ink-subtle pt-0.5">{{ String(i + 1).padStart(2, '0') }}</span>
+                <span class="text-micro font-mono text-ink-subtle pt-0.5">{{ String(i + 1).padStart(2, '0') }}</span>
                 <div class="flex-1 min-w-0">
                   <div class="text-ink font-medium leading-tight">{{ q.label || q.key }}</div>
-                  <div class="text-[10px] text-ink-subtle font-mono mt-0.5">
+                  <div class="text-micro text-ink-subtle font-mono mt-0.5">
                     <span v-if="q.type">{{ q.type }}</span>
                     <span v-if="q.key && q.key !== q.label"> · key: {{ q.key }}</span>
                   </div>
@@ -1331,7 +1331,7 @@ function onFormEditorSaved() {
 
           <!-- Botões: editar mapeamento de campos -->
           <div class="pt-3 border-t border-line/60 flex items-center justify-between gap-2">
-            <div class="text-[11px] text-ink-subtle">
+            <div class="text-micro text-ink-subtle">
               <i class="fas fa-circle-info mr-1"></i>
               Vínculo CV (empreendimento, mídia) vive na <b>campanha</b>. Aqui você só configura o mapeamento <b>pergunta → campo CV</b>.
             </div>

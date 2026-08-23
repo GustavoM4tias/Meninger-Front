@@ -134,7 +134,7 @@ const isMac = computed(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPa
            hover:border-accent/40 hover:bg-surface-raised transition-colors duration-150">
     <i class="fas fa-magnifying-glass text-xs shrink-0 group-hover:text-accent transition-colors"></i>
     <span class="flex-1 min-w-0 text-left text-sm text-ink-subtle truncate">Buscar no sistema...</span>
-    <kbd class="hidden lg:inline-flex shrink-0 items-center gap-0.5 font-mono text-[10px] uppercase tracking-tighter
+    <kbd class="hidden lg:inline-flex shrink-0 items-center gap-0.5 font-mono text-micro uppercase tracking-tighter
                 text-ink-subtle px-1.5 py-0.5 rounded-md border border-line bg-surface
                 group-hover:border-accent/30 group-hover:text-accent transition-colors">
       <span>{{ isMac ? '⌘' : 'Ctrl' }}</span><span>K</span>
@@ -157,7 +157,7 @@ const isMac = computed(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPa
             class="h-6 w-6 grid place-items-center rounded text-ink-subtle hover:text-ink hover:bg-surface-sunken transition-colors">
             <i class="fas fa-xmark text-xs"></i>
           </button>
-          <kbd class="font-mono text-[10px] uppercase tracking-tighter text-ink-subtle
+          <kbd class="font-mono text-micro uppercase tracking-tighter text-ink-subtle
                       px-1.5 py-0.5 rounded border border-line bg-surface">ESC</kbd>
         </div>
       </div>
@@ -193,7 +193,7 @@ const isMac = computed(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPa
     </ul>
 
     <template #footer>
-      <div class="flex items-center justify-between w-full text-[11px] text-ink-subtle font-mono">
+      <div class="flex items-center justify-between w-full text-micro text-ink-subtle font-mono">
         <div class="flex items-center gap-3">
           <span class="flex items-center gap-1.5">
             <kbd class="px-1.5 py-0.5 rounded border border-line bg-surface">↑</kbd>

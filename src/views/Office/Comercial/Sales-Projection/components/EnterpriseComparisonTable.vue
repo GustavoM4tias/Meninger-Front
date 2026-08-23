@@ -371,7 +371,7 @@ const sortOptions = computed(() => [
             </Badge>
           </div>
 
-          <div class="flex items-center gap-3 mt-1.5 flex-wrap text-[11px]">
+          <div class="flex items-center gap-3 mt-1.5 flex-wrap text-micro">
             <span class="text-ink-muted font-mono">
               <span class="text-ink font-semibold">{{ realizedCount(row) }}</span> venda(s)
               <span v-if="!row.onlyProjectionRow && row.proj_count" class="text-emerald-500 font-semibold">
@@ -389,12 +389,12 @@ const sortOptions = computed(() => [
               {{ formatCurrency(baseValue(row)) }}
             </span>
             <span v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
-              class="text-[11px] text-emerald-500 font-mono tabular-nums">
+              class="text-micro text-emerald-500 font-mono tabular-nums">
               +{{ formatCurrency(appendedValue(row)) }}
             </span>
           </div>
 
-          <div class="mt-1.5 flex items-center justify-between gap-2 text-[11px] flex-wrap">
+          <div class="mt-1.5 flex items-center justify-between gap-2 text-micro flex-wrap">
             <span class="text-ink-subtle font-mono">
               meta {{ row.projectedUnits || '—' }}u · {{ formatCurrency(row.projectedVgv) }}
             </span>
@@ -422,20 +422,20 @@ const sortOptions = computed(() => [
               <input type="checkbox" :checked="allVisibleChecked"
                 @change="toggleAllVisible($event)" class="accent-accent" />
             </th>
-            <th class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+            <th class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">
               {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
             </th>
-            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Vendas</th>
-            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Vendas</th>
+            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">
               Realizado <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
             </th>
-            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Meta unid.</th>
-            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Meta projetada</th>
-            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle"
+            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Meta unid.</th>
+            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Meta projetada</th>
+            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle"
               v-tippy="`Modo padrão: ${goalStore.globalMode === 'units' ? 'Unidades' : 'VGV'}. Clique no nome para detalhes.`">
               % Atingida
             </th>
-            <th class="px-4 py-2.5 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+            <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
           </tr>
         </thead>
 
@@ -476,12 +476,12 @@ const sortOptions = computed(() => [
               <div class="text-sm font-semibold text-ink tabular-nums relative inline-block">
                 {{ realizedCount(row) }}
                 <span v-if="!row.onlyProjectionRow && row.proj_count"
-                  class="absolute -top-3 -right-2 text-[10px] font-bold text-emerald-500 font-mono"
+                  class="absolute -top-3 -right-2 text-micro font-bold text-emerald-500 font-mono"
                   v-tippy="'Projeção'">
                   +{{ row.proj_count }}
                 </span>
                 <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0"
-                  class="absolute -bottom-3 -right-2 text-[10px] font-bold text-amber-500 font-mono"
+                  class="absolute -bottom-3 -right-2 text-micro font-bold text-amber-500 font-mono"
                   v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
                   <i class="fas fa-file-circle-xmark text-[9px]"></i>{{ distratoCount(row) }}
                 </span>
@@ -494,11 +494,11 @@ const sortOptions = computed(() => [
                 {{ formatCurrency(baseValue(row)) }}
               </div>
               <div v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
-                class="text-[11px] text-emerald-500 font-mono tabular-nums">
+                class="text-micro text-emerald-500 font-mono tabular-nums">
                 +{{ formatCurrency(appendedValue(row)) }}
               </div>
               <div v-if="!row.onlyProjectionRow && distratoValue(row) > 0"
-                class="text-[11px] text-amber-500 font-mono tabular-nums"
+                class="text-micro text-amber-500 font-mono tabular-nums"
                 v-tippy="'Valor de vendas distratadas — incluído no total'">
                 <i class="fas fa-file-circle-xmark text-[9px]"></i> {{ formatCurrency(distratoValue(row)) }}
               </div>

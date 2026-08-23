@@ -95,13 +95,13 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
                 <div class="flex items-start gap-2">
                   <div class="min-w-0 flex-1">
                     <p class="font-medium text-ink truncate">{{ row.name }}</p>
-                    <p class="text-[11px] text-ink-subtle font-mono">
+                    <p class="text-micro text-ink-subtle font-mono">
                       <span v-if="row.erp_id">CC {{ row.erp_id }}</span>
                       <span v-else class="text-amber-600 dark:text-amber-400">manual</span>
                       <span v-if="row.city"> • {{ row.city }}</span>
                       <span v-if="row.category && row.category !== NO_CATEGORY" class="text-accent"> • {{ row.category }}</span>
                     </p>
-                    <p class="text-[11px] text-ink-muted mt-0.5">
+                    <p class="text-micro text-ink-muted mt-0.5">
                       Ticket {{ brlCompact(row.defaultPrice) }}
                     </p>
                   </div>
@@ -127,7 +127,7 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
                   class="w-full max-w-[80px] mx-auto text-center h-8 px-1 rounded-md border border-line bg-surface
                          text-ink text-sm focus-ring disabled:opacity-60 disabled:cursor-not-allowed
                          [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                <p class="text-[10px] text-ink-subtle mt-0.5 truncate" :title="brl(cellVgv(row, ym))">
+                <p class="text-micro text-ink-subtle mt-0.5 truncate" :title="brl(cellVgv(row, ym))">
                   {{ (row.values?.[ym]?.units || 0) ? brlCompact(cellVgv(row, ym)) : '—' }}
                 </p>
               </td>
@@ -135,7 +135,7 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
               <!-- Total linha -->
               <td class="px-3 py-2 text-right align-top whitespace-nowrap">
                 <p class="font-semibold text-ink">{{ int(rowUnits(row, monthKeys)) }} un.</p>
-                <p class="text-[11px] text-ink-muted">{{ brlCompact(rowVgv(row, monthKeys)) }}</p>
+                <p class="text-micro text-ink-muted">{{ brlCompact(rowVgv(row, monthKeys)) }}</p>
               </td>
             </tr>
 
@@ -151,11 +151,11 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
               <td class="sticky left-0 z-10 bg-surface-sunken px-3 py-2.5 text-ink">Total geral</td>
               <td v-for="ym in monthKeys" :key="ym" class="px-2 py-2.5 text-center">
                 <p class="text-ink">{{ int(monthTotals[ym].units) }}</p>
-                <p class="text-[10px] text-ink-muted font-normal">{{ brlCompact(monthTotals[ym].vgv) }}</p>
+                <p class="text-micro text-ink-muted font-normal">{{ brlCompact(monthTotals[ym].vgv) }}</p>
               </td>
               <td class="px-3 py-2.5 text-right whitespace-nowrap">
                 <p class="text-ink">{{ int(grand.units) }} un.</p>
-                <p class="text-[11px] text-accent font-normal">{{ brlCompact(grand.vgv) }}</p>
+                <p class="text-micro text-accent font-normal">{{ brlCompact(grand.vgv) }}</p>
               </td>
             </tr>
           </tfoot>
@@ -188,7 +188,7 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
         <div class="flex items-start justify-between gap-2 px-3.5 py-3 border-b border-line bg-surface-sunken/40">
           <div class="min-w-0">
             <p class="font-semibold text-ink truncate">{{ row.name }}</p>
-            <p class="text-[11px] text-ink-subtle font-mono">
+            <p class="text-micro text-ink-subtle font-mono">
               <span v-if="row.erp_id">CC {{ row.erp_id }}</span><span v-else>manual</span><span v-if="row.category && row.category !== NO_CATEGORY" class="text-accent"> • {{ row.category }}</span>
               <span v-if="row.city"> • {{ row.city }}</span> • Ticket {{ brlCompact(row.defaultPrice) }}
             </p>
@@ -205,13 +205,13 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
 
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3">
           <label v-for="ym in monthKeys" :key="ym" class="flex flex-col gap-1">
-            <span class="text-[11px] text-ink-muted">{{ monthLabel(ym) }}</span>
+            <span class="text-micro text-ink-muted">{{ monthLabel(ym) }}</span>
             <input type="number" min="0" inputmode="numeric"
               :value="row.values?.[ym]?.units || 0"
               :disabled="disabled"
               @input="onUnits(row, ym, $event)"
               class="h-10 px-2 rounded-lg border border-line bg-surface text-ink text-sm focus-ring disabled:opacity-60" />
-            <span class="text-[10px] text-ink-subtle">
+            <span class="text-micro text-ink-subtle">
               {{ (row.values?.[ym]?.units || 0) ? brlCompact(cellVgv(row, ym)) : '—' }}
             </span>
           </label>

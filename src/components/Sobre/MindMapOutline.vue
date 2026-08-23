@@ -62,7 +62,7 @@ function countAll(node) {
         </div>
 
         <span v-if="node.c?.length"
-              class="shrink-0 self-center text-[10px] font-mono tabular-nums rounded-md px-1.5 py-0.5"
+              class="shrink-0 self-center text-micro font-mono tabular-nums rounded-md px-1.5 py-0.5"
               :style="{ color: node.acc || acc,
                         background: `color-mix(in srgb, ${node.acc || acc} 12%, transparent)` }">
           {{ countAll(node) }}

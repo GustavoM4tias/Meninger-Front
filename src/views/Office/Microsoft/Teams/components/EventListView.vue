@@ -83,13 +83,13 @@ function barClass(ev) {
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-ink truncate">{{ group.dayName }}</span>
             <span v-if="group.isToday"
-              class="shrink-0 text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-accent-soft text-accent">
+              class="shrink-0 text-micro font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-accent-soft text-accent">
               Hoje
             </span>
           </div>
-          <p class="text-[11px] text-ink-subtle truncate">{{ group.dayDate }}</p>
+          <p class="text-micro text-ink-subtle truncate">{{ group.dayDate }}</p>
         </div>
-        <span class="shrink-0 text-[11px] font-mono tabular-nums text-ink-subtle">
+        <span class="shrink-0 text-micro font-mono tabular-nums text-ink-subtle">
           {{ group.events.length }}
         </span>
       </div>
@@ -108,11 +108,11 @@ function barClass(ev) {
                 :class="ev.isCancelled ? 'text-ink-subtle line-through' : 'text-ink'">
                 {{ fmtTime(ev.start) }}
               </p>
-              <p class="text-[11px] font-mono tabular-nums text-ink-subtle leading-tight">
+              <p class="text-micro font-mono tabular-nums text-ink-subtle leading-tight">
                 {{ fmtTime(ev.end) }}
               </p>
             </template>
-            <p v-else class="text-[11px] font-medium text-ink-subtle leading-tight">Dia inteiro</p>
+            <p v-else class="text-micro font-medium text-ink-subtle leading-tight">Dia inteiro</p>
           </div>
           <div class="w-1 rounded-full shrink-0" :class="barClass(ev)"></div>
         </div>
@@ -125,20 +125,20 @@ function barClass(ev) {
               {{ ev.subject }}
             </span>
             <span v-if="ev.isOnlineMeeting"
-              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 text-[10px] font-semibold shrink-0">
+              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 text-micro font-semibold shrink-0">
               <i class="fas fa-video text-[8px]"></i> Teams
             </span>
             <span v-if="ev.isRecurring"
-              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-surface-sunken text-ink-subtle text-[10px] shrink-0">
+              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-surface-sunken text-ink-subtle text-micro shrink-0">
               <i class="fas fa-rotate text-[8px]"></i> Recorrente
             </span>
             <span v-if="ev.isCancelled"
-              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 text-[10px] font-semibold shrink-0">
+              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 text-micro font-semibold shrink-0">
               Cancelado
             </span>
           </div>
 
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-ink-subtle">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-micro text-ink-subtle">
             <span v-if="ev.location" class="inline-flex items-center gap-1 min-w-0">
               <i class="fas fa-location-dot text-[9px] shrink-0"></i>
               <span class="truncate">{{ ev.location }}</span>

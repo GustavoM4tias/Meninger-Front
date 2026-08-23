@@ -117,7 +117,7 @@ function onSubmit() {
     </form>
 
     <div v-if="showFooter"
-      class="border-t border-slate-100 text-center text-[10px] text-slate-400 tracking-wide"
+      class="border-t border-slate-100 text-center text-micro text-slate-400 tracking-wide"
       :class="spacing.footer">
       {{ footerText }}
     </div>

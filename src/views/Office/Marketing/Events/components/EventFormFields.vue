@@ -190,7 +190,7 @@ onMounted(() => { if (!microsoftStore.connected) microsoftStore.fetchStatus?.();
               <span v-if="selectedEnterprise.cidade"> · {{ selectedEnterprise.cidade }}</span>
               <span v-if="selectedEnterprise.estado">/{{ selectedEnterprise.estado }}</span>
             </p>
-            <p class="text-[11px] text-accent mt-1">
+            <p class="text-micro text-accent mt-1">
               Endereço preenchido automaticamente. Você ainda pode editar abaixo.
             </p>
           </div>

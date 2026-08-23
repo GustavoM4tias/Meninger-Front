@@ -134,9 +134,9 @@ const onDelete = async (t) => {
           class="rounded-xl border border-line bg-surface-raised overflow-hidden">
           <div class="px-4 py-2.5 border-b border-line bg-surface-sunken/40 flex items-center gap-2">
             <i :class="[f.icon, 'text-[11px] text-ink-subtle']"></i>
-            <span class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">{{ f.label }}</span>
+            <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle">{{ f.label }}</span>
             <RouterLink v-if="f.screen" :to="f.screen"
-              class="ml-auto text-[11px] text-accent hover:underline">abrir tela</RouterLink>
+              class="ml-auto text-micro text-accent hover:underline">abrir tela</RouterLink>
           </div>
 
           <div class="divide-y divide-line">
@@ -148,15 +148,15 @@ const onDelete = async (t) => {
                     <p class="text-sm font-medium text-ink truncate flex items-center gap-2">
                       {{ t.name }}
                       <span v-if="t.fallbackOf" v-tippy="`Só entra se ${t.fallbackOf} não estiver aprovado`"
-                        class="text-[10px] px-1.5 py-0.5 rounded border border-line text-ink-subtle">reserva</span>
+                        class="text-micro px-1.5 py-0.5 rounded border border-line text-ink-subtle">reserva</span>
                     </p>
                     <p class="text-xs text-ink-muted line-clamp-2 mt-0.5">{{ t.purpose }}</p>
                   </div>
                   <div class="shrink-0 flex flex-col items-end gap-1">
-                    <span :class="['text-[11px] px-2 py-0.5 rounded-md border', statusCls(t.status)]">
+                    <span :class="['text-micro px-2 py-0.5 rounded-md border', statusCls(t.status)]">
                       {{ t.status }}
                     </span>
-                    <span :class="['text-[11px] px-2 py-0.5 rounded-md border', categoryCls(t.category)]"
+                    <span :class="['text-micro px-2 py-0.5 rounded-md border', categoryCls(t.category)]"
                       v-tippy="t.categoryReclassified
                         ? `Enviado como ${t.categoryIntended}; a Meta reclassificou para ${t.category}.`
                         : 'Categoria definida pela Meta na aprovação.'">
@@ -222,7 +222,7 @@ const onDelete = async (t) => {
                   </span>
                 </div>
 
-                <p class="text-ink-subtle font-mono text-[11px]">{{ t.source }}</p>
+                <p class="text-ink-subtle font-mono text-micro">{{ t.source }}</p>
               </div>
             </div>
           </div>
@@ -248,8 +248,8 @@ const onDelete = async (t) => {
               <p v-if="t.bodyText" class="text-xs text-ink-muted line-clamp-1">{{ t.bodyText }}</p>
             </div>
             <span class="text-xs text-ink-subtle hidden sm:block">{{ t.language }}</span>
-            <span v-if="t.category" :class="['text-[11px] px-2 py-0.5 rounded-md border hidden sm:block', categoryCls(t.category)]">{{ t.category }}</span>
-            <span :class="['text-[11px] px-2 py-0.5 rounded-md border', statusCls(t.status)]">{{ t.status }}</span>
+            <span v-if="t.category" :class="['text-micro px-2 py-0.5 rounded-md border hidden sm:block', categoryCls(t.category)]">{{ t.category }}</span>
+            <span :class="['text-micro px-2 py-0.5 rounded-md border', statusCls(t.status)]">{{ t.status }}</span>
             <button type="button" @click="onDelete(t)"
               class="h-8 w-8 grid place-items-center rounded-md text-ink-subtle
                      hover:bg-red-500/10 hover:text-red-500 transition-colors"

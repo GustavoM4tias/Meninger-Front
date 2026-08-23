@@ -58,7 +58,7 @@
                                     : 'text-slate-700 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'">
                                 <i class="fa-regular fa-folder text-xs opacity-70"></i>
                                 <span class="flex-1">{{ c.name }}</span>
-                                <span v-if="c.count" class="text-[10px] font-normal opacity-60">{{ c.count }}</span>
+                                <span v-if="c.count" class="text-micro font-normal opacity-60">{{ c.count }}</span>
                             </button>
 
                             <button v-for="s in c.subcategories" :key="c.slug + '/' + s.slug" type="button"
@@ -69,7 +69,7 @@
                                     : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50'">
                                 <i class="fa-solid fa-angle-right text-[10px] opacity-50"></i>
                                 <span class="flex-1">{{ s.name }}</span>
-                                <span class="text-[10px] font-normal opacity-60">{{ s.count }}</span>
+                                <span class="text-micro font-normal opacity-60">{{ s.count }}</span>
                             </button>
                         </template>
                     </div>
@@ -136,7 +136,7 @@
                                     </div>
 
                                     <span v-if="a.status"
-                                        class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+                                        class="shrink-0 rounded-full px-2.5 py-1 text-micro font-bold uppercase tracking-wide"
                                         :class="a.status === 'PUBLISHED'
                                             ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
                                             : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'">

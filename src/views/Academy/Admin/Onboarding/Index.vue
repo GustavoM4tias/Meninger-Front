@@ -58,14 +58,14 @@
                             </div>
                             <div class="mt-1 flex flex-wrap items-center gap-1.5">
                                 <span v-if="r.mandatory"
-                                    class="rounded-full bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                                    class="rounded-full bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                                     obrigatória
                                 </span>
                                 <span v-if="r.dueDays"
-                                    class="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                    class="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-micro font-bold text-slate-600 dark:text-slate-400">
                                     prazo {{ r.dueDays }} dias
                                 </span>
-                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                <span class="rounded-full px-2 py-0.5 text-micro font-bold uppercase tracking-wider"
                                     :class="r.active
                                         ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
                                         : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'">

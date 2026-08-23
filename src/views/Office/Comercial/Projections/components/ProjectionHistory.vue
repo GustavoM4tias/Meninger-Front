@@ -80,19 +80,19 @@ async function show() {
       <ol v-else class="relative border-l border-line ml-3 space-y-4 py-1">
         <li v-for="l in store.logs" :key="l.id" class="ml-5 relative">
           <span
-            class="absolute -left-[27px] top-0.5 grid place-items-center h-6 w-6 rounded-full border text-[10px]"
+            class="absolute -left-[27px] top-0.5 grid place-items-center h-6 w-6 rounded-full border text-micro"
             :class="toneClass[meta(l.action).tone]">
             <i :class="meta(l.action).icon"></i>
           </span>
 
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <span class="text-sm font-semibold text-ink">{{ meta(l.action).label }}</span>
-            <span class="text-[11px] text-ink-subtle font-mono">{{ formatDateTime(l.created_at || l.createdAt) }}</span>
+            <span class="text-micro text-ink-subtle font-mono">{{ formatDateTime(l.created_at || l.createdAt) }}</span>
           </div>
 
           <p v-if="l.note" class="text-sm text-ink-muted leading-relaxed mt-0.5">{{ l.note }}</p>
 
-          <p class="text-[11px] text-ink-subtle mt-1">
+          <p class="text-micro text-ink-subtle mt-1">
             <i class="far fa-user text-[10px] mr-1"></i>
             {{ l.actor?.username || l.actor?.email || ('Usuário #' + (l.user_id ?? '—')) }}
           </p>

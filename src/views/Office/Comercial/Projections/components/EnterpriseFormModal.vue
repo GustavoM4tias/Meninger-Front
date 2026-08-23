@@ -207,11 +207,11 @@ function pickLink(e) {
               @change="togglePick(e.id)" class="rounded border-line accent-accent" />
             <div class="min-w-0 flex-1">
               <p class="text-sm text-ink truncate">{{ e.name }}</p>
-              <p class="text-[11px] text-ink-subtle font-mono">
+              <p class="text-micro text-ink-subtle font-mono">
                 CC {{ e.id }}<span v-if="e.city"> • {{ e.city }}</span>
               </p>
             </div>
-            <span v-if="existingSet.has(String(e.id))" class="text-[10px] text-ink-subtle">já incluído</span>
+            <span v-if="existingSet.has(String(e.id))" class="text-micro text-ink-subtle">já incluído</span>
           </label>
         </div>
         <p class="text-xs text-ink-muted">
@@ -243,12 +243,12 @@ function pickLink(e) {
         :class="(row?.erp_id || linkPick) ? 'border-line' : 'border-dashed border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/20'">
         <div class="flex items-center justify-between gap-2">
           <div class="min-w-0">
-            <p class="text-[10px] font-bold text-ink-subtle uppercase tracking-widest mb-1">
+            <p class="text-micro font-bold text-ink-subtle uppercase tracking-widest mb-1">
               <i class="fas fa-hashtag mr-1"></i>Centro de custo (Sienge)
             </p>
             <p v-if="linkPick" class="text-sm font-semibold text-accent truncate">
               CC {{ linkPick.id }} <span class="font-normal text-ink-muted">• {{ linkPick.name }}</span>
-              <span class="ml-1.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">(aplica ao confirmar)</span>
+              <span class="ml-1.5 text-micro font-semibold text-amber-600 dark:text-amber-400">(aplica ao confirmar)</span>
             </p>
             <p v-else-if="row?.erp_id" class="text-sm font-semibold text-ink truncate">CC {{ row.erp_id }}</p>
             <p v-else class="text-sm font-medium text-amber-700 dark:text-amber-400">
@@ -275,11 +275,11 @@ function pickLink(e) {
               :disabled="existingSet.has(String(e.id))">
               <div class="min-w-0 flex-1">
                 <p class="text-sm text-ink truncate">{{ e.name }}</p>
-                <p class="text-[11px] text-ink-subtle font-mono">
+                <p class="text-micro text-ink-subtle font-mono">
                   CC {{ e.id }}<span v-if="e.city"> • {{ e.city }}</span>
                 </p>
               </div>
-              <span v-if="existingSet.has(String(e.id))" class="text-[10px] text-ink-subtle shrink-0">já incluído</span>
+              <span v-if="existingSet.has(String(e.id))" class="text-micro text-ink-subtle shrink-0">já incluído</span>
             </button>
           </div>
         </div>
@@ -288,13 +288,13 @@ function pickLink(e) {
       <!-- Estoque atual (CV) -->
       <div v-if="isErpRow()" class="rounded-xl border border-line bg-surface-sunken p-3">
         <div class="flex items-center justify-between mb-2.5">
-          <span class="text-[10px] font-bold text-ink-subtle uppercase tracking-widest">
+          <span class="text-micro font-bold text-ink-subtle uppercase tracking-widest">
             <i class="fas fa-cubes mr-1"></i>Estoque atual no CV
           </span>
-          <span v-if="stock" class="text-[11px] font-semibold text-ink-muted tabular-nums bg-surface-raised px-2 py-0.5 rounded-full border border-line">
+          <span v-if="stock" class="text-micro font-semibold text-ink-muted tabular-nums bg-surface-raised px-2 py-0.5 rounded-full border border-line">
             {{ stock.total }} unidades
           </span>
-          <span v-else-if="edit.totalUnits" class="text-[11px] font-semibold text-ink-muted tabular-nums bg-surface-raised px-2 py-0.5 rounded-full border border-line">
+          <span v-else-if="edit.totalUnits" class="text-micro font-semibold text-ink-muted tabular-nums bg-surface-raised px-2 py-0.5 rounded-full border border-line">
             {{ edit.totalUnits }} unidades (manual)
           </span>
         </div>
@@ -308,28 +308,28 @@ function pickLink(e) {
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-3">
             <div class="text-center px-1 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40">
-              <p class="text-[9px] text-rose-500 font-bold uppercase tracking-wide">Vendidos</p>
+              <p class="text-micro text-rose-500 font-bold uppercase tracking-wide">Vendidos</p>
               <p class="text-base font-black text-rose-700 dark:text-rose-400 tabular-nums leading-none mt-0.5">{{ stock.sold }}</p>
-              <p class="text-[9px] text-rose-400 tabular-nums">{{ stockPct(stock.sold) }}%</p>
+              <p class="text-micro text-rose-400 tabular-nums">{{ stockPct(stock.sold) }}%</p>
             </div>
             <div class="text-center px-1 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40">
-              <p class="text-[9px] text-amber-500 font-bold uppercase tracking-wide">Reservados</p>
+              <p class="text-micro text-amber-500 font-bold uppercase tracking-wide">Reservados</p>
               <p class="text-base font-black text-amber-700 dark:text-amber-400 tabular-nums leading-none mt-0.5">{{ stock.reserved }}</p>
-              <p class="text-[9px] text-amber-400 tabular-nums">{{ stockPct(stock.reserved) }}%</p>
+              <p class="text-micro text-amber-400 tabular-nums">{{ stockPct(stock.reserved) }}%</p>
             </div>
             <div class="text-center px-1 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
-              <p class="text-[9px] text-emerald-600 font-bold uppercase tracking-wide">Disponíveis</p>
+              <p class="text-micro text-emerald-600 font-bold uppercase tracking-wide">Disponíveis</p>
               <p class="text-base font-black text-emerald-700 dark:text-emerald-400 tabular-nums leading-none mt-0.5">{{ stock.available }}</p>
-              <p class="text-[9px] text-emerald-500 tabular-nums">{{ stockPct(stock.available) }}%</p>
+              <p class="text-micro text-emerald-500 tabular-nums">{{ stockPct(stock.available) }}%</p>
             </div>
             <div class="text-center px-1 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
-              <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wide">Bloqueados</p>
+              <p class="text-micro text-slate-500 font-bold uppercase tracking-wide">Bloqueados</p>
               <p class="text-base font-black text-slate-600 dark:text-slate-400 tabular-nums leading-none mt-0.5">{{ stock.blocked }}</p>
-              <p class="text-[9px] text-slate-400 tabular-nums">{{ stockPct(stock.blocked) }}%</p>
+              <p class="text-micro text-slate-400 tabular-nums">{{ stockPct(stock.blocked) }}%</p>
             </div>
           </div>
         </template>
-        <p v-else class="text-[11px] text-ink-subtle italic">
+        <p v-else class="text-micro text-ink-subtle italic">
           Dados de estoque do CV indisponíveis para o CC {{ row?.erp_id }}.
           <template v-if="edit.totalUnits">Usando total manual de {{ edit.totalUnits }} unidades.</template>
           <template v-else>Informe o total manual abaixo; quando o CV trouxer as unidades, ele sobrepõe.</template>

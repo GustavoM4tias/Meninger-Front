@@ -64,7 +64,7 @@ const handleRemove = (e) => {
     <!-- Conteúdo -->
     <div class="flex flex-col min-w-0 flex-1 justify-center">
       <div class="flex items-center gap-2">
-        <span :class="['text-[10px] font-medium uppercase tracking-wide', meta.accent]">
+        <span :class="['text-micro font-medium uppercase tracking-wide', meta.accent]">
           {{ meta.label }}
         </span>
         <span v-if="isUnread" class="h-1.5 w-1.5 rounded-full bg-accent shrink-0"></span>
@@ -73,7 +73,7 @@ const handleRemove = (e) => {
         {{ notification.title }}
       </h4>
       <p v-if="notification.body" class="text-xs text-ink-muted truncate">{{ notification.body }}</p>
-      <p class="text-[11px] text-ink-subtle">{{ formatFull(notification.created_at) }}</p>
+      <p class="text-micro text-ink-subtle">{{ formatFull(notification.created_at) }}</p>
     </div>
 
     <!-- Botão remover (aparece no hover) -->

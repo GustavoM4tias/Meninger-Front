@@ -122,12 +122,12 @@ const quickLinks = computed(() => [
         <div class="relative flex items-start justify-between gap-3">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap mb-2">
-              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
                            bg-white/20 backdrop-blur border border-white/20 text-white">
                 <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
                 {{ lead.situacao_nome || 'Sem situação' }}
               </span>
-              <span class="text-[11px] text-white/70 font-mono">#{{ lead.idlead }}</span>
+              <span class="text-micro text-white/70 font-mono">#{{ lead.idlead }}</span>
             </div>
             <h2 class="text-xl sm:text-2xl font-semibold leading-tight tracking-tight break-words">
               {{ lead.nome || '—' }}
@@ -164,7 +164,7 @@ const quickLinks = computed(() => [
         <div class="rounded-xl bg-surface-raised border border-line shadow-elevated p-3 sm:p-4 surface-gradient">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div class="min-w-0">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1">
                 <i class="far fa-envelope text-accent text-[9px] mr-1"></i>E-mail
               </p>
               <a v-if="lead.email" :href="`mailto:${lead.email}`"
@@ -174,7 +174,7 @@ const quickLinks = computed(() => [
               <span v-else class="text-sm text-ink-subtle">—</span>
             </div>
             <div class="min-w-0">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1">
                 <i class="fab fa-whatsapp text-emerald-500 text-[9px] mr-1"></i>Telefone
               </p>
               <a v-if="lead.telefone"
@@ -185,7 +185,7 @@ const quickLinks = computed(() => [
               <span v-else class="text-sm text-ink-subtle">—</span>
             </div>
             <div class="min-w-0">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1">
                 <i class="fas fa-location-dot text-red-400 text-[9px] mr-1"></i>Localização
               </p>
               <p class="text-sm text-ink truncate">{{ locationText || '—' }}</p>
@@ -201,7 +201,7 @@ const quickLinks = computed(() => [
         <section>
           <div class="flex items-center gap-1.5 mb-2">
             <i class="fas fa-city text-xs text-accent"></i>
-            <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Empreendimentos</h4>
+            <h4 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Empreendimentos</h4>
           </div>
           <div v-if="empreendimentos.length" class="flex flex-wrap gap-1.5">
             <Badge v-for="(e, i) in empreendimentos" :key="i" variant="accent">{{ e.nome || e }}</Badge>
@@ -213,14 +213,14 @@ const quickLinks = computed(() => [
         <section>
           <div class="flex items-center gap-1.5 mb-2">
             <i class="fas fa-users text-xs text-accent"></i>
-            <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Responsáveis</h4>
+            <h4 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Responsáveis</h4>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div v-for="r in responsaveis" :key="r.label"
               class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-sunken border border-line min-w-0">
               <i :class="`${r.icon} text-ink-subtle text-xs shrink-0`"></i>
               <div class="min-w-0">
-                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono leading-none">{{ r.label }}</p>
+                <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono leading-none">{{ r.label }}</p>
                 <p class="text-sm font-medium text-ink truncate mt-0.5">{{ r.value || '—' }}</p>
               </div>
             </div>
@@ -231,15 +231,15 @@ const quickLinks = computed(() => [
         <section>
           <div class="flex items-center gap-1.5 mb-2">
             <i class="fas fa-bullhorn text-xs text-accent"></i>
-            <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Captação</h4>
+            <h4 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Captação</h4>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-0.5">Mídia</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-0.5">Mídia</p>
               <p class="text-sm text-ink">{{ lead.midia_principal || '—' }}</p>
             </div>
             <div>
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-0.5">Origem</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-0.5">Origem</p>
               <p class="text-sm text-ink">{{ lead.origem || '—' }}</p>
             </div>
           </div>
@@ -250,7 +250,7 @@ const quickLinks = computed(() => [
           class="rounded-xl border border-red-500/20 bg-red-500/10 overflow-hidden">
           <div class="flex items-center gap-2 px-3 py-2 border-b border-red-500/20">
             <i class="fas fa-ban text-red-500 text-xs"></i>
-            <p class="text-[10px] font-mono uppercase tracking-wider text-red-700 dark:text-red-300">
+            <p class="text-micro font-mono uppercase tracking-wider text-red-700 dark:text-red-300">
               Motivo de cancelamento / descarte
             </p>
           </div>
@@ -264,7 +264,7 @@ const quickLinks = computed(() => [
         <section v-if="tags.length">
           <div class="flex items-center gap-1.5 mb-2">
             <i class="fas fa-tags text-xs text-accent"></i>
-            <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Tags</h4>
+            <h4 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Tags</h4>
           </div>
           <div class="flex flex-wrap gap-1.5">
             <Badge v-for="(tag, i) in tags" :key="i" variant="warning" size="sm">{{ tagLabel(tag) }}</Badge>
@@ -275,7 +275,7 @@ const quickLinks = computed(() => [
         <section v-if="lastInteracao">
           <div class="flex items-center gap-1.5 mb-2">
             <i class="fas fa-comment-dots text-xs text-accent"></i>
-            <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Última interação</h4>
+            <h4 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Última interação</h4>
           </div>
           <div class="rounded-xl border border-line overflow-hidden">
             <div class="px-3 py-2 bg-surface-sunken flex flex-wrap items-center gap-2 text-xs text-ink-muted">
@@ -288,11 +288,11 @@ const quickLinks = computed(() => [
             </div>
             <div class="px-3 py-2.5 space-y-2">
               <div v-if="lastInteracao.descricao">
-                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Descrição</p>
+                <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1">Descrição</p>
                 <p class="text-sm text-ink leading-relaxed whitespace-pre-line">{{ lastInteracao.descricao }}</p>
               </div>
               <div v-if="anotacao">
-                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1">Anotação</p>
+                <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1">Anotação</p>
                 <p class="text-sm text-ink leading-relaxed italic">{{ anotacao }}</p>
               </div>
               <p v-if="!lastInteracao.descricao && !anotacao" class="text-sm text-ink-subtle italic">

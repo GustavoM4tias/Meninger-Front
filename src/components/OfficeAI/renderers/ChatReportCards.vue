@@ -35,12 +35,12 @@ function open(link) {
                     <div class="flex flex-wrap items-center gap-1.5">
                         <p class="truncate text-sm font-semibold text-ink">{{ c.title }}</p>
                         <span v-if="c.status !== 'published'"
-                            class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">Rascunho</span>
+                            class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted">Rascunho</span>
                     </div>
                     <p v-if="c.empreendimento" class="mt-0.5 truncate text-xs text-ink-muted">
                         <i class="fas fa-building mr-1 text-[9px]"></i>{{ c.empreendimento }}
                     </p>
-                    <p v-if="c.periodo" class="mt-0.5 text-[11px] text-ink-subtle">{{ c.periodo }}</p>
+                    <p v-if="c.periodo" class="mt-0.5 text-micro text-ink-subtle">{{ c.periodo }}</p>
                 </div>
                 <button type="button" @click="open(c.link)"
                     class="inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent/30 bg-accent-soft px-2.5 py-1
@@ -51,25 +51,25 @@ function open(link) {
             </div>
 
             <div class="mt-2 flex flex-wrap gap-1">
-                <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium" :class="vis(c.visibilidade).cls">
+                <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-micro font-medium" :class="vis(c.visibilidade).cls">
                     <i :class="vis(c.visibilidade).icon" class="text-[9px]"></i>{{ vis(c.visibilidade).label }}
                 </span>
-                <span class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                <span class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted">
                     <i class="fas fa-cube mr-1 text-[9px]"></i>{{ c.blocos }} bloco{{ c.blocos === 1 ? '' : 's' }}
                 </span>
-                <span class="rounded-md border px-1.5 py-0.5 text-[10px] font-medium"
+                <span class="rounded-md border px-1.5 py-0.5 text-micro font-medium"
                     :class="c.modo === 'live' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-ink-muted bg-surface-sunken border-line'">
                     <i :class="c.modo === 'live' ? 'fas fa-bolt' : 'fas fa-thumbtack'" class="mr-1 text-[9px]"></i>{{ c.modo === 'live' ? 'Ao vivo' : 'Fixo' }}
                 </span>
                 <span v-if="c.origem === 'compartilhado' && c.dono"
-                    class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                    class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted">
                     <i class="fas fa-share-nodes mr-1 text-[9px]"></i>por {{ c.dono }}
                 </span>
             </div>
 
             <div v-if="c.secoes?.length" class="mt-1.5 flex flex-wrap gap-1">
                 <span v-for="(s, si) in c.secoes.slice(0, 5)" :key="si"
-                    class="rounded-md bg-accent-soft/50 px-1.5 py-0.5 text-[10px] text-accent">{{ s }}</span>
+                    class="rounded-md bg-accent-soft/50 px-1.5 py-0.5 text-micro text-accent">{{ s }}</span>
             </div>
         </div>
 

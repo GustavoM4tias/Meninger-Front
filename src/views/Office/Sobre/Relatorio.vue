@@ -97,7 +97,7 @@ onBeforeUnmount(() => observer?.disconnect());
 
         <!-- Índice -->
         <aside class="lg:sticky lg:top-4 lg:self-start">
-          <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Neste documento</p>
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Neste documento</p>
           <nav class="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible no-scrollbar -mx-1 px-1">
             <button v-for="(section, i) in reportSections" :key="section.id" type="button"
                     @click="goTo(section.id)"
@@ -107,7 +107,7 @@ onBeforeUnmount(() => observer?.disconnect());
                     :class="activeId === section.id
                       ? 'bg-accent-soft text-accent border-accent/30 font-medium'
                       : 'bg-surface-raised text-ink-muted border-line hover:text-ink hover:border-line-strong'">
-              <span class="font-mono text-[10px] opacity-70">{{ i + 1 }}</span>
+              <span class="font-mono text-micro opacity-70">{{ i + 1 }}</span>
               <span class="truncate lg:whitespace-normal">{{ section.title }}</span>
             </button>
           </nav>
@@ -150,7 +150,7 @@ onBeforeUnmount(() => observer?.disconnect());
                          class="rounded-xl border border-line bg-surface-raised surface-gradient shadow-soft p-4">
                       <p class="text-xl font-semibold text-accent tracking-tight tabular-nums">{{ item.v }}</p>
                       <p class="text-xs font-medium text-ink mt-1">{{ item.l }}</p>
-                      <p class="text-[11px] text-ink-subtle leading-snug mt-1">{{ item.s }}</p>
+                      <p class="text-micro text-ink-subtle leading-snug mt-1">{{ item.s }}</p>
                     </div>
                   </div>
                 </div>
@@ -164,7 +164,7 @@ onBeforeUnmount(() => observer?.disconnect());
                       <thead>
                         <tr class="bg-surface-sunken">
                           <th v-for="h in block.head" :key="h"
-                              class="text-left font-mono text-[10px] uppercase tracking-wider text-ink-subtle
+                              class="text-left font-mono text-micro uppercase tracking-wider text-ink-subtle
                                      px-3 py-2 border-b border-line">
                             {{ h }}
                           </th>
@@ -188,7 +188,7 @@ onBeforeUnmount(() => observer?.disconnect());
                          class="rounded-xl border border-line bg-surface-raised shadow-soft p-3">
                       <p class="text-sm font-semibold text-ink">{{ row[0] }}</p>
                       <div v-for="(cell, ci) in row.slice(1)" :key="ci" class="mt-2">
-                        <p v-if="cell" class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+                        <p v-if="cell" class="text-micro font-mono uppercase tracking-wider text-ink-subtle">
                           {{ block.head[ci + 1] }}
                         </p>
                         <p v-if="cell" class="text-xs text-ink-muted leading-relaxed">{{ cell }}</p>
@@ -220,7 +220,7 @@ onBeforeUnmount(() => observer?.disconnect());
                            { k: 'Novidade', v: block.extra },
                            { k: 'Por que existe', v: block.why },
                          ].filter(f => f.v)" :key="field.k">
-                      <dt class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">{{ field.k }}</dt>
+                      <dt class="text-micro font-mono uppercase tracking-wider text-ink-subtle">{{ field.k }}</dt>
                       <dd class="text-sm text-ink-muted leading-relaxed">{{ field.v }}</dd>
                     </div>
                   </dl>
@@ -230,7 +230,7 @@ onBeforeUnmount(() => observer?.disconnect());
             </div>
           </section>
 
-          <p class="text-[11px] text-ink-subtle border-t border-line pt-4">
+          <p class="text-micro text-ink-subtle border-t border-line pt-4">
             Menin Office, Visão Executiva de agosto de 2026. Valores no acumulado até 4 de agosto de 2026,
             medidos nas telas do próprio sistema.
           </p>

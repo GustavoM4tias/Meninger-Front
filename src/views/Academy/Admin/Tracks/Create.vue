@@ -51,7 +51,7 @@
                             <input v-model="form.title" placeholder="Ex: Onboarding Comercial"
                                 @keydown.enter.prevent="save"
                                 class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60" />
-                            <div class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                            <div class="mt-1 text-micro text-slate-400 dark:text-slate-500">
                                 Use um nome claro — a pessoa entende sem contexto.
                             </div>
                         </label>
@@ -65,7 +65,7 @@
                                 <option value="DRAFT">Rascunho</option>
                                 <option value="PUBLISHED">Publicado</option>
                             </select>
-                            <div class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                            <div class="mt-1 text-micro text-slate-400 dark:text-slate-500">
                                 Recomendado começar como rascunho.
                             </div>
                         </label>
@@ -81,7 +81,7 @@
 
                         <div class="md:col-span-12">
                             <DepartmentSelector v-model="form.departmentIds" />
-                            <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                            <p class="mt-2 text-micro text-slate-500 dark:text-slate-400">
                                 <i class="fa-solid fa-circle-info mr-1"></i>
                                 Cada artigo vinculado precisa cobrir TODOS os públicos selecionados aqui.
                             </p>

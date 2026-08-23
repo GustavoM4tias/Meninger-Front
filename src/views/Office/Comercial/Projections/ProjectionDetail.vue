@@ -589,19 +589,19 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
           <Input :model-value="endMonth" type="month" label="Mês final"
             @update:model-value="(v) => changePeriod(() => endMonth = v)" />
           <div>
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>Empreendimento
             </label>
             <MultiSelector v-model="filterEnterprises" :options="enterpriseOptions" placeholder="Selecione..." />
           </div>
           <div>
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-location-dot text-[10px] mr-1 text-ink-subtle"></i>Cidade
             </label>
             <MultiSelector v-model="filterCities" :options="cityOptions" placeholder="Selecione..." />
           </div>
           <div>
-            <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+            <label class="block text-micro font-medium text-ink-muted mb-1.5">
               <i class="fas fa-layer-group text-[10px] mr-1 text-ink-subtle"></i>Categoria
             </label>
             <MultiSelector v-model="filterCategories" :options="categoryOptions" placeholder="Selecione..." />

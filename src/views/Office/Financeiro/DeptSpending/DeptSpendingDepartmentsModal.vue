@@ -10,7 +10,7 @@
 
             <Input v-model="search" icon-left="fas fa-search" placeholder="Buscar departamento..." class="mb-3" />
 
-            <div class="flex items-center justify-between mb-2 text-[11px] text-ink-subtle">
+            <div class="flex items-center justify-between mb-2 text-micro text-ink-subtle">
                 <span class="font-mono tabular-nums">{{ filtered.length }} departamento(s)</span>
                 <Badge variant="accent" size="sm">{{ store.marketingCount }} marcado(s)</Badge>
             </div>

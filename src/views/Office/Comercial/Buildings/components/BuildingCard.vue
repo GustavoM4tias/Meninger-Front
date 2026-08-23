@@ -43,7 +43,7 @@ const showBuildingDetails = () => emit('click', props.building);
       <!-- Stage badge sobre a foto -->
       <div v-if="stage"
         class="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md
-               bg-black/60 backdrop-blur-md text-white text-[11px] font-medium border border-white/20">
+               bg-black/60 backdrop-blur-md text-white text-micro font-medium border border-white/20">
         <i :class="stageMeta.icon" class="text-[9px]"></i>
         {{ stage }}
       </div>

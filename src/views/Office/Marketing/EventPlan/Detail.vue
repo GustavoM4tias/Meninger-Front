@@ -335,7 +335,7 @@ onMounted(async () => {
                             <span class="truncate text-xs font-medium" :class="etapa.estado === 'pendente' ? 'text-ink-subtle' : 'text-ink'">
                                 {{ etapa.titulo }}
                             </span>
-                            <span class="hidden truncate text-[11px] text-ink-subtle sm:block">{{ etapa.quem }}</span>
+                            <span class="hidden truncate text-micro text-ink-subtle sm:block">{{ etapa.quem }}</span>
                         </div>
                         <span
                             v-if="i < etapas.length - 1"

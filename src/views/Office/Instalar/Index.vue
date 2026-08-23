@@ -422,7 +422,7 @@ onBeforeUnmount(() => { stopWatching?.(); });
                         <div class="flex items-center gap-2 min-w-0">
                             <span class="text-ink truncate">{{ nomeAparelho(d.user_agent) }}</span>
                             <span v-if="ehEsteAparelho(d)"
-                                class="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded
+                                class="shrink-0 text-micro uppercase tracking-wide px-1.5 py-0.5 rounded
                                        bg-accent-soft text-accent font-semibold">atual</span>
                         </div>
                         <p class="text-xs text-ink-subtle mt-0.5">

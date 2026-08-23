@@ -655,9 +655,9 @@ const openDetail = (row) => {
                 <i :class="k.icon"></i>
               </span>
               <div class="min-w-0 flex-1">
-                <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
+                <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
                 <p class="text-2xl font-semibold text-ink tabular-nums leading-tight mt-0.5 truncate">{{ k.value }}</p>
-                <p class="text-[11px] text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
+                <p class="text-micro text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
               </div>
             </div>
           </div>
@@ -702,13 +702,13 @@ const openDetail = (row) => {
                 class="h-[260px] flex flex-col items-center justify-center gap-2 text-ink-subtle">
                 <i class="fas fa-bullseye text-3xl opacity-40"></i>
                 <p class="text-sm">Sem projeção definida</p>
-                <p class="text-[11px] font-mono">Cadastre uma meta para ver o % atingida.</p>
+                <p class="text-micro font-mono">Cadastre uma meta para ver o % atingida.</p>
               </div>
 
               <!-- Com dados -->
               <template v-else>
                 <VChart :option="gaugeOption" autoresize style="height:240px;width:100%;" />
-                <div class="flex items-center justify-center gap-3 -mt-2 text-[11px] font-mono">
+                <div class="flex items-center justify-center gap-3 -mt-2 text-micro font-mono">
                   <span class="inline-flex items-center gap-1.5 text-ink-muted">
                     <span class="w-3 h-1 rounded-full" :style="{ backgroundColor: gaugeColor }"></span>
                     Atingida
@@ -729,7 +729,7 @@ const openDetail = (row) => {
                 <i class="fas fa-list-ul text-accent text-sm"></i>
                 <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Detalhamento por status</h3>
               </div>
-              <span class="text-[10px] text-ink-subtle font-mono">clique para expandir</span>
+              <span class="text-micro text-ink-subtle font-mono">clique para expandir</span>
             </div>
 
             <div class="space-y-1.5">
@@ -751,7 +751,7 @@ const openDetail = (row) => {
                   </div>
                   <div class="w-20 text-right shrink-0">
                     <span class="text-sm font-bold text-ink tabular-nums">{{ s.count }}</span>
-                    <span class="text-[11px] text-ink-subtle font-mono ml-1">{{ pctOf(s.count) }}%</span>
+                    <span class="text-micro text-ink-subtle font-mono ml-1">{{ pctOf(s.count) }}%</span>
                   </div>
                 </button>
 
@@ -779,7 +779,7 @@ const openDetail = (row) => {
                               {{ ent.modeLabel }}
                             </Badge>
                           </div>
-                          <p class="text-[10px] text-ink-subtle font-mono mt-0.5 truncate">
+                          <p class="text-micro text-ink-subtle font-mono mt-0.5 truncate">
                             {{ ent.count }} venda(s)
                             <template v-if="ent.projectedAbs > 0">
                               · {{ formatByMode(ent._row, ent.realizedAbs) }} /
@@ -829,7 +829,7 @@ const openDetail = (row) => {
             <VChart v-else :option="comparisonChartOption" autoresize
               :style="{ height: Math.max(360, comparisonData.length * 36 + 60) + 'px', width: '100%' }" />
 
-            <p v-if="comparisonData.length" class="text-[11px] text-ink-subtle mt-3 font-mono leading-relaxed">
+            <p v-if="comparisonData.length" class="text-micro text-ink-subtle mt-3 font-mono leading-relaxed">
               <i class="fas fa-circle-info text-[10px] mr-1"></i>
               Cada empreend. é avaliado pelo modo configurado (VGV ou Unidades).
               <span class="text-emerald-500 font-semibold">Verde</span>: acima da meta ·
@@ -882,7 +882,7 @@ const openDetail = (row) => {
                       <p class="text-sm font-medium text-ink truncate">{{ r.name }}</p>
                       <Badge variant="neutral" size="sm" class="shrink-0">{{ modeLabelOf(r) }}</Badge>
                     </div>
-                    <p class="text-[11px] text-ink-subtle font-mono mt-0.5 truncate">
+                    <p class="text-micro text-ink-subtle font-mono mt-0.5 truncate">
                       {{ formatByMode(r, realizedAbsOf(r)) }} / {{ formatByMode(r, projectedAbsOf(r)) }}
                     </p>
                   </div>
@@ -927,7 +927,7 @@ const openDetail = (row) => {
                       <p class="text-sm font-medium text-ink truncate">{{ r.name }}</p>
                       <Badge variant="neutral" size="sm" class="shrink-0">{{ modeLabelOf(r) }}</Badge>
                     </div>
-                    <p class="text-[11px] text-ink-subtle font-mono mt-0.5 truncate">
+                    <p class="text-micro text-ink-subtle font-mono mt-0.5 truncate">
                       {{ formatByMode(r, realizedAbsOf(r)) }} / {{ formatByMode(r, projectedAbsOf(r)) }}
                     </p>
                   </div>
@@ -1063,7 +1063,7 @@ const openDetail = (row) => {
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-sm font-semibold text-ink">{{ STATUS_META[rule.key].label }}</span>
-                    <code class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-raised border border-line text-ink-muted">
+                    <code class="text-micro font-mono px-1.5 py-0.5 rounded bg-surface-raised border border-line text-ink-muted">
                       {{ rule.rule }}
                     </code>
                   </div>

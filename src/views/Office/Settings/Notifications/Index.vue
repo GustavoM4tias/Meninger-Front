@@ -90,13 +90,13 @@ const onToggle = (pref, key, value) => {
 
     <div v-else class="space-y-8">
       <section v-for="block in grouped" :key="block.group">
-        <h2 class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+        <h2 class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
           {{ block.group }}
         </h2>
 
         <div class="rounded-xl border border-line bg-surface-raised shadow-soft overflow-hidden">
           <div class="hidden sm:grid grid-cols-[1fr_110px_110px_110px] px-4 py-2.5 border-b border-line
-                      text-[11px] font-mono uppercase tracking-wider text-ink-subtle bg-surface-sunken/40">
+                      text-micro font-mono uppercase tracking-wider text-ink-subtle bg-surface-sunken/40">
             <span>Tipo</span>
             <span class="text-center">Sistema</span>
             <span class="text-center">E-mail</span>
@@ -132,7 +132,7 @@ const onToggle = (pref, key, value) => {
         </div>
       </section>
 
-      <p class="text-[11px] text-ink-subtle">
+      <p class="text-micro text-ink-subtle">
         As alterações são salvas automaticamente.
       </p>
     </div>

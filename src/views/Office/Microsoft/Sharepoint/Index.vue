@@ -61,7 +61,7 @@
         <Surface variant="raised" padding="md" class="surface-gradient">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
+              <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
                 Site SharePoint
               </label>
               <Select
@@ -73,7 +73,7 @@
             </div>
 
             <div>
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
+              <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
                 Biblioteca
               </label>
               <Select
@@ -85,7 +85,7 @@
             </div>
 
             <div v-if="sp.selectedDrive">
-              <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
+              <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
                 Buscar
               </label>
               <Input
@@ -107,10 +107,10 @@
               <i :class="sp.isCurrentDefault ? 'fas fa-thumbtack' : 'far fa-bookmark'" class="text-[11px]"></i>
               {{ sp.isCurrentDefault ? 'Este é o seu padrão' : 'Definir como padrão' }}
             </button>
-            <p v-if="sp.defaultLocation && !sp.isCurrentDefault" class="text-[11px] text-ink-subtle">
+            <p v-if="sp.defaultLocation && !sp.isCurrentDefault" class="text-micro text-ink-subtle">
               Padrão atual: <span class="text-ink-muted">{{ sp.defaultLocation.siteName }} › {{ sp.defaultLocation.driveName }}</span>
             </p>
-            <p v-else-if="sp.isCurrentDefault" class="text-[11px] text-ink-subtle">
+            <p v-else-if="sp.isCurrentDefault" class="text-micro text-ink-subtle">
               O SharePoint vai abrir direto nesta biblioteca.
             </p>
           </div>

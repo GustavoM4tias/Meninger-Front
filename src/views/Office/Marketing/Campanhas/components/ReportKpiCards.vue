@@ -119,7 +119,7 @@ function deltaView(item) {
             <i :class="item.icon"></i>
           </span>
           <span v-if="deltaView(item)"
-            :class="['inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums', deltaView(item).cls]"
+            :class="['inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-micro font-semibold tabular-nums', deltaView(item).cls]"
             :title="prevLabel">
             <i :class="['fas text-[8px]', deltaView(item).icon]"></i>{{ deltaView(item).text }}
           </span>
@@ -128,8 +128,8 @@ function deltaView(item) {
           :class="{ 'opacity-40': loading }">
           {{ item.value }}
         </span>
-        <span class="text-[11px] text-ink-muted" :title="item.hint || null">{{ item.label }}</span>
-        <span v-if="item.sub" class="text-[10px] text-ink-muted/80 tabular-nums leading-none"
+        <span class="text-micro text-ink-muted" :title="item.hint || null">{{ item.label }}</span>
+        <span v-if="item.sub" class="text-micro text-ink-muted/80 tabular-nums leading-none"
           title="Leads da nossa base já entregues ao CV">
           {{ item.sub }}
         </span>

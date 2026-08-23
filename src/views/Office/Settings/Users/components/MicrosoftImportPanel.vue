@@ -216,7 +216,7 @@ function initials(name) {
               </Badge>
             </div>
             <p class="text-xs text-ink-muted truncate">{{ user.email || '—' }}</p>
-            <p v-if="user.phone || user.city" class="text-[11px] text-ink-subtle font-mono truncate">
+            <p v-if="user.phone || user.city" class="text-micro text-ink-subtle font-mono truncate">
               <span v-if="user.phone">{{ user.phone }}</span>
               <span v-if="user.phone && user.city" class="mx-1">·</span>
               <span v-if="user.city">{{ user.city }}</span>

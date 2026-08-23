@@ -515,13 +515,13 @@ const levelTabs = computed(() => [
               Sincronizado: <b>{{ store.lastSync.accounts_count }}</b> conta(s) de anúncio,
               <b>{{ store.lastSync.campaigns_total }}</b> campanha(s)
               ({{ store.lastSync.campaigns_new }} nova(s), {{ store.lastSync.campaigns_updated }} atualizada(s))
-              <span class="text-[11px] text-ink-subtle">· janela {{ store.lastSync.since }} → {{ store.lastSync.until }}</span>
+              <span class="text-micro text-ink-subtle">· janela {{ store.lastSync.since }} → {{ store.lastSync.until }}</span>
             </div>
             <div v-if="store.lastSync.errors?.length" class="mt-1.5 space-y-1">
               <div v-for="(e, i) in store.lastSync.errors" :key="i"
                 class="text-xs rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5">
                 <div class="font-medium"><i class="fas fa-circle-exclamation mr-1"></i>{{ e.account_name || 'Conta' }} <span class="text-ink-subtle font-mono">#{{ e.account_id }}</span></div>
-                <div class="text-amber-700 dark:text-amber-300 mt-0.5 font-mono text-[11px] break-words">{{ e.error }}</div>
+                <div class="text-amber-700 dark:text-amber-300 mt-0.5 font-mono text-micro break-words">{{ e.error }}</div>
               </div>
             </div>
           </div>
@@ -535,7 +535,7 @@ const levelTabs = computed(() => [
             <i class="fas fa-clock-rotate-left text-ink-subtle"></i>
             Operações recentes ({{ store.ops.length }})
           </div>
-          <button @click="store.clearOps()" class="text-[10px] text-ink-subtle hover:text-red-500">limpar</button>
+          <button @click="store.clearOps()" class="text-micro text-ink-subtle hover:text-red-500">limpar</button>
         </div>
         <ul class="divide-y divide-line/60 max-h-60 overflow-y-auto">
           <li v-for="op in store.ops" :key="op.id" class="px-3 py-2 text-xs flex items-start gap-2.5">
@@ -547,7 +547,7 @@ const levelTabs = computed(() => [
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span :class="[
-                  'inline-flex rounded text-[9px] px-1.5 py-0.5 font-mono uppercase',
+                  'inline-flex rounded text-micro px-1.5 py-0.5 font-mono uppercase',
                   op.type === 'sync'      ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' :
                   op.type === 'import'    ? 'bg-violet-500/10 text-violet-700 dark:text-violet-300' :
                   op.type === 'backfill'  ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300' :
@@ -556,46 +556,46 @@ const levelTabs = computed(() => [
                   'bg-slate-500/10 text-slate-600 dark:text-slate-300'
                 ]">{{ op.type }}</span>
                 <span class="font-medium text-ink truncate">{{ op.label }}</span>
-                <span class="text-[10px] text-ink-subtle ml-auto whitespace-nowrap">
+                <span class="text-micro text-ink-subtle ml-auto whitespace-nowrap">
                   {{ new Date(op.started_at).toLocaleTimeString('pt-BR') }}
                   <template v-if="op.duration_ms != null"> · {{ (op.duration_ms / 1000).toFixed(1) }}s</template>
                 </span>
               </div>
 
-              <div v-if="op.status === 'running'" class="text-[11px] text-ink-subtle mt-0.5">processando...</div>
+              <div v-if="op.status === 'running'" class="text-micro text-ink-subtle mt-0.5">processando...</div>
 
-              <div v-else-if="op.status === 'success' && op.type === 'sync'" class="text-[11px] text-ink-muted mt-0.5">
+              <div v-else-if="op.status === 'success' && op.type === 'sync'" class="text-micro text-ink-muted mt-0.5">
                 <b>{{ op.result.campaigns_total }}</b> campanhas em {{ op.result.accounts_count }} contas
                 ({{ op.result.campaigns_new }} novas)
                 <span v-if="op.result.errors?.length" class="text-amber-600 dark:text-amber-300">· {{ op.result.errors.length }} erros</span>
               </div>
 
-              <div v-else-if="op.status === 'success' && op.type === 'import'" class="text-[11px] text-ink-muted mt-0.5">
+              <div v-else-if="op.status === 'success' && op.type === 'import'" class="text-micro text-ink-muted mt-0.5">
                 <b>{{ op.result.inserted }}</b> novos · {{ op.result.duplicates }} duplicados · {{ op.result.forms_count }} forms
                 <span v-if="op.result.errors?.length" class="text-amber-600 dark:text-amber-300">· {{ op.result.errors.length }} erros</span>
               </div>
 
-              <div v-else-if="op.status === 'success' && op.type === 'backfill'" class="text-[11px] text-ink-muted mt-0.5">
+              <div v-else-if="op.status === 'success' && op.type === 'backfill'" class="text-micro text-ink-muted mt-0.5">
                 <b>{{ fmtInt(op.result.rows_written) }}</b> linhas diárias · {{ op.result.accounts_count }} contas
                 · níveis: {{ (op.result.levels || []).join(', ') }}
                 <span v-if="op.result.errors?.length" class="text-amber-600 dark:text-amber-300">· {{ op.result.errors.length }} erros</span>
               </div>
 
-              <div v-else-if="op.status === 'success' && op.type === 'reconcile'" class="text-[11px] text-ink-muted mt-0.5">
+              <div v-else-if="op.status === 'success' && op.type === 'reconcile'" class="text-micro text-ink-muted mt-0.5">
                 <b>{{ op.result.matched }}</b> casados · {{ op.result.unmatched }} sem match · {{ op.result.errors }} erros (de {{ op.result.processed }})
               </div>
 
-              <div v-else-if="op.status === 'success' && op.type === 'ads'" class="text-[11px] text-ink-muted mt-0.5">
+              <div v-else-if="op.status === 'success' && op.type === 'ads'" class="text-micro text-ink-muted mt-0.5">
                 <b>{{ op.result.ads_total }}</b> ads · {{ op.result.ads_new }} novos · {{ op.result.ads_updated }} atualizados
               </div>
 
-              <div v-else-if="op.status === 'error'" class="text-[11px] text-red-600 dark:text-red-300 mt-0.5 break-words">
+              <div v-else-if="op.status === 'error'" class="text-micro text-red-600 dark:text-red-300 mt-0.5 break-words">
                 {{ op.error || 'erro desconhecido' }}
               </div>
 
               <details v-if="op.result?.errors?.length" class="mt-1">
-                <summary class="text-[10px] text-amber-600 dark:text-amber-300 cursor-pointer">ver detalhes dos {{ op.result.errors.length }} erro(s)</summary>
-                <ul class="mt-1 ml-2 space-y-0.5 text-[10px] text-ink-muted font-mono max-h-32 overflow-y-auto">
+                <summary class="text-micro text-amber-600 dark:text-amber-300 cursor-pointer">ver detalhes dos {{ op.result.errors.length }} erro(s)</summary>
+                <ul class="mt-1 ml-2 space-y-0.5 text-micro text-ink-muted font-mono max-h-32 overflow-y-auto">
                   <li v-for="(e, i) in op.result.errors.slice(0, 20)" :key="i">
                     <b>{{ e.form_name || e.page_name || e.account_name || '?' }}:</b> {{ e.error }}
                   </li>
@@ -621,11 +621,11 @@ const levelTabs = computed(() => [
             </div>
             <div v-if="store.lastImport.errors?.length" class="mt-1.5 text-xs text-amber-700 dark:text-amber-300">
               ⚠️ {{ store.lastImport.errors.length }} form(s) com erro
-              <span v-for="(e, i) in store.lastImport.errors.slice(0, 3)" :key="i" class="block font-mono text-[10px] mt-0.5">
+              <span v-for="(e, i) in store.lastImport.errors.slice(0, 3)" :key="i" class="block font-mono text-micro mt-0.5">
                 {{ e.form_name }}: {{ e.error }}
               </span>
             </div>
-            <div class="text-[11px] mt-1">
+            <div class="text-micro mt-1">
               <RouterLink to="/meta?tab=captacao" class="underline">Ver leads em Captação →</RouterLink>
             </div>
           </div>
@@ -648,14 +648,14 @@ const levelTabs = computed(() => [
               :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0',
                 level === t.key ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
               <i :class="[t.icon, 'text-[10px]']"></i>{{ t.label }}
-              <span v-if="t.count != null" class="text-[10px] opacity-70 tabular-nums">{{ t.count }}</span>
+              <span v-if="t.count != null" class="text-micro opacity-70 tabular-nums">{{ t.count }}</span>
             </button>
           </div>
 
           <!-- Breadcrumb do drill -->
           <div v-if="drill.campaign" class="flex items-center gap-1.5 min-w-0 flex-wrap">
             <i class="fas fa-chevron-right text-[9px] text-ink-subtle"></i>
-            <span class="inline-flex items-center gap-1.5 max-w-[260px] rounded-md border border-accent/30 bg-accent/10 pl-2 pr-1 py-1 text-[11px] text-accent">
+            <span class="inline-flex items-center gap-1.5 max-w-[260px] rounded-md border border-accent/30 bg-accent/10 pl-2 pr-1 py-1 text-micro text-accent">
               <i class="fas fa-bullhorn text-[9px]"></i>
               <span class="truncate" :title="drill.campaign.name">{{ drill.campaign.name }}</span>
               <button @click="clearCampaignDrill" class="w-4 h-4 rounded grid place-items-center hover:bg-accent/20" title="Remover escopo da campanha">
@@ -664,7 +664,7 @@ const levelTabs = computed(() => [
             </span>
             <template v-if="drill.adset">
               <i class="fas fa-chevron-right text-[9px] text-ink-subtle"></i>
-              <span class="inline-flex items-center gap-1.5 max-w-[240px] rounded-md border border-accent/30 bg-accent/10 pl-2 pr-1 py-1 text-[11px] text-accent">
+              <span class="inline-flex items-center gap-1.5 max-w-[240px] rounded-md border border-accent/30 bg-accent/10 pl-2 pr-1 py-1 text-micro text-accent">
                 <i class="fas fa-layer-group text-[9px]"></i>
                 <span class="truncate" :title="drill.adset.name">{{ drill.adset.name }}</span>
                 <button @click="clearAdsetDrill" class="w-4 h-4 rounded grid place-items-center hover:bg-accent/20" title="Remover escopo do conjunto">
@@ -695,10 +695,10 @@ const levelTabs = computed(() => [
             </button>
           </div>
 
-          <div v-if="level === 'campaign'" class="text-[11px] text-ink-subtle whitespace-nowrap">
+          <div v-if="level === 'campaign'" class="text-micro text-ink-subtle whitespace-nowrap">
             <b>{{ filtered.length }}</b> campanha(s) no período
           </div>
-          <div v-else-if="level === 'adset'" class="text-[11px] text-ink-subtle whitespace-nowrap">
+          <div v-else-if="level === 'adset'" class="text-micro text-ink-subtle whitespace-nowrap">
             <b>{{ adsetRows.length }}</b> conjunto(s)
           </div>
         </div>
@@ -725,27 +725,27 @@ const levelTabs = computed(() => [
               </span>
               <div class="flex-1 min-w-0">
                 <div class="text-sm font-semibold text-ink truncate" :title="a.name">{{ a.name }}</div>
-                <div class="text-[10px] font-mono text-ink-subtle truncate">{{ a.id }}</div>
+                <div class="text-micro font-mono text-ink-subtle truncate">{{ a.id }}</div>
               </div>
-              <span v-if="a.active" class="inline-flex rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-300 whitespace-nowrap">
+              <span v-if="a.active" class="inline-flex rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-micro font-medium text-emerald-600 dark:text-emerald-300 whitespace-nowrap">
                 {{ a.active }} ativa{{ a.active > 1 ? 's' : '' }}
               </span>
             </div>
             <div class="px-4 py-3 grid grid-cols-2 gap-x-3 gap-y-2.5">
               <div>
-                <div class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Investido</div>
+                <div class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Investido</div>
                 <div class="text-base font-semibold text-ink tabular-nums mt-0.5">{{ fmtMoney(a.spend, a.currency) }}</div>
               </div>
               <div>
-                <div class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Leads</div>
+                <div class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads</div>
                 <div class="text-base font-semibold text-ink tabular-nums mt-0.5">{{ fmtInt(a.leads) }}</div>
               </div>
               <div>
-                <div class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">CAC médio</div>
+                <div class="text-micro font-mono uppercase tracking-wider text-ink-subtle">CAC médio</div>
                 <div class="text-sm font-semibold text-ink tabular-nums mt-0.5">{{ a.cac != null ? fmtMoney(a.cac, a.currency) : '—' }}</div>
               </div>
               <div>
-                <div class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Campanhas</div>
+                <div class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Campanhas</div>
                 <div class="text-sm font-semibold text-ink tabular-nums mt-0.5">{{ fmtInt(a.campaigns) }}</div>
               </div>
             </div>
@@ -778,16 +778,16 @@ const levelTabs = computed(() => [
             <table class="min-w-full text-sm">
               <thead class="bg-surface-sunken/30 border-b border-line">
                 <tr>
-                  <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
-                  <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Conta</th>
-                  <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Investido</th>
-                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
-                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle" title="Custo por lead no período">CAC</th>
-                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CTR</th>
-                  <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CPM</th>
-                  <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Último</th>
-                  <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle w-32">Ações</th>
+                  <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
+                  <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Conta</th>
+                  <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">Investido</th>
+                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
+                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle" title="Custo por lead no período">CAC</th>
+                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">CTR</th>
+                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">CPM</th>
+                  <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Último</th>
+                  <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle w-32">Ações</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-line/60">
@@ -815,9 +815,9 @@ const levelTabs = computed(() => [
                       <div class="min-w-0">
                         <div class="text-ink font-medium leading-tight truncate max-w-[320px]" :title="c.name || c.id">
                           {{ c.name || '(sem nome)' }}
-                          <span v-if="c.no_delivery" class="ml-1 text-[9px] text-ink-subtle italic font-normal">sem veiculação</span>
+                          <span v-if="c.no_delivery" class="ml-1 text-micro text-ink-subtle italic font-normal">sem veiculação</span>
                         </div>
-                        <div class="text-[10px] font-mono text-ink-subtle truncate">
+                        <div class="text-micro font-mono text-ink-subtle truncate">
                           #{{ c.id }}<span v-if="c.objective"> · {{ c.objective }}</span>
                           <span v-if="c.start_time"> · {{ fmtShortDate(c.start_time) }}</span>
                         </div>
@@ -838,7 +838,7 @@ const levelTabs = computed(() => [
                   <!-- Status (clique = filtra a listagem por este status) -->
                   <td class="px-3 py-2.5 text-center">
                     <button @click.stop="focusStatus(statusBadge(c).label)"
-                      :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium hover:ring-1 hover:ring-accent/40 transition', statusBadge(c).cls]"
+                      :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium hover:ring-1 hover:ring-accent/40 transition', statusBadge(c).cls]"
                       :title="`Filtrar por ${statusBadge(c).label}`">
                       {{ statusBadge(c).label }}
                     </button>
@@ -847,7 +847,7 @@ const levelTabs = computed(() => [
                   <!-- Métricas do período -->
                   <td class="px-3 py-2.5 text-right whitespace-nowrap">
                     <div class="text-sm font-semibold text-ink leading-tight">{{ fmtMoney(c.spend, c.currency) }}</div>
-                    <div v-if="c.daily_budget_cents" class="text-[10px] text-ink-subtle">{{ fmtMoney(c.daily_budget_cents / 100, c.currency) }}/dia</div>
+                    <div v-if="c.daily_budget_cents" class="text-micro text-ink-subtle">{{ fmtMoney(c.daily_budget_cents / 100, c.currency) }}/dia</div>
                   </td>
 
                   <td class="px-3 py-2.5 text-right whitespace-nowrap">
@@ -856,7 +856,7 @@ const levelTabs = computed(() => [
                       {{ fmtInt(c.office_leads || 0) }}
                     </div>
                     <div v-if="(c.office_leads_delivered || 0) > 0"
-                      class="text-[10px] text-ink-subtle tabular-nums"
+                      class="text-micro text-ink-subtle tabular-nums"
                       title="Leads já entregues ao CV">
                       {{ fmtInt(c.office_leads_delivered) }} no CV
                     </div>
@@ -869,11 +869,11 @@ const levelTabs = computed(() => [
                     <span v-else class="text-ink-subtle italic text-xs">—</span>
                   </td>
 
-                  <td class="px-3 py-2.5 text-right text-[11px] text-ink-muted">{{ fmtPct(c.ctr) }}</td>
-                  <td class="px-3 py-2.5 text-right text-[11px] text-ink-muted">{{ c.cpm != null ? fmtMoney(c.cpm, c.currency) : '—' }}</td>
+                  <td class="px-3 py-2.5 text-right text-micro text-ink-muted">{{ fmtPct(c.ctr) }}</td>
+                  <td class="px-3 py-2.5 text-right text-micro text-ink-muted">{{ c.cpm != null ? fmtMoney(c.cpm, c.currency) : '—' }}</td>
 
                   <!-- Último lead -->
-                  <td class="px-3 py-2.5 text-[11px] text-ink-muted whitespace-nowrap">
+                  <td class="px-3 py-2.5 text-micro text-ink-muted whitespace-nowrap">
                     {{ fmtRelative(c.lead_stats?.last_lead_at) }}
                   </td>
 
@@ -946,11 +946,11 @@ const levelTabs = computed(() => [
               </span>
               <div class="flex-1 min-w-0">
                 <div class="text-sm font-semibold text-ink truncate" :title="f.name">{{ f.name || `#${f.id}` }}</div>
-                <div class="text-[11px] text-ink-subtle truncate mt-0.5">
+                <div class="text-micro text-ink-subtle truncate mt-0.5">
                   <i class="fab fa-facebook text-[10px] mr-1"></i>{{ f.page_name || f.page_id }}
                 </div>
               </div>
-              <span :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap',
+              <span :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium whitespace-nowrap',
                 String(f.status).toUpperCase() === 'ACTIVE'
                   ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
                   : 'border-slate-500/20 bg-slate-500/10 text-slate-500']">
@@ -968,7 +968,7 @@ const levelTabs = computed(() => [
             </div>
             <div v-if="formQuestionChips(f).length" class="flex flex-wrap gap-1.5">
               <span v-for="q in formQuestionChips(f)" :key="q"
-                class="text-[11px] px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-ink-muted truncate max-w-[160px]">
+                class="text-micro px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-ink-muted truncate max-w-[160px]">
                 {{ q }}
               </span>
             </div>

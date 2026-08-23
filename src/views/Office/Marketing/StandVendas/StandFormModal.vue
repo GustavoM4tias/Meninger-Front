@@ -6,13 +6,13 @@
             <Input v-model="form.name" label="Nome do stand" placeholder="Ex.: Stand Três Marias" required />
 
             <div>
-                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Stand modelo (categoria)</label>
+                <label class="text-micro font-medium text-ink-muted mb-1.5 block">Stand modelo (categoria)</label>
                 <Select v-model="form.model_id" :options="[{ value: '', label: '(Sem modelo)' }, ...store.modelOptions]"
                     placeholder="(Sem modelo)" />
             </div>
 
             <div>
-                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Centros de custo (1 ou mais)</label>
+                <label class="text-micro font-medium text-ink-muted mb-1.5 block">Centros de custo (1 ou mais)</label>
                 <MultiSelector v-model="ccSelection" :options="store.costCenterOptions"
                     placeholder="Selecione os centros de custo" :page-size="200" overlay />
                 <p class="text-xs text-ink-subtle mt-1.5">O gasto do stand é a soma dos centros de custo selecionados.</p>

@@ -547,7 +547,7 @@ const LEAD_BANNER_GRADIENT = {
 // Bloco "rótulo em cima, valor embaixo" — o mesmo par usado nas seções do modal.
 const leadField = (label, value, icon = '') => `
   <div class="min-w-0">
-    <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-0.5">
+    <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-0.5">
       ${icon}${escapeHtml(label)}
     </p>
     <p class="text-sm text-ink truncate">${escapeHtml(value || '—')}</p>
@@ -557,7 +557,7 @@ const leadSection = (icon, titulo, inner) => `
   <section>
     <div class="flex items-center gap-1.5 mb-2">
       <i class="${icon} text-xs text-accent"></i>
-      <h4 class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">${escapeHtml(titulo)}</h4>
+      <h4 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">${escapeHtml(titulo)}</h4>
     </div>
     ${inner}
   </section>`;
@@ -576,10 +576,10 @@ const leadTooltipOf = (sale) => {
       <div class="pointer-events-none absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
       <div class="relative">
         <div class="flex items-center gap-2 flex-wrap mb-1.5">
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-white/20 backdrop-blur border border-white/20 text-white">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium bg-white/20 backdrop-blur border border-white/20 text-white">
             <span class="h-1.5 w-1.5 rounded-full bg-white"></span>${escapeHtml(lead.situacao_nome || 'Lead')}
           </span>
-          <span class="text-[11px] text-white/70 font-mono">#${escapeHtml(lead.idlead)}</span>
+          <span class="text-micro text-white/70 font-mono">#${escapeHtml(lead.idlead)}</span>
         </div>
         <h2 class="text-lg font-semibold leading-tight tracking-tight break-words">${escapeHtml(lead.nome || 'Lead')}</h2>
         <p class="text-xs text-white/70 mt-1 font-mono">
@@ -619,7 +619,7 @@ const leadTooltipOf = (sale) => {
   // colunas ficam lado a lado justamente para essa comparação.
   const bloco = (rotulo, corretor, imob) => `
     <div class="rounded-lg bg-surface-sunken border border-line p-2 min-w-0">
-      <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">${escapeHtml(rotulo)}</p>
+      <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">${escapeHtml(rotulo)}</p>
       <div class="flex items-center gap-1.5 min-w-0">
         <i class="fas fa-user-tie text-ink-subtle text-[10px] shrink-0"></i>
         <p class="text-xs font-medium text-ink truncate">${escapeHtml(corretor || '—')}</p>
@@ -654,7 +654,7 @@ const leadTooltipOf = (sale) => {
         ${campanhaBloco}
         ${responsaveis}
       </div>
-      <div class="px-4 py-2 border-t border-line bg-surface text-[11px] text-ink-subtle flex items-center gap-1.5">
+      <div class="px-4 py-2 border-t border-line bg-surface text-micro text-ink-subtle flex items-center gap-1.5">
         <i class="fas fa-arrow-up-right-from-square text-[9px]"></i>Clique para abrir na tela de Leads
       </div>
     </a>`;
@@ -1061,12 +1061,12 @@ const closeModal = () => emit('close');
                   <i :class="k.icon"></i>
                 </span>
                 <div class="min-w-0 flex-1">
-                  <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
+                  <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
                   <p class="text-xl font-semibold text-ink leading-tight tracking-tight mt-0.5 truncate"
                     :class="k.mono ? 'tabular-nums' : 'tabular-nums'">
                     {{ k.value }}
                   </p>
-                  <p class="text-[11px] text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
+                  <p class="text-micro text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
                 </div>
               </div>
             </div>
@@ -1077,7 +1077,7 @@ const closeModal = () => emit('close');
         <div class="px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/30">
           <div class="grid grid-cols-1 lg:grid-cols-[1fr_14rem_10rem] gap-3 items-end">
             <div>
-              <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+              <label class="block text-micro font-medium text-ink-muted mb-1.5">
                 <i class="fas fa-magnifying-glass text-[10px] mr-1 text-ink-subtle"></i>
                 Busca livre
               </label>
@@ -1234,12 +1234,12 @@ const closeModal = () => emit('close');
                       <div class="min-w-0">
                         <h4 class="text-sm font-semibold text-ink truncate">
                           {{ customerNameOf(sale) }}
-                          <span v-if="sale.customer_id" class="ml-1 text-[11px] text-ink-subtle font-mono">
+                          <span v-if="sale.customer_id" class="ml-1 text-micro text-ink-subtle font-mono">
                             #{{ sale.customer_id }}
                           </span>
                         </h4>
                         <p v-if="sale.contracts?.[0]?.associates?.[0]"
-                          class="text-[11px] text-ink-subtle truncate font-mono">
+                          class="text-micro text-ink-subtle truncate font-mono">
                           {{ sale.contracts[0].associates[0].name }} #{{ sale.contracts[0].associates[0].customer_id }}
                         </p>
                       </div>
@@ -1247,7 +1247,7 @@ const closeModal = () => emit('close');
                         <a v-if="leadOf(sale)" :href="leadLinkOf(sale)" target="_blank" rel="noopener"
                           @click.stop v-tippy="leadTippyOf(sale)"
                           class="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-accent/25
-                                 bg-accent-soft pl-1.5 pr-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide
+                                 bg-accent-soft pl-1.5 pr-2 py-0.5 text-micro font-semibold uppercase tracking-wide
                                  text-accent transition-all duration-200 ease-out-expo
                                  hover:border-accent/60 hover:ring-2 hover:ring-accent-ring/25">
                           <span class="grid place-items-center h-3.5 w-3.5 rounded-full bg-accent/15">
@@ -1331,12 +1331,12 @@ const closeModal = () => emit('close');
                         <!-- Ajuste contábil: admin corrige o dado sem tocar no Sienge -->
                         <template v-if="can('configure') && !contract._projection">
                           <button type="button" v-tippy="'Corrigir a data da instituição financeira deste contrato'"
-                            class="text-[11px] text-ink-subtle hover:text-accent transition-colors"
+                            class="text-micro text-ink-subtle hover:text-accent transition-colors"
                             @click.stop="openAdjustment(contract, { type: 'FI_DATE' })">
                             <i class="far fa-calendar-check text-[10px]"></i> Ajustar data
                           </button>
                           <button type="button" v-tippy="'Adicionar uma série que não veio do Sienge'"
-                            class="text-[11px] text-ink-subtle hover:text-accent transition-colors"
+                            class="text-micro text-ink-subtle hover:text-accent transition-colors"
                             @click.stop="openAdjustment(contract, { type: 'SERIE_ADD' })">
                             <i class="fas fa-circle-plus text-[10px]"></i> Add série
                           </button>
@@ -1347,7 +1347,7 @@ const closeModal = () => emit('close');
                     <!-- Data ajustada: mostra de onde veio, senão o número muda sem explicação -->
                     <div v-if="contract.original_financial_institution_date
                       && contract.original_financial_institution_date !== contract.financial_institution_date"
-                      class="mb-3 text-[11px] text-sky-700 dark:text-sky-400 font-mono">
+                      class="mb-3 text-micro text-sky-700 dark:text-sky-400 font-mono">
                       <i class="fas fa-wand-magic-sparkles text-[9px]"></i>
                       Data ajustada: {{ formatDate(contract.original_financial_institution_date) }}
                       → {{ formatDate(contract.financial_institution_date) }}
@@ -1391,14 +1391,14 @@ const closeModal = () => emit('close');
                         <div class="text-base font-semibold tabular-nums"
                           :class="isDiscount(condition) ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'">
                           {{ formatCurrency(condition.total_value) }}
-                          <span v-if="isDiscount(condition)" class="text-[10px] ml-1 text-ink-subtle font-normal">(desconto)</span>
+                          <span v-if="isDiscount(condition)" class="text-micro ml-1 text-ink-subtle font-normal">(desconto)</span>
                         </div>
                         <div v-if="condition._adjustment_before
                           && Number(condition._adjustment_before.total_value) !== Number(condition.total_value)"
-                          class="text-[10px] text-ink-subtle tabular-nums line-through">
+                          class="text-micro text-ink-subtle tabular-nums line-through">
                           {{ formatCurrency(condition._adjustment_before.total_value) }}
                         </div>
-                        <div class="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-ink-subtle">
+                        <div class="flex items-center gap-2 mt-0.5 text-micro font-mono text-ink-subtle">
                           <span>Cód: {{ condition.condition_type_id || '—' }}</span>
                           <span v-if="condition.installments_number">· {{ condition.installments_number }}x parcelas</span>
                         </div>

@@ -58,7 +58,7 @@
                                     {{ it.title }}
                                 </p>
 
-                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                <span class="rounded-full px-2 py-0.5 text-micro font-bold uppercase tracking-wider"
                                     :class="it.status === 'OPEN'
                                         ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
                                         : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'">
@@ -66,7 +66,7 @@
                                 </span>
 
                                 <span
-                                    class="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
+                                    class="rounded-full bg-indigo-50 px-2 py-0.5 text-micro font-medium text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
                                     {{ typeLabel(it.type) }}
                                 </span>
                             </div>

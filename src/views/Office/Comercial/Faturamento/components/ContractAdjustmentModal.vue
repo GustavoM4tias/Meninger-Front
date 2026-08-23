@@ -311,9 +311,9 @@ const save = async () => {
             @click="pickContract(row)">
             <div class="flex items-center justify-between gap-2 flex-wrap">
               <span class="text-sm font-medium text-ink truncate">{{ row.customer_name || '—' }}</span>
-              <span class="text-[11px] font-mono text-ink-subtle">#{{ row.contract_id }}</span>
+              <span class="text-micro font-mono text-ink-subtle">#{{ row.contract_id }}</span>
             </div>
-            <div class="mt-0.5 flex flex-wrap gap-x-3 text-[11px] text-ink-muted font-mono">
+            <div class="mt-0.5 flex flex-wrap gap-x-3 text-micro text-ink-muted font-mono">
               <span>{{ row.unit_name || '—' }}</span>
               <span>{{ formatDate(row.financial_institution_date) }}</span>
               <span class="truncate max-w-[220px]">{{ row.enterprise_name || '—' }}</span>
@@ -336,9 +336,9 @@ const save = async () => {
         <div class="rounded-xl border border-line bg-surface-sunken p-3">
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <span class="text-sm font-semibold text-ink truncate">{{ contract.customer_name || '—' }}</span>
-            <span class="text-[11px] font-mono text-ink-subtle">Contrato #{{ contract.contract_id }}</span>
+            <span class="text-micro font-mono text-ink-subtle">Contrato #{{ contract.contract_id }}</span>
           </div>
-          <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-ink-muted font-mono">
+          <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-micro text-ink-muted font-mono">
             <span><i class="fas fa-hashtag text-[9px] mr-1"></i>{{ contract.unit_name || '—' }}</span>
             <span><i class="far fa-calendar text-[9px] mr-1"></i>{{ formatDate(contract.financial_institution_date) }}</span>
             <span class="truncate max-w-[240px]"><i class="fas fa-building text-[9px] mr-1"></i>{{ contract.enterprise_name || '—' }}</span>
@@ -352,13 +352,13 @@ const save = async () => {
         </div>
         <div v-else class="flex items-center gap-2">
           <Badge variant="accent" size="sm">{{ ADJ_TYPE_LABEL[type] || type }}</Badge>
-          <span class="text-[11px] text-ink-subtle">Para trocar o tipo, remova este ajuste e crie outro.</span>
+          <span class="text-micro text-ink-subtle">Para trocar o tipo, remova este ajuste e crie outro.</span>
         </div>
 
         <!-- FI_DATE -->
         <div v-if="type === 'FI_DATE'" class="space-y-2">
           <Input v-model="newDate" type="date" size="sm" label="Nova data da instituição financeira" required />
-          <p class="text-[11px] text-ink-subtle leading-tight">
+          <p class="text-micro text-ink-subtle leading-tight">
             Esta data é o recorte do período: mudá-la MOVE a venda de mês no dashboard.
           </p>
         </div>
@@ -383,7 +383,7 @@ const save = async () => {
               <div class="text-sm font-semibold tabular-nums text-ink mt-0.5">
                 {{ formatCurrency(readCondition(pc).value) }}
               </div>
-              <div class="text-[10px] font-mono text-ink-subtle">Cód: {{ readCondition(pc).code || '—' }}</div>
+              <div class="text-micro font-mono text-ink-subtle">Cód: {{ readCondition(pc).code || '—' }}</div>
             </button>
           </div>
         </div>
@@ -398,14 +398,14 @@ const save = async () => {
             :required="type === 'SERIE_ADD'" placeholder="0,00" />
           <Input v-model="serieInstallments" type="number" size="sm" label="Parcelas" placeholder="1" />
           <Input v-model="serieBaseDate" type="date" size="sm" label="Data base" class="sm:col-span-2" />
-          <p v-if="type === 'SERIE_EDIT'" class="sm:col-span-2 text-[11px] text-ink-subtle leading-tight">
+          <p v-if="type === 'SERIE_EDIT'" class="sm:col-span-2 text-micro text-ink-subtle leading-tight">
             Campo em branco mantém o valor que veio do Sienge.
           </p>
         </div>
 
         <!-- Antes / depois -->
         <div v-if="preview" class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
-          <p class="text-[11px] font-medium text-amber-700 dark:text-amber-400 mb-1">{{ preview.label }}</p>
+          <p class="text-micro font-medium text-amber-700 dark:text-amber-400 mb-1">{{ preview.label }}</p>
           <div class="flex items-center gap-2 text-sm flex-wrap">
             <span class="text-ink-muted line-through tabular-nums">{{ preview.before }}</span>
             <i class="fas fa-arrow-right text-[10px] text-ink-subtle"></i>
@@ -422,7 +422,7 @@ const save = async () => {
             class="w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink
                    placeholder:text-ink-subtle focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none"
             placeholder="Ex.: contrato assinado em 05/07, lançado no Sienge com data de junho"></textarea>
-          <p class="text-[11px] text-ink-subtle mt-1">Fica registrado com seu nome e aparece na auditoria do ajuste.</p>
+          <p class="text-micro text-ink-subtle mt-1">Fica registrado com seu nome e aparece na auditoria do ajuste.</p>
         </div>
 
         <p v-if="saveError"

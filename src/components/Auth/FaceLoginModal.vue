@@ -91,12 +91,12 @@ const glowClass = computed(() => ({
                 <div class="absolute -right-2 top-1/2 -translate-y-1/2 h-10 w-px transition-colors duration-200" :class="frameLineClass"></div>
               </div>
             </div>
-            <div class="absolute bottom-3 left-3 text-[11px] font-mono text-white/80">{{ face.statusText.value }}</div>
+            <div class="absolute bottom-3 left-3 text-micro font-mono text-white/80">{{ face.statusText.value }}</div>
           </div>
         </div>
 
         <div class="flex items-center justify-between gap-3">
-          <span class="font-mono text-[11px] px-2 py-1 rounded-full border border-line bg-surface-sunken text-ink-muted">
+          <span class="font-mono text-micro px-2 py-1 rounded-full border border-line bg-surface-sunken text-ink-muted">
             {{ face.statusPill.value }}
           </span>
           <div class="flex gap-2">

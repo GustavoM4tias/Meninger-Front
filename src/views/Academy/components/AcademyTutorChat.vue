@@ -21,7 +21,7 @@
                     </span>
                     <div>
                         <div class="text-sm font-semibold text-slate-900 dark:text-white">Eme · Tutor</div>
-                        <div class="text-[11px] text-slate-400 dark:text-slate-500">
+                        <div class="text-micro text-slate-400 dark:text-slate-500">
                             Assistente de estudos do Academy
                         </div>
                     </div>
@@ -89,7 +89,7 @@
                         <!-- Lista -->
                         <template v-else>
                             <p v-if="favoriteSessions.length"
-                                class="px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                                class="px-2 py-1.5 text-micro font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                                 Favoritas
                             </p>
                             <div v-for="s in favoriteSessions" :key="s.id"
@@ -99,7 +99,7 @@
                                     <p class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
                                         {{ s.title || 'Conversa sem título' }}
                                     </p>
-                                    <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ fromNow(s.updated_at)
+                                    <p class="text-micro text-slate-400 dark:text-slate-500">{{ fromNow(s.updated_at)
                                         }}</p>
                                 </button>
                                 <div class="flex shrink-0 items-center gap-0.5">
@@ -119,7 +119,7 @@
                             </div>
 
                             <p v-if="recentSessions.length"
-                                class="mt-1 px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                                class="mt-1 px-2 py-1.5 text-micro font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                                 Recentes
                             </p>
                             <div v-for="s in recentSessions" :key="s.id"
@@ -129,7 +129,7 @@
                                     <p class="truncate text-sm font-medium text-slate-800 dark:text-slate-200">
                                         {{ s.title || 'Conversa sem título' }}
                                     </p>
-                                    <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ fromNow(s.updated_at)
+                                    <p class="text-micro text-slate-400 dark:text-slate-500">{{ fromNow(s.updated_at)
                                         }}</p>
                                 </button>
                                 <div class="flex shrink-0 items-center gap-0.5">
@@ -241,7 +241,7 @@
                                     :class="(streaming || typing) ? 'fa-spinner fa-spin' : 'fa-arrow-up'"></i>
                             </button>
                         </div>
-                        <p class="mt-1.5 text-center text-[11px] text-slate-400 dark:text-slate-500">
+                        <p class="mt-1.5 text-center text-micro text-slate-400 dark:text-slate-500">
                             O Eme responde apenas com base no conteúdo real do Academy.
                         </p>
                     </div>

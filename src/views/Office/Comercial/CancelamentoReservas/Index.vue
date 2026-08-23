@@ -86,7 +86,7 @@
             <div class="hidden md:block overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
-                  <tr class="text-left text-[11px] uppercase tracking-wider text-ink-subtle border-b border-line">
+                  <tr class="text-left text-micro uppercase tracking-wider text-ink-subtle border-b border-line">
                     <th v-for="col in histColumns" :key="col.key"
                       class="px-4 py-3 font-medium"
                       :class="[
@@ -109,7 +109,7 @@
                     <td class="px-4 py-3 font-mono text-ink-muted whitespace-nowrap">
                       #{{ item.id }}
                       <span v-if="item.casos_count > 1"
-                        class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-ink/5 text-ink-muted border border-line align-middle"
+                        class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-micro font-semibold bg-ink/5 text-ink-muted border border-line align-middle"
                         :title="`${item.casos_count} ocorrências desta reserva - abra o caso para ver todas`">
                         <i class="fas fa-layer-group text-[9px]"></i> {{ item.casos_count }}
                       </span>
@@ -134,13 +134,13 @@
                     <td class="px-4 py-3 whitespace-nowrap text-center">
                       <div class="flex flex-wrap gap-1 justify-center">
                         <a v-if="item.cv_situacao" :href="cvReservaUrl(item)" target="_blank" rel="noopener" @click.stop
-                          class="inline-flex items-center gap-1 px-2.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                          class="inline-flex items-center gap-1 px-2.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
                           :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)"
                           :title="`Reserva: ${item.cv_situacao} - abrir no CV`">
                           <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
                         </a>
                         <a v-if="item.cv_situacao_repasse" :href="cvRepasseUrl(item)" target="_blank" rel="noopener" @click.stop
-                          class="inline-flex items-center gap-1 px-2.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
+                          class="inline-flex items-center gap-1 px-2.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
                           :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)"
                           :title="`Repasse: ${item.cv_situacao_repasse} - abrir no CV`">
                           <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
@@ -195,17 +195,17 @@
                 <div v-if="item.cv_situacao || item.cv_situacao_repasse || item.casos_count > 1"
                   class="flex flex-wrap items-center gap-1 mt-1.5">
                   <span v-if="item.cv_situacao"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted"
                     :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)">
                     <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
                   </span>
                   <span v-if="item.cv_situacao_repasse"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface-sunken text-ink-muted"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted"
                     :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)">
                     <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
                   </span>
                   <span v-if="item.casos_count > 1"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-ink/5 text-ink-muted border border-line">
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold bg-ink/5 text-ink-muted border border-line">
                     <i class="fas fa-layer-group text-[9px]"></i> {{ item.casos_count }} ocorrências
                   </span>
                 </div>
@@ -214,7 +214,7 @@
                     <Badge v-if="item.sienge_contrato_excluido" variant="danger" size="sm" outlined>Contrato excluído</Badge>
                     <Badge v-if="item.cv_unidade_disponibilizada" variant="success" size="sm" outlined>Unidade liberada</Badge>
                   </div>
-                  <span class="text-[11px] text-ink-subtle">{{ formatDateTime(item.createdAt ?? item.created_at) }}</span>
+                  <span class="text-micro text-ink-subtle">{{ formatDateTime(item.createdAt ?? item.created_at) }}</span>
                 </div>
               </div>
             </div>
@@ -545,7 +545,7 @@
         <!-- Dados -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div class="bg-surface-sunken border border-line rounded-xl p-3.5 space-y-2">
-            <div class="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-subtle">
+            <div class="flex items-center gap-2 text-micro uppercase tracking-wider text-ink-subtle">
               <i class="fas fa-bookmark"></i> Reserva no CV
             </div>
             <div class="space-y-1.5">
@@ -560,7 +560,7 @@
               <div class="flex justify-between items-center gap-3">
                 <span class="text-ink-muted">Etapa da reserva</span>
                 <a v-if="etapaCv?.cv_situacao" :href="cvReservaUrl(detail.item)" target="_blank" rel="noopener"
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface text-ink-muted hover:opacity-80 transition-opacity"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold border border-line bg-surface text-ink-muted hover:opacity-80 transition-opacity"
                   :style="cvBadgeStyle(etapaCv.cv_situacao_cor_bg, etapaCv.cv_situacao_cor_nome)">
                   <i class="fas fa-flag text-[9px]"></i>{{ etapaCv.cv_situacao }}
                 </a>
@@ -569,7 +569,7 @@
               <div class="flex justify-between items-center gap-3">
                 <span class="text-ink-muted">Etapa do repasse</span>
                 <a v-if="etapaCv?.cv_situacao_repasse" :href="cvRepasseUrl(etapaCv)" target="_blank" rel="noopener"
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-line bg-surface text-ink-muted hover:opacity-80 transition-opacity"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold border border-line bg-surface text-ink-muted hover:opacity-80 transition-opacity"
                   :style="cvBadgeStyle(etapaCv.cv_repasse_cor_bg, etapaCv.cv_repasse_cor_nome)">
                   <i class="fas fa-building-columns text-[9px]"></i>{{ etapaCv.cv_situacao_repasse }}
                 </a>
@@ -578,7 +578,7 @@
             </div>
           </div>
           <div class="bg-surface-sunken border border-line rounded-xl p-3.5 space-y-2">
-            <div class="flex items-center gap-2 text-[11px] uppercase tracking-wider text-ink-subtle">
+            <div class="flex items-center gap-2 text-micro uppercase tracking-wider text-ink-subtle">
               <i class="fas fa-file-contract"></i> Contrato no Sienge
             </div>
             <div v-if="detail.item.contrato_id" class="space-y-1.5">
@@ -643,11 +643,11 @@
                 :class="a.id === detail.item.id
                   ? 'border-accent/50 bg-accent-soft'
                   : 'border-line bg-surface-sunken hover:bg-surface-hover'">
-                <span class="text-[11px] font-mono text-ink-subtle">{{ i + 1 }}ª</span>
+                <span class="text-micro font-mono text-ink-subtle">{{ i + 1 }}ª</span>
                 <span class="font-mono text-xs text-ink-muted">caso #{{ a.id }}</span>
                 <Badge :variant="statusMeta(a.status).variant" size="sm" dot>{{ statusMeta(a.status).label }}</Badge>
                 <Badge v-if="a.manual" variant="info" size="sm" outlined>Manual</Badge>
-                <span class="text-[11px] text-ink-subtle ml-auto whitespace-nowrap">
+                <span class="text-micro text-ink-subtle ml-auto whitespace-nowrap">
                   {{ formatDateTime(a.createdAt ?? a.created_at) }}
                 </span>
                 <span v-if="a.motivo" class="w-full text-xs text-ink-muted truncate">{{ a.motivo }}</span>
@@ -672,7 +672,7 @@
                 }"></span>
               <div class="flex flex-wrap items-center gap-1.5 text-xs text-ink-subtle">
                 <span class="font-mono">{{ formatDateTime(evt.created_at) }}</span>
-                <span class="px-1.5 py-0.5 rounded bg-surface-sunken border border-line text-[10px] uppercase tracking-wide">
+                <span class="px-1.5 py-0.5 rounded bg-surface-sunken border border-line text-micro uppercase tracking-wide">
                   {{ eventTypeLabel(evt.type) }}
                 </span>
                 <span>caso #{{ evt.history_id }}</span>

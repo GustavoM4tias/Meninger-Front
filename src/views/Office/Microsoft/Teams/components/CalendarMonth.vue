@@ -115,7 +115,7 @@ function onPopupEventClick(ev) { closePopup(); emit('event-click', ev); }
     <!-- Cabeçalho dos dias da semana -->
     <div class="grid grid-cols-7 border-b border-line bg-surface-sunken/60">
       <div v-for="name in DAY_NAMES" :key="name"
-        class="py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+        class="py-2 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">
         <span class="hidden sm:inline">{{ name }}</span>
         <span class="sm:hidden">{{ name[0] }}</span>
       </div>
@@ -149,7 +149,7 @@ function onPopupEventClick(ev) { closePopup(); emit('event-click', ev); }
           <button
             @click.stop="$emit('slot-click', { date: day, hour: 9, minute: 0 })"
             aria-label="Criar evento neste dia"
-            class="h-5 w-5 rounded grid place-items-center text-[9px] text-ink-subtle
+            class="h-5 w-5 rounded grid place-items-center text-micro text-ink-subtle
                    opacity-0 group-hover/cell:opacity-100 focus:opacity-100
                    hover:text-accent hover:bg-accent-soft transition-all">
             <i class="fas fa-plus"></i>
@@ -161,7 +161,7 @@ function onPopupEventClick(ev) { closePopup(); emit('event-click', ev); }
           <button v-for="ev in visibleEvents(day)" :key="ev.id"
             :title="ev.subject"
             @click.stop="$emit('event-click', ev)"
-            class="w-full flex items-center gap-1 text-left truncate text-[10px] sm:text-[11px]
+            class="w-full flex items-center gap-1 text-left truncate text-micro sm:text-micro
                    px-1.5 py-0.5 rounded border font-medium leading-snug transition-colors hover:shadow-soft"
             :class="chipClass(ev)">
             <i v-if="ev.isOnlineMeeting && !ev.isAllDay" class="fas fa-video text-[7px] opacity-70 shrink-0"></i>
@@ -173,7 +173,7 @@ function onPopupEventClick(ev) { closePopup(); emit('event-click', ev); }
 
           <button v-if="overflowCount(day) > 0"
             @click.stop="showPopup(day, $event)"
-            class="w-full text-left text-[10px] font-semibold text-accent px-1.5 py-0.5 rounded
+            class="w-full text-left text-micro font-semibold text-accent px-1.5 py-0.5 rounded
                    hover:bg-accent-soft transition-colors">
             +{{ overflowCount(day) }} mais
           </button>
@@ -219,7 +219,7 @@ function onPopupEventClick(ev) { closePopup(); emit('event-click', ev); }
                   :class="{ 'line-through text-ink-subtle': ev.isCancelled }">
                   {{ ev.subject }}
                 </p>
-                <p class="text-[10px] text-ink-subtle mt-0.5">
+                <p class="text-micro text-ink-subtle mt-0.5">
                   <i v-if="ev.isOnlineMeeting" class="fas fa-video mr-1 text-[8px]"></i>
                   <span v-if="ev.isAllDay">Dia inteiro</span>
                   <span v-else class="font-mono tabular-nums">

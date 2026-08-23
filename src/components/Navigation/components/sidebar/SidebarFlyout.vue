@@ -94,7 +94,7 @@ const style = computed(() => ({
 
           <!-- Subcategorias -->
           <template v-for="sub in subEntries" :key="sub.key">
-            <p class="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
+            <p class="px-2 pt-1.5 pb-0.5 text-micro font-semibold uppercase tracking-wider text-ink-subtle">
               {{ sub.name }}
             </p>
             <SidebarItem

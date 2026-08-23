@@ -195,7 +195,7 @@ async function save() {
               Adicionar
             </Button>
           </div>
-          <p class="mt-2 text-[11px] text-ink-subtle">
+          <p class="mt-2 text-micro text-ink-subtle">
             Vale pra notificação in-app e e-mail. Cada pessoa ainda pode silenciar esses avisos nas
             preferências de notificação dela.
           </p>

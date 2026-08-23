@@ -298,7 +298,7 @@ onUnmounted(() => {
                 <i :class="opt.i" class="mt-0.5 w-4 text-ink-muted group-hover:text-accent transition-colors"></i>
                 <span class="min-w-0">
                   <span class="block text-sm text-ink group-hover:text-accent transition-colors">{{ opt.t }}</span>
-                  <span class="block text-[11px] text-ink-subtle">{{ opt.d }}</span>
+                  <span class="block text-micro text-ink-subtle">{{ opt.d }}</span>
                 </span>
               </button>
 
@@ -312,7 +312,7 @@ onUnmounted(() => {
                     <span class="block text-sm text-ink group-hover:text-accent transition-colors">
                       Trilha de exportações
                     </span>
-                    <span class="block text-[11px] text-ink-subtle">Quem exportou o quê e quando</span>
+                    <span class="block text-micro text-ink-subtle">Quem exportou o quê e quando</span>
                   </span>
                 </button>
               </template>

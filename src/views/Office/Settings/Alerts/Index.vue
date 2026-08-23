@@ -107,7 +107,7 @@ const channelIcons = (ch = {}) => [
 
     <!-- Compartilhados comigo (convites pendentes) -->
     <div v-if="store.incomingShares.length" class="mb-5 space-y-2">
-      <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle px-1">
+      <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle px-1">
         Compartilhados comigo
       </p>
       <article v-for="s in store.incomingShares" :key="s.id"
@@ -152,7 +152,7 @@ const channelIcons = (ch = {}) => [
           <div class="flex items-center gap-2 flex-wrap">
             <p class="text-sm font-semibold text-ink truncate">{{ rule.name }}</p>
             <span v-if="!rule.enabled"
-              class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle px-1.5 py-0.5 rounded bg-surface-sunken border border-line">
+              class="text-micro font-mono uppercase tracking-wider text-ink-subtle px-1.5 py-0.5 rounded bg-surface-sunken border border-line">
               desativado
             </span>
           </div>
@@ -163,7 +163,7 @@ const channelIcons = (ch = {}) => [
             <span v-if="isAdmin && rule.owner" class="mx-2">·</span>
             <span v-if="isAdmin && rule.owner">de <strong>{{ rule.owner.username }}</strong></span>
           </p>
-          <p class="text-[11px] text-ink-subtle mt-0.5">
+          <p class="text-micro text-ink-subtle mt-0.5">
             Disparos: <span class="font-mono">{{ rule.trigger_count }}</span>
             <span class="mx-1">·</span>
             Último: {{ formatDate(rule.last_triggered_at) }}

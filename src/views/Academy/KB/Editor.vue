@@ -85,7 +85,7 @@
                                     @blur="onCategoryBlur" placeholder="Ex: processos-comerciais"
                                     class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-700 dark:focus:ring-indigo-950/60" />
                                 <span v-if="categorySlug && !isExistingCategory"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-indigo-100 px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
                                     nova
                                 </span>
                             </div>
@@ -100,7 +100,7 @@
                                             <i class="fa-regular fa-folder text-xs text-slate-400"></i>
                                             <span class="text-slate-800 dark:text-slate-200">{{ c.name }}</span>
                                         </span>
-                                        <span class="font-mono text-[10px] text-slate-400 dark:text-slate-500">{{ c.slug }}</span>
+                                        <span class="font-mono text-micro text-slate-400 dark:text-slate-500">{{ c.slug }}</span>
                                     </button>
                                 </div>
                             </Transition>
@@ -156,7 +156,7 @@
                                     o.level === 2 ? 'pl-5 text-slate-700 dark:text-slate-300' : '',
                                     o.level === 3 ? 'pl-8 text-xs text-slate-500 dark:text-slate-400' : ''
                                 ]">
-                                <span class="mr-1.5 font-mono text-[10px] text-slate-400 dark:text-slate-500">
+                                <span class="mr-1.5 font-mono text-micro text-slate-400 dark:text-slate-500">
                                     {{ '#'.repeat(o.level) }}
                                 </span>
                                 {{ o.text }}
@@ -215,7 +215,7 @@
                             <span>Salvar e criar outro</span>
                             <span><kbd class="kb-key">{{ modKeyLabel }}</kbd><kbd class="kb-key">Enter</kbd></span>
                         </li>
-                        <li class="text-[11px] text-slate-500 dark:text-slate-400">
+                        <li class="text-micro text-slate-500 dark:text-slate-400">
                             Auto-save a cada 2s enquanto você edita.
                         </li>
                     </ul>
@@ -233,7 +233,7 @@
                             <i class="fa-solid fa-shapes text-violet-500"></i> Comece com um modelo
                         </span>
                         <span v-if="body && body.trim()"
-                            class="text-[11px] text-slate-400 dark:text-slate-500">
+                            class="text-micro text-slate-400 dark:text-slate-500">
                             Aplicar substitui o conteúdo
                         </span>
                     </div>

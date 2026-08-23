@@ -103,7 +103,7 @@ function clearFile(target) {
           </Surface>
 
           <Surface variant="raised" padding="md">
-            <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-3">Estatísticas</p>
+            <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-3">Estatísticas</p>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between items-center">
                 <span class="text-ink-muted">Validações totais</span>
@@ -228,7 +228,7 @@ function clearFile(target) {
 
               <!-- Mensagens -->
               <div v-if="resultado.mensagens?.length" class="space-y-3">
-                <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">
+                <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">
                   Detalhes da validação
                 </p>
 
@@ -251,7 +251,7 @@ function clearFile(target) {
 
                 <!-- Resumo -->
                 <div class="rounded-xl bg-surface-sunken border border-line p-4 surface-gradient">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-3">
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-3">
                     Resumo
                   </p>
                   <div class="grid grid-cols-3 gap-3 text-center">

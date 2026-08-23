@@ -43,7 +43,7 @@
                                 <span class="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                                     {{ a.desc }}
                                 </span>
-                                <span class="mt-2 block font-mono text-[10px] text-slate-400 dark:text-slate-500">
+                                <span class="mt-2 block font-mono text-micro text-slate-400 dark:text-slate-500">
                                     {{ a.hint }}
                                 </span>
                             </span>

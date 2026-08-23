@@ -144,7 +144,7 @@ async function save(publishAfter = false) {
           <Switch v-model="form.channels.inapp" size="sm" label="Sino (in-app)" />
           <Switch v-model="form.channels.email" size="sm" label="E-mail" />
           <Switch :model-value="false" size="sm" label="WhatsApp" disabled />
-          <span class="text-[11px] text-ink-subtle">WhatsApp chega em fase futura.</span>
+          <span class="text-micro text-ink-subtle">WhatsApp chega em fase futura.</span>
         </div>
       </div>
 

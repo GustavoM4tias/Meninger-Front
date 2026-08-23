@@ -102,7 +102,7 @@
                                             <i class="fa-solid fa-hashtag text-[9px] text-slate-400 dark:text-slate-500"></i>
                                             {{ t.slug }}
                                         </span>
-                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                        <span class="rounded-full px-2 py-0.5 text-micro font-bold uppercase tracking-wider"
                                             :class="t.status === 'PUBLISHED'
                                                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
                                                 : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'">

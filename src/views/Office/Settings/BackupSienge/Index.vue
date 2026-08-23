@@ -350,7 +350,7 @@ onBeforeUnmount(stopPolling)
                             <p class="font-semibold text-ink text-sm sm:text-base">
                                 Último backup OK - {{ formatDate(store.latestSuccess.finished_at) }}
                             </p>
-                            <p class="text-[11px] sm:text-xs text-ink-muted mt-0.5">
+                            <p class="text-micro sm:text-xs text-ink-muted mt-0.5">
                                 Duração total: {{ formatDuration(store.latestSuccess.duration_ms) }}
                                 • Tamanho: {{ formatBytes(store.latestSuccess.file_size_bytes) }}
                                 <span v-if="store.latestSuccess.import_duration_ms">
@@ -404,7 +404,7 @@ onBeforeUnmount(stopPolling)
                             <div class="hidden md:block overflow-x-auto">
                                 <table class="w-full text-sm">
                                     <thead>
-                                        <tr class="text-left text-[11px] uppercase tracking-wider text-ink-subtle border-b border-line">
+                                        <tr class="text-left text-micro uppercase tracking-wider text-ink-subtle border-b border-line">
                                             <th v-for="col in HIST_COLUMNS" :key="col.label" class="px-4 py-3 font-medium"
                                                 :class="[
                                                     col.align === 'right' ? 'text-right' : 'text-left',
@@ -473,7 +473,7 @@ onBeforeUnmount(stopPolling)
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="min-w-0">
                                             <p class="text-sm font-medium text-ink">{{ formatDate(row.started_at) }}</p>
-                                            <p class="text-[11px] text-ink-muted">
+                                            <p class="text-micro text-ink-muted">
                                                 #{{ row.id }} • {{ triggerLabel(row.triggered_by) }}
                                             </p>
                                         </div>
@@ -482,7 +482,7 @@ onBeforeUnmount(stopPolling)
                                         </Badge>
                                     </div>
 
-                                    <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                                    <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-micro">
                                         <div class="flex gap-1.5">
                                             <dt class="text-ink-subtle">Duração:</dt>
                                             <dd class="font-mono tabular-nums text-ink-muted">{{ formatDuration(row.duration_ms) }}</dd>
@@ -506,7 +506,7 @@ onBeforeUnmount(stopPolling)
                                     </dl>
 
                                     <p v-if="row.error_message || row.import_error_message"
-                                        class="text-[11px] text-red-600 dark:text-red-400 break-words line-clamp-3">
+                                        class="text-micro text-red-600 dark:text-red-400 break-words line-clamp-3">
                                         {{ row.error_message || row.import_error_message }}
                                     </p>
                                 </li>

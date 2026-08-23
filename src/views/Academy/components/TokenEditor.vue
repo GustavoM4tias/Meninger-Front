@@ -454,7 +454,7 @@ function renderEmbedsIntoHtml(html, payload) {
                 <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
                   <input type="radio" disabled ${oi === correct ? 'checked' : ''} />
                   <span>${escapeHtml(o)}</span>
-                  ${oi === correct ? '<span class="ml-2 text-[11px] font-mono text-emerald-600">correta</span>' : ''}
+                  ${oi === correct ? '<span class="ml-2 text-micro font-mono text-emerald-600">correta</span>' : ''}
                 </label>
               `).join('')}
             </div>

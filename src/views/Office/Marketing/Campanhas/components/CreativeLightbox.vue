@@ -99,7 +99,7 @@ const facebookLink = computed(() => {
               class="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-white/20 text-white/80 hover:bg-white/10 text-sm transition-colors">
               <i class="fas fa-book"></i>Ad Library
             </a>
-            <span class="text-[10px] text-white/40 font-mono px-2">video_id: {{ videoId }}</span>
+            <span class="text-micro text-white/40 font-mono px-2">video_id: {{ videoId }}</span>
           </div>
         </div>
       </div>

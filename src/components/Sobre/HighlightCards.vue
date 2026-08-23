@@ -32,12 +32,12 @@ defineProps({
            :class="kpi.info ? 'pr-7' : ''">
           {{ kpi.v }}
         </p>
-        <p class="text-[11px] sm:text-xs font-medium text-ink mt-0.5">{{ kpi.l }}</p>
-        <p class="text-[10px] sm:text-[11px] text-ink-subtle leading-snug mt-1">{{ kpi.s }}</p>
+        <p class="text-micro sm:text-xs font-medium text-ink mt-0.5">{{ kpi.l }}</p>
+        <p class="text-micro sm:text-micro text-ink-subtle leading-snug mt-1">{{ kpi.s }}</p>
       </div>
     </div>
 
-    <p v-if="updatedLabel" class="flex items-center gap-1.5 text-[11px] text-ink-subtle">
+    <p v-if="updatedLabel" class="flex items-center gap-1.5 text-micro text-ink-subtle">
       <span v-if="isLive" class="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-dot-pulse"></span>
       {{ updatedLabel }}
     </p>

@@ -25,7 +25,7 @@
                 </div>
 
                 <div class="min-w-0">
-                    <p v-if="eyebrow" class="mb-1 font-mono text-[11px] uppercase tracking-wider text-ink-subtle">
+                    <p v-if="eyebrow" class="mb-1 font-mono text-micro uppercase tracking-wider text-ink-subtle">
                         {{ eyebrow }}
                     </p>
                     <h1 class="break-words text-lg font-semibold tracking-tight text-ink sm:text-2xl">

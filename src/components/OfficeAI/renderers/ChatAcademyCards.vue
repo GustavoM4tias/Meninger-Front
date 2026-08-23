@@ -75,7 +75,7 @@ function embedUrl(url) {
                 </span>
                 <div class="min-w-0 flex-1">
                     <p v-if="card.category"
-                        class="mb-0.5 truncate text-[10px] font-medium uppercase tracking-wide text-ink-subtle">
+                        class="mb-0.5 truncate text-micro font-medium uppercase tracking-wide text-ink-subtle">
                         {{ card.category }}
                     </p>
                     <p class="truncate text-sm font-semibold text-ink">{{ card.title }}</p>
@@ -110,14 +110,14 @@ function embedUrl(url) {
             <!-- badges -->
             <div v-if="card.badges?.length" class="mt-2 flex flex-wrap gap-1">
                 <span v-for="(b, bi) in card.badges" :key="bi"
-                    class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                    class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted">
                     {{ b }}
                 </span>
             </div>
 
             <!-- seções (pré-requisitos, etapas, etc.) -->
             <div v-for="(sec, si) in (card.sections || [])" :key="si" class="mt-2">
-                <p class="text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">{{ sec.label }}</p>
+                <p class="text-micro font-semibold uppercase tracking-wide text-ink-subtle">{{ sec.label }}</p>
                 <ul class="mt-0.5 space-y-0.5">
                     <li v-for="(it, ii) in sec.items" :key="ii"
                         class="flex items-start gap-1.5 text-xs text-ink-muted">

@@ -57,13 +57,13 @@
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b border-line text-left">
-                                <th class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-muted">Stand</th>
-                                <th class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-muted">Modelo</th>
-                                <th class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-muted">Centros de custo</th>
-                                <th class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-muted text-right">Gasto total</th>
-                                <th class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-muted text-right">Construção</th>
-                                <th class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-muted text-right">Manutenção</th>
-                                <th class="px-4 py-3 text-[11px] font-mono uppercase tracking-wider text-ink-muted">Status</th>
+                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted">Stand</th>
+                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted">Modelo</th>
+                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted">Centros de custo</th>
+                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted text-right">Gasto total</th>
+                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted text-right">Construção</th>
+                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted text-right">Manutenção</th>
+                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -142,7 +142,7 @@
                                 </div>
                                 <div class="min-w-0">
                                     <p class="font-semibold text-ink truncate">{{ m.name }}</p>
-                                    <p class="text-[11px] text-ink-subtle">
+                                    <p class="text-micro text-ink-subtle">
                                         {{ m.stands_count }} stand{{ m.stands_count === 1 ? '' : 's' }} vinculado{{ m.stands_count === 1 ? '' : 's' }}
                                     </p>
                                 </div>
@@ -156,14 +156,14 @@
                     <!-- Faixas em destaque -->
                     <div class="grid grid-cols-2 divide-x divide-line border-y border-line bg-surface-sunken/60">
                         <div class="px-3.5 py-3 min-w-0">
-                            <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Valor médio</p>
+                            <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Valor médio</p>
                             <p class="font-mono tabular-nums font-bold text-[13px] leading-snug text-ink whitespace-nowrap"
                                 :class="fmtValueRange(m) ? '' : 'text-ink-subtle font-normal'">
                                 {{ fmtValueRange(m) || 'A definir' }}
                             </p>
                         </div>
                         <div class="px-3.5 py-3 min-w-0">
-                            <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Metragem</p>
+                            <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Metragem</p>
                             <p class="font-mono tabular-nums font-bold text-[13px] leading-snug text-ink whitespace-nowrap"
                                 :class="fmtAreaRange(m) ? '' : 'text-ink-subtle font-normal'">
                                 {{ fmtAreaRange(m) || 'A definir' }}
@@ -174,9 +174,9 @@
                     <div class="p-4 sm:px-5 pt-3 flex-1">
                         <div v-if="m.items?.length" class="flex flex-wrap content-start gap-1.5">
                             <span v-for="item in m.items.slice(0, 5)" :key="item"
-                                class="px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-[11px] text-ink-muted">{{ item }}</span>
+                                class="px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-micro text-ink-muted">{{ item }}</span>
                             <span v-if="m.items.length > 5"
-                                class="px-2 py-0.5 rounded-md border border-dashed border-line text-[11px] text-ink-subtle">
+                                class="px-2 py-0.5 rounded-md border border-dashed border-line text-micro text-ink-subtle">
                                 +{{ m.items.length - 5 }} itens
                             </span>
                         </div>

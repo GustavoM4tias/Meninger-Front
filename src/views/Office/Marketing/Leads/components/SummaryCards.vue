@@ -51,7 +51,7 @@ const totalLeads = computed(() => props.kpi.total ?? 0);
     <!-- Header com período + total -->
     <div class="flex items-center justify-between gap-3 flex-wrap">
       <div class="flex items-center gap-3 min-w-0">
-        <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Período</p>
+        <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Período</p>
         <span class="font-mono text-xs text-ink truncate">{{ periodoLabel }}</span>
       </div>
       <div class="flex items-baseline gap-2">
@@ -78,7 +78,7 @@ const totalLeads = computed(() => props.kpi.total ?? 0);
               :class="accentFor(item.key)">
               <i :class="iconFor(item.key)"></i>
             </span>
-            <span class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">
+            <span class="text-micro uppercase tracking-wider font-mono text-ink-subtle">
               {{ totalLeads ? ((item.count / totalLeads) * 100).toFixed(0) : 0 }}%
             </span>
           </div>

@@ -115,7 +115,7 @@ function clickStage(st) {
       </h2>
       <div v-if="conversao != null" class="flex items-baseline gap-1.5">
         <span class="text-2xl font-bold text-emerald-600 dark:text-emerald-300 tabular-nums">{{ conversao }}%</span>
-        <span class="text-[11px] text-ink-subtle">qualificados + reservas</span>
+        <span class="text-micro text-ink-subtle">qualificados + reservas</span>
       </div>
     </div>
 
@@ -126,8 +126,8 @@ function clickStage(st) {
         <div class="flex items-center gap-2 mb-1">
           <i :class="[st.icon, 'text-xs w-4 text-center']" :style="{ color: st.color }"></i>
           <span class="text-xs font-medium text-ink">{{ st.label }}</span>
-          <span class="text-[10px] text-ink-subtle">{{ st.pct.toFixed(0) }}%</span>
-          <span v-if="deltaBadge(st.delta)" :class="['text-[10px] ml-auto tabular-nums flex items-center gap-0.5', deltaBadge(st.delta).cls]">
+          <span class="text-micro text-ink-subtle">{{ st.pct.toFixed(0) }}%</span>
+          <span v-if="deltaBadge(st.delta)" :class="['text-micro ml-auto tabular-nums flex items-center gap-0.5', deltaBadge(st.delta).cls]">
             <i :class="['fas text-[7px]', deltaBadge(st.delta).icon]"></i>{{ deltaBadge(st.delta).text }}
           </span>
           <span class="text-sm font-semibold text-ink tabular-nums" :class="{ 'ml-auto': !deltaBadge(st.delta) }">{{ fmtInt(st.count) }}</span>

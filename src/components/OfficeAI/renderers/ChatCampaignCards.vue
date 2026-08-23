@@ -35,7 +35,7 @@ function openFicha(c) {
       </span>
       <div class="min-w-0 flex-1">
         <p class="text-sm font-semibold text-ink truncate">{{ action.title || 'Campanhas' }}</p>
-        <p class="text-[11px] text-ink-subtle truncate">
+        <p class="text-micro text-ink-subtle truncate">
           {{ action.total }} campanha{{ action.total > 1 ? 's' : '' }}
           <template v-if="action.subtitle"> · {{ action.subtitle }}</template>
         </p>
@@ -49,9 +49,9 @@ function openFicha(c) {
         <div class="flex items-start justify-between gap-2 min-w-0">
           <div class="min-w-0">
             <p class="text-sm font-semibold text-ink break-words">{{ c.empreendimento }}</p>
-            <p v-if="c.cidade" class="text-[11px] text-ink-subtle">{{ c.cidade }}</p>
+            <p v-if="c.cidade" class="text-micro text-ink-subtle">{{ c.cidade }}</p>
           </div>
-          <span class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border"
+          <span class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-medium border"
             :class="c.autorizada
               ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
               : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'"
@@ -63,7 +63,7 @@ function openFicha(c) {
 
         <!-- Campanha + chips -->
         <p class="text-sm text-accent font-medium break-words">{{ c.titulo }}</p>
-        <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-ink-muted">
+        <div class="flex flex-wrap items-center gap-1.5 text-micro text-ink-muted">
           <span v-if="c.periodo" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-surface-sunken border border-line">
             <i class="far fa-calendar text-[9px]"></i>{{ c.periodo }}
           </span>
@@ -83,7 +83,7 @@ function openFicha(c) {
           <p :class="openDesc[i] ? '' : 'line-clamp-3'">{{ c.descricao }}</p>
           <button v-if="c.descricao.length > 140" type="button"
             @click="openDesc[i] = !openDesc[i]"
-            class="mt-0.5 text-[11px] text-accent hover:underline">
+            class="mt-0.5 text-micro text-accent hover:underline">
             {{ openDesc[i] ? 'ver menos' : 'ver mais' }}
           </button>
         </div>
@@ -91,7 +91,7 @@ function openFicha(c) {
         <!-- Regulamento (colapsado) -->
         <div v-if="c.regulamento">
           <button type="button" @click="openRules[i] = !openRules[i]"
-            class="inline-flex items-center gap-1.5 text-[11px] text-ink-subtle hover:text-ink-muted transition-colors">
+            class="inline-flex items-center gap-1.5 text-micro text-ink-subtle hover:text-ink-muted transition-colors">
             <i class="fas text-[9px]" :class="openRules[i] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
             Regulamento
           </button>
@@ -103,7 +103,7 @@ function openFicha(c) {
 
         <!-- Abrir ficha -->
         <button v-if="c.ficha_id" type="button" @click="openFicha(c)"
-          class="inline-flex items-center gap-1.5 text-[11px] font-medium text-accent hover:underline">
+          class="inline-flex items-center gap-1.5 text-micro font-medium text-accent hover:underline">
           <i class="fas fa-arrow-up-right-from-square text-[9px]"></i>
           Abrir ficha completa
         </button>

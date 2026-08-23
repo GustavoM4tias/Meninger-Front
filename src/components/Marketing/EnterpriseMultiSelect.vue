@@ -106,7 +106,7 @@ function clearAll() {
             <span v-for="e in selectedList" :key="e.id"
                 class="inline-flex items-center gap-1.5 rounded-md bg-accent/10 text-accent border border-accent/20 px-2 py-1 text-xs">
                 <span class="font-medium">{{ e.name }}</span>
-                <span v-if="e.city" class="text-ink-subtle text-[10px]">{{ e.city }}</span>
+                <span v-if="e.city" class="text-ink-subtle text-micro">{{ e.city }}</span>
                 <button type="button" @click="remove(e.id)" class="hover:text-red-500" aria-label="Remover">
                     <i class="fas fa-times text-[10px]"></i>
                 </button>
@@ -135,7 +135,7 @@ function clearAll() {
                 class="text-xs text-ink-subtle hover:text-red-500 transition-colors">
                 Limpar
             </button>
-            <span class="text-[10px] text-ink-subtle ml-auto" v-if="!loading && !error">
+            <span class="text-micro text-ink-subtle ml-auto" v-if="!loading && !error">
                 {{ enterprises.length }} empreendimentos no CV
             </span>
         </div>
@@ -170,7 +170,7 @@ function clearAll() {
                         <span v-if="e.city" class="text-ink-subtle text-xs"> · {{ e.city }}</span>
                         <span v-if="e.status" class="text-ink-subtle text-xs"> · {{ e.status }}</span>
                     </span>
-                    <span class="text-[10px] font-mono text-ink-subtle shrink-0">#{{ e.id }}</span>
+                    <span class="text-micro font-mono text-ink-subtle shrink-0">#{{ e.id }}</span>
                 </label>
             </div>
         </div>

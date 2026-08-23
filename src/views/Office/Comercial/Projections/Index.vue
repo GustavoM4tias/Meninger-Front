@@ -181,7 +181,7 @@ async function confirmDelete() {
               <h3 class="font-semibold text-ink truncate group-hover:text-accent transition-colors flex items-center gap-2">
                 <i class="fas fa-bullseye text-sm text-accent shrink-0"></i>{{ p.name }}
               </h3>
-              <p class="text-[11px] text-ink-subtle font-mono mt-2">
+              <p class="text-micro text-ink-subtle font-mono mt-2">
                 <i class="far fa-clock text-[10px] mr-1"></i>Atualizada {{ formatDate(p.updated_at || p.updatedAt || p.created_at || p.createdAt) }}
               </p>
             </div>

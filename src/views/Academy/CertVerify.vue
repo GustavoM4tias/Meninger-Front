@@ -37,11 +37,11 @@
 
                         <div class="grid grid-cols-2 gap-3 pt-2">
                             <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 px-3 py-2">
-                                <div class="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">Emitido em</div>
+                                <div class="text-micro uppercase tracking-wide text-slate-400 dark:text-slate-500">Emitido em</div>
                                 <div class="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-200">{{ fmtDate(data.issuedAt) }}</div>
                             </div>
                             <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 px-3 py-2">
-                                <div class="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">Validade</div>
+                                <div class="text-micro uppercase tracking-wide text-slate-400 dark:text-slate-500">Validade</div>
                                 <div class="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-200">
                                     {{ data.expiresAt ? fmtDate(data.expiresAt) : 'Sem expiração' }}
                                 </div>
@@ -54,7 +54,7 @@
                         </div>
 
                         <div class="rounded-xl bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-center">
-                            <div class="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">Código</div>
+                            <div class="text-micro uppercase tracking-wide text-slate-400 dark:text-slate-500">Código</div>
                             <div class="font-mono text-sm text-slate-600 dark:text-slate-300">{{ code }}</div>
                         </div>
 

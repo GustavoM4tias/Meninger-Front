@@ -38,10 +38,10 @@ const intFmt = new Intl.NumberFormat('pt-BR');
 <template>
   <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient p-4">
     <div class="flex items-center justify-between gap-3 mb-3">
-      <h2 class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle flex items-center gap-2">
+      <h2 class="text-micro font-semibold uppercase tracking-wider text-ink-subtle flex items-center gap-2">
         <i class="fas fa-signal-stream text-accent"></i>Origem dos leads
       </h2>
-      <span v-if="fontes.length" class="text-[10px] text-ink-subtle shrink-0">clique p/ filtrar</span>
+      <span v-if="fontes.length" class="text-micro text-ink-subtle shrink-0">clique p/ filtrar</span>
     </div>
 
     <div v-if="fontes.length" class="space-y-2.5">

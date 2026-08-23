@@ -109,7 +109,7 @@ function openSingle(entry, mode = 'list') {
           </div>
           <div class="flex items-baseline gap-2 mt-1">
             <span class="text-base font-semibold text-ink tabular-nums">{{ e.count }}</span>
-            <span class="text-[11px] text-ink-subtle font-mono">
+            <span class="text-micro text-ink-subtle font-mono">
               {{ totalCount ? ((e.count / totalCount) * 100).toFixed(1) : 0 }}%
             </span>
           </div>
@@ -126,9 +126,9 @@ function openSingle(entry, mode = 'list') {
             <th class="px-4 py-2.5 w-10">
               <input type="checkbox" :checked="allVisibleChecked" @change="toggleAllVisible($event)" />
             </th>
-            <th class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
-            <th class="px-4 py-2.5 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
-            <th class="px-4 py-2.5 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
+            <th class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
+            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
+            <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-line">
@@ -153,7 +153,7 @@ function openSingle(entry, mode = 'list') {
             </td>
             <td class="px-4 py-3 text-right">
               <div class="text-sm font-semibold text-ink tabular-nums">{{ e.count }}</div>
-              <div class="text-[10px] text-ink-subtle font-mono">
+              <div class="text-micro text-ink-subtle font-mono">
                 {{ totalCount ? ((e.count / totalCount) * 100).toFixed(1) : 0 }}%
               </div>
             </td>

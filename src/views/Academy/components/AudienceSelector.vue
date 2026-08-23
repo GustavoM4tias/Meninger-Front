@@ -27,12 +27,12 @@
                                 <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                     {{ opt.label }}
                                 </span>
-                                <span class="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                                <span class="rounded-full px-1.5 py-0.5 text-micro font-bold uppercase tracking-wider"
                                     :class="opt.tint">
                                     {{ opt.badge }}
                                 </span>
                             </div>
-                            <p class="mt-0.5 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+                            <p class="mt-0.5 text-micro leading-snug text-slate-500 dark:text-slate-400">
                                 {{ opt.hint }}
                             </p>
                         </div>
@@ -47,12 +47,12 @@
                 Sem visibilidade selecionada, ninguém verá o conteúdo. Escolha uma opção.
             </p>
             <p v-else-if="selected === 'INTERNAL' || selected === 'ADMIN'"
-                class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
+                class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-micro text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
                 <i class="fa-solid fa-lock mr-1"></i>
                 Conteúdo protegido — <strong>não aparece</strong> para corretores, imobiliárias nem correspondentes.
             </p>
             <p v-else
-                class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+                class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-micro text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
                 <i class="fa-solid fa-eye mr-1"></i>
                 Atenção: este conteúdo ficará visível para o <strong>público externo</strong>
                 (corretores, imobiliárias e correspondentes). Não publique informação interna aqui.

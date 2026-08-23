@@ -35,7 +35,7 @@ const handleMarkAll = () => notificationStore.markAllRead();
         <span v-if="unreadCount > 0"
           class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1
                  grid place-items-center rounded-full
-                 bg-red-500 text-[10px] font-bold text-white ring-2 ring-surface">
+                 bg-red-500 text-micro font-bold text-white ring-2 ring-surface">
           {{ unreadCount > 99 ? '99+' : unreadCount }}
         </span>
       </button>
@@ -50,13 +50,13 @@ const handleMarkAll = () => notificationStore.markAllRead();
           <i class="far fa-bell text-accent text-sm"></i>
           <p class="text-sm font-semibold text-ink">Notificações</p>
           <span v-if="unreadCount > 0"
-            class="text-[11px] font-mono text-accent px-2 py-0.5 rounded-md
+            class="text-micro font-mono text-accent px-2 py-0.5 rounded-md
                    bg-accent-soft border border-accent/20">
             {{ unreadCount }} novas
           </span>
         </div>
         <button v-if="unreadCount > 0" type="button" @click="handleMarkAll"
-          class="text-[11px] text-ink-muted hover:text-accent transition-colors">
+          class="text-micro text-ink-muted hover:text-accent transition-colors">
           <i class="fas fa-check-double mr-1"></i> Marcar tudo
         </button>
       </div>
@@ -84,11 +84,11 @@ const handleMarkAll = () => notificationStore.markAllRead();
       <!-- Footer -->
       <div class="px-3 py-2 border-t border-line flex items-center justify-between">
         <RouterLink to="/notifications"
-          class="text-[11px] text-ink-muted hover:text-accent transition-colors px-2 py-1 rounded hover:bg-surface-sunken">
+          class="text-micro text-ink-muted hover:text-accent transition-colors px-2 py-1 rounded hover:bg-surface-sunken">
           <i class="fas fa-list-ul mr-1 text-[10px]"></i> Ver todas
         </RouterLink>
         <RouterLink to="/settings/notifications"
-          class="text-[11px] text-ink-muted hover:text-accent transition-colors px-2 py-1 rounded hover:bg-surface-sunken">
+          class="text-micro text-ink-muted hover:text-accent transition-colors px-2 py-1 rounded hover:bg-surface-sunken">
           <i class="fas fa-sliders mr-1 text-[10px]"></i> Preferências
         </RouterLink>
       </div>

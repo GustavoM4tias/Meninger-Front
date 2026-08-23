@@ -84,7 +84,7 @@ const kpis = computed(() => [
     </div>
 
     <div class="flex items-center justify-end">
-      <p class="text-[11px] text-ink-subtle">Clique numa linha para ver as vendas.</p>
+      <p class="text-micro text-ink-subtle">Clique numa linha para ver as vendas.</p>
     </div>
 
     <RankingTable :rows="linhas"

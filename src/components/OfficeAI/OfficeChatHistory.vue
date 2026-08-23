@@ -70,7 +70,7 @@ const storageColor = computed(() =>
     <div class="flex-1 overflow-y-auto py-2 max-h-[50vh]">
       <!-- Favoritos -->
       <template v-if="favoriteSessions.length">
-        <p class="px-4 py-1.5 text-[10px] text-ink-subtle uppercase tracking-[0.18em] font-mono">Favoritos</p>
+        <p class="px-4 py-1.5 text-micro text-ink-subtle uppercase tracking-[0.18em] font-mono">Favoritos</p>
         <transition-group
           enter-active-class="transition ease-out-expo duration-300"
           enter-from-class="opacity-0 -translate-x-2"
@@ -83,7 +83,7 @@ const storageColor = computed(() =>
               : ''">
             <div class="flex-1 min-w-0" @click="open(s.id)">
               <p class="text-sm text-ink truncate">{{ s.title || 'Chat sem título' }}</p>
-              <p class="text-[11px] text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</p>
+              <p class="text-micro text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</p>
             </div>
             <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button @click.stop="aiStore.favoriteSession(s.id)"
@@ -101,7 +101,7 @@ const storageColor = computed(() =>
 
       <!-- Recentes -->
       <template v-if="recentSessions.length">
-        <p class="px-4 py-1.5 text-[10px] text-ink-subtle uppercase tracking-[0.18em] font-mono mt-1">Recentes</p>
+        <p class="px-4 py-1.5 text-micro text-ink-subtle uppercase tracking-[0.18em] font-mono mt-1">Recentes</p>
         <transition-group
           enter-active-class="transition ease-out-expo duration-300"
           enter-from-class="opacity-0 -translate-x-2"
@@ -114,7 +114,7 @@ const storageColor = computed(() =>
               : ''">
             <div class="flex-1 min-w-0" @click="open(s.id)">
               <p class="text-sm text-ink truncate">{{ s.title || 'Chat sem título' }}</p>
-              <p class="text-[11px] text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</p>
+              <p class="text-micro text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</p>
             </div>
             <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button @click.stop="aiStore.favoriteSession(s.id)"

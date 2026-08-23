@@ -105,7 +105,7 @@ const grupoAberto = ref(null);
 
     <div class="flex items-center justify-between gap-3 flex-wrap">
       <SegmentedControl v-model="quebra" :options="QUEBRAS" size="sm" />
-      <p class="text-[11px] text-ink-subtle">Clique numa linha para ver as vendas.</p>
+      <p class="text-micro text-ink-subtle">Clique numa linha para ver as vendas.</p>
     </div>
 
     <RankingTable :rows="linhas"

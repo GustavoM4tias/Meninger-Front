@@ -56,7 +56,7 @@
                             {{ t.title }}
                         </div>
                         <span
-                            class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                            class="mt-1 inline-flex rounded-full px-2 py-0.5 text-micro font-semibold"
                             :class="trackStatus(t.progressPercent).cls">
                             {{ trackStatus(t.progressPercent).label }}
                         </span>

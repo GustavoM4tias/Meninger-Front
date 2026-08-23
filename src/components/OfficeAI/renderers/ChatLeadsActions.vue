@@ -154,7 +154,7 @@ const colorMap = {
 
 <template>
   <div class="mt-3 pt-3 border-t border-gray-200 dark:border-white/5">
-    <p class="text-[11px] text-gray-400 dark:text-slate-600 uppercase tracking-wide mb-2">Sugestões</p>
+    <p class="text-micro text-gray-400 dark:text-slate-600 uppercase tracking-wide mb-2">Sugestões</p>
     <div class="flex flex-wrap gap-1.5">
       <button
         v-for="btn in buttons"

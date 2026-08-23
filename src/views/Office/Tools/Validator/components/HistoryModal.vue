@@ -46,7 +46,7 @@ const iconByNivel = (nivel) => ({
       </div>
 
       <section v-if="item.mensagens?.length">
-        <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">Detalhes</p>
+        <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">Detalhes</p>
         <div class="space-y-2">
           <div v-for="(msg, i) in item.mensagens" :key="i"
             class="rounded-lg border-l-4 p-3 surface-gradient"

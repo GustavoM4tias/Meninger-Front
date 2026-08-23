@@ -60,12 +60,12 @@ function openLightbox(ad) {
   <div>
     <!-- Toolbar: ordenação -->
     <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
-      <div class="text-[11px] text-ink-subtle">
+      <div class="text-micro text-ink-subtle">
         <b>{{ ads.length }}</b> anúncio(s) com veiculação no período
       </div>
       <div class="inline-flex rounded-lg border border-line bg-surface p-0.5">
         <button v-for="s in SORTS" :key="s.key" @click="sortBy = s.key"
-          :class="['px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors',
+          :class="['px-2.5 py-1 rounded-md text-micro font-medium transition-colors',
             sortBy === s.key ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
           {{ s.label }}
         </button>
@@ -100,7 +100,7 @@ function openLightbox(ad) {
           <!-- Badges sobre a arte -->
           <div class="absolute top-1.5 left-1.5 flex gap-1">
             <span v-if="isVideo(ad)"
-              class="inline-flex items-center gap-1 rounded-md bg-black/60 text-white text-[9px] px-1.5 py-0.5 backdrop-blur-sm">
+              class="inline-flex items-center gap-1 rounded-md bg-black/60 text-white text-micro px-1.5 py-0.5 backdrop-blur-sm">
               <i class="fas fa-play text-[7px]"></i>Vídeo
             </span>
           </div>
@@ -119,10 +119,10 @@ function openLightbox(ad) {
           <div class="text-xs font-medium text-ink leading-tight line-clamp-2" :title="ad.name || ad.id">
             {{ ad.name || '(não sincronizado)' }}
           </div>
-          <div v-if="showCampaign && ad.campaign?.name" class="text-[10px] text-ink-subtle truncate mt-0.5" :title="ad.campaign.name">
+          <div v-if="showCampaign && ad.campaign?.name" class="text-micro text-ink-subtle truncate mt-0.5" :title="ad.campaign.name">
             <i class="fas fa-bullhorn text-[8px] mr-1"></i>{{ ad.campaign.name }}
           </div>
-          <div v-else-if="ad.adset_name" class="text-[10px] text-ink-subtle truncate mt-0.5" :title="ad.adset_name">
+          <div v-else-if="ad.adset_name" class="text-micro text-ink-subtle truncate mt-0.5" :title="ad.adset_name">
             <i class="fas fa-layer-group text-[8px] mr-1"></i>{{ ad.adset_name }}
           </div>
         </div>
@@ -130,19 +130,19 @@ function openLightbox(ad) {
         <!-- Métricas do período -->
         <div class="px-2.5 py-2 mt-1.5 border-t border-line/60 grid grid-cols-2 gap-x-2 gap-y-1">
           <div>
-            <div class="text-[9px] uppercase tracking-wider font-mono text-ink-subtle">Investido</div>
+            <div class="text-micro uppercase tracking-wider font-mono text-ink-subtle">Investido</div>
             <div class="text-xs font-semibold text-ink tabular-nums">{{ fmtMoney(ad.spend) }}</div>
           </div>
           <div class="text-right">
-            <div class="text-[9px] uppercase tracking-wider font-mono text-ink-subtle">Leads</div>
+            <div class="text-micro uppercase tracking-wider font-mono text-ink-subtle">Leads</div>
             <div class="text-xs font-semibold text-ink tabular-nums">{{ fmtInt(ad.office_leads) }}</div>
           </div>
           <div>
-            <div class="text-[9px] uppercase tracking-wider font-mono text-ink-subtle">CAC</div>
+            <div class="text-micro uppercase tracking-wider font-mono text-ink-subtle">CAC</div>
             <div class="text-xs font-medium text-ink tabular-nums">{{ ad.cac != null ? fmtMoney(ad.cac) : '—' }}</div>
           </div>
           <div class="text-right">
-            <div class="text-[9px] uppercase tracking-wider font-mono text-ink-subtle">CTR</div>
+            <div class="text-micro uppercase tracking-wider font-mono text-ink-subtle">CTR</div>
             <div class="text-xs font-medium text-ink tabular-nums">{{ fmtPct(ad.ctr) }}</div>
           </div>
         </div>

@@ -29,7 +29,7 @@
                                     class="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                                     :class="selected?.versionNumber === v.versionNumber ? 'bg-slate-50 dark:bg-slate-800/60' : ''">
                                     <div class="flex items-center gap-2">
-                                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-100 text-[11px] font-bold text-white dark:text-slate-900">
+                                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-100 text-micro font-bold text-white dark:text-slate-900">
                                             v{{ v.versionNumber }}
                                         </span>
                                         <span class="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{{ v.title }}</span>

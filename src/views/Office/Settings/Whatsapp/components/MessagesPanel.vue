@@ -78,7 +78,7 @@ const formatDt = (d) => {
 
     <div v-else class="rounded-xl border border-line bg-surface-raised overflow-hidden">
       <div class="hidden sm:grid grid-cols-[140px_1fr_180px_140px_180px] px-4 py-2 border-b border-line
-                  text-[11px] font-mono uppercase tracking-wider text-ink-subtle bg-surface-sunken/40">
+                  text-micro font-mono uppercase tracking-wider text-ink-subtle bg-surface-sunken/40">
         <span>Status</span><span>Conteúdo</span><span>Para / De</span><span>Categoria</span><span>Quando</span>
       </div>
 

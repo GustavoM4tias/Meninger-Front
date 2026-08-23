@@ -124,7 +124,7 @@ async function doMigrateMappings() {
               <!-- Opções -->
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
                 <label class="block">
-                  <span class="text-[10px] uppercase tracking-wider text-ink-subtle">Janela campanhas/ads</span>
+                  <span class="text-micro uppercase tracking-wider text-ink-subtle">Janela campanhas/ads</span>
                   <select v-model.number="fullOpts.sinceDays" class="w-full rounded border border-line bg-surface px-2 py-1 text-xs text-ink">
                     <option :value="30">30 dias</option>
                     <option :value="60">60 dias</option>
@@ -134,7 +134,7 @@ async function doMigrateMappings() {
                   </select>
                 </label>
                 <label class="block">
-                  <span class="text-[10px] uppercase tracking-wider text-ink-subtle">Janela histórico</span>
+                  <span class="text-micro uppercase tracking-wider text-ink-subtle">Janela histórico</span>
                   <select v-model.number="fullOpts.historicalDays" class="w-full rounded border border-line bg-surface px-2 py-1 text-xs text-ink">
                     <option :value="7">7 dias</option>
                     <option :value="14">14 dias</option>
@@ -144,7 +144,7 @@ async function doMigrateMappings() {
                   </select>
                 </label>
                 <label class="block">
-                  <span class="text-[10px] uppercase tracking-wider text-ink-subtle">Anúncios</span>
+                  <span class="text-micro uppercase tracking-wider text-ink-subtle">Anúncios</span>
                   <select v-model="fullOpts.adsAllStatuses" class="w-full rounded border border-line bg-surface px-2 py-1 text-xs text-ink">
                     <option :value="false">Só campanhas ativas</option>
                     <option :value="true">Todas (mais lento)</option>
@@ -166,7 +166,7 @@ async function doMigrateMappings() {
                 {{ store.lastFullSync.errors.length }} erro(s) total
               </span>
             </div>
-            <ul class="space-y-0.5 text-[11px] text-ink-muted ml-5">
+            <ul class="space-y-0.5 text-micro text-ink-muted ml-5">
               <li v-if="store.lastFullSync.forms">
                 <b>Forms:</b> {{ store.lastFullSync.forms.forms_total }} ({{ store.lastFullSync.forms.forms_new }} novos)
               </li>
@@ -185,7 +185,7 @@ async function doMigrateMappings() {
         </div>
 
         <!-- ── OPERAÇÕES INDIVIDUAIS ───────────────────────────────────── -->
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle pt-1">Operações individuais</div>
+        <div class="text-micro uppercase tracking-wider text-ink-subtle pt-1">Operações individuais</div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button @click="doSync" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left">
@@ -194,7 +194,7 @@ async function doMigrateMappings() {
               <span class="font-medium text-sm text-ink">Sincronizar Meta</span>
               <span v-if="store.syncing" class="ml-auto"><i class="fas fa-circle-notch fa-spin text-xs text-accent"></i></span>
             </div>
-            <p class="text-[11px] text-ink-muted">Só campanhas + insights da Marketing API.</p>
+            <p class="text-micro text-ink-muted">Só campanhas + insights da Marketing API.</p>
           </button>
 
           <button @click="doImportHistorical" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left">
@@ -203,7 +203,7 @@ async function doMigrateMappings() {
               <span class="font-medium text-sm text-ink">Importar histórico</span>
               <span v-if="store.importing" class="ml-auto"><i class="fas fa-circle-notch fa-spin text-xs text-accent"></i></span>
             </div>
-            <p class="text-[11px] text-ink-muted">Leads dos forms — até 90d (limite Meta).</p>
+            <p class="text-micro text-ink-muted">Leads dos forms — até 90d (limite Meta).</p>
           </button>
 
           <button @click="doReparse" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left">
@@ -211,7 +211,7 @@ async function doMigrateMappings() {
               <i class="fas fa-wand-magic-sparkles text-emerald-500"></i>
               <span class="font-medium text-sm text-ink">Re-processar leads</span>
             </div>
-            <p class="text-[11px] text-ink-muted">Aplica parser novo no raw_payload de leads antigos.</p>
+            <p class="text-micro text-ink-muted">Aplica parser novo no raw_payload de leads antigos.</p>
           </button>
 
           <button @click="doDispatchHistorical" class="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 hover:border-emerald-500/60 transition-colors text-left">
@@ -220,7 +220,7 @@ async function doMigrateMappings() {
               <span class="font-medium text-sm text-ink">Disparar histórico ao CV</span>
               <span v-if="store.dispatching" class="ml-auto"><i class="fas fa-circle-notch fa-spin text-xs text-accent"></i></span>
             </div>
-            <p class="text-[11px] text-ink-muted">Envia o backlog desde 01/06 (preview antes). Atualiza quem já existe.</p>
+            <p class="text-micro text-ink-muted">Envia o backlog desde 01/06 (preview antes). Atualiza quem já existe.</p>
           </button>
 
           <button @click="doMigrateMappings" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left sm:col-span-2">
@@ -228,13 +228,13 @@ async function doMigrateMappings() {
               <i class="fas fa-shuffle text-sky-500"></i>
               <span class="font-medium text-sm text-ink">Migrar mapping form → campanha</span>
             </div>
-            <p class="text-[11px] text-ink-muted">Copia mídia/empreendimento dos forms pras campanhas. Rodar 1× na migração.</p>
+            <p class="text-micro text-ink-muted">Copia mídia/empreendimento dos forms pras campanhas. Rodar 1× na migração.</p>
           </button>
         </div>
 
         <!-- ── Log de operações ───────────────────────────────────────── -->
         <div v-if="store.ops?.length" class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle mb-2 flex items-center justify-between">
+          <div class="text-micro uppercase tracking-wider text-ink-subtle mb-2 flex items-center justify-between">
             <span>Últimas operações</span>
             <button @click="store.clearOps()" class="text-ink-subtle hover:text-red-500 normal-case">limpar</button>
           </div>
@@ -244,7 +244,7 @@ async function doMigrateMappings() {
                           op.status === 'success' ? 'fas fa-circle-check text-emerald-500' :
                           'fas fa-circle-xmark text-red-500'" class="mt-0.5 text-[10px]"></i>
               <span class="flex-1 truncate">{{ op.label }}</span>
-              <span class="text-ink-subtle text-[10px] whitespace-nowrap">
+              <span class="text-ink-subtle text-micro whitespace-nowrap">
                 {{ new Date(op.started_at).toLocaleTimeString('pt-BR') }}
                 {{ op.duration_ms != null ? `(${(op.duration_ms/1000).toFixed(1)}s)` : '' }}
               </span>

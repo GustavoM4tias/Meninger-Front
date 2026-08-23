@@ -14,8 +14,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'change']);
 
 const sizeMap = {
-  sm: { track: 'h-5 w-9', thumb: 'h-4 w-4', translate: 'translate-x-4', icon: 'text-[8px]' },
-  md: { track: 'h-6 w-11', thumb: 'h-5 w-5', translate: 'translate-x-5', icon: 'text-[10px]' },
+  sm: { track: 'h-5 w-9', thumb: 'h-4 w-4', translate: 'translate-x-4', icon: 'text-micro' },
+  md: { track: 'h-6 w-11', thumb: 'h-5 w-5', translate: 'translate-x-5', icon: 'text-micro' },
 };
 
 const sz = computed(() => sizeMap[props.size] || sizeMap.md);

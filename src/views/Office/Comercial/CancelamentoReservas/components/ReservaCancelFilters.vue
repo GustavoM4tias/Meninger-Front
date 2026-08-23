@@ -124,7 +124,7 @@ onMounted(() => {
       style="overflow:visible">
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-flag text-[10px] mr-1 text-ink-subtle"></i>Status do caso
         </label>
         <MultiSelector v-model="selectedStatusLabels"
@@ -132,7 +132,7 @@ onMounted(() => {
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
         </label>
         <MultiSelector :model-value="store.historyFilter.empreendimento"
@@ -142,7 +142,7 @@ onMounted(() => {
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-flag text-[10px] mr-1 text-ink-subtle"></i>Etapa da reserva (CV)
         </label>
         <MultiSelector v-model="selectedCvSituacaoLabels"
@@ -150,7 +150,7 @@ onMounted(() => {
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-building-columns text-[10px] mr-1 text-ink-subtle"></i>Etapa do repasse (CV)
         </label>
         <MultiSelector v-model="selectedCvRepasseLabels"

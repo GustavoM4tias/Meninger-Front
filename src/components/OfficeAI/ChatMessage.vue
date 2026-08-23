@@ -145,7 +145,7 @@ const stepsOpen = ref(false);
             <p v-if="warningStyle.title" class="font-semibold">{{ warningStyle.title }}</p>
             <p :class="warningStyle.title ? 'mt-0.5' : ''">{{ warning.message }}</p>
             <p v-if="warning.kind === 'unreliable' && warning.details?.length"
-              class="text-[10px] opacity-80 mt-1 break-words">
+              class="text-micro opacity-80 mt-1 break-words">
               Não use estes valores do texto: {{ warning.details.map(d => d.value).join(', ') }}
             </p>
           </div>
@@ -204,7 +204,7 @@ const stepsOpen = ref(false);
         <ChatChecklistCards v-if="action?.type === 'checklist_cards' || action?.type === 'checklist_tasks'" :action="action" />
 
         <!-- "O que a Eme fez" — transparência pós-resposta -->
-        <div v-if="!streaming && steps.length" class="text-[11px] text-ink-subtle">
+        <div v-if="!streaming && steps.length" class="text-micro text-ink-subtle">
           <button type="button" @click="stepsOpen = !stepsOpen"
             class="inline-flex items-center gap-1.5 hover:text-ink-muted transition-colors">
             <i class="fas fa-circle-check text-emerald-500/80"></i>
@@ -216,7 +216,7 @@ const stepsOpen = ref(false);
               <i class="shrink-0 text-[10px]"
                 :class="s.status === 'error' ? 'fas fa-circle-exclamation text-amber-500' : 'fas fa-check text-emerald-500/80'"></i>
               <span class="truncate">{{ s.label }}</span>
-              <span v-if="s.ms != null" class="shrink-0 font-mono text-[10px] opacity-70">{{ (s.ms / 1000).toFixed(1) }}s</span>
+              <span v-if="s.ms != null" class="shrink-0 font-mono text-micro opacity-70">{{ (s.ms / 1000).toFixed(1) }}s</span>
             </li>
           </ul>
         </div>

@@ -138,7 +138,7 @@ onMounted(async () => {
       <Input v-model="localEnd" type="month" label="Mês fim" />
 
       <div v-if="groupsOptions.length">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-diagram-project text-[10px] mr-1 text-ink-subtle"></i>Grupos workflow (projeção)
         </label>
         <MultiSelector
@@ -148,7 +148,7 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empresa(s)
         </label>
         <MultiSelector

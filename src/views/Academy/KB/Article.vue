@@ -84,7 +84,7 @@
                                     <div class="flex items-center gap-2.5">
                                         <span class="kb-avatar">{{ authorInitials }}</span>
                                         <span>
-                                            <span class="block text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">Criado por</span>
+                                            <span class="block text-micro uppercase tracking-wide text-slate-400 dark:text-slate-500">Criado por</span>
                                             <button v-if="article?.createdBy?.id" type="button"
                                                 class="font-semibold text-slate-700 transition hover:text-[rgb(var(--art))] dark:text-slate-200"
                                                 @click="router.push({ name: 'AcademyUserProfile', params: { id: article.createdBy.id } })">
@@ -97,7 +97,7 @@
                                     <span class="hidden h-8 w-px bg-slate-200 dark:bg-slate-700 sm:block"></span>
 
                                     <div v-if="article?.updatedAt">
-                                        <span class="block text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                                        <span class="block text-micro uppercase tracking-wide text-slate-400 dark:text-slate-500">
                                             Atualizado
                                         </span>
                                         <span class="font-medium text-slate-600 dark:text-slate-300">
@@ -216,7 +216,7 @@
                                             <p class="mt-1 whitespace-pre-line text-sm text-slate-700 dark:text-slate-200">
                                                 {{ j.comment }}
                                             </p>
-                                            <div class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                                            <div class="mt-1 text-micro text-slate-400 dark:text-slate-500">
                                                 {{ fmtDate(j.updatedAt) }}
                                             </div>
                                         </div>

@@ -157,7 +157,7 @@ onBeforeUnmount(() => { faceModalOpen.value = false; });
     <!-- Divider -->
     <div class="flex items-center gap-3">
       <div class="hairline flex-1"></div>
-      <span class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">ou</span>
+      <span class="text-micro uppercase tracking-wider font-mono text-ink-subtle">ou</span>
       <div class="hairline flex-1"></div>
     </div>
 

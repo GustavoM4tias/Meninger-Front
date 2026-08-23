@@ -128,24 +128,24 @@ function fmtShortDate(iso) {
     <!-- Resumo agregado (sticky-like card) -->
     <Surface variant="raised" padding="sm" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
       <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Forms exibidos</div>
+        <div class="text-micro uppercase tracking-wider text-ink-subtle">Forms exibidos</div>
         <div class="text-xl font-semibold text-ink">{{ filtered.length }}</div>
-        <div class="text-[10px] text-ink-subtle">{{ summary.withMapping }} com vínculo</div>
+        <div class="text-micro text-ink-subtle">{{ summary.withMapping }} com vínculo</div>
       </div>
       <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Leads totais</div>
+        <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads totais</div>
         <div class="text-xl font-semibold text-ink">{{ summary.total }}</div>
       </div>
       <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Últimos 30 dias</div>
+        <div class="text-micro uppercase tracking-wider text-ink-subtle">Últimos 30 dias</div>
         <div class="text-xl font-semibold text-ink">{{ summary.last_30d }}</div>
       </div>
       <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Entregues ao CV</div>
+        <div class="text-micro uppercase tracking-wider text-ink-subtle">Entregues ao CV</div>
         <div class="text-xl font-semibold text-emerald-600 dark:text-emerald-300">{{ summary.delivered }}</div>
       </div>
       <div>
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Em held</div>
+        <div class="text-micro uppercase tracking-wider text-ink-subtle">Em held</div>
         <div class="text-xl font-semibold text-amber-600 dark:text-amber-300">{{ summary.held }}</div>
       </div>
     </Surface>
@@ -207,7 +207,7 @@ function fmtShortDate(iso) {
             <div v-for="(e, i) in store.lastSync.errors" :key="i"
               class="text-xs rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5">
               <div class="font-medium"><i class="fas fa-circle-exclamation mr-1"></i>{{ e.page_name || 'Página' }} <span class="text-ink-subtle font-mono">#{{ e.page_id }}</span></div>
-              <div class="text-amber-700 dark:text-amber-300 mt-0.5 font-mono text-[11px] break-words">{{ e.error }}</div>
+              <div class="text-amber-700 dark:text-amber-300 mt-0.5 font-mono text-micro break-words">{{ e.error }}</div>
             </div>
           </div>
           <div v-else-if="store.lastSync.forms_total === 0 && store.lastSync.pages_count > 0"
@@ -232,16 +232,16 @@ function fmtShortDate(iso) {
         <table class="min-w-full text-sm">
           <thead class="bg-surface-sunken/30 border-b border-line">
             <tr>
-              <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Form</th>
-              <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Página</th>
-              <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-              <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle" title="Data de criação na Meta">Criado</th>
-              <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Vínculo</th>
-              <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Empreend.</th>
-              <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Roteamento</th>
-              <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle" title="Total / Últimos 30d">Leads</th>
-              <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle" title="% de leads entregues ao CV">Entrega</th>
-              <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Último</th>
+              <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Form</th>
+              <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Página</th>
+              <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+              <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle" title="Data de criação na Meta">Criado</th>
+              <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Vínculo</th>
+              <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Empreend.</th>
+              <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Roteamento</th>
+              <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle" title="Total / Últimos 30d">Leads</th>
+              <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle" title="% de leads entregues ao CV">Entrega</th>
+              <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Último</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-line/60">
@@ -270,7 +270,7 @@ function fmtShortDate(iso) {
                   <span :class="['inline-block w-2 h-2 rounded-full shrink-0', priorityDot(f.priority).cls]" :title="priorityDot(f.priority).title"></span>
                   <div class="min-w-0">
                     <div class="text-ink font-medium leading-tight truncate">{{ f.name || '(sem nome)' }}</div>
-                    <div class="text-[10px] font-mono text-ink-subtle truncate">
+                    <div class="text-micro font-mono text-ink-subtle truncate">
                       #{{ f.id }}<span v-if="f.campaign_ref"> · {{ f.campaign_ref }}</span>
                     </div>
                   </div>
@@ -284,44 +284,44 @@ function fmtShortDate(iso) {
 
               <!-- Status Meta -->
               <td class="px-3 py-2.5 text-center">
-                <span :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium', statusBadge(f.status).cls]">
+                <span :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge(f.status).cls]">
                   {{ statusBadge(f.status).label }}
                 </span>
               </td>
 
               <!-- Criado (data vinda da Meta) -->
               <td class="px-3 py-2.5">
-                <div class="text-[11px] text-ink-muted">
+                <div class="text-micro text-ink-muted">
                   <span v-if="f.created_time">{{ fmtShortDate(f.created_time) }}</span>
                   <span v-else class="text-ink-subtle italic">—</span>
                 </div>
-                <div class="text-[10px] text-ink-subtle">na Meta</div>
+                <div class="text-micro text-ink-subtle">na Meta</div>
               </td>
 
               <!-- Vínculo -->
               <td class="px-3 py-2.5">
                 <template v-if="f.midia_slug">
-                  <div class="font-mono text-[11px] text-ink leading-tight">{{ f.midia_slug }}</div>
-                  <div class="text-[10px] text-ink-subtle">{{ f.cv_origem || 'FB' }}</div>
+                  <div class="font-mono text-micro text-ink leading-tight">{{ f.midia_slug }}</div>
+                  <div class="text-micro text-ink-subtle">{{ f.cv_origem || 'FB' }}</div>
                 </template>
-                <span v-else class="text-[11px] text-ink-subtle italic">sem vínculo</span>
+                <span v-else class="text-micro text-ink-subtle italic">sem vínculo</span>
               </td>
 
               <!-- Empreendimentos -->
               <td class="px-3 py-2.5 text-ink-muted">
                 <span v-if="Array.isArray(f.bound_empreendimentos) && f.bound_empreendimentos.length"
                   class="text-xs">{{ f.bound_empreendimentos.length }}</span>
-                <span v-else class="text-[11px] text-ink-subtle italic">—</span>
+                <span v-else class="text-micro text-ink-subtle italic">—</span>
               </td>
 
               <!-- Roteamento -->
               <td class="px-3 py-2.5 text-center">
                 <span v-if="f.mapping_active && f.midia_slug"
-                  class="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium">
+                  class="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 px-1.5 py-0.5 text-micro font-medium">
                   <i class="fas fa-bolt text-[9px]"></i>Auto
                 </span>
                 <span v-else
-                  class="inline-flex items-center gap-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium">
+                  class="inline-flex items-center gap-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20 px-1.5 py-0.5 text-micro font-medium">
                   <i class="fas fa-hand text-[9px]"></i>Manual
                 </span>
               </td>
@@ -329,7 +329,7 @@ function fmtShortDate(iso) {
               <!-- Leads count -->
               <td class="px-3 py-2.5 text-right whitespace-nowrap">
                 <div class="text-sm font-semibold text-ink leading-tight">{{ f.stats?.total || 0 }}</div>
-                <div class="text-[10px] text-ink-subtle leading-tight">
+                <div class="text-micro text-ink-subtle leading-tight">
                   <span v-if="f.stats?.last_30d">+{{ f.stats.last_30d }} (30d)</span>
                   <span v-else>—</span>
                 </div>
@@ -342,15 +342,15 @@ function fmtShortDate(iso) {
                     <div class="w-12 h-1.5 rounded-full bg-surface-sunken overflow-hidden">
                       <div class="h-full bg-emerald-500" :style="{ width: deliveryRate(f.stats) + '%' }"></div>
                     </div>
-                    <span class="text-[10px] font-medium text-ink">{{ deliveryRate(f.stats) }}%</span>
+                    <span class="text-micro font-medium text-ink">{{ deliveryRate(f.stats) }}%</span>
                   </div>
-                  <div v-if="f.stats.held" class="text-[10px] text-amber-600 dark:text-amber-300">{{ f.stats.held }} held</div>
+                  <div v-if="f.stats.held" class="text-micro text-amber-600 dark:text-amber-300">{{ f.stats.held }} held</div>
                 </template>
-                <span v-else class="text-[11px] text-ink-subtle italic">—</span>
+                <span v-else class="text-micro text-ink-subtle italic">—</span>
               </td>
 
               <!-- Último lead -->
-              <td class="px-3 py-2.5 text-[11px] text-ink-muted whitespace-nowrap">
+              <td class="px-3 py-2.5 text-micro text-ink-muted whitespace-nowrap">
                 {{ fmtRelative(f.stats?.last_lead_at) }}
               </td>
             </tr>

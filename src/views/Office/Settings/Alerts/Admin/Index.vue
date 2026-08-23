@@ -65,17 +65,17 @@ const cards = (s) => [
         <div v-for="c in cards(stats)" :key="c.label"
           class="rounded-xl bg-surface-raised border border-line shadow-soft surface-gradient p-4">
           <div class="flex items-center justify-between">
-            <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">{{ c.label }}</p>
+            <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle">{{ c.label }}</p>
             <i :class="[c.icon, c.cls, 'text-sm']"></i>
           </div>
           <p class="text-2xl font-bold text-ink mt-2">{{ c.value }}</p>
-          <p class="text-[11px] text-ink-subtle mt-0.5">{{ c.sub }}</p>
+          <p class="text-micro text-ink-subtle mt-0.5">{{ c.sub }}</p>
         </div>
       </div>
 
       <!-- Compartilhamentos -->
       <div class="rounded-xl bg-surface-raised border border-line shadow-soft p-4">
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-3">
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-3">
           Compartilhamentos
         </p>
         <div class="flex flex-wrap gap-x-8 gap-y-2 text-sm">
@@ -88,7 +88,7 @@ const cards = (s) => [
 
       <!-- Por usuário -->
       <div class="rounded-xl bg-surface-raised border border-line shadow-soft overflow-hidden">
-        <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle px-4 pt-4 pb-2">
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle px-4 pt-4 pb-2">
           Alertas por usuário
         </p>
         <div v-if="!stats.perUser.length" class="px-4 py-6 text-center text-xs text-ink-muted">
@@ -96,7 +96,7 @@ const cards = (s) => [
         </div>
         <table v-else class="w-full text-sm">
           <thead>
-            <tr class="text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle border-y border-line bg-surface-sunken/40">
+            <tr class="text-left text-micro font-mono uppercase tracking-wider text-ink-subtle border-y border-line bg-surface-sunken/40">
               <th class="px-4 py-2 font-medium">Usuário</th>
               <th class="px-3 py-2 font-medium text-center">Alertas</th>
               <th class="px-3 py-2 font-medium text-center">Ativos</th>
@@ -110,7 +110,7 @@ const cards = (s) => [
               class="border-b border-line last:border-0 hover:bg-surface-sunken/40 transition-colors">
               <td class="px-4 py-2.5">
                 <span class="font-medium text-ink">{{ u.username }}</span>
-                <span v-if="u.email" class="block text-[11px] text-ink-subtle">{{ u.email }}</span>
+                <span v-if="u.email" class="block text-micro text-ink-subtle">{{ u.email }}</span>
               </td>
               <td class="px-3 py-2.5 text-center font-mono text-ink">{{ u.rulesCount }}</td>
               <td class="px-3 py-2.5 text-center font-mono text-ink-muted">{{ u.enabledCount }}</td>

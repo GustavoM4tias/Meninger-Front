@@ -39,7 +39,7 @@
 
             <!-- Progresso -->
             <div class="space-y-1">
-              <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Status</label>
+              <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Status</label>
               <button
                 @click="toggleComplete"
                 :disabled="store.savingTask"
@@ -57,7 +57,7 @@
 
             <!-- Prioridade -->
             <div class="space-y-1">
-              <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Prioridade</label>
+              <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Prioridade</label>
               <select
                 v-model="form.priority"
                 @change="savePriority"
@@ -73,7 +73,7 @@
 
             <!-- Vencimento -->
             <div class="space-y-1">
-              <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Vencimento</label>
+              <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Vencimento</label>
               <input
                 type="date"
                 v-model="form.dueDate"
@@ -85,7 +85,7 @@
 
           <!-- Coluna (Bucket) -->
           <div class="space-y-1">
-            <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Coluna</label>
+            <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Coluna</label>
             <select
               v-model="form.bucketId"
               @change="saveBucket"
@@ -97,7 +97,7 @@
 
           <!-- Descrição -->
           <div class="space-y-1.5">
-            <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Descrição</label>
+            <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Descrição</label>
             <textarea
               v-model="form.description"
               @blur="saveDescription"
@@ -110,8 +110,8 @@
           <!-- Checklist -->
           <div class="space-y-2">
             <div class="flex items-center justify-between">
-              <label class="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Checklist</label>
-              <span v-if="checklist.length > 0" class="text-[11px] text-gray-400 dark:text-slate-500">
+              <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Checklist</label>
+              <span v-if="checklist.length > 0" class="text-micro text-gray-400 dark:text-slate-500">
                 {{ checklist.filter(i => i.isChecked).length }}/{{ checklist.length }}
               </span>
             </div>

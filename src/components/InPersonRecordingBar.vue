@@ -19,7 +19,7 @@
           <!-- Info -->
           <div class="min-w-0">
             <p class="text-xs font-semibold text-white truncate max-w-[160px]">{{ store.title }}</p>
-            <p class="text-[10px] text-violet-300/70 uppercase tracking-wider">
+            <p class="text-micro text-violet-300/70 uppercase tracking-wider">
               {{ store.isPaused ? 'pausado' : 'gravando' }}
             </p>
           </div>

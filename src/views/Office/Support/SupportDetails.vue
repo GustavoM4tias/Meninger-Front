@@ -205,7 +205,7 @@ const changeStatus = async () => {
           <div class="p-5 sm:p-6">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
               <div>
-                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                   Status
                 </label>
 
@@ -229,21 +229,21 @@ const changeStatus = async () => {
               </div>
 
               <div v-if="ticket.module">
-                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                   Módulo
                 </label>
                 <p class="text-sm font-medium text-ink capitalize">{{ ticket.module }}</p>
               </div>
 
               <div v-if="ticket.problemType">
-                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                   Tipo
                 </label>
                 <p class="text-sm font-medium text-ink">{{ formatProblemType(ticket.problemType) }}</p>
               </div>
 
               <div v-if="ticket.browser || ticket.os">
-                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                   Ambiente
                 </label>
                 <p class="text-sm text-ink-muted">

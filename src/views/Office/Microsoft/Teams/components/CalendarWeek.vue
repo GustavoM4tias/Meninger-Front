@@ -229,7 +229,7 @@ const gridCols = computed(() => `56px repeat(${props.weekDays.length}, minmax(0,
       <div v-for="day in weekDays" :key="fmtYMD(day)"
         class="py-2 px-1 text-center border-r border-line last:border-r-0"
         :class="isWeekend(day) && !isToday(day) ? 'bg-surface-sunken/40' : ''">
-        <div class="text-[10px] font-mono uppercase tracking-wider"
+        <div class="text-micro font-mono uppercase tracking-wider"
           :class="isToday(day) ? 'text-accent' : 'text-ink-subtle'">
           {{ isSingleDay ? DAY_SHORT[day.getDay()] : DAY_SHORT[day.getDay()] }}
         </div>
@@ -246,13 +246,13 @@ const gridCols = computed(() => `56px repeat(${props.weekDays.length}, minmax(0,
     <div v-if="hasAllDay" class="grid border-b border-line bg-surface-raised shrink-0"
       :style="{ gridTemplateColumns: gridCols }">
       <div class="flex items-center justify-end pr-2 py-1.5 border-r border-line">
-        <span class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Dia</span>
+        <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Dia</span>
       </div>
       <div v-for="day in weekDays" :key="fmtYMD(day)"
         class="border-r border-line last:border-r-0 p-1 space-y-1 min-h-[34px]">
         <button v-for="ev in allDayByDay[fmtYMD(day)]" :key="ev.id"
           @click="$emit('event-click', ev)"
-          class="w-full truncate text-left text-[11px] px-2 py-1 rounded-md font-medium border transition-colors"
+          class="w-full truncate text-left text-micro px-2 py-1 rounded-md font-medium border transition-colors"
           :class="eventClass(ev)">
           {{ ev.subject }}
         </button>
@@ -268,7 +268,7 @@ const gridCols = computed(() => `56px repeat(${props.weekDays.length}, minmax(0,
           <!-- Coluna de horas -->
           <div class="relative border-r border-line bg-surface-sunken/30">
             <div v-for="h in hours" :key="h"
-              class="absolute right-2 -translate-y-1/2 text-[11px] font-mono tabular-nums text-ink-subtle select-none"
+              class="absolute right-2 -translate-y-1/2 text-micro font-mono tabular-nums text-ink-subtle select-none"
               :style="{ top: ((h - hourRange.start) * SLOT_PX) + 'px' }">
               {{ String(h).padStart(2, '0') }}:00
             </div>
@@ -300,7 +300,7 @@ const gridCols = computed(() => `56px repeat(${props.weekDays.length}, minmax(0,
                        pointer-events-none z-[5] flex items-center gap-1.5 px-2"
                 :style="{ top: hoverTop + 'px', height: '26px' }">
                 <i class="fas fa-plus text-accent text-[9px]"></i>
-                <span class="text-[10px] font-mono font-semibold text-accent">{{ hoverTime }}</span>
+                <span class="text-micro font-mono font-semibold text-accent">{{ hoverTime }}</span>
               </div>
             </Transition>
 
@@ -322,10 +322,10 @@ const gridCols = computed(() => `56px repeat(${props.weekDays.length}, minmax(0,
               :class="eventClass(slot.ev)"
               :style="eventStyle(slot)">
               <div class="flex items-start gap-1">
-                <span class="text-[11px] font-semibold leading-tight truncate flex-1">{{ slot.ev.subject }}</span>
+                <span class="text-micro font-semibold leading-tight truncate flex-1">{{ slot.ev.subject }}</span>
                 <i v-if="slot.ev.isOnlineMeeting" class="fas fa-video text-[8px] mt-0.5 opacity-60 shrink-0"></i>
               </div>
-              <div v-if="!isCompact(slot.ev)" class="text-[9px] font-mono tabular-nums opacity-70 truncate">
+              <div v-if="!isCompact(slot.ev)" class="text-micro font-mono tabular-nums opacity-70 truncate">
                 {{ fmtTime(slot.ev.start) }}–{{ fmtTime(slot.ev.end) }}
               </div>
             </button>

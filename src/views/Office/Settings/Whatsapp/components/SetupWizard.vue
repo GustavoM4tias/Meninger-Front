@@ -124,7 +124,7 @@ const onRestart = () => {
       </div>
 
       <!-- stepper -->
-      <ol class="hidden sm:flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider">
+      <ol class="hidden sm:flex items-center gap-1 text-micro font-mono uppercase tracking-wider">
         <li v-for="(label, i) in ['Token', 'Conta', 'Webhook', 'Pronto']" :key="i"
           :class="['px-2 py-0.5 rounded-md border',
             i === step ? 'bg-accent-soft text-accent border-accent/20'
@@ -182,7 +182,7 @@ const onRestart = () => {
             {{ w.name || w.id }}{{ w.currency ? ` · ${w.currency}` : '' }}
           </option>
         </select>
-        <p v-if="!wabas.length" class="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+        <p v-if="!wabas.length" class="text-micro text-amber-600 dark:text-amber-400 mt-1">
           Nenhuma WABA visível para esse Business. Verifique permissões do System User.
         </p>
       </div>
@@ -197,7 +197,7 @@ const onRestart = () => {
             {{ p.display_phone_number }}{{ p.verified_name ? ` · ${p.verified_name}` : '' }}{{ p.quality_rating ? ` · ${p.quality_rating}` : '' }}
           </option>
         </select>
-        <p v-if="!phones.length" class="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+        <p v-if="!phones.length" class="text-micro text-amber-600 dark:text-amber-400 mt-1">
           Nenhum número cadastrado nessa WABA.
         </p>
       </div>

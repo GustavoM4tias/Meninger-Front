@@ -164,7 +164,7 @@ function goMural() { store.closePanel(); router.push('/mural'); }
                 :loading="ackingId === current.id" @click="confirm">
                 Li e estou ciente
               </Button>
-              <span v-else-if="current.acked" class="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">
+              <span v-else-if="current.acked" class="text-micro text-emerald-600 dark:text-emerald-400 truncate">
                 <i class="fas fa-circle-check"></i> Confirmado {{ formatDateTime(current.ackedAt) }}
               </span>
               <button class="text-xs text-accent hover:underline shrink-0" @click="goMural">Ver mural</button>

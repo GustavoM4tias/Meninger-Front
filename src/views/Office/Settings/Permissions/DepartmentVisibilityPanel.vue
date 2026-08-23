@@ -11,7 +11,7 @@
         <!-- Escopo -->
         <div class="flex flex-wrap items-end gap-3">
             <div>
-                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Nível</label>
+                <label class="text-micro font-medium text-ink-muted mb-1.5 block">Nível</label>
                 <div class="flex items-center bg-surface-sunken rounded-lg p-1 text-sm">
                     <button v-for="s in scopes" :key="s.value" type="button" @click="selectScope(s.value)"
                         class="px-3 py-1.5 rounded-md font-medium transition-colors"
@@ -22,17 +22,17 @@
             </div>
 
             <div v-if="scope === 'department'" class="min-w-[240px]">
-                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Departamento</label>
+                <label class="text-micro font-medium text-ink-muted mb-1.5 block">Departamento</label>
                 <Select v-model="scopeKey" :options="orgDepartmentOptions" placeholder="Selecione o departamento"
                     @update:modelValue="loadRules" />
             </div>
             <div v-if="scope === 'position'" class="min-w-[240px]">
-                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Cargo</label>
+                <label class="text-micro font-medium text-ink-muted mb-1.5 block">Cargo</label>
                 <Select v-model="scopeKey" :options="positionOptions" placeholder="Selecione o cargo"
                     @update:modelValue="loadRules" />
             </div>
             <div v-if="scope === 'user'" class="min-w-[240px]">
-                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Usuário</label>
+                <label class="text-micro font-medium text-ink-muted mb-1.5 block">Usuário</label>
                 <Select v-model="scopeKey" :options="userOptions" placeholder="Selecione o usuário"
                     @update:modelValue="loadRules" />
             </div>
@@ -49,8 +49,8 @@
 
         <div v-else class="border border-line rounded-lg overflow-hidden">
             <div class="px-3 py-2 bg-surface-sunken/60 border-b border-line flex items-center justify-between">
-                <span class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Departamento</span>
-                <span class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Visibilidade</span>
+                <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Departamento</span>
+                <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Visibilidade</span>
             </div>
             <div class="divide-y divide-line max-h-[55vh] overflow-y-auto">
                 <div v-for="d in store.departments" :key="d"

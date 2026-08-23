@@ -293,6 +293,11 @@ coisa: inadimplência subindo é seta para cima com cor de negativo.
 lê sem zoom, e zoom em tabela é onde o usuário desiste. `text-[10px]`,
 `text-[9px]` e menores estão proibidos.
 
+A regra vale para TEXTO. **Ícone não se lê, se mede**: um `<i>` com
+`fa-circle text-[3px]` é marcador de lista, e forçá-lo a 11px vira borrão. Por
+isso `_design/piso-tipografia.mjs` deixa as tags `<i>` de fora — e isso não é
+licença para esconder palavra dentro de `<i>`.
+
 ```
 text-micro    11px   rótulo, selo, legenda            (o piso)
 text-xs       12px   texto de apoio, célula densa

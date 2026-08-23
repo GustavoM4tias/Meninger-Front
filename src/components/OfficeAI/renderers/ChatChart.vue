@@ -179,7 +179,7 @@ function downloadCSV() {
               Total: {{ fmtNumber(total) }}
             </span>
           </div>
-          <p v-if="subtitle" class="text-[11px] text-gray-500 dark:text-slate-500 truncate mt-0.5">{{ subtitle }}</p>
+          <p v-if="subtitle" class="text-micro text-gray-500 dark:text-slate-500 truncate mt-0.5">{{ subtitle }}</p>
         </div>
       </div>
 
@@ -229,7 +229,7 @@ function downloadCSV() {
       <span
         v-for="(t, i) in topBreakdown"
         :key="i"
-        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] bg-white dark:bg-slate-700/60 ring-1 ring-slate-200 dark:ring-slate-600/40"
+        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro bg-white dark:bg-slate-700/60 ring-1 ring-slate-200 dark:ring-slate-600/40"
       >
         <span class="font-medium text-gray-700 dark:text-gray-200">{{ t.label }}</span>
         <span class="tabular-nums text-indigo-600 dark:text-indigo-400">{{ fmtNumber(t.value) }}</span>

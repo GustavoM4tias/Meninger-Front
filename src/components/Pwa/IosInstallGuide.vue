@@ -52,7 +52,7 @@ const passos = [
                 <div class="min-w-0 flex-1 pt-0.5">
                     <div class="flex items-center gap-2">
                         <span
-                            class="shrink-0 w-5 h-5 rounded-full bg-ink text-surface grid place-items-center text-[11px] font-bold">
+                            class="shrink-0 w-5 h-5 rounded-full bg-ink text-surface grid place-items-center text-micro font-bold">
                             {{ i + 1 }}
                         </span>
                         <p class="text-sm font-medium text-ink">{{ p.titulo }}</p>

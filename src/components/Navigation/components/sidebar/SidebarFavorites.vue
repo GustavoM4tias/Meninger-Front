@@ -51,7 +51,7 @@ async function removeFavorite(router, section) {
     @toggle="$emit('toggle')" @mouseenter="onEnter" @mouseleave="onLeave">
     <template v-if="Object.keys(groupedFavorites).length > 0">
       <li v-for="(subGroups, category) in groupedFavorites" :key="category" class="py-1">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle mb-1 px-2">
+        <p class="text-micro font-semibold uppercase tracking-wider text-ink-subtle mb-1 px-2">
           {{ category }}
         </p>
         <ul class="space-y-0.5">

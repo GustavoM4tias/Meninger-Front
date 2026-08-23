@@ -92,13 +92,13 @@ function fmtVigencia(v) {
 
           <div class="grid grid-cols-2 gap-3">
             <div class="rounded-xl p-3 bg-surface-sunken border border-line text-center">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Municípios</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Municípios</p>
               <p class="text-2xl font-bold text-ink mt-1 tabular-nums">
                 {{ store.info.total != null ? store.info.total.toLocaleString('pt-BR') : '—' }}
               </p>
             </div>
             <div class="rounded-xl p-3 bg-surface-sunken border border-line text-center">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Vigência</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Vigência</p>
               <p class="text-base font-bold text-ink mt-1 font-mono">{{ fmtVigencia(store.info.co_periodo) }}</p>
             </div>
           </div>
@@ -110,7 +110,7 @@ function fmtVigencia(v) {
               <i class="fas fa-user text-xs"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Última importação</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Última importação</p>
               <p class="text-sm font-semibold text-ink truncate">
                 {{ store.info.last_import.username }}
                 <span class="text-xs font-normal text-ink-subtle ml-1">
@@ -134,7 +134,7 @@ function fmtVigencia(v) {
           </div>
           <p class="text-xs text-ink-muted leading-relaxed">
             Faça upload da planilha oficial
-            <strong class="text-ink font-mono text-[11px]">TABELA_MUNICIPIOS_VIGENCIA_*.xlsx</strong>
+            <strong class="text-ink font-mono text-micro">TABELA_MUNICIPIOS_VIGENCIA_*.xlsx</strong>
             da CEF. Todos os municípios são atualizados via upsert — sem perda de dados.
           </p>
 
@@ -155,7 +155,7 @@ function fmtVigencia(v) {
             <span v-else class="text-sm font-medium text-ink truncate max-w-full px-4">
               {{ selectedFile.name }}
             </span>
-            <span class="text-[11px] text-ink-subtle font-mono">.xlsx — máx 5 MB</span>
+            <span class="text-micro text-ink-subtle font-mono">.xlsx — máx 5 MB</span>
             <input ref="fileInput" type="file" accept=".xlsx" class="hidden" @change="onFileChange" />
           </label>
 
@@ -197,13 +197,13 @@ function fmtVigencia(v) {
           <p class="text-xs text-ink-muted">Definidos em portaria federal, não variam por município.</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="rounded-xl p-4 bg-blue-500/10 border border-blue-500/20 text-center">
-              <p class="text-[11px] font-semibold text-blue-700 dark:text-blue-300">Faixa 3</p>
-              <p class="text-[10px] text-blue-600/80 dark:text-blue-400/80 mt-0.5">R$4.700 a R$8.000</p>
+              <p class="text-micro font-semibold text-blue-700 dark:text-blue-300">Faixa 3</p>
+              <p class="text-micro text-blue-600/80 dark:text-blue-400/80 mt-0.5">R$4.700 a R$8.000</p>
               <p class="text-lg font-bold text-blue-700 dark:text-blue-200 mt-1.5 tabular-nums">R$ 400.000</p>
             </div>
             <div class="rounded-xl p-4 bg-purple-500/10 border border-purple-500/20 text-center">
-              <p class="text-[11px] font-semibold text-purple-700 dark:text-purple-300">Faixa 4</p>
-              <p class="text-[10px] text-purple-600/80 dark:text-purple-400/80 mt-0.5">até R$12.000</p>
+              <p class="text-micro font-semibold text-purple-700 dark:text-purple-300">Faixa 4</p>
+              <p class="text-micro text-purple-600/80 dark:text-purple-400/80 mt-0.5">até R$12.000</p>
               <p class="text-lg font-bold text-purple-700 dark:text-purple-200 mt-1.5 tabular-nums">R$ 600.000</p>
             </div>
           </div>

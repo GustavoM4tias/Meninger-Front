@@ -47,11 +47,11 @@ function open(link) {
                     <div class="flex flex-wrap items-center gap-1.5">
                         <p class="truncate text-sm font-semibold text-ink">{{ card.nome }}</p>
                         <span v-if="card.admin"
-                            class="rounded-md border border-accent/20 bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                            class="rounded-md border border-accent/20 bg-accent-soft px-1.5 py-0.5 text-micro font-medium text-accent">
                             Admin
                         </span>
                         <span v-if="card.equipeTotal"
-                            class="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium
+                            class="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-micro font-medium
                                    text-emerald-600 dark:text-emerald-400">
                             Gestor · {{ card.equipeTotal }}
                         </span>
@@ -59,7 +59,7 @@ function open(link) {
                     <p class="mt-0.5 truncate text-xs text-ink-muted">
                         {{ [card.cargo, card.departamento].filter(Boolean).join(' · ') || 'Sem cargo definido' }}
                     </p>
-                    <p v-if="card.cidade" class="mt-0.5 text-[11px] text-ink-subtle">
+                    <p v-if="card.cidade" class="mt-0.5 text-micro text-ink-subtle">
                         <i class="fas fa-location-dot mr-1 text-[9px]"></i>{{ card.cidade }}
                     </p>
                 </div>
@@ -75,12 +75,12 @@ function open(link) {
             <div v-if="card.telefone || card.email" class="mt-2 flex flex-wrap gap-1.5">
                 <a v-if="card.telefone" :href="whatsappUrl(card.telefone)" target="_blank" rel="noopener"
                     class="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1
-                           text-[11px] font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
+                           text-micro font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
                     <i class="fab fa-whatsapp"></i>{{ card.telefone }}
                 </a>
                 <a v-if="card.email" :href="mailtoUrl(card.email)"
                     class="inline-flex max-w-full items-center gap-1 rounded-lg border border-line bg-surface-sunken px-2 py-1
-                           text-[11px] font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
+                           text-micro font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
                     <i class="fas fa-envelope"></i><span class="truncate">{{ card.email }}</span>
                 </a>
             </div>
@@ -107,7 +107,7 @@ function open(link) {
                         <div class="flex flex-wrap items-center gap-1.5">
                             <p class="text-base font-semibold text-ink">{{ detail.nome }}</p>
                             <span v-if="detail.admin"
-                                class="rounded-md border border-accent/20 bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                                class="rounded-md border border-accent/20 bg-accent-soft px-1.5 py-0.5 text-micro font-medium text-accent">
                                 Admin do sistema
                             </span>
                         </div>
@@ -117,18 +117,18 @@ function open(link) {
 
                 <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <div v-if="detail.departamento" class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                        <p class="text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">Departamento</p>
+                        <p class="text-micro font-semibold uppercase tracking-wide text-ink-subtle">Departamento</p>
                         <p class="mt-0.5 text-sm text-ink">{{ detail.departamento }}</p>
                     </div>
                     <div v-if="detail.cidade" class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                        <p class="text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">Cidade</p>
+                        <p class="text-micro font-semibold uppercase tracking-wide text-ink-subtle">Cidade</p>
                         <p class="mt-0.5 text-sm text-ink">{{ detail.cidade }}</p>
                     </div>
                 </div>
 
                 <!-- contato -->
                 <div v-if="detail.telefone || detail.email" class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">Contato</p>
+                    <p class="text-micro font-semibold uppercase tracking-wide text-ink-subtle">Contato</p>
                     <div class="mt-1.5 flex flex-wrap gap-1.5">
                         <a v-if="detail.telefone" :href="whatsappUrl(detail.telefone)" target="_blank" rel="noopener"
                             class="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1
@@ -145,7 +145,7 @@ function open(link) {
 
                 <!-- gestor direto -->
                 <div v-if="detail.gestor" class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">Gestor direto</p>
+                    <p class="text-micro font-semibold uppercase tracking-wide text-ink-subtle">Gestor direto</p>
                     <p class="mt-0.5 text-sm text-ink">
                         {{ detail.gestor.nome }}<span v-if="detail.gestor.cargo" class="text-ink-muted"> · {{ detail.gestor.cargo }}</span>
                     </p>
@@ -153,17 +153,17 @@ function open(link) {
 
                 <!-- equipe -->
                 <div v-if="detail.equipeTotal" class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">
+                    <p class="text-micro font-semibold uppercase tracking-wide text-ink-subtle">
                         Equipe ({{ detail.equipeTotal }})
                     </p>
                     <div class="mt-1 flex flex-wrap gap-1">
                         <span v-for="m in detail.equipe" :key="m.id"
-                            class="rounded-md border border-line bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium text-ink-muted"
+                            class="rounded-md border border-line bg-surface-raised px-1.5 py-0.5 text-micro font-medium text-ink-muted"
                             :title="m.cargo || ''">
                             {{ m.nome }}
                         </span>
                         <span v-if="detail.equipeTotal > detail.equipe.length"
-                            class="rounded-md px-1.5 py-0.5 text-[10px] text-ink-subtle">
+                            class="rounded-md px-1.5 py-0.5 text-micro text-ink-subtle">
                             +{{ detail.equipeTotal - detail.equipe.length }}
                         </span>
                     </div>

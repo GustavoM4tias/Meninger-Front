@@ -109,24 +109,24 @@
                                         </p>
 
                                         <span v-if="seq.isLocked(it, idx) && !it.completed"
-                                            class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                                            class="rounded-full bg-rose-100 px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
                                             bloqueado
                                         </span>
 
                                         <span v-else-if="seq.isCurrent(it, idx) && !it.completed"
-                                            class="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                            class="rounded-full bg-indigo-100 px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
                                             atual
                                         </span>
 
                                         <span v-if="!it.required"
-                                            class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                            class="rounded-full bg-slate-100 px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                                             opcional
                                         </span>
                                     </div>
 
                                     <p class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                                         <span
-                                            class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                            class="rounded bg-slate-100 px-1.5 py-0.5 text-micro font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                                             {{ it.type || 'ITEM' }}
                                         </span>
                                         <span class="inline-flex items-center gap-1">
@@ -145,12 +145,12 @@
                                         </button>
 
                                         <span v-if="it.completed"
-                                            class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                            class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-micro font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                                             <i class="fa-solid fa-circle-check"></i> concluído
                                         </span>
 
                                         <span v-else-if="seq.isCurrent(it, idx)"
-                                            class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                            class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-1 text-micro font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
                                             <i class="fa-solid fa-hourglass-half"></i> em andamento
                                         </span>
                                     </div>

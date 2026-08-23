@@ -21,7 +21,7 @@
                     <p class="font-semibold text-gray-800 dark:text-gray-100 md:text-lg leading-tight">
                         {{ totals.aprovados + totals.reprovados }}
                     </p>
-                    <p class="font-light text-[11px] leading-tight"
+                    <p class="font-light text-micro leading-tight"
                         :class="delta.validacoes >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
                         {{ delta.validacoes >= 0 ? '+' : '' }}{{ delta.validacoes.toFixed(1) }}%
                     </p>
@@ -32,7 +32,7 @@
                     <p class="font-semibold text-gray-800 dark:text-gray-100 md:text-lg leading-tight">
                         {{ approvalRate }}%
                     </p>
-                    <p class="font-light text-[11px] leading-tight"
+                    <p class="font-light text-micro leading-tight"
                         :class="delta.aprovacao >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
                         {{ delta.aprovacao >= 0 ? '+' : '' }}{{ delta.aprovacao.toFixed(1) }}%
                     </p>

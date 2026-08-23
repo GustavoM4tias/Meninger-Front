@@ -213,7 +213,7 @@ async function confirmFeedback({ comment }) {
             <!-- Conversas recentes -->
             <div v-if="recentSessions.length" class="relative z-10 w-full">
               <div class="flex items-center justify-between mb-3">
-                <p class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
+                <p class="flex items-center gap-2 text-micro font-semibold uppercase tracking-wider text-ink-subtle">
                   <i class="fas fa-clock-rotate-left text-accent/70"></i>
                   Conversas recentes
                 </p>
@@ -241,12 +241,12 @@ async function confirmFeedback({ comment }) {
                   <span class="min-w-0 flex-1 text-sm text-ink truncate group-hover:text-accent transition-colors">
                     {{ s.title || 'Chat sem título' }}
                   </span>
-                  <span class="shrink-0 text-[11px] text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</span>
+                  <span class="shrink-0 text-micro text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</span>
                 </button>
               </div>
             </div>
 
-            <p class="relative z-10 text-center text-[11px] text-ink-subtle font-mono pt-1">
+            <p class="relative z-10 text-center text-micro text-ink-subtle font-mono pt-1">
               A Eme pode cometer erros. Verifique informações importantes.
             </p>
           </div>
@@ -298,7 +298,7 @@ async function confirmFeedback({ comment }) {
               :is-streaming="aiStore.isStreaming"
               @send="send"
             />
-            <p class="text-center text-[11px] text-ink-subtle mt-2 font-mono">
+            <p class="text-center text-micro text-ink-subtle mt-2 font-mono">
               Eme pode cometer erros. Verifique informações importantes.
             </p>
           </div>

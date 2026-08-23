@@ -60,7 +60,7 @@
                     <Input v-model="refMonth" type="month" label="Mês de referência" />
 
                     <div class="lg:col-span-2">
-                        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                        <label class="block text-micro font-medium text-ink-muted mb-1.5">
                             <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
                         </label>
                         <MultiSelector :model-value="selectedCompanies"
@@ -69,7 +69,7 @@
                     </div>
 
                     <div v-if="can('configure')">
-                        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                        <label class="block text-micro font-medium text-ink-muted mb-1.5">
                             <i class="fas fa-circle-check text-[10px] mr-1 text-ink-subtle"></i>Liberação
                         </label>
                         <Select v-model="releaseFilter" :options="releaseOptions" placeholder="(Todos)" />
@@ -91,10 +91,10 @@
                         <i :class="c.icon"></i>
                     </span>
                     <div class="min-w-0 flex-1">
-                        <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ c.label }}</p>
+                        <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">{{ c.label }}</p>
                         <p class="text-2xl font-semibold tabular-nums tracking-tight leading-tight mt-0.5 truncate"
                             :class="c.valueClass || 'text-ink'">{{ c.value }}</p>
-                        <p class="text-[11px] text-ink-muted mt-0.5 truncate" :title="c.sub">{{ c.sub }}</p>
+                        <p class="text-micro text-ink-muted mt-0.5 truncate" :title="c.sub">{{ c.sub }}</p>
                     </div>
                 </div>
             </div>
@@ -115,25 +115,25 @@
                     <table class="min-w-full">
                         <thead class="bg-surface-sunken/60 border-b border-line">
                             <tr>
-                                <th @click="handleSort('empresa')" class="px-5 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                <th @click="handleSort('empresa')" class="px-5 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
                                     <div class="flex items-center gap-1.5">Empreendimento <i :class="sortIcon('empresa')" class="text-[9px]"></i></div>
                                 </th>
-                                <th @click="handleSort('acumulado')" class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                <th @click="handleSort('acumulado')" class="px-5 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
                                     <div class="flex items-center justify-end gap-1.5">Gasto acumulado <i :class="sortIcon('acumulado')" class="text-[9px]"></i></div>
                                 </th>
-                                <th @click="handleSort('orcamento')" class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                <th @click="handleSort('orcamento')" class="px-5 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
                                     <div class="flex items-center justify-end gap-1.5">Orçamento <i :class="sortIcon('orcamento')" class="text-[9px]"></i></div>
                                 </th>
-                                <th @click="handleSort('saldo')" class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                <th @click="handleSort('saldo')" class="px-5 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
                                     <div class="flex items-center justify-end gap-1.5">Saldo <i :class="sortIcon('saldo')" class="text-[9px]"></i></div>
                                 </th>
-                                <th @click="handleSort('futuro')" class="px-5 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                <th @click="handleSort('futuro')" class="px-5 py-3 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
                                     <div class="flex items-center justify-center gap-1.5">A comercializar <i :class="sortIcon('futuro')" class="text-[9px]"></i></div>
                                 </th>
-                                <th @click="handleSort('recomendado')" class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
+                                <th @click="handleSort('recomendado')" class="px-5 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors select-none">
                                     <div class="flex items-center justify-end gap-1.5">Recom./unid <i :class="sortIcon('recomendado')" class="text-[9px]"></i></div>
                                 </th>
-                                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
+                                <th class="px-5 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-line">
@@ -176,7 +176,7 @@
                                 <td class="px-5 py-3 text-right whitespace-nowrap">
                                     <div class="text-sm font-bold text-ink font-mono tabular-nums">{{ fmtBRL(item.header?.spentAccumulated) }}</div>
                                     <div v-if="Number(item.header?.lojaExcedenteAno || 0) > 0"
-                                        class="text-[10px] text-orange-600 dark:text-orange-400"
+                                        class="text-micro text-orange-600 dark:text-orange-400"
                                         v-tippy="'Excedente da loja acima do teto conta como gasto de MKT'">
                                         inclui {{ fmtBRL(item.header.lojaExcedenteAno) }} da loja
                                     </div>
@@ -185,14 +185,14 @@
                                             <div class="h-full rounded-full" :class="pctBarClass(item.header?.pctInvested)"
                                                 :style="{ width: Math.min(100, Number(item.header?.pctInvested || 0) * 100) + '%' }"></div>
                                         </div>
-                                        <div class="text-[10px] text-ink-subtle mt-0.5">{{ fmtPct(item.header?.pctInvested) }} do orçamento</div>
+                                        <div class="text-micro text-ink-subtle mt-0.5">{{ fmtPct(item.header?.pctInvested) }} do orçamento</div>
                                     </div>
                                 </td>
 
                                 <!-- ORÇAMENTO -->
                                 <td class="px-5 py-3 text-right whitespace-nowrap">
                                     <div class="text-sm font-semibold text-ink font-mono tabular-nums">{{ fmtBRL(item.header?.budgetTotal) }}</div>
-                                    <div class="text-[10px] text-ink-subtle font-mono">{{ fmtBRL(item.header?.plannedCostPerUnit) }}/unid</div>
+                                    <div class="text-micro text-ink-subtle font-mono">{{ fmtBRL(item.header?.plannedCostPerUnit) }}/unid</div>
                                 </td>
 
                                 <!-- SALDO -->
@@ -200,13 +200,13 @@
                                     <div class="text-sm font-bold font-mono tabular-nums" :class="moneyClass(item.header?.remainingBudgetTotal)">
                                         {{ fmtBRL(item.header?.remainingBudgetTotal) }}
                                     </div>
-                                    <div class="text-[10px] text-ink-subtle">orçamento − acumulado</div>
+                                    <div class="text-micro text-ink-subtle">orçamento − acumulado</div>
                                 </td>
 
                                 <!-- A COMERCIALIZAR (futuro) -->
                                 <td class="px-5 py-3 text-center whitespace-nowrap">
                                     <div class="text-base font-bold text-ink font-mono tabular-nums">{{ Number(item.header?.futureUnits || 0) }}</div>
-                                    <div class="text-[10px] text-ink-subtle mb-1">unidades</div>
+                                    <div class="text-micro text-ink-subtle mb-1">unidades</div>
                                     <Badge :variant="futureSourceInfo(item).variant" size="sm" v-tippy="futureSourceInfo(item).tip">
                                         <i class="fas" :class="futureSourceInfo(item).icon"></i> {{ futureSourceInfo(item).label }}
                                     </Badge>
@@ -217,7 +217,7 @@
                                     <div class="text-sm font-semibold font-mono tabular-nums" :class="moneyClass(item.header?.recommendedPerFutureUnit)">
                                         {{ fmtBRL(item.header?.recommendedPerFutureUnit) }}
                                     </div>
-                                    <div class="text-[10px] text-ink-subtle font-mono">
+                                    <div class="text-micro text-ink-subtle font-mono">
                                         VGV fut. {{ fmtCompact(item.header?.futureRevenue) }}
                                     </div>
                                 </td>
@@ -282,24 +282,24 @@
 
                 <!-- PARA TRÁS -->
                 <div>
-                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+                    <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
                         <i class="fas fa-clock-rotate-left mr-1"></i>Para trás — acumulado até {{ monthLabel }}
                     </p>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <Surface variant="flat" padding="sm" bordered>
-                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Gasto acumulado</div>
+                            <div class="text-micro text-ink-subtle uppercase tracking-wider">Gasto acumulado</div>
                             <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.spentAccumulated) }}</div>
                         </Surface>
                         <Surface variant="flat" padding="sm" bordered>
-                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">% investido</div>
+                            <div class="text-micro text-ink-subtle uppercase tracking-wider">% investido</div>
                             <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtPct(detailItem.header?.pctInvested) }}</div>
                         </Surface>
                         <Surface variant="flat" padding="sm" bordered>
-                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Vendidas (real)</div>
+                            <div class="text-micro text-ink-subtle uppercase tracking-wider">Vendidas (real)</div>
                             <div class="text-base font-bold text-ink font-mono tabular-nums">{{ Number(detailItem.header?.soldUnitsRealYtd || 0) }}</div>
                         </Surface>
                         <Surface variant="flat" padding="sm" bordered>
-                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Real / unid vendida</div>
+                            <div class="text-micro text-ink-subtle uppercase tracking-wider">Real / unid vendida</div>
                             <div class="text-base font-bold text-ink font-mono tabular-nums" :class="realUnitClass(detailItem)">{{ fmtBRL(detailItem.header?.currentRealCostPerUnit) }}</div>
                         </Surface>
                     </div>
@@ -307,25 +307,25 @@
 
                 <!-- PELA FRENTE -->
                 <div>
-                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">
+                    <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
                         <i class="fas fa-forward mr-1"></i>Pela frente — a comercializar
                         <span class="normal-case text-ink-subtle">({{ futureSourceInfo(detailItem).label.toLowerCase() }})</span>
                     </p>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <Surface variant="flat" padding="sm" bordered>
-                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Unidades futuras</div>
+                            <div class="text-micro text-ink-subtle uppercase tracking-wider">Unidades futuras</div>
                             <div class="text-base font-bold text-ink font-mono tabular-nums">{{ Number(detailItem.header?.futureUnits || 0) }}</div>
                         </Surface>
                         <Surface variant="flat" padding="sm" bordered>
-                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">VGV a realizar</div>
+                            <div class="text-micro text-ink-subtle uppercase tracking-wider">VGV a realizar</div>
                             <div class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(detailItem.header?.futureRevenue) }}</div>
                         </Surface>
                         <Surface variant="flat" padding="sm" bordered>
-                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Saldo a investir</div>
+                            <div class="text-micro text-ink-subtle uppercase tracking-wider">Saldo a investir</div>
                             <div class="text-base font-bold font-mono tabular-nums" :class="moneyClass(detailItem.header?.remainingBudgetTotal)">{{ fmtBRL(detailItem.header?.remainingBudgetTotal) }}</div>
                         </Surface>
                         <Surface variant="flat" padding="sm" bordered>
-                            <div class="text-[10px] text-ink-subtle uppercase tracking-wider">Recomendado / unid</div>
+                            <div class="text-micro text-ink-subtle uppercase tracking-wider">Recomendado / unid</div>
                             <div class="text-base font-bold font-mono tabular-nums" :class="moneyClass(detailItem.header?.recommendedPerFutureUnit)">{{ fmtBRL(detailItem.header?.recommendedPerFutureUnit) }}</div>
                         </Surface>
                     </div>
@@ -338,16 +338,16 @@
                 </div>
 
                 <!-- Série mensal -->
-                <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle -mb-2">Mês a mês - recomendado vs. gasto</p>
+                <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle -mb-2">Mês a mês - recomendado vs. gasto</p>
                 <div class="overflow-x-auto rounded-lg border border-line">
                     <table class="min-w-full text-sm">
                         <thead class="bg-surface-sunken/60 border-b border-line">
                             <tr>
-                                <th class="px-3 py-2 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Mês</th>
-                                <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Meta / Vend.</th>
-                                <th class="px-3 py-2 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Recomendado</th>
-                                <th class="px-3 py-2 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Gasto</th>
-                                <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                                <th class="px-3 py-2 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Mês</th>
+                                <th class="px-3 py-2 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Meta / Vend.</th>
+                                <th class="px-3 py-2 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Recomendado</th>
+                                <th class="px-3 py-2 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Gasto</th>
+                                <th class="px-3 py-2 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-line">

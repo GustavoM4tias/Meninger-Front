@@ -141,7 +141,7 @@
                       {{ opt }}
                     </span>
 
-                    <span v-if="quizSubmitted && correctIndexOf(q, qi) != null && oi === correctIndexOf(q, qi)" class="ml-2 rounded-full px-2 py-0.5 text-[11px] font-mono border
+                    <span v-if="quizSubmitted && correctIndexOf(q, qi) != null && oi === correctIndexOf(q, qi)" class="ml-2 rounded-full px-2 py-0.5 text-micro font-mono border
                              border-emerald-200 dark:border-emerald-900/40
                              bg-emerald-50/60 dark:bg-emerald-900/10
                              text-emerald-700 dark:text-emerald-300">
@@ -211,7 +211,7 @@
           @mouseenter="onPreviewEnter" @mouseleave="onPreviewLeave" @click="openPreview">
           <div class="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <div class="flex items-center gap-2">
-              <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+              <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                 <i class="fa-regular fa-folder text-[9px]"></i>
                 {{ preview.entry.categorySlug }}
               </span>
@@ -223,7 +223,7 @@
           <div class="px-4 py-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
             {{ preview.entry.snippet || 'Sem prévia disponível.' }}
           </div>
-          <div class="flex items-center justify-between border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400 dark:border-slate-800 dark:text-slate-500">
+          <div class="flex items-center justify-between border-t border-slate-100 px-4 py-2 text-micro text-slate-400 dark:border-slate-800 dark:text-slate-500">
             <span class="inline-flex items-center gap-1">
               <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
               Clique para abrir
@@ -847,7 +847,7 @@ function optionClass(qi, oi) {
 }
 
 .token-kicker {
-  @apply text-[11px] font-mono text-slate-500 dark:text-slate-400;
+  @apply text-micro font-mono text-slate-500 dark:text-slate-400;
 }
 
 .token-title {

@@ -227,34 +227,34 @@ function fmtShortDate(iso) {
     <Surface variant="raised" padding="none" class="overflow-hidden">
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-line/60">
         <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ink-subtle">
+          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
             <i class="fas fa-square-poll-vertical"></i>Forms exibidos
           </div>
           <div class="mt-1 text-xl font-semibold text-ink leading-none">{{ filtered.length }}</div>
-          <div class="mt-1 text-[10px] text-ink-subtle">{{ summary.actives }} ativos</div>
+          <div class="mt-1 text-micro text-ink-subtle">{{ summary.actives }} ativos</div>
         </div>
         <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ink-subtle">
+          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
             <i class="fas fa-users"></i>Leads no período
           </div>
           <div class="mt-1 text-xl font-semibold text-ink leading-none">{{ summary.total }}</div>
         </div>
         <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ink-subtle">
+          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
             <i class="fas fa-circle-exclamation"></i>Com erro
           </div>
           <div class="mt-1 text-xl font-semibold leading-none"
             :class="summary.failed > 0 ? 'text-red-600 dark:text-red-400' : 'text-ink'">{{ summary.failed }}</div>
-          <div v-if="summary.failed > 0" class="mt-1 text-[10px] text-red-500">falha/recusa no CV</div>
+          <div v-if="summary.failed > 0" class="mt-1 text-micro text-red-500">falha/recusa no CV</div>
         </div>
         <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ink-subtle">
+          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
             <i class="fas fa-circle-check"></i>Entregues ao CV
           </div>
           <div class="mt-1 text-xl font-semibold text-emerald-600 dark:text-emerald-400 leading-none">{{ summary.delivered }}</div>
         </div>
         <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-ink-subtle">
+          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
             <i class="fas fa-hourglass-half"></i>Em held
           </div>
           <div class="mt-1 text-xl font-semibold text-amber-600 dark:text-amber-400 leading-none">{{ summary.held }}</div>
@@ -335,14 +335,14 @@ function fmtShortDate(iso) {
         <table class="min-w-full text-sm">
           <thead class="bg-surface-sunken/30 border-b border-line">
             <tr>
-              <th class="px-4 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Formulário</th>
-              <th class="px-4 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
-              <th class="px-4 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Período</th>
-              <th class="px-4 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Empreend.</th>
-              <th class="px-4 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
-              <th class="px-4 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Entrega</th>
-              <th class="px-4 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Último</th>
-              <th class="px-4 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+              <th class="px-4 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Formulário</th>
+              <th class="px-4 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
+              <th class="px-4 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Período</th>
+              <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Empreend.</th>
+              <th class="px-4 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
+              <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Entrega</th>
+              <th class="px-4 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Último</th>
+              <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
               <th class="px-4 py-2.5 w-20"></th>
             </tr>
           </thead>
@@ -374,7 +374,7 @@ function fmtShortDate(iso) {
                   <span :class="['inline-block w-2 h-2 rounded-full shrink-0', priorityDot(f.priority).cls]" :title="priorityDot(f.priority).title"></span>
                   <div class="min-w-0">
                     <div class="text-ink font-medium leading-tight truncate">{{ f.name }}</div>
-                    <div class="text-[10px] font-mono text-ink-subtle truncate mt-0.5">
+                    <div class="text-micro font-mono text-ink-subtle truncate mt-0.5">
                       /{{ f.slug }}<span v-if="f.campaign_ref"> · {{ f.campaign_ref }}</span>
                     </div>
                   </div>
@@ -383,18 +383,18 @@ function fmtShortDate(iso) {
 
               <!-- Mídia -->
               <td class="px-4 py-3">
-                <div v-if="f.midia_slug" class="font-mono text-[11px] text-ink">{{ f.midia_slug }}</div>
-                <div v-else class="text-[11px] text-ink-subtle italic">—</div>
-                <div class="text-[10px] text-ink-subtle mt-0.5">{{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '—' }}</div>
+                <div v-if="f.midia_slug" class="font-mono text-micro text-ink">{{ f.midia_slug }}</div>
+                <div v-else class="text-micro text-ink-subtle italic">—</div>
+                <div class="text-micro text-ink-subtle mt-0.5">{{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '—' }}</div>
               </td>
 
               <!-- Período -->
               <td class="px-4 py-3 whitespace-nowrap">
-                <div class="text-[11px] text-ink-muted">
+                <div class="text-micro text-ink-muted">
                   <span v-if="f.start_date">{{ fmtShortDate(f.start_date) }}</span>
                   <span v-else class="text-ink-subtle italic">desde criação</span>
                 </div>
-                <div class="text-[10px] mt-0.5" :class="endedAlready(f) ? 'text-red-500 font-medium' : 'text-ink-subtle'">
+                <div class="text-micro mt-0.5" :class="endedAlready(f) ? 'text-red-500 font-medium' : 'text-ink-subtle'">
                   <template v-if="f.end_date">→ {{ fmtShortDate(f.end_date) }}<span v-if="endedAlready(f)"> (encerrado)</span></template>
                   <template v-else>sem fim</template>
                 </div>
@@ -404,7 +404,7 @@ function fmtShortDate(iso) {
               <td class="px-4 py-3 text-center text-ink-muted">
                 <span v-if="Array.isArray(f.bound_empreendimentos) && f.bound_empreendimentos.length"
                   class="text-xs">{{ f.bound_empreendimentos.length }}</span>
-                <span v-else class="text-[11px] text-ink-subtle italic">—</span>
+                <span v-else class="text-micro text-ink-subtle italic">—</span>
               </td>
 
               <!-- Leads count (recorte do período mestre) -->
@@ -412,7 +412,7 @@ function fmtShortDate(iso) {
                 <div class="text-sm font-semibold text-ink leading-tight" title="Leads captados no período selecionado">
                   {{ f.stats?.total || 0 }}
                 </div>
-                <div class="text-[10px] leading-tight mt-0.5"
+                <div class="text-micro leading-tight mt-0.5"
                   :class="f.stats?.failed ? 'text-red-500 font-medium' : 'text-ink-subtle'">
                   <span v-if="f.stats?.failed">{{ f.stats.failed }} com erro</span>
                   <span v-else>—</span>
@@ -426,15 +426,15 @@ function fmtShortDate(iso) {
                     <div class="w-12 h-1.5 rounded-full bg-surface-sunken border border-line/40 overflow-hidden">
                       <div class="h-full bg-emerald-500" :style="{ width: deliveryRate(f.stats) + '%' }"></div>
                     </div>
-                    <span class="text-[10px] font-medium text-ink">{{ deliveryRate(f.stats) }}%</span>
+                    <span class="text-micro font-medium text-ink">{{ deliveryRate(f.stats) }}%</span>
                   </div>
-                  <div v-if="f.stats.held" class="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">{{ f.stats.held }} held</div>
+                  <div v-if="f.stats.held" class="text-micro text-amber-600 dark:text-amber-400 mt-0.5">{{ f.stats.held }} held</div>
                 </template>
-                <span v-else class="text-[11px] text-ink-subtle italic">—</span>
+                <span v-else class="text-micro text-ink-subtle italic">—</span>
               </td>
 
               <!-- Último lead -->
-              <td class="px-4 py-3 text-[11px] text-ink-muted whitespace-nowrap">
+              <td class="px-4 py-3 text-micro text-ink-muted whitespace-nowrap">
                 {{ fmtRelative(f.stats?.last_lead_at) }}
               </td>
 
@@ -442,7 +442,7 @@ function fmtShortDate(iso) {
               <td class="px-4 py-3 text-center">
                 <button @click="quickToggle($event, f)"
                   :title="f.active ? 'Clique para desativar' : 'Clique para ativar'"
-                  :class="['inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors',
+                  :class="['inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-micro font-medium transition-colors',
                     f.active
                       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
                       : 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/20 hover:bg-slate-500/20']">

@@ -153,7 +153,7 @@ const creatorAvatar = computed(() => {
       <div class="px-5 py-5 space-y-6 max-h-[40vh] overflow-y-auto">
 
         <section v-if="event.description">
-          <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5">Descrição</p>
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5">Descrição</p>
           <p class="text-sm text-ink leading-relaxed whitespace-pre-line">{{ event.description }}</p>
         </section>
 
@@ -161,7 +161,7 @@ const creatorAvatar = computed(() => {
         <PlannedItemsSection :event-id="event.id" />
 
         <section v-if="event.address && (event.address.street || event.address.zip_code)">
-          <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5">Endereço</p>
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5">Endereço</p>
           <div class="text-sm text-ink space-y-0.5">
             <p v-if="event.address.street">
               {{ event.address.street }}<span v-if="event.address.number">, {{ event.address.number }}</span>
@@ -172,7 +172,7 @@ const creatorAvatar = computed(() => {
         </section>
 
         <section v-if="event.organizers?.length">
-          <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Organizadores</p>
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Organizadores</p>
           <div class="space-y-1.5">
             <div v-for="(o, i) in event.organizers" :key="i"
               class="flex items-center gap-3 p-2.5 rounded-lg bg-surface-sunken border border-line">

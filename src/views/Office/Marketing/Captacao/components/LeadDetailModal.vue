@@ -145,7 +145,7 @@ async function doReconcileCv() {
       <header class="rounded-xl border border-line bg-surface-sunken/40 px-4 py-3">
         <div class="flex items-start justify-between gap-3 flex-wrap">
           <div class="min-w-0">
-            <div class="flex items-center gap-2 text-[11px] text-ink-subtle font-mono mb-0.5 flex-wrap">
+            <div class="flex items-center gap-2 text-micro text-ink-subtle font-mono mb-0.5 flex-wrap">
               <span :class="channelMeta.cls"><i :class="channelMeta.icon"></i> {{ channelMeta.label }}</span>
               <span v-if="lead.is_reentry" class="text-violet-600 dark:text-violet-400">
                 <i class="fas fa-arrows-rotate"></i> re-entrada
@@ -165,7 +165,7 @@ async function doReconcileCv() {
           </div>
           <div class="flex flex-col items-end gap-1.5 shrink-0">
             <LeadStatusBadge :status="lead.status" />
-            <span v-if="lead.cv_idlead" class="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">
+            <span v-if="lead.cv_idlead" class="text-micro font-mono text-emerald-600 dark:text-emerald-400">
               <i class="fas fa-link mr-1"></i>CV #{{ lead.cv_idlead }}
             </span>
           </div>
@@ -174,7 +174,7 @@ async function doReconcileCv() {
 
       <!-- 2. Cronologia das 3 entradas -->
       <section v-if="timeline3" class="rounded-xl border border-line bg-surface-raised p-4">
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-3">
+        <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-3">
           <i class="fas fa-stopwatch mr-1"></i>Cronologia
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -190,7 +190,7 @@ async function doReconcileCv() {
             <div class="text-sm font-mono tabular-nums" :class="timeline3.meta ? 'text-ink' : 'text-ink-subtle'">
               {{ fmt(timeline3.meta) }}
             </div>
-            <div class="text-[10px] text-ink-subtle mt-1">
+            <div class="text-micro text-ink-subtle mt-1">
               {{ lead.channel === 'meta_lead_ads' ? 'criação na plataforma' : 'não se aplica (canal site)' }}
             </div>
           </div>
@@ -206,7 +206,7 @@ async function doReconcileCv() {
             <div class="text-sm font-mono tabular-nums" :class="timeline3.office ? 'text-ink' : 'text-ink-subtle'">
               {{ fmt(timeline3.office) }}
             </div>
-            <div class="text-[10px] text-ink-subtle mt-1">
+            <div class="text-micro text-ink-subtle mt-1">
               <span v-if="timeline3.metaToOffice != null">
                 <i class="fas fa-arrow-right text-[8px] mx-0.5"></i>
                 {{ humanDelta(timeline3.metaToOffice) }} após Meta
@@ -229,7 +229,7 @@ async function doReconcileCv() {
             <div class="text-sm font-mono tabular-nums" :class="timeline3.cv ? 'text-ink' : 'text-ink-subtle'">
               {{ fmt(timeline3.cv) }}
             </div>
-            <div class="text-[10px] text-ink-subtle mt-1">
+            <div class="text-micro text-ink-subtle mt-1">
               <span v-if="timeline3.officeToCv != null">
                 <i class="fas fa-arrow-right text-[8px] mx-0.5"></i>
                 {{ humanDelta(timeline3.officeToCv) }} após Office
@@ -241,7 +241,7 @@ async function doReconcileCv() {
           </div>
         </div>
 
-        <div v-if="lead.dispatch_attempts > 0" class="mt-3 text-[11px] text-ink-subtle font-mono">
+        <div v-if="lead.dispatch_attempts > 0" class="mt-3 text-micro text-ink-subtle font-mono">
           <i class="fas fa-arrows-rotate text-[10px] mr-1"></i>
           {{ lead.dispatch_attempts }} tentativa{{ lead.dispatch_attempts > 1 ? 's' : '' }} de despacho
           <span v-if="lead.next_retry_at"> · próximo retry: {{ fmt(lead.next_retry_at) }}</span>
@@ -252,15 +252,15 @@ async function doReconcileCv() {
       <section class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <!-- Campanha Meta -->
         <div v-if="metaCampaign" class="rounded-xl border border-line bg-surface-raised p-4">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">
             <i class="fas fa-bullhorn mr-1"></i>Campanha Meta
           </div>
           <div class="text-sm font-medium text-ink">{{ metaCampaign.name || '(sem nome)' }}</div>
-          <div class="text-[11px] text-ink-muted font-mono mt-0.5">
+          <div class="text-micro text-ink-muted font-mono mt-0.5">
             #{{ metaCampaign.id }}
             <span v-if="metaCampaign.account_name"> · {{ metaCampaign.account_name }}</span>
           </div>
-          <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
+          <div class="mt-2 flex flex-wrap items-center gap-1.5 text-micro">
             <Badge v-if="metaCampaign.effective_status" :variant="String(metaCampaign.effective_status).includes('ACTIVE') ? 'success' : 'neutral'" size="sm">
               {{ metaCampaign.effective_status }}
             </Badge>
@@ -276,19 +276,19 @@ async function doReconcileCv() {
 
         <!-- Form Meta -->
         <div v-if="metaForm" class="rounded-xl border border-line bg-surface-raised p-4">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">
             <i class="fas fa-square-poll-vertical mr-1"></i>Formulário Meta
           </div>
           <div class="text-sm font-medium text-ink">{{ metaForm.name || '(sem nome)' }}</div>
-          <div class="text-[11px] text-ink-muted font-mono mt-0.5">
+          <div class="text-micro text-ink-muted font-mono mt-0.5">
             #{{ metaForm.id }}
             <span v-if="metaForm.page_name"> · {{ metaForm.page_name }}</span>
           </div>
           <details v-if="Array.isArray(metaForm.questions) && metaForm.questions.length" class="mt-2">
-            <summary class="text-[11px] text-accent cursor-pointer">
+            <summary class="text-micro text-accent cursor-pointer">
               Ver {{ metaForm.questions.length }} pergunta(s) do form
             </summary>
-            <ul class="mt-1.5 ml-3 space-y-0.5 text-[11px] text-ink-muted list-disc list-inside">
+            <ul class="mt-1.5 ml-3 space-y-0.5 text-micro text-ink-muted list-disc list-inside">
               <li v-for="(q, i) in metaForm.questions" :key="i">
                 <span class="font-medium text-ink">{{ q.label || q.key }}</span>
                 <span v-if="q.type" class="text-ink-subtle"> · {{ q.type }}</span>
@@ -299,11 +299,11 @@ async function doReconcileCv() {
 
         <!-- Form interno -->
         <div v-if="leadForm" class="rounded-xl border border-line bg-surface-raised p-4">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">
             <i class="fas fa-globe mr-1"></i>Formulário do site
           </div>
           <div class="text-sm font-medium text-ink">{{ leadForm.name }}</div>
-          <div class="text-[11px] text-ink-muted font-mono mt-0.5">
+          <div class="text-micro text-ink-muted font-mono mt-0.5">
             /{{ leadForm.slug }}
             <span v-if="leadForm.midia_slug"> · {{ leadForm.midia_slug }}</span>
           </div>
@@ -311,7 +311,7 @@ async function doReconcileCv() {
 
         <!-- Vínculo CV -->
         <div class="rounded-xl border border-line bg-surface-raised p-4">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">
             <i class="fas fa-link mr-1"></i>Vínculo CV
           </div>
           <dl class="text-xs space-y-1">
@@ -341,33 +341,33 @@ async function doReconcileCv() {
 
       <!-- 4. Dados pessoais + atribuição -->
       <section class="grid grid-cols-2 sm:grid-cols-3 gap-3 rounded-xl border border-line bg-surface-raised p-4">
-        <div class="sm:col-span-3 text-[10px] uppercase tracking-wider text-ink-subtle font-mono">
+        <div class="sm:col-span-3 text-micro uppercase tracking-wider text-ink-subtle font-mono">
           <i class="fas fa-user mr-1"></i>Dados e atribuição
         </div>
         <div>
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Nome</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Nome</div>
           <div class="text-sm text-ink truncate">{{ lead.nome || '—' }}</div>
         </div>
         <div>
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">E-mail</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">E-mail</div>
           <div class="text-sm text-ink break-all">{{ lead.email || '—' }}</div>
         </div>
         <div>
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Telefone</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Telefone</div>
           <div class="text-sm text-ink">{{ lead.telefone || '—' }}</div>
         </div>
         <div v-if="lead.cidade || lead.estado">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Cidade / UF</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Cidade / UF</div>
           <div class="text-sm text-ink">{{ [lead.cidade, lead.estado].filter(Boolean).join(' · ') || '—' }}</div>
         </div>
         <div v-if="lead.utm_source || lead.utm_campaign">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">UTM</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">UTM</div>
           <div class="text-sm text-ink truncate font-mono" :title="`${lead.utm_source} / ${lead.utm_medium} / ${lead.utm_campaign}`">
             {{ [lead.utm_source, lead.utm_medium, lead.utm_campaign].filter(Boolean).join(' / ') }}
           </div>
         </div>
         <div v-if="lead.landing_url">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Landing</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Landing</div>
           <div class="text-sm text-ink break-all font-mono">{{ lead.landing_url }}</div>
         </div>
       </section>
@@ -375,7 +375,7 @@ async function doReconcileCv() {
       <!-- 5. Respostas do form (extra_fields) -->
       <section v-if="lead.extra_fields && Object.keys(lead.extra_fields).length"
         class="rounded-xl border border-line bg-surface-raised p-4">
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">
+        <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">
           <i class="fas fa-list-check mr-1"></i>Respostas do formulário ({{ Object.keys(lead.extra_fields).length }})
         </div>
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
@@ -391,7 +391,7 @@ async function doReconcileCv() {
         class="rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-sm text-red-700 dark:text-red-300">
         <div class="flex items-center gap-2 font-medium mb-0.5">
           <i class="fas fa-circle-exclamation"></i>Último erro
-          <span v-if="lead.error_code" class="text-[10px] font-mono opacity-70">{{ lead.error_code }}</span>
+          <span v-if="lead.error_code" class="text-micro font-mono opacity-70">{{ lead.error_code }}</span>
         </div>
         <div class="text-xs opacity-90">{{ lead.last_error }}</div>
       </div>
@@ -446,15 +446,15 @@ async function doReconcileCv() {
 
       <!-- 9. Timeline de eventos -->
       <section class="rounded-xl border border-line bg-surface-raised p-4">
-        <div class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-3">
+        <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-3">
           <i class="fas fa-clock-rotate-left mr-1"></i>Histórico de eventos
         </div>
         <ol class="relative border-l border-line ml-2 space-y-3">
           <li v-for="ev in events" :key="ev.id" class="ml-4">
             <div class="absolute -left-[7px] mt-1 h-3 w-3 rounded-full bg-accent border-2 border-surface-raised"></div>
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-[11px] text-ink-subtle font-mono">{{ fmt(ev.created_at) }}</span>
-              <span class="text-[10px] text-ink-subtle font-mono">· {{ ev.actor }}</span>
+              <span class="text-micro text-ink-subtle font-mono">{{ fmt(ev.created_at) }}</span>
+              <span class="text-micro text-ink-subtle font-mono">· {{ ev.actor }}</span>
             </div>
             <div class="text-sm text-ink font-medium">
               {{ ev.event_type }}

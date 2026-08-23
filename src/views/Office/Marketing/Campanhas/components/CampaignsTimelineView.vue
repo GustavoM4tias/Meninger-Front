@@ -144,14 +144,14 @@ const sorted = computed(() => {
       <div v-for="(m, i) in months" :key="i"
         class="absolute top-0 bottom-0 flex items-center"
         :style="{ left: m.position + '%' }">
-        <span class="text-[9px] uppercase tracking-wider text-ink-subtle font-mono pl-1 border-l border-line/40 h-full flex items-center">
+        <span class="text-micro uppercase tracking-wider text-ink-subtle font-mono pl-1 border-l border-line/40 h-full flex items-center">
           {{ m.label }}
         </span>
       </div>
       <!-- Marca "hoje" -->
       <div class="absolute top-0 bottom-0 w-px bg-red-500/80 z-10"
         :style="{ left: nowPos + '%' }">
-        <div class="absolute -top-1 -translate-x-1/2 text-[8px] font-mono text-red-500 bg-surface px-1 rounded whitespace-nowrap">
+        <div class="absolute -top-1 -translate-x-1/2 text-micro font-mono text-red-500 bg-surface px-1 rounded whitespace-nowrap">
           hoje
         </div>
       </div>
@@ -170,7 +170,7 @@ const sorted = computed(() => {
         <!-- Nome da campanha (esquerda, sticky) -->
         <div class="absolute left-2 top-0 bottom-0 z-20 flex items-center pr-2 pointer-events-none"
           style="background: linear-gradient(90deg, var(--surface) 80%, transparent);">
-          <span class="text-[11px] text-ink font-medium truncate max-w-[200px]" :title="c.name">{{ c.name }}</span>
+          <span class="text-micro text-ink font-medium truncate max-w-[200px]" :title="c.name">{{ c.name }}</span>
         </div>
 
         <!-- Barra Gantt (trimada à janela) -->
@@ -178,13 +178,13 @@ const sorted = computed(() => {
           :style="{ left: rangeOnWindow(c).left + '%', width: rangeOnWindow(c).width + '%' }"
           :title="`${c.name}\n${fmtShortDate(c.start_time)} → ${c.stop_time ? fmtShortDate(c.stop_time) : 'em andamento'}\nGasto: ${fmtMoney(c.spend)} · Leads: ${c.office_leads || 0}`">
           <!-- Indicador clip à esquerda (começou antes da janela) -->
-          <span v-if="rangeOnWindow(c).leftClipped" class="text-white/80 text-[9px] px-0.5">‹‹</span>
-          <span class="flex-1 text-[10px] text-white font-medium truncate flex items-center gap-1 px-1">
+          <span v-if="rangeOnWindow(c).leftClipped" class="text-white/80 text-micro px-0.5">‹‹</span>
+          <span class="flex-1 text-micro text-white font-medium truncate flex items-center gap-1 px-1">
             <span v-if="c.spend" class="opacity-90 font-mono shrink-0">{{ fmtMoney(c.spend) }}</span>
             <span v-if="c.office_leads" class="opacity-80 shrink-0">· {{ c.office_leads }}L</span>
           </span>
           <!-- Indicador clip à direita (continua após a janela) -->
-          <span v-if="rangeOnWindow(c).rightClipped" class="text-white/80 text-[9px] px-0.5">››</span>
+          <span v-if="rangeOnWindow(c).rightClipped" class="text-white/80 text-micro px-0.5">››</span>
         </div>
       </div>
 
@@ -195,7 +195,7 @@ const sorted = computed(() => {
     </div>
 
     <!-- Legenda -->
-    <div class="px-3 py-2 border-t border-line/60 bg-surface-sunken/30 flex flex-wrap items-center gap-3 text-[10px] text-ink-subtle">
+    <div class="px-3 py-2 border-t border-line/60 bg-surface-sunken/30 flex flex-wrap items-center gap-3 text-micro text-ink-subtle">
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-500/70"></span>Ativa</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-500/60"></span>Pausada</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-400/40"></span>Arquivada / Outras</span>

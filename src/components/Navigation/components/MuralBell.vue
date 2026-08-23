@@ -27,7 +27,7 @@ onBeforeUnmount(() => store.stopPolling());
     <i class="fas fa-bullhorn text-base"></i>
     <span
       v-if="count > 0"
-      class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full text-[10px] font-bold text-white ring-2 ring-surface"
+      class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full text-micro font-bold text-white ring-2 ring-surface"
       :class="store.hasUrgentePending ? 'bg-red-500' : 'bg-amber-500'">
       {{ count > 99 ? '99+' : count }}
     </span>

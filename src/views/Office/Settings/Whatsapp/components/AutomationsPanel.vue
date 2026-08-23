@@ -14,7 +14,7 @@ import Select from '@/components/UI/Select.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
 
 const TA = 'w-full rounded-lg border border-line bg-surface-sunken px-3 py-2.5 text-[12.5px] font-mono leading-relaxed text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring/30 focus:border-accent/40 transition resize-y'
-const LABEL = 'block text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5'
+const LABEL = 'block text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5'
 
 const loading = ref(true)
 const busy = ref(false)

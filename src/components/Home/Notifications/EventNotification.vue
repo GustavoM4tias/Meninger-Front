@@ -178,7 +178,7 @@ function onKeydown(e) {
 
                 <div class="grid grid-cols-7 gap-2 mb-1 shrink-0">
                     <div v-for="w in weekdays" :key="w"
-                        class="text-center text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+                        class="text-center text-micro font-semibold text-gray-500 dark:text-gray-400">
                         {{ w }}
                     </div>
                 </div>

@@ -143,12 +143,12 @@ function recorteClass(r) {
                 <p class="font-semibold text-ink">{{ m.no_municipio }}</p>
                 <Badge variant="neutral" size="sm" class="font-mono">{{ m.sg_uf }}</Badge>
                 <span v-if="m.co_recorte"
-                  class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border"
+                  class="inline-flex items-center px-2 py-0.5 rounded-md text-micro font-medium border"
                   :class="recorteClass(m.co_recorte)">
                   {{ m.co_recorte }}<span class="ml-1 opacity-60 font-normal">G{{ m.co_grupo_regional }}</span>
                 </span>
               </div>
-              <div class="flex items-center gap-3 mt-1 flex-wrap text-[11px] text-ink-subtle">
+              <div class="flex items-center gap-3 mt-1 flex-wrap text-micro text-ink-subtle">
                 <span v-if="m.denominacao_hierarquia">{{ m.denominacao_hierarquia }}</span>
                 <span v-if="m.no_regiao">{{ m.no_regiao }}</span>
                 <span v-if="m.populacao" class="inline-flex items-center gap-1">
@@ -165,12 +165,12 @@ function recorteClass(r) {
             <!-- Faixa 2 -->
             <div class="rounded-xl p-3 bg-green-500/10 border border-green-500/20 text-center">
               <p class="text-xs font-semibold text-green-700 dark:text-green-300">Faixa 2</p>
-              <p class="text-[10px] text-green-600/80 dark:text-green-400/80 mt-0.5">Renda até R$4.700</p>
+              <p class="text-micro text-green-600/80 dark:text-green-400/80 mt-0.5">Renda até R$4.700</p>
               <p class="text-base font-bold text-green-700 dark:text-green-200 mt-1.5 tabular-nums">
                 {{ fmtCurrency(m.vr_faixa2) }}
               </p>
               <p v-if="m.vr_anterior && m.vr_anterior !== m.vr_faixa2"
-                class="text-[10px] text-green-600/70 dark:text-green-400/70 mt-0.5 tabular-nums">
+                class="text-micro text-green-600/70 dark:text-green-400/70 mt-0.5 tabular-nums">
                 anterior: {{ fmtCurrency(m.vr_anterior) }}
               </p>
             </div>
@@ -178,7 +178,7 @@ function recorteClass(r) {
             <!-- Faixa 3 -->
             <div class="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 text-center">
               <p class="text-xs font-semibold text-blue-700 dark:text-blue-300">Faixa 3</p>
-              <p class="text-[10px] text-blue-600/80 dark:text-blue-400/80 mt-0.5">Renda R$4.700–8.000</p>
+              <p class="text-micro text-blue-600/80 dark:text-blue-400/80 mt-0.5">Renda R$4.700–8.000</p>
               <p class="text-base font-bold text-blue-700 dark:text-blue-200 mt-1.5 tabular-nums">
                 {{ fmtCurrency(m.vr_faixa3) }}
               </p>
@@ -187,7 +187,7 @@ function recorteClass(r) {
             <!-- Faixa 4 -->
             <div class="rounded-xl p-3 bg-purple-500/10 border border-purple-500/20 text-center">
               <p class="text-xs font-semibold text-purple-700 dark:text-purple-300">Faixa 4</p>
-              <p class="text-[10px] text-purple-600/80 dark:text-purple-400/80 mt-0.5">Renda até R$12.000</p>
+              <p class="text-micro text-purple-600/80 dark:text-purple-400/80 mt-0.5">Renda até R$12.000</p>
               <p class="text-base font-bold text-purple-700 dark:text-purple-200 mt-1.5 tabular-nums">
                 {{ fmtCurrency(store.info.faixa4) }}
               </p>

@@ -175,7 +175,7 @@
                                     class="line-clamp-1 text-xs text-slate-500 dark:text-slate-400">
                                     {{ ev.snippet }}
                                 </div>
-                                <div class="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                                <div class="mt-0.5 text-micro text-slate-400 dark:text-slate-500">
                                     {{ feedLabel(ev) }} • {{ fmtRelative(ev.timestamp) }}
                                 </div>
                             </div>

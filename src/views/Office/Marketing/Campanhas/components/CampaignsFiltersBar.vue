@@ -109,7 +109,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Status -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-circle-play text-[10px] mr-1 text-ink-subtle"></i>Status
         </label>
         <MultiSelector :model-value="filtros.status"
@@ -119,7 +119,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Conta de anúncio -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-building-columns text-[10px] mr-1 text-ink-subtle"></i>Conta de anúncio
         </label>
         <MultiSelector :model-value="filtros.conta"
@@ -129,7 +129,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Mídia (vínculo CV) -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-bullhorn text-[10px] mr-1 text-ink-subtle"></i>Mídia
         </label>
         <MultiSelector :model-value="filtros.midia"
@@ -139,7 +139,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Objetivo -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-bullseye text-[10px] mr-1 text-ink-subtle"></i>Objetivo
         </label>
         <MultiSelector :model-value="filtros.objetivo"
@@ -149,7 +149,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Busca textual -->
       <div class="sm:col-span-2">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-magnifying-glass text-[10px] mr-1 text-ink-subtle"></i>Buscar
         </label>
         <Input :model-value="filtros.busca"
@@ -159,7 +159,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Ordenação (single-select via MultiSelector pra visual idêntico) -->
       <div>
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-arrow-down-wide-short text-[10px] mr-1 text-ink-subtle"></i>Ordenar por
         </label>
         <MultiSelector :model-value="filtros.sort ? [sortLabelByKey[filtros.sort]] : []"
@@ -169,7 +169,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
 
       <!-- Opções extras -->
       <div class="sm:col-span-2">
-        <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
           <i class="fas fa-sliders text-[10px] mr-1 text-ink-subtle"></i>Opções
         </label>
         <div class="flex gap-2">
@@ -190,7 +190,7 @@ function toggle() { isExpanded.value = !isExpanded.value; }
       </div>
 
       <!-- Dica da régua de tempo -->
-      <div class="sm:col-span-2 lg:col-span-4 text-[10px] text-ink-subtle">
+      <div class="sm:col-span-2 lg:col-span-4 text-micro text-ink-subtle">
         <i class="fas fa-circle-info mr-1"></i>
         As <b>datas</b> recortam TODAS as métricas (investido, leads, CAC, gráfico, tabelas).
         Os demais filtros só refinam a listagem.

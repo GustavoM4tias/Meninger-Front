@@ -22,7 +22,7 @@ const APP_VERSION = __APP_VERSION_OFFICE__;
       </a>
     </div>
 
-    <span class="font-mono text-[11px] uppercase tracking-wider text-ink-subtle px-2.5 py-1 rounded-md border border-line bg-surface-raised">
+    <span class="font-mono text-micro uppercase tracking-wider text-ink-subtle px-2.5 py-1 rounded-md border border-line bg-surface-raised">
       v{{ APP_VERSION }}
     </span>
   </div>

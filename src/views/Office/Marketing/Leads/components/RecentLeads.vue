@@ -63,7 +63,7 @@ const recentes = computed(() =>
 <template>
   <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient p-4">
     <div class="flex items-center justify-between gap-3 mb-1">
-      <h2 class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle flex items-center gap-2">
+      <h2 class="text-micro font-semibold uppercase tracking-wider text-ink-subtle flex items-center gap-2">
         <i class="fas fa-user-clock text-accent"></i>Leads recentes
       </h2>
       <button v-if="recentes.length" type="button" @click="emit('verTodos')"
@@ -78,7 +78,7 @@ const recentes = computed(() =>
           class="w-full flex items-center gap-3 py-2.5 text-left group rounded-lg
                  hover:bg-accent-soft/30 transition-colors px-1 -mx-1">
           <!-- Avatar -->
-          <span class="h-9 w-9 shrink-0 rounded-full grid place-items-center text-[11px] font-bold text-white"
+          <span class="h-9 w-9 shrink-0 rounded-full grid place-items-center text-micro font-bold text-white"
             :style="{ backgroundColor: avatarColor(l.nome) }">
             {{ initials(l.nome) }}
           </span>
@@ -100,7 +100,7 @@ const recentes = computed(() =>
               <span class="h-1.5 w-1.5 rounded-full" :style="{ backgroundColor: l.cor }"></span>
               <span class="truncate max-w-[7.5rem]">{{ l.situacao }}</span>
             </span>
-            <span class="block text-[11px] text-ink-subtle mt-0.5">{{ l.quando }}</span>
+            <span class="block text-micro text-ink-subtle mt-0.5">{{ l.quando }}</span>
           </span>
         </button>
       </li>

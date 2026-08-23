@@ -683,7 +683,7 @@ const closeModal = () => emit('close');
             <i class="fas fa-circle-exclamation"></i>{{ erpLinksStore.error }}
           </div>
 
-          <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 text-[11px] text-ink-muted">
+          <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 text-micro text-ink-muted">
             A projeção vem dos Grupos de Workflow (CV) e precisa achar o empreendimento
             correspondente no Sienge. Normalmente isso acontece sozinho, pelo campo
             <code class="font-mono">idempreendimento_int</code> do cadastro do CV. Quando esse campo
@@ -696,7 +696,7 @@ const closeModal = () => emit('close');
             <div class="flex items-center justify-between gap-2 flex-wrap">
               <div class="min-w-0">
                 <h3 class="text-sm font-semibold text-ink">De onde vem cada projeção</h3>
-                <p class="text-[11px] text-ink-muted">
+                <p class="text-micro text-ink-muted">
                   Cada empreendimento e fase do CV que está gerando projeção, e o centro de custo do
                   Sienge em que ele cai.
                 </p>
@@ -734,18 +734,18 @@ const closeModal = () => emit('close');
                       <span v-if="p.cv_stage_name" class="text-ink-muted font-normal">
                         · {{ p.cv_stage_name }}
                       </span>
-                      <span class="text-[10px] text-ink-subtle font-mono ml-1">
+                      <span class="text-micro text-ink-subtle font-mono ml-1">
                         ({{ p.reservas }})
                       </span>
                     </p>
 
                     <!-- Resolveu: mostra o centro de custo e o caminho -->
-                    <p v-if="p.via" class="text-[10px] text-ink-subtle font-mono mt-0.5 truncate">
+                    <p v-if="p.via" class="text-micro text-ink-subtle font-mono mt-0.5 truncate">
                       <i class="fas fa-arrow-right text-[8px] mr-0.5"></i>
                       <span class="text-ink">{{ p.erp_enterprise_id }}</span>
                       {{ p.erp_enterprise_name || '(sem contrato no período)' }}
                     </p>
-                    <p v-else class="text-[10px] text-red-600 dark:text-red-400 mt-0.5">
+                    <p v-else class="text-micro text-red-600 dark:text-red-400 mt-0.5">
                       Não achou centro de custo. Aparece como linha separada no dashboard.
                     </p>
 
@@ -753,16 +753,16 @@ const closeModal = () => emit('close');
                       <Badge v-if="p.via" :variant="VIA_VARIANT[p.via] || 'neutral'" size="sm">
                         {{ VIA_LABEL[p.via] || p.via }}
                       </Badge>
-                      <span v-if="p.cv_stage_int_id" class="text-[10px] text-ink-subtle font-mono">
+                      <span v-if="p.cv_stage_int_id" class="text-micro text-ink-subtle font-mono">
                         etapa {{ p.cv_stage_id }} → CC {{ p.cv_stage_int_id }}
                       </span>
-                      <span v-else class="text-[10px] text-ink-subtle font-mono">
+                      <span v-else class="text-micro text-ink-subtle font-mono">
                         etapa {{ p.cv_stage_id ?? '—' }} sem código
                       </span>
                     </div>
 
                     <p v-if="p.alerta_sem_codigo_etapa"
-                      class="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                      class="text-micro text-amber-600 dark:text-amber-400 mt-1">
                       <i class="fas fa-triangle-exclamation text-[9px] mr-0.5"></i>
                       A fase não tem código no CV, então a resolução caiu no nível do empreendimento
                       e todas as fases dele vão para este mesmo centro de custo. O certo é preencher
@@ -788,7 +788,7 @@ const closeModal = () => emit('close');
                   <h3 class="text-sm font-semibold text-ink">
                     {{ editingLink ? 'Editando vínculo' : 'Novo vínculo' }}
                   </h3>
-                  <p class="text-[11px] text-ink-muted">
+                  <p class="text-micro text-ink-muted">
                     Use "Vincular" na lista acima (ou "Editar" num vínculo ativo) para preencher.
                   </p>
                 </div>
@@ -796,11 +796,11 @@ const closeModal = () => emit('close');
                   @click="resetLinkForm">Cancelar</Button>
               </div>
 
-              <div class="rounded-lg border border-line bg-surface-sunken px-2.5 py-2 text-[11px] text-ink-muted">
+              <div class="rounded-lg border border-line bg-surface-sunken px-2.5 py-2 text-micro text-ink-muted">
                 <span v-if="newLink.cv_enterprise_name || newLink.cv_enterprise_id != null || newLink.cv_stage_id != null">
                   <span class="text-ink font-medium">{{ newLink.cv_enterprise_name || `CV #${newLink.cv_enterprise_id}` }}</span>
                   <span v-if="newLink.cv_stage_name"> · {{ newLink.cv_stage_name }}</span>
-                  <span class="block font-mono text-[10px] text-ink-subtle mt-0.5">
+                  <span class="block font-mono text-micro text-ink-subtle mt-0.5">
                     etapa CV {{ newLink.cv_stage_id ?? '—' }} · empreendimento CV
                     {{ newLink.cv_enterprise_id ?? '—' }}
                   </span>
@@ -809,7 +809,7 @@ const closeModal = () => emit('close');
               </div>
 
               <div>
-                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                <label class="block text-micro font-medium text-ink-muted mb-1.5">
                   <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>
                   Empreendimento no Sienge
                 </label>
@@ -836,7 +836,7 @@ const closeModal = () => emit('close');
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <h3 class="text-sm font-semibold text-ink">Vínculos ativos</h3>
-                  <p class="text-[11px] text-ink-muted">Valem para todos os usuários.</p>
+                  <p class="text-micro text-ink-muted">Valem para todos os usuários.</p>
                 </div>
                 <Badge variant="accent" size="sm">
                   <span class="font-mono tabular-nums">{{ erpLinksStore.items.length }}</span>
@@ -859,12 +859,12 @@ const closeModal = () => emit('close');
                           · {{ link.cv_stage_name }}
                         </span>
                       </p>
-                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5 truncate">
+                      <p class="text-micro text-ink-subtle font-mono mt-0.5 truncate">
                         <i class="fas fa-arrow-right text-[8px] mx-0.5"></i>
                         {{ link.erp_enterprise_name || enterpriseNameById.get(Number(link.erp_enterprise_id)) || '—' }}
                         ({{ link.erp_enterprise_id }})
                       </p>
-                      <p v-if="link.description" class="text-[10px] text-ink-subtle mt-0.5 truncate">
+                      <p v-if="link.description" class="text-micro text-ink-subtle mt-0.5 truncate">
                         {{ link.description }}
                       </p>
                     </div>
@@ -903,7 +903,7 @@ const closeModal = () => emit('close');
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <h3 class="text-sm font-semibold text-ink">Empreendimentos configurados</h3>
-                  <p class="text-[11px] text-ink-muted">Estes terão o terreno buscado externamente.</p>
+                  <p class="text-micro text-ink-muted">Estes terão o terreno buscado externamente.</p>
                 </div>
                 <Badge variant="accent" size="sm">
                   <span class="font-mono tabular-nums">{{ landSyncStore.items.length }}</span>
@@ -920,7 +920,7 @@ const closeModal = () => emit('close');
                     class="px-3 py-2.5 flex items-start justify-between gap-2 hover:bg-surface-hover transition-colors">
                     <div class="min-w-0">
                       <p class="text-xs font-medium text-ink truncate">{{ item.enterprise_name || 'Sem nome' }}</p>
-                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5">
+                      <p class="text-micro text-ink-subtle font-mono mt-0.5">
                         ID ERP: {{ item.enterprise_id }}
                       </p>
                     </div>
@@ -938,11 +938,11 @@ const closeModal = () => emit('close');
             <Surface variant="raised" padding="md" class="space-y-3">
               <div>
                 <h3 class="text-sm font-semibold text-ink">Adicionar empreendimento</h3>
-                <p class="text-[11px] text-ink-muted">Vincule empreendimentos com atualização externa de terreno.</p>
+                <p class="text-micro text-ink-muted">Vincule empreendimentos com atualização externa de terreno.</p>
               </div>
 
               <div>
-                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                <label class="block text-micro font-medium text-ink-muted mb-1.5">
                   <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>
                   Empreendimento(s)
                 </label>
@@ -953,7 +953,7 @@ const closeModal = () => emit('close');
               </div>
 
               <div class="flex items-center justify-between gap-2 pt-1 flex-wrap">
-                <p class="text-[10px] text-ink-subtle inline-flex items-center gap-1.5">
+                <p class="text-micro text-ink-subtle inline-flex items-center gap-1.5">
                   <span class="inline-flex w-2 h-2 rounded-full bg-emerald-500"></span>
                   Ao salvar, o próximo job de OBSTIT usará essa configuração.
                 </p>
@@ -995,7 +995,7 @@ const closeModal = () => emit('close');
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <h3 class="text-sm font-semibold text-ink">Empreendimentos ocultos</h3>
-                  <p class="text-[11px] text-ink-muted">Excluídos da listagem e dos cálculos.</p>
+                  <p class="text-micro text-ink-muted">Excluídos da listagem e dos cálculos.</p>
                 </div>
                 <Badge variant="warning" size="sm">
                   <span class="font-mono tabular-nums">{{ hiddenStore.items.length }}</span>
@@ -1012,14 +1012,14 @@ const closeModal = () => emit('close');
                     <!-- Cabeçalho do grupo: empresa + restaurar todos -->
                     <div
                       class="sticky top-0 z-10 px-3 py-1.5 bg-surface-raised border-y border-line first:border-t-0 flex items-center justify-between gap-2">
-                      <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle truncate">
+                      <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle truncate">
                         <span v-if="group.company_id != null" class="text-ink font-semibold">{{ group.company_id }}</span>
                         <span v-if="group.company_id != null"> - </span>
                         <span :class="group.company_name ? 'text-ink' : ''">{{ group.company_name || 'Sem empresa identificada' }}</span>
                         <span class="ml-1">({{ group.items.length }})</span>
                       </p>
                       <button type="button"
-                        class="shrink-0 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-50"
+                        class="shrink-0 text-micro font-medium text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-50"
                         :disabled="hiddenRemoving"
                         v-tippy="'Restaurar todos os empreendimentos deste grupo'"
                         @click="handleHiddenRemoveGroup(group)">
@@ -1050,14 +1050,14 @@ const closeModal = () => emit('close');
             <Surface variant="raised" padding="md" class="space-y-3">
               <div>
                 <h3 class="text-sm font-semibold text-ink">Ocultar empreendimento</h3>
-                <p class="text-[11px] text-ink-muted">
+                <p class="text-micro text-ink-muted">
                   Selecione empreendimentos ou uma empresa inteira — a empresa vira
                   automaticamente todos os centros de custo dela.
                 </p>
               </div>
 
               <div>
-                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                <label class="block text-micro font-medium text-ink-muted mb-1.5">
                   <i class="fas fa-eye-slash text-[10px] mr-1 text-ink-subtle"></i>
                   Empresa ou empreendimento(s)
                 </label>
@@ -1068,7 +1068,7 @@ const closeModal = () => emit('close');
               </div>
 
               <div class="flex items-center justify-between gap-2 pt-1 flex-wrap">
-                <p v-if="selectedHiddenLabels.length" class="text-[10px] text-ink-subtle">
+                <p v-if="selectedHiddenLabels.length" class="text-micro text-ink-subtle">
                   <span class="font-mono text-ink">{{ selectedHiddenLabels.length }}</span>
                   empreendimento(s) na seleção
                 </p>
@@ -1092,7 +1092,7 @@ const closeModal = () => emit('close');
             <span>
               Define que contratos de um empreendimento cujo repasse <strong>passou em algum momento</strong> por uma etapa do CV
               devem ter o VGV recalculado com comissão apartada. Fórmula:
-              <code class="font-mono text-[10px] bg-surface-sunken text-ink px-1.5 py-0.5 rounded ml-1">VGV_real = VGV_recebido / (1 − comissão)</code>
+              <code class="font-mono text-micro bg-surface-sunken text-ink px-1.5 py-0.5 rounded ml-1">VGV_real = VGV_recebido / (1 − comissão)</code>
             </span>
           </div>
 
@@ -1112,7 +1112,7 @@ const closeModal = () => emit('close');
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <h3 class="text-sm font-semibold text-ink">Regras configuradas</h3>
-                  <p class="text-[11px] text-ink-muted">Comissão apartada aplicada por etapa do repasse.</p>
+                  <p class="text-micro text-ink-muted">Comissão apartada aplicada por etapa do repasse.</p>
                 </div>
                 <Badge variant="accent" size="sm">
                   <span class="font-mono tabular-nums">{{ commissionRulesStore.rules.length }}</span>
@@ -1132,7 +1132,7 @@ const closeModal = () => emit('close');
                       <p class="text-xs font-medium text-ink truncate">
                         {{ rule.enterprise_name || `Empreendimento ${rule.enterprise_id}` }}
                       </p>
-                      <p class="text-[10px] text-ink-subtle mt-0.5 flex flex-wrap items-center gap-x-2">
+                      <p class="text-micro text-ink-subtle mt-0.5 flex flex-wrap items-center gap-x-2">
                         <span class="font-mono">ERP: {{ rule.enterprise_id }}</span>
                         <span>·</span>
                         <span class="font-mono">
@@ -1145,7 +1145,7 @@ const closeModal = () => emit('close');
                         </span>
                       </p>
                       <p v-if="rule.description"
-                        class="text-[10px] text-ink-subtle mt-0.5 italic truncate">{{ rule.description }}</p>
+                        class="text-micro text-ink-subtle mt-0.5 italic truncate">{{ rule.description }}</p>
                     </div>
                     <div class="flex items-center gap-0.5 shrink-0">
                       <Button variant="ghost" size="sm" icon="fas fa-pen"
@@ -1168,7 +1168,7 @@ const closeModal = () => emit('close');
                   <h3 class="text-sm font-semibold text-ink">
                     {{ editingCommission ? 'Editando regra' : 'Adicionar regra' }}
                   </h3>
-                  <p class="text-[11px] text-ink-muted">
+                  <p class="text-micro text-ink-muted">
                     Com etapa, aplica-se apenas a contratos cujo repasse <em>já passou</em> por ela.
                     Sem etapa, vale para toda venda. Selecione vários empreendimentos para criar a
                     mesma regra em lote.
@@ -1179,7 +1179,7 @@ const closeModal = () => emit('close');
               </div>
 
               <div>
-                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                <label class="block text-micro font-medium text-ink-muted mb-1.5">
                   <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>
                   Empreendimento(s) (ERP)
                 </label>
@@ -1223,7 +1223,7 @@ const closeModal = () => emit('close');
             <span>
               Quando o Sienge emite o contrato de Terreno (TR) num empreendimento separado dos contratos
               de incorporação, configure aqui o vínculo: as vendas do <strong>satélite</strong> serão
-              mescladas com as do(s) <strong>partner(s)</strong> casando por <code class="font-mono text-[10px] bg-surface-sunken px-1.5 py-0.5 rounded">cliente + unidade</code>.
+              mescladas com as do(s) <strong>partner(s)</strong> casando por <code class="font-mono text-micro bg-surface-sunken px-1.5 py-0.5 rounded">cliente + unidade</code>.
               Sem partner correspondente, o contrato satélite é descartado para evitar contagem dupla.
             </span>
           </div>
@@ -1244,7 +1244,7 @@ const closeModal = () => emit('close');
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <h3 class="text-sm font-semibold text-ink">Vínculos configurados</h3>
-                  <p class="text-[11px] text-ink-muted">Satélite → partner(s) que recebem o merge.</p>
+                  <p class="text-micro text-ink-muted">Satélite → partner(s) que recebem o merge.</p>
                 </div>
                 <Badge variant="accent" size="sm">
                   <span class="font-mono tabular-nums">{{ trSatStore.items.length }}</span>
@@ -1264,10 +1264,10 @@ const closeModal = () => emit('close');
                       <p class="text-xs font-medium text-ink truncate">
                         {{ item.satellite_enterprise_name || `Empreendimento ${item.satellite_enterprise_id}` }}
                       </p>
-                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5">
+                      <p class="text-micro text-ink-subtle font-mono mt-0.5">
                         ID satélite: {{ item.satellite_enterprise_id }}
                       </p>
-                      <p class="text-[10px] text-ink-muted mt-1">
+                      <p class="text-micro text-ink-muted mt-1">
                         <i class="fas fa-arrow-right text-accent mr-1"></i>
                         <span class="text-ink">Partners:</span>
                         <span v-for="(pid, idx) in item.partner_enterprise_ids" :key="pid">
@@ -1277,7 +1277,7 @@ const closeModal = () => emit('close');
                         </span>
                       </p>
                       <p v-if="item.description"
-                        class="text-[10px] text-ink-subtle mt-0.5 italic truncate">{{ item.description }}</p>
+                        class="text-micro text-ink-subtle mt-0.5 italic truncate">{{ item.description }}</p>
                     </div>
                     <div class="flex items-center gap-0.5 shrink-0">
                       <Button variant="ghost" size="sm" icon="fas fa-pen"
@@ -1300,7 +1300,7 @@ const closeModal = () => emit('close');
                   <h3 class="text-sm font-semibold text-ink">
                     {{ editingTrSat ? 'Editando vínculo' : 'Adicionar vínculo' }}
                   </h3>
-                  <p class="text-[11px] text-ink-muted">
+                  <p class="text-micro text-ink-muted">
                     Selecione o empreendimento <em>satélite</em> (que carrega o TR) e os <em>partners</em> de incorporação.
                   </p>
                 </div>
@@ -1309,7 +1309,7 @@ const closeModal = () => emit('close');
               </div>
 
               <div>
-                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                <label class="block text-micro font-medium text-ink-muted mb-1.5">
                   <i class="fas fa-building text-[10px] mr-1 text-ink-subtle"></i>
                   Empreendimento satélite (TR)
                 </label>
@@ -1318,13 +1318,13 @@ const closeModal = () => emit('close');
                   :options="enterpriseIdOptions" placeholder="Busque o satélite..."
                   :single="true" :overlay="true" :page-size="150"
                   :disabled="!!editingTrSat" />
-                <p v-if="editingTrSat" class="text-[10px] text-ink-subtle mt-1">
+                <p v-if="editingTrSat" class="text-micro text-ink-subtle mt-1">
                   O satélite não muda na edição — para trocar, remova e crie outro vínculo.
                 </p>
               </div>
 
               <div>
-                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                <label class="block text-micro font-medium text-ink-muted mb-1.5">
                   <i class="fas fa-handshake text-[10px] mr-1 text-ink-subtle"></i>
                   Partners (incorporação)
                 </label>
@@ -1357,7 +1357,7 @@ const closeModal = () => emit('close');
             <i class="fas fa-circle-exclamation"></i>{{ valueRulesStore.error }}
           </div>
 
-          <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 text-[11px] text-ink-muted">
+          <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 text-micro text-ink-muted">
             Por padrão o VGV de um empreendimento é a soma das condições de pagamento do contrato.
             Use esta aba quando um empreendimento precisar de outra conta: apenas o valor do terreno
             (campo <code class="font-mono">land_value</code>) ou apenas as condições de Terreno (TR).
@@ -1370,7 +1370,7 @@ const closeModal = () => emit('close');
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <h3 class="text-sm font-semibold text-ink">Regras ativas</h3>
-                  <p class="text-[11px] text-ink-muted">Valem para todos os usuários do dashboard.</p>
+                  <p class="text-micro text-ink-muted">Valem para todos os usuários do dashboard.</p>
                 </div>
                 <Badge variant="accent" size="sm">
                   <span class="font-mono tabular-nums">{{ valueRulesStore.items.length }}</span>
@@ -1390,11 +1390,11 @@ const closeModal = () => emit('close');
                       <p class="text-xs font-medium text-ink truncate">
                         {{ rule.enterprise_name || enterpriseNameById.get(Number(rule.enterprise_id)) || 'Sem nome' }}
                       </p>
-                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5">
+                      <p class="text-micro text-ink-subtle font-mono mt-0.5">
                         ID {{ rule.enterprise_id }} · VGV: {{ VALUE_MODE_LABEL[rule.net_mode] || rule.net_mode }}
                         · VGV+DC: {{ VALUE_MODE_LABEL[rule.gross_mode] || rule.gross_mode }}
                       </p>
-                      <p v-if="rule.description" class="text-[10px] text-ink-subtle mt-0.5 truncate">
+                      <p v-if="rule.description" class="text-micro text-ink-subtle mt-0.5 truncate">
                         {{ rule.description }}
                       </p>
                     </div>
@@ -1419,7 +1419,7 @@ const closeModal = () => emit('close');
                   <h3 class="text-sm font-semibold text-ink">
                     {{ editingValueRule ? 'Editando regra' : 'Nova regra' }}
                   </h3>
-                  <p class="text-[11px] text-ink-muted">
+                  <p class="text-micro text-ink-muted">
                     Uma regra por empreendimento (salvar de novo sobrescreve). Selecione vários
                     para aplicar a mesma composição em lote.
                   </p>
@@ -1429,7 +1429,7 @@ const closeModal = () => emit('close');
               </div>
 
               <div>
-                <label class="block text-[11px] font-medium text-ink-muted mb-1.5">
+                <label class="block text-micro font-medium text-ink-muted mb-1.5">
                   <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empreendimento(s)
                 </label>
                 <MultiSelector :model-value="newValueRuleEnts"
@@ -1440,11 +1440,11 @@ const closeModal = () => emit('close');
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Modo no VGV</label>
+                  <label class="block text-micro font-medium text-ink-muted mb-1.5">Modo no VGV</label>
                   <Select v-model="newValueRule.net_mode" :options="valueModeSelectOptions" />
                 </div>
                 <div>
-                  <label class="block text-[11px] font-medium text-ink-muted mb-1.5">Modo no VGV+DC</label>
+                  <label class="block text-micro font-medium text-ink-muted mb-1.5">Modo no VGV+DC</label>
                   <Select v-model="newValueRule.gross_mode" :options="valueModeSelectOptions" />
                 </div>
               </div>
@@ -1477,7 +1477,7 @@ const closeModal = () => emit('close');
             <i class="fas fa-circle-check"></i>{{ adjustFeedback }}
           </div>
 
-          <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 text-[11px] text-ink-muted">
+          <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 text-micro text-ink-muted">
             Corrige, só para o relatório, o dado que veio errado do Sienge: data da instituição
             financeira, série adicionada à mão ou série editada. Nada é gravado no Sienge - a
             correção é uma máscara aplicada na leitura, e toda venda ajustada mostra o selo
@@ -1491,7 +1491,7 @@ const closeModal = () => emit('close');
           </div>
 
           <div v-if="adjustmentsStore.needsReview.length"
-            class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-[11px] text-amber-700 dark:text-amber-300">
+            class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-micro text-amber-700 dark:text-amber-300">
             <i class="fas fa-triangle-exclamation mr-1"></i>
             {{ adjustmentsStore.needsReview.length }} ajuste(s) para conferir: o dado mudou no
             Sienge depois da correção. A correção continua valendo no relatório - decida manter
@@ -1502,7 +1502,7 @@ const closeModal = () => emit('close');
             <div class="flex items-center justify-between gap-2 flex-wrap">
               <div class="min-w-0">
                 <h3 class="text-sm font-semibold text-ink">Ajustes ativos</h3>
-                <p class="text-[11px] text-ink-muted">
+                <p class="text-micro text-ink-muted">
                   Valem para todos os usuários do dashboard, do fechamento e da Eme.
                 </p>
               </div>
@@ -1543,23 +1543,23 @@ const closeModal = () => emit('close');
                         {{ ADJ_STATUS_LABEL[item.status] || item.status }}
                       </Badge>
                     </div>
-                    <p class="text-[11px] text-ink font-mono mt-0.5">{{ adjustmentSummary(item) }}</p>
-                    <p class="text-[10px] text-ink-subtle font-mono mt-0.5 truncate">
+                    <p class="text-micro text-ink font-mono mt-0.5">{{ adjustmentSummary(item) }}</p>
+                    <p class="text-micro text-ink-subtle font-mono mt-0.5 truncate">
                       #{{ item.contract_id }} · {{ item.customer_name || '—' }} ·
                       {{ item.unit_name || '—' }} · {{ item.enterprise_name || '—' }}
                     </p>
-                    <p class="text-[10px] text-ink-muted mt-0.5 truncate">
+                    <p class="text-micro text-ink-muted mt-0.5 truncate">
                       {{ item.reason }}
                       <span class="text-ink-subtle">— {{ item.created_by_name || 'sem autor' }}</span>
                     </p>
                     <p v-if="item.status_message"
-                      class="text-[10px] mt-0.5"
+                      class="text-micro mt-0.5"
                       :class="item.status === 'needs_review'
                         ? 'text-amber-600 dark:text-amber-400'
                         : 'text-ink-subtle'">
                       {{ item.status_message }}
                     </p>
-                    <p v-if="item.reviewed_by_name" class="text-[10px] text-ink-subtle mt-0.5">
+                    <p v-if="item.reviewed_by_name" class="text-micro text-ink-subtle mt-0.5">
                       Conferido por {{ item.reviewed_by_name }}
                     </p>
                   </div>
@@ -1586,31 +1586,31 @@ const closeModal = () => emit('close');
     </div>
 
     <template #footer>
-      <p v-if="activeTab === 'obstit'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+      <p v-if="activeTab === 'obstit'" class="text-micro text-ink-subtle leading-tight mr-auto hidden sm:block">
         Coleta de TR é D-1, feita 1×/dia às 07:05.<br>
         Sincronização manual: 1–10 minutos.
       </p>
-      <p v-else-if="activeTab === 'commission'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+      <p v-else-if="activeTab === 'commission'" class="text-micro text-ink-subtle leading-tight mr-auto hidden sm:block">
         Sem etapa, a comissão vale para toda venda do empreendimento.<br>
         Alterações são aplicadas imediatamente. Recarregue os contratos para ver os novos valores.
       </p>
-      <p v-else-if="activeTab === 'links'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+      <p v-else-if="activeTab === 'links'" class="text-micro text-ink-subtle leading-tight mr-auto hidden sm:block">
         O vínculo é resolvido no servidor: a projeção passa a chegar já casada.<br>
         Recarregue os contratos para ver o efeito no dashboard.
       </p>
-      <p v-else-if="activeTab === 'value'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+      <p v-else-if="activeTab === 'value'" class="text-micro text-ink-subtle leading-tight mr-auto hidden sm:block">
         Vale para todos os usuários, no Faturamento e no Vendas × Projeção.<br>
         Recarregue os contratos para ver os novos valores.
       </p>
-      <p v-else-if="activeTab === 'trsat'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+      <p v-else-if="activeTab === 'trsat'" class="text-micro text-ink-subtle leading-tight mr-auto hidden sm:block">
         Match por <code class="font-mono">customer_id + unit_name</code>.<br>
         Satélites sem partner correspondente são descartados do relatório.
       </p>
-      <p v-else-if="activeTab === 'adjust'" class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+      <p v-else-if="activeTab === 'adjust'" class="text-micro text-ink-subtle leading-tight mr-auto hidden sm:block">
         O Sienge não é alterado: a correção é aplicada na leitura, para todo mundo.<br>
         Conferência automática às 03:40, depois do sync de contratos.
       </p>
-      <p v-else class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+      <p v-else class="text-micro text-ink-subtle leading-tight mr-auto hidden sm:block">
         Alterações são aplicadas imediatamente no dashboard.<br>
         Os ocultos continuam sendo consultados internamente.
       </p>

@@ -15,7 +15,7 @@
       <Surface variant="raised" padding="md" class="mb-5 surface-gradient">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
           <div>
-            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+            <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-city text-ink-subtle text-[10px]"></i>
               Empreendimento
             </label>
@@ -24,7 +24,7 @@
           </div>
 
           <div>
-            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+            <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-sitemap text-ink-subtle text-[10px]"></i>
               Departamento(s)
             </label>
@@ -34,7 +34,7 @@
           </div>
 
           <div>
-            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+            <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-calendar-day text-ink-subtle text-[10px]"></i>
               De
             </label>
@@ -42,7 +42,7 @@
           </div>
 
           <div>
-            <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+            <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
               <i class="fas fa-calendar-check text-ink-subtle text-[10px]"></i>
               Até
             </label>
@@ -77,7 +77,7 @@
           <div class="text-2xl font-bold text-emerald-700 dark:text-emerald-200 font-mono tabular-nums">
             {{ filteredTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
           </div>
-          <div class="text-[10px] text-emerald-700/70 dark:text-emerald-300/70 mt-1">Pago no período</div>
+          <div class="text-micro text-emerald-700/70 dark:text-emerald-300/70 mt-1">Pago no período</div>
         </Surface>
 
         <Surface v-if="filteredCancelledTotal > 0" variant="raised" padding="md" class="border-red-500/30 bg-red-500/10 surface-gradient">
@@ -87,7 +87,7 @@
           <div class="text-2xl font-bold text-red-700 dark:text-red-300 font-mono tabular-nums">
             {{ filteredCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
           </div>
-          <div class="text-[10px] text-red-700/70 dark:text-red-300/70 mt-1">Não somam no total</div>
+          <div class="text-micro text-red-700/70 dark:text-red-300/70 mt-1">Não somam no total</div>
         </Surface>
 
         <Surface variant="raised" padding="md" class="surface-gradient">
@@ -95,7 +95,7 @@
             <i class="fas fa-building text-emerald-500"></i> Empreendimentos
           </div>
           <div class="text-2xl font-bold text-ink font-mono tabular-nums">{{ filteredGroups.length }}</div>
-          <div class="text-[10px] text-ink-subtle mt-1">Com lançamentos</div>
+          <div class="text-micro text-ink-subtle mt-1">Com lançamentos</div>
         </Surface>
 
         <Surface variant="raised" padding="md" class="surface-gradient">
@@ -105,7 +105,7 @@
           <div class="text-2xl font-bold text-ink font-mono tabular-nums">
             {{ filteredGroups.reduce((sum, g) => sum + g.expenses.length, 0) }}
           </div>
-          <div class="text-[10px] text-ink-subtle mt-1">Custos registrados</div>
+          <div class="text-micro text-ink-subtle mt-1">Custos registrados</div>
         </Surface>
       </div>
 
@@ -128,21 +128,21 @@
             <thead class="bg-surface-sunken/60 border-b border-line">
               <tr>
                 <th @click="handleSort('name')"
-                  class="px-5 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors">
+                  class="px-5 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors">
                   <div class="flex items-center gap-2">
                     Empreendimento <i :class="getSortIcon('name')"></i>
                   </div>
                 </th>
                 <th @click="handleSort('total')"
-                  class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors">
+                  class="px-5 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors">
                   <div class="flex items-center justify-end gap-2">
                     Total <i :class="getSortIcon('total')"></i>
                   </div>
                 </th>
-                <th class="px-5 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">
+                <th class="px-5 py-3 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">
                   Lançamentos
                 </th>
-                <th class="px-5 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">
+                <th class="px-5 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">
                   Ações
                 </th>
               </tr>
@@ -172,7 +172,7 @@
                     }) }}
                   </div>
                   <div v-if="Number(group.cancelledTotal) > 0"
-                    class="text-[10px] text-red-500 font-mono tabular-nums mt-0.5">
+                    class="text-micro text-red-500 font-mono tabular-nums mt-0.5">
                     <i class="fas fa-ban mr-0.5"></i>{{ Number(group.cancelledTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }} cancelado
                   </div>
                 </td>
@@ -237,7 +237,7 @@
 
           <div class="flex flex-col md:flex-row gap-2 items-stretch md:items-end">
             <div class="flex-1 min-w-0">
-              <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+              <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
                 <i class="fas fa-magnifying-glass text-ink-subtle text-[10px]"></i>
                 Buscar
               </label>
@@ -248,7 +248,7 @@
             </div>
 
             <div class="w-full md:w-48">
-              <label class="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+              <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
                 <i class="fas fa-sitemap text-ink-subtle text-[10px]"></i>
                 Departamento
               </label>
@@ -271,7 +271,7 @@
 
           <!-- Filtro de data -->
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <span class="text-[11px] font-medium text-ink-muted whitespace-nowrap flex items-center gap-1.5">
+            <span class="text-micro font-medium text-ink-muted whitespace-nowrap flex items-center gap-1.5">
               <i class="fas fa-calendar-days text-ink-subtle text-[10px]"></i>
               Pagamento entre
             </span>
@@ -291,7 +291,7 @@
             <div class="flex items-center gap-1.5 flex-wrap">
               <button v-for="preset in datePresets" :key="preset.value"
                 @click="setModalDatePreset(preset.value)"
-                class="px-2.5 py-1 text-[11px] rounded-lg border transition-colors"
+                class="px-2.5 py-1 text-micro rounded-lg border transition-colors"
                 :class="modalDatePreset === preset.value
                   ? 'bg-emerald-600 text-white border-emerald-600'
                   : 'border-line text-ink-muted hover:bg-surface-hover'">
@@ -338,27 +338,27 @@
                     class="w-4 h-4 text-emerald-600 border-line rounded focus:ring-emerald-500 cursor-pointer" />
                 </th>
                 <th @click="handleModalSort('date')"
-                  class="px-3 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink whitespace-nowrap">
+                  class="px-3 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink whitespace-nowrap">
                   <span class="flex items-center gap-1">Pagamento <i :class="getModalSortIcon('date')"></i></span>
                 </th>
                 <th @click="handleModalSort('title')"
-                  class="px-3 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink">
+                  class="px-3 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink">
                   <span class="flex items-center gap-1">Fornecedor / Título <i :class="getModalSortIcon('title')"></i></span>
                 </th>
-                <th class="px-3 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap">
+                <th class="px-3 py-3 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap">
                   Parcela
                 </th>
                 <th @click="handleModalSort('amount')"
-                  class="px-3 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink whitespace-nowrap">
+                  class="px-3 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink whitespace-nowrap">
                   <span class="flex items-center justify-end gap-1">Valor <i :class="getModalSortIcon('amount')"></i></span>
                 </th>
-                <th class="px-3 py-3 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap">V. Título</th>
+                <th class="px-3 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap">V. Título</th>
                 <th @click="handleModalSort('department')"
-                  class="px-3 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink">
+                  class="px-3 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink">
                   <span class="flex items-center gap-1">Departamento <i :class="getModalSortIcon('department')"></i></span>
                 </th>
-                <th class="px-3 py-3 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle min-w-[80px]">Observação</th>
-                <th class="px-3 py-3 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
+                <th class="px-3 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle min-w-[80px]">Observação</th>
+                <th class="px-3 py-3 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-line/60">
@@ -376,10 +376,10 @@
                   <div class="font-medium text-ink font-mono tabular-nums">
                     {{ formatDate(exp.paidAt) }}
                   </div>
-                  <div class="text-[10px] text-ink-subtle mt-0.5">
+                  <div class="text-micro text-ink-subtle mt-0.5">
                     Vencimento: {{ formatDate(exp.dueDate) }}
                   </div>
-                  <div v-if="exp.bill?.issueDate" class="text-[10px] text-ink-subtle">
+                  <div v-if="exp.bill?.issueDate" class="text-micro text-ink-subtle">
                     Emissão: {{ formatDate(exp.bill.issueDate) }}
                   </div>
                 </td>
@@ -394,10 +394,10 @@
                       {{ exp.bill.document_identification_id }} {{ exp.bill.document_number }}
                       <span class="text-ink-subtle">· #{{ exp.bill.id }}</span>
                     </div>
-                    <div v-if="exp.bill.creditor_json?.cnpj" class="text-[10px] text-ink-subtle font-mono">
+                    <div v-if="exp.bill.creditor_json?.cnpj" class="text-micro text-ink-subtle font-mono">
                       CNPJ: {{ exp.bill.creditor_json.cnpj }}
                     </div>
-                    <div v-if="exp.bill.notes" class="text-[10px] text-ink-subtle truncate mt-0.5"
+                    <div v-if="exp.bill.notes" class="text-micro text-ink-subtle truncate mt-0.5"
                       :title="exp.bill.notes">
                       <i class="fas fa-sticky-note mr-1"></i>{{ exp.bill.notes }}
                     </div>
@@ -529,23 +529,23 @@
         <Surface variant="raised" padding="sm" class="bg-surface-sunken/40">
           <div class="grid grid-cols-2 gap-3 text-xs text-ink-muted">
             <div>
-              <span class="font-mono uppercase text-[10px] tracking-wider text-ink-subtle block mb-0.5">Vencimento</span>
+              <span class="font-mono uppercase text-micro tracking-wider text-ink-subtle block mb-0.5">Vencimento</span>
               <span class="font-mono tabular-nums">{{ formatDate(editingExpense.dueDate) }}</span>
               <span class="text-ink-subtle block">Pagamento: {{ formatDate(editingExpense.paidAt) }}</span>
             </div>
             <div>
-              <span class="font-mono uppercase text-[10px] tracking-wider text-ink-subtle block mb-0.5">Parcela</span>
+              <span class="font-mono uppercase text-micro tracking-wider text-ink-subtle block mb-0.5">Parcela</span>
               <span v-if="editingExpense.installmentsNumber > 1" class="font-mono tabular-nums">
                 {{ editingExpense.installmentNumber }}/{{ editingExpense.installmentsNumber }}
               </span>
               <span v-else>—</span>
             </div>
             <div>
-              <span class="font-mono uppercase text-[10px] tracking-wider text-ink-subtle block mb-0.5">Documento</span>
+              <span class="font-mono uppercase text-micro tracking-wider text-ink-subtle block mb-0.5">Documento</span>
               {{ editingExpense.bill?.document_identification_id }} {{ editingExpense.bill?.document_number || '—' }}
             </div>
             <div>
-              <span class="font-mono uppercase text-[10px] tracking-wider text-ink-subtle block mb-0.5">V. Título</span>
+              <span class="font-mono uppercase text-micro tracking-wider text-ink-subtle block mb-0.5">V. Título</span>
               <span class="font-mono tabular-nums">
                 {{ editingExpense.bill?.totalInvoiceAmount
                   ? Number(editingExpense.bill.totalInvoiceAmount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -557,9 +557,9 @@
 
         <!-- Departamento (vem do Sienge — somente leitura) -->
         <div>
-          <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">
+          <label class="text-micro font-medium text-ink-muted mb-1.5 block">
             <i class="fas fa-sitemap text-ink-subtle mr-1"></i> Departamento
-            <span class="text-[10px] text-ink-subtle font-normal">· do Sienge</span>
+            <span class="text-micro text-ink-subtle font-normal">· do Sienge</span>
           </label>
           <div class="px-3.5 py-2.5 rounded-lg border border-line bg-surface-sunken/40 text-sm text-ink">
             {{ editingExpense.departmentName || editingExpense.bill?.mainDepartmentName || '(sem departamento)' }}
@@ -568,7 +568,7 @@
 
         <!-- Observação -->
         <div>
-          <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">
+          <label class="text-micro font-medium text-ink-muted mb-1.5 block">
             <i class="fas fa-note-sticky text-ink-subtle mr-1"></i> Observação
           </label>
           <textarea v-model="editForm.description" rows="3"

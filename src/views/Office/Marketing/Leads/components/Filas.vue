@@ -52,7 +52,7 @@ const filtradas = computed(() => {
   <Button variant="secondary" size="sm" icon="fas fa-people-group" @click="open = true">
     <span class="hidden sm:inline">Filas</span>
     <span v-if="ativasCount"
-      class="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-accent-soft text-accent">
+      class="font-mono text-micro px-1.5 py-0.5 rounded-md bg-accent-soft text-accent">
       {{ ativasCount }}
     </span>
   </Button>

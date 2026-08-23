@@ -198,7 +198,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
                 </div>
 
                 <div class="space-y-2">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">
                     Arquivos que serão enviados
                   </p>
                   <div class="flex flex-wrap gap-2">
@@ -206,7 +206,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
                       class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-sunken border border-line text-sm">
                       <i class="fas fa-file-csv text-accent text-xs"></i>
                       <span class="font-mono text-ink text-xs">{{ file.name }}</span>
-                      <span class="text-ink-subtle text-[11px] font-mono">({{ file.totalRows }} linhas)</span>
+                      <span class="text-ink-subtle text-micro font-mono">({{ file.totalRows }} linhas)</span>
                     </div>
                   </div>
                   <p class="text-xs text-ink-subtle">
@@ -267,7 +267,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
                     <thead>
                       <tr class="bg-surface-sunken/40 border-b border-line">
                         <th v-for="(col, ci) in (file.previewRows[0] || [])" :key="ci"
-                          class="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-ink-subtle whitespace-nowrap border-r border-line last:border-r-0">
+                          class="px-3 py-2 text-left font-mono text-micro uppercase tracking-wider text-ink-subtle whitespace-nowrap border-r border-line last:border-r-0">
                           {{ col || '—' }}
                         </th>
                       </tr>
@@ -330,7 +330,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
               <div class="flex items-start gap-2">
                 <i class="fas fa-database text-accent text-xs mt-1"></i>
                 <div class="min-w-0">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Bucket</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Bucket</p>
                   <p class="font-mono text-ink truncate">bucket-menin</p>
                 </div>
               </div>
@@ -338,14 +338,14 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
                 <i class="text-xs mt-1"
                   :class="store.testMode ? 'fas fa-flask text-amber-500' : 'fas fa-folder text-yellow-500'"></i>
                 <div class="min-w-0">
-                  <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Pasta ativa</p>
+                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Pasta ativa</p>
                   <p class="font-mono text-ink truncate">{{ folderName }}/</p>
                 </div>
               </div>
             </div>
 
             <div class="mt-4 pt-4 border-t border-line">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">Arquivos gerados</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">Arquivos gerados</p>
               <ul class="space-y-1.5 text-xs">
                 <li class="flex items-center gap-2">
                   <i class="fas fa-file-csv text-accent text-[10px]"></i>
@@ -359,7 +359,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
             </div>
 
             <div class="mt-4 pt-4 border-t border-line space-y-1.5">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">Pastas do bucket</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">Pastas do bucket</p>
               <div class="flex items-center gap-2 text-xs">
                 <i class="fas fa-flask text-amber-500 w-4 text-center text-[10px]"></i>
                 <span class="font-mono text-ink">test-robot/</span>
@@ -419,7 +419,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
               <tr>
                 <th v-for="h in ['Data/Hora', 'Usuário', 'Arquivo origem', 'Pasta', 'Arquivos enviados', 'Status', 'Detalhe']"
                   :key="h"
-                  class="px-4 py-2.5 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap">
+                  class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap">
                   {{ h }}
                 </th>
               </tr>

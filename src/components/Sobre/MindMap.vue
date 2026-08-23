@@ -367,7 +367,7 @@ defineExpose({ expandAll, collapseAll, fit, zoomBy });
       </button>
     </div>
 
-    <p class="absolute bottom-3 left-3 text-[11px] text-ink-subtle pointer-events-none hidden sm:block">
+    <p class="absolute bottom-3 left-3 text-micro text-ink-subtle pointer-events-none hidden sm:block">
       Clique num cartão para abrir o ramo · arraste para mover · role para dar zoom
     </p>
   </div>

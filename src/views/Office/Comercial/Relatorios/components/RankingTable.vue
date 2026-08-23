@@ -62,7 +62,7 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
         <h3 class="text-sm font-semibold text-ink truncate">{{ titulo }}</h3>
         <Badge v-if="rows.length" variant="neutral" size="sm">{{ rows.length }}</Badge>
       </div>
-      <p v-if="rows.length" class="text-[11px] font-mono text-ink-subtle tabular-nums shrink-0">
+      <p v-if="rows.length" class="text-micro font-mono text-ink-subtle tabular-nums shrink-0">
         {{ totalVendas }} venda{{ totalVendas === 1 ? '' : 's' }} · {{ moeda(totalValor) }}
       </p>
     </header>
@@ -77,11 +77,11 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
           :class="row.itens?.length && 'cursor-pointer'"
           @click="abrir(row)">
           <div class="flex items-start gap-2">
-            <span class="text-[10px] font-mono text-ink-subtle mt-0.5 w-5 shrink-0">{{ i + 1 }}º</span>
+            <span class="text-micro font-mono text-ink-subtle mt-0.5 w-5 shrink-0">{{ i + 1 }}º</span>
             <div class="min-w-0 flex-1">
               <p class="text-sm font-semibold text-ink break-words"
                 :class="row.semDado && 'text-ink-muted italic font-normal'">{{ row.label }}</p>
-              <p class="text-[11px] text-ink-subtle font-mono mt-0.5">
+              <p class="text-micro text-ink-subtle font-mono mt-0.5">
                 {{ row.vendas }} venda{{ row.vendas === 1 ? '' : 's' }} · ticket {{ moeda(row.ticket) }}
               </p>
             </div>
@@ -92,7 +92,7 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
           <div class="h-1.5 rounded-full bg-surface-sunken overflow-hidden">
             <div class="h-full rounded-full bg-accent/70" :style="{ width: larguraBarra(row) }"></div>
           </div>
-          <div class="flex items-center justify-between text-[11px] text-ink-muted font-mono">
+          <div class="flex items-center justify-between text-micro text-ink-muted font-mono">
             <span>{{ pct(row.shareValor) }} do VGV</span>
             <span v-if="showLead && row.comLead">
               <i class="fas fa-bullhorn text-accent text-[9px] mr-1"></i>{{ row.comLead }} de lead
@@ -106,15 +106,15 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-line bg-surface-sunken/60">
-              <th class="px-3 py-2 text-left w-10 text-[10px] font-mono uppercase tracking-wider text-ink-subtle">#</th>
-              <th class="px-3 py-2 text-left text-[10px] font-mono uppercase tracking-wider text-ink-subtle">
+              <th class="px-3 py-2 text-left w-10 text-micro font-mono uppercase tracking-wider text-ink-subtle">#</th>
+              <th class="px-3 py-2 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">
                 {{ labelHeader }}
               </th>
-              <th class="px-3 py-2 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Vendas</th>
-              <th v-if="showLead" class="px-3 py-2 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">De lead</th>
-              <th class="px-3 py-2 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Ticket</th>
-              <th class="px-3 py-2 text-right text-[10px] font-mono uppercase tracking-wider text-ink-subtle">VGV</th>
-              <th class="px-3 py-2 text-left w-[22%] text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Participação</th>
+              <th class="px-3 py-2 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Vendas</th>
+              <th v-if="showLead" class="px-3 py-2 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">De lead</th>
+              <th class="px-3 py-2 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Ticket</th>
+              <th class="px-3 py-2 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">VGV</th>
+              <th class="px-3 py-2 text-left w-[22%] text-micro font-mono uppercase tracking-wider text-ink-subtle">Participação</th>
               <th class="w-8"></th>
             </tr>
           </thead>
@@ -123,7 +123,7 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
               class="group border-b border-line/60 last:border-0 transition-colors hover:bg-surface-sunken/40"
               :class="row.itens?.length && 'cursor-pointer'"
               @click="abrir(row)">
-              <td class="px-3 py-2 text-[11px] font-mono text-ink-subtle">{{ i + 1 }}</td>
+              <td class="px-3 py-2 text-micro font-mono text-ink-subtle">{{ i + 1 }}</td>
               <td class="px-3 py-2 max-w-[260px]">
                 <span class="block truncate font-medium text-ink"
                   :class="row.semDado && 'text-ink-muted italic font-normal'"
@@ -144,7 +144,7 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
                     <div class="h-full rounded-full bg-accent/70 transition-all duration-300 ease-out-expo"
                       :style="{ width: larguraBarra(row) }"></div>
                   </div>
-                  <span class="text-[11px] font-mono text-ink-muted tabular-nums w-11 text-right">
+                  <span class="text-micro font-mono text-ink-muted tabular-nums w-11 text-right">
                     {{ pct(row.shareValor) }}
                   </span>
                 </div>

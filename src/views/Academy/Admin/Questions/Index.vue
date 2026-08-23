@@ -66,20 +66,20 @@
                                 {{ q.text }}
                             </div>
                             <div class="mt-1 flex flex-wrap items-center gap-1.5">
-                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                <span class="rounded-full px-2 py-0.5 text-micro font-bold uppercase tracking-wider"
                                     :class="q.type === 'MULTIPLE'
                                         ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400'
                                         : 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-400'">
                                     {{ q.type === 'MULTIPLE' ? 'Múltipla' : 'Única' }}
                                 </span>
-                                <span class="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                <span class="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                                     {{ diffLabel(q.difficulty) }}
                                 </span>
                                 <span class="text-xs text-slate-400 dark:text-slate-500">
                                     {{ (q.options || []).length }} opções
                                 </span>
                                 <span v-for="t in (q.tags || [])" :key="t"
-                                    class="rounded-full border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                                    class="rounded-full border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-micro text-slate-500 dark:text-slate-400">
                                     {{ t }}
                                 </span>
                             </div>

@@ -30,7 +30,7 @@
                 {{ watchedPercent }}% assistido
             </span>
             <span v-if="watchedPercent >= AUTO_THRESHOLD"
-                class="rounded-full bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                class="rounded-full bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                 concluído
             </span>
         </div>

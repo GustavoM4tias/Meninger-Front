@@ -22,7 +22,7 @@ const open = ref(false);
         {{ fila.nome }}
       </h3>
 
-      <span class="text-[11px] font-mono text-ink-subtle">
+      <span class="text-micro font-mono text-ink-subtle">
         {{ fila.corretores_e_imobiliarias?.length || 0 }}
         corretor{{ fila.corretores_e_imobiliarias?.length === 1 ? '' : 'es' }}
       </span>
@@ -49,7 +49,7 @@ const open = ref(false);
             </div>
             <div class="min-w-0 flex-1">
               <p class="text-xs font-medium text-ink truncate">{{ c.nome_corretor || '—' }}</p>
-              <p v-if="c.nome_imobiliaria" class="text-[10px] text-ink-muted truncate font-mono">
+              <p v-if="c.nome_imobiliaria" class="text-micro text-ink-muted truncate font-mono">
                 {{ c.nome_imobiliaria }}
               </p>
             </div>

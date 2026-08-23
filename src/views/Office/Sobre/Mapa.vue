@@ -112,7 +112,7 @@ onMounted(() => {
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-3">
         <span v-for="branch in legend" :key="branch.t" class="inline-flex items-center gap-1.5">
           <span class="h-2.5 w-2.5 rounded-sm shrink-0" :style="{ background: branch.acc }"></span>
-          <span class="text-[11px] text-ink-muted">{{ branch.t }}</span>
+          <span class="text-micro text-ink-muted">{{ branch.t }}</span>
         </span>
       </div>
 
@@ -126,7 +126,7 @@ onMounted(() => {
           <Button variant="ghost" size="sm" icon="fas fa-angles-up" @click="collapseAll">
             <span class="hidden sm:inline">Recolher</span>
           </Button>
-          <span class="hidden md:inline text-[11px] font-mono text-ink-subtle">
+          <span class="hidden md:inline text-micro font-mono text-ink-subtle">
             {{ totalItems }} itens
           </span>
         </div>
@@ -150,7 +150,7 @@ onMounted(() => {
           @toggle="toggleOutline" />
       </div>
 
-      <p class="text-[11px] text-ink-subtle mt-4">
+      <p class="text-micro text-ink-subtle mt-4">
         Conteúdo da Visão Executiva do Menin Office, agosto de 2026. Números medidos nas telas do próprio sistema.
       </p>
     </PageContainer>

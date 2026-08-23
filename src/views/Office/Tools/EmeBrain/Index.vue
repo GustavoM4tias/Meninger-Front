@@ -25,7 +25,7 @@ dayjs.locale('pt-br')
 // Classe reutilizável para textareas (alinha com o look dos campos do design system)
 const TA = 'w-full rounded-lg border border-line bg-surface-sunken px-3 py-2.5 text-sm text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent-ring/30 focus:border-accent/40 transition resize-y'
 const TA_MONO = TA + ' font-mono text-[12.5px] leading-relaxed'
-const LABEL = 'block text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5'
+const LABEL = 'block text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5'
 
 const tab = ref('blocks')
 const loading = ref(true)
@@ -483,10 +483,10 @@ onMounted(load)
       <!-- INSIGHTS -->
       <section v-show="tab === 'insights'">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Total</p><p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ fb.stats.total }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Positivos</p><p class="text-2xl font-semibold text-emerald-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-thumbs-up text-base"></i>{{ fb.stats.up }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Negativos</p><p class="text-2xl font-semibold text-red-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-thumbs-down text-base"></i>{{ fb.stats.down }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Taxa positiva</p><p class="text-2xl font-semibold mt-1 tabular-nums" :class="positiveRate >= 70 ? 'text-emerald-500' : positiveRate >= 40 ? 'text-amber-500' : 'text-red-500'">{{ positiveRate }}%</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Total</p><p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ fb.stats.total }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Positivos</p><p class="text-2xl font-semibold text-emerald-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-thumbs-up text-base"></i>{{ fb.stats.up }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Negativos</p><p class="text-2xl font-semibold text-red-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-thumbs-down text-base"></i>{{ fb.stats.down }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Taxa positiva</p><p class="text-2xl font-semibold mt-1 tabular-nums" :class="positiveRate >= 70 ? 'text-emerald-500' : positiveRate >= 40 ? 'text-amber-500' : 'text-red-500'">{{ positiveRate }}%</p></Surface>
         </div>
 
         <Surface v-if="fb.stats.total" variant="raised" padding="sm" class="mb-4">
@@ -540,10 +540,10 @@ onMounted(load)
         </p>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Total</p><p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ inc.stats.total }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Corrigidas</p><p class="text-2xl font-semibold text-sky-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-wand-magic-sparkles text-base"></i>{{ inc.stats.corrected }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Bloqueadas</p><p class="text-2xl font-semibold text-amber-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-shield-halved text-base"></i>{{ inc.stats.blocked }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Com aviso</p><p class="text-2xl font-semibold text-red-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-circle-exclamation text-base"></i>{{ inc.stats.warned }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Total</p><p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ inc.stats.total }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Corrigidas</p><p class="text-2xl font-semibold text-sky-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-wand-magic-sparkles text-base"></i>{{ inc.stats.corrected }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Bloqueadas</p><p class="text-2xl font-semibold text-amber-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-shield-halved text-base"></i>{{ inc.stats.blocked }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Com aviso</p><p class="text-2xl font-semibold text-red-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-circle-exclamation text-base"></i>{{ inc.stats.warned }}</p></Surface>
         </div>
 
         <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
@@ -634,7 +634,7 @@ onMounted(load)
         <p v-if="sbox.note" class="text-xs text-ink-subtle font-mono mt-3">{{ sbox.note }}</p>
 
         <Surface v-if="sbox.answer" variant="sunken" padding="sm" class="mt-4">
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Resposta</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Resposta</p>
           <p class="text-sm text-ink leading-relaxed whitespace-pre-wrap">{{ sbox.answer }}</p>
         </Surface>
         <details v-if="sbox.prompt" class="mt-4 group">
@@ -660,32 +660,32 @@ onMounted(load)
       </template>
       <div v-if="detail.item" class="space-y-4">
         <section v-if="detail.item.context?.user_question">
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Pergunta do usuário</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Pergunta do usuário</p>
           <div class="rounded-lg border border-line bg-surface-sunken p-3 text-sm text-ink leading-relaxed whitespace-pre-wrap">{{ detail.item.context.user_question }}</div>
         </section>
         <section>
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Resposta avaliada</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Resposta avaliada</p>
           <div class="rounded-lg border border-line bg-surface-sunken p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">{{ detail.item.context?.assistant_text || truncate(detail.item.message?.content, 1000) }}</div>
         </section>
         <section v-if="detail.item.comment">
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Comentário</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Comentário</p>
           <div class="rounded-lg border border-line bg-surface-sunken p-3 text-sm text-ink italic leading-relaxed">"{{ detail.item.comment }}"</div>
         </section>
         <section v-if="detail.item.context" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Modelo</p><p class="text-xs text-ink font-mono truncate mt-0.5">{{ detail.item.context.model || '—' }}</p></div>
-          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Pool</p><Badge :variant="poolVariant(detail.item.context.pool)" size="sm" class="mt-0.5">{{ poolLabel(detail.item.context.pool) }}</Badge></div>
-          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Latência</p><p class="text-xs text-ink font-mono mt-0.5">{{ formatLatency(detail.item.context.latency_ms) }}</p></div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Modelo</p><p class="text-xs text-ink font-mono truncate mt-0.5">{{ detail.item.context.model || '—' }}</p></div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Pool</p><Badge :variant="poolVariant(detail.item.context.pool)" size="sm" class="mt-0.5">{{ poolLabel(detail.item.context.pool) }}</Badge></div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Latência</p><p class="text-xs text-ink font-mono mt-0.5">{{ formatLatency(detail.item.context.latency_ms) }}</p></div>
         </section>
         <section v-if="detail.item.context?.tool_calls?.length">
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">Ferramentas chamadas ({{ detail.item.context.tool_calls.length }})</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">Ferramentas chamadas ({{ detail.item.context.tool_calls.length }})</p>
           <div class="space-y-2">
             <div v-for="(tc, idx) in detail.item.context.tool_calls" :key="idx" class="rounded-lg border border-line bg-surface-sunken p-3 space-y-2">
               <div class="flex items-center gap-2 flex-wrap">
                 <Badge variant="accent" size="sm"><code class="font-mono">{{ tc.name }}</code></Badge>
                 <Badge v-if="tc.error" variant="danger" size="sm">erro</Badge>
-                <span class="text-[10px] text-ink-subtle ml-auto font-mono">{{ formatLatency(tc.ms) }}</span>
+                <span class="text-micro text-ink-subtle ml-auto font-mono">{{ formatLatency(tc.ms) }}</span>
               </div>
-              <pre v-if="tc.args && Object.keys(tc.args).length" class="text-[11px] font-mono text-ink-muted bg-surface rounded p-2 overflow-x-auto">{{ JSON.stringify(tc.args, null, 2) }}</pre>
+              <pre v-if="tc.args && Object.keys(tc.args).length" class="text-micro font-mono text-ink-muted bg-surface rounded p-2 overflow-x-auto">{{ JSON.stringify(tc.args, null, 2) }}</pre>
               <div v-if="tc.error" class="text-xs text-red-600">{{ tc.error }}</div>
             </div>
           </div>
@@ -722,11 +722,11 @@ onMounted(load)
           <span v-if="incDetail.item.attempts" class="font-mono ml-auto">{{ incDetail.item.attempts }} tentativa{{ incDetail.item.attempts > 1 ? 's' : '' }} de correção</span>
         </section>
         <section v-if="incDetail.item.context?.user_question">
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Pergunta do usuário</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Pergunta do usuário</p>
           <div class="rounded-lg border border-line bg-surface-sunken p-3 text-sm text-ink leading-relaxed whitespace-pre-wrap">{{ incDetail.item.context.user_question }}</div>
         </section>
         <section v-if="incDetail.item.suspicious?.length">
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Valores/nomes acusados pelo validador</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Valores/nomes acusados pelo validador</p>
           <div class="flex items-center gap-1.5 flex-wrap">
             <Badge v-for="(s, i) in incDetail.item.suspicious" :key="i" variant="danger" size="sm">
               <code class="font-mono">{{ s.value }}</code>
@@ -735,20 +735,20 @@ onMounted(load)
           </div>
         </section>
         <section v-if="incDetail.item.original_text">
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Texto original (com problema)</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Texto original (com problema)</p>
           <div class="rounded-lg border border-red-500/25 bg-red-500/5 p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">{{ incDetail.item.original_text }}</div>
         </section>
         <section v-if="incDetail.item.final_text">
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Texto entregue ao usuário</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Texto entregue ao usuário</p>
           <div class="rounded-lg border border-emerald-500/25 bg-emerald-500/5 p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">{{ incDetail.item.final_text }}</div>
         </section>
         <section v-if="incDetail.item.context" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Modelo</p><p class="text-xs text-ink font-mono truncate mt-0.5">{{ incDetail.item.context.model || '—' }}</p></div>
-          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Pool</p><Badge :variant="poolVariant(incDetail.item.context.pool)" size="sm" class="mt-0.5">{{ poolLabel(incDetail.item.context.pool) }}</Badge></div>
-          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Latência</p><p class="text-xs text-ink font-mono mt-0.5">{{ formatLatency(incDetail.item.context.latency_ms) }}</p></div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Modelo</p><p class="text-xs text-ink font-mono truncate mt-0.5">{{ incDetail.item.context.model || '—' }}</p></div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Pool</p><Badge :variant="poolVariant(incDetail.item.context.pool)" size="sm" class="mt-0.5">{{ poolLabel(incDetail.item.context.pool) }}</Badge></div>
+          <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Latência</p><p class="text-xs text-ink font-mono mt-0.5">{{ formatLatency(incDetail.item.context.latency_ms) }}</p></div>
         </section>
         <section v-if="incDetail.item.context?.tool_calls?.length">
-          <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono mb-2">Ferramentas chamadas ({{ incDetail.item.context.tool_calls.length }})</p>
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">Ferramentas chamadas ({{ incDetail.item.context.tool_calls.length }})</p>
           <div class="flex items-center gap-1.5 flex-wrap">
             <Badge v-for="(tc, idx) in incDetail.item.context.tool_calls" :key="idx" :variant="tc.error ? 'danger' : 'accent'" size="sm">
               <code class="font-mono">{{ tc.name }}</code>

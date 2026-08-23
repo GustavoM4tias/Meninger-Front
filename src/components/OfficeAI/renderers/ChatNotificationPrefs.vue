@@ -65,14 +65,14 @@ async function toggle(pref, canal) {
                 <i class="fas fa-sliders mr-1.5 text-[10px]"></i>{{ action.title || 'Preferências de notificação' }}
             </p>
             <button v-if="action.screenLink" type="button" @click="router.push(action.screenLink)"
-                class="text-[11px] font-medium text-accent transition hover:underline">
+                class="text-micro font-medium text-accent transition hover:underline">
                 Abrir tela completa
             </button>
         </div>
 
         <div class="max-h-96 overflow-y-auto divide-y divide-line">
             <div v-for="g in groups" :key="g.name" class="px-3 py-2">
-                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">{{ g.name }}</p>
+                <p class="mb-1.5 text-micro font-semibold uppercase tracking-wide text-ink-subtle">{{ g.name }}</p>
 
                 <div v-for="p in g.items" :key="p.type"
                     class="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5">
@@ -80,7 +80,7 @@ async function toggle(pref, canal) {
                         <p class="truncate text-xs font-medium text-ink" :title="p.description || ''">
                             {{ p.label }}
                             <span v-if="!p.userOptional"
-                                class="ml-1 rounded border border-amber-500/30 bg-amber-500/10 px-1 py-px text-[9px] font-medium
+                                class="ml-1 rounded border border-amber-500/30 bg-amber-500/10 px-1 py-px text-micro font-medium
                                        text-amber-600 dark:text-amber-400" title="Notificação obrigatória">
                                 obrigatória
                             </span>
@@ -93,7 +93,7 @@ async function toggle(pref, canal) {
                                 @click="toggle(p, ch.key)"
                                 :disabled="!p.userOptional || savingKey === `${p.type}:${ch.key}`"
                                 :title="`${ch.label}: ${p[ch.key] ? 'ligado' : 'desligado'}${!p.userOptional ? ' (obrigatória)' : ''}`"
-                                class="inline-flex min-h-[28px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-medium
+                                class="inline-flex min-h-[28px] items-center gap-1 rounded-lg border px-2 py-1 text-micro font-medium
                                        transition disabled:cursor-not-allowed"
                                 :class="p[ch.key]
                                     ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
@@ -110,7 +110,7 @@ async function toggle(pref, canal) {
             </div>
         </div>
 
-        <p class="border-t border-line bg-surface-sunken px-3 py-1.5 text-[10px] text-ink-subtle">
+        <p class="border-t border-line bg-surface-sunken px-3 py-1.5 text-micro text-ink-subtle">
             Toque num canal para ligar/desligar — salva na hora. Você também pode pedir por texto ("desativa o e-mail de eventos").
         </p>
     </div>

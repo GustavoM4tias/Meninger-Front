@@ -118,14 +118,14 @@ function deltaView(k) {
             <i :class="k.icon"></i>
           </span>
           <span v-if="deltaView(k)"
-            :class="['inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums', deltaView(k).cls]"
+            :class="['inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-micro font-semibold tabular-nums', deltaView(k).cls]"
             title="vs período anterior">
             <i :class="['fas text-[8px]', deltaView(k).icon]"></i>{{ deltaView(k).text }}
           </span>
         </div>
         <span class="text-lg font-semibold text-ink tabular-nums tracking-tight leading-none mt-1">{{ fmtValue(k) }}</span>
         <div class="flex items-end justify-between gap-2">
-          <span class="text-[11px] text-ink-muted leading-tight">{{ k.label }}</span>
+          <span class="text-micro text-ink-muted leading-tight">{{ k.label }}</span>
           <Sparkline :values="k.series" :color="k.sparkColor" class="shrink-0" />
         </div>
       </div>

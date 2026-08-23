@@ -81,7 +81,7 @@
         </span>
 
         <!-- Badge -->
-        <span class="text-[10px] text-ink-subtle">
+        <span class="text-micro text-ink-subtle">
           <template v-if="item.isFolder && item.childCount !== null">
             {{ item.childCount }} {{ item.childCount === 1 ? 'item' : 'itens' }}
           </template>

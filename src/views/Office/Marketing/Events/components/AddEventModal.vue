@@ -117,7 +117,7 @@ watch(form, () => { hasDraft.value = !!localStorage.getItem(PERSIST_KEY); }, { d
         <div class="flex-1 min-w-0">
           <h2 class="text-base font-semibold text-ink leading-tight">Novo evento</h2>
           <p class="text-xs text-ink-muted mt-0.5 flex items-center gap-2">
-            <kbd class="px-1.5 py-0.5 rounded border border-line bg-surface text-[10px] font-mono">⌘ Enter</kbd>
+            <kbd class="px-1.5 py-0.5 rounded border border-line bg-surface text-micro font-mono">⌘ Enter</kbd>
             para salvar
             <span v-if="hasDraft" class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
               · <i class="fas fa-circle text-[6px]"></i> rascunho salvo

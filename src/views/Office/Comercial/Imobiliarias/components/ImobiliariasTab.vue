@@ -309,11 +309,11 @@ onMounted(() => { if (!all.value.length) store.fetchReport(); });
                             </td>
                             <td class="px-4">
                                 <div v-if="(i.empreendimentos || []).length" class="flex items-center gap-1 min-w-0">
-                                    <span class="truncate rounded-full bg-surface-sunken border border-line-subtle px-2 py-0.5 text-[11px] text-ink-muted">
+                                    <span class="truncate rounded-full bg-surface-sunken border border-line-subtle px-2 py-0.5 text-micro text-ink-muted">
                                         {{ i.empreendimentos[0].nome }}
                                     </span>
                                     <span v-if="i.empreendimentos.length > 1"
-                                        class="shrink-0 rounded-full bg-accent-soft text-accent px-1.5 py-0.5 text-[11px] font-medium"
+                                        class="shrink-0 rounded-full bg-accent-soft text-accent px-1.5 py-0.5 text-micro font-medium"
                                         v-tippy="i.empreendimentos.slice(1).map(e => e.nome).join(', ')">
                                         +{{ i.empreendimentos.length - 1 }}
                                     </span>

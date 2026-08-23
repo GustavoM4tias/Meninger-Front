@@ -150,7 +150,7 @@ function limpar() {
     <div v-else-if="itens.length" class="overflow-x-auto rounded-lg border border-line">
       <table class="w-full text-sm">
         <thead class="bg-surface-sunken">
-          <tr class="text-left text-[11px] uppercase tracking-wider text-ink-subtle">
+          <tr class="text-left text-micro uppercase tracking-wider text-ink-subtle">
             <th class="px-3 py-2 font-semibold">Quem</th>
             <th class="px-3 py-2 font-semibold">Relatório</th>
             <th class="px-3 py-2 font-semibold">Formato</th>
@@ -165,11 +165,11 @@ function limpar() {
           <tr v-for="it in itens" :key="it.id" class="hover:bg-surface-sunken/50 transition-colors">
             <td class="px-3 py-2 min-w-[12rem]">
               <p class="font-medium text-ink truncate">{{ it.userName || 'Usuário removido' }}</p>
-              <p class="text-[11px] text-ink-subtle truncate">{{ it.userEmail || '—' }}</p>
+              <p class="text-micro text-ink-subtle truncate">{{ it.userEmail || '—' }}</p>
             </td>
             <td class="px-3 py-2 text-ink-muted font-mono text-xs whitespace-nowrap">{{ it.report || '—' }}</td>
             <td class="px-3 py-2">
-              <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold"
+              <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-micro font-semibold"
                 :class="fmtOf(it.format).cls">
                 <i :class="fmtOf(it.format).icon"></i>{{ fmtOf(it.format).label }}
               </span>
@@ -177,12 +177,12 @@ function limpar() {
             <td class="px-3 py-2 whitespace-nowrap text-ink-muted">{{ periodo(it.periodStart, it.periodEnd) }}</td>
             <td class="px-3 py-2 text-right tabular-nums text-ink">{{ it.recordCount != null ? intFmt.format(it.recordCount) : '—' }}</td>
             <td class="px-3 py-2 max-w-[16rem]">
-              <span class="text-[11px] text-ink-subtle truncate block" :title="resumoFiltros(it.filtersJson)">
+              <span class="text-micro text-ink-subtle truncate block" :title="resumoFiltros(it.filtersJson)">
                 {{ resumoFiltros(it.filtersJson) || '—' }}
               </span>
             </td>
             <td class="px-3 py-2 whitespace-nowrap text-ink-muted font-mono text-xs">{{ quando(it.createdAt) }}</td>
-            <td class="px-3 py-2 text-[11px] text-ink-subtle font-mono">{{ it.ip || '—' }}</td>
+            <td class="px-3 py-2 text-micro text-ink-subtle font-mono">{{ it.ip || '—' }}</td>
           </tr>
         </tbody>
       </table>

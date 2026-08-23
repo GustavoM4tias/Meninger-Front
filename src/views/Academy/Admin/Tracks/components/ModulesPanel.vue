@@ -38,7 +38,7 @@
                         <div class="min-w-0">
                             <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ m.title }}</div>
                             <div v-if="m.description" class="text-xs text-slate-500 dark:text-slate-400">{{ m.description }}</div>
-                            <div class="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                            <div class="mt-0.5 text-micro text-slate-400 dark:text-slate-500">
                                 {{ m.itemCount || 0 }} {{ (m.itemCount === 1) ? 'item' : 'itens' }}
                             </div>
                         </div>
@@ -68,7 +68,7 @@
                     <li v-for="it in itemsByModule(m.id)" :key="it.id"
                         class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 px-3 py-1.5">
                         <span class="text-xs text-slate-700 dark:text-slate-300 truncate">{{ it.title }}</span>
-                        <button class="text-[11px] font-semibold text-slate-400 hover:text-rose-500"
+                        <button class="text-micro font-semibold text-slate-400 hover:text-rose-500"
                             @click="moveItem(it, null)">desvincular</button>
                     </li>
                 </ul>
@@ -85,7 +85,7 @@
                 <li v-for="it in looseItems" :key="it.id"
                     class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 px-3 py-1.5">
                     <span class="text-xs text-slate-700 dark:text-slate-300 truncate">{{ it.title }}</span>
-                    <select v-if="store.list.length" class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[11px] text-slate-700 dark:text-slate-300"
+                    <select v-if="store.list.length" class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-micro text-slate-700 dark:text-slate-300"
                         @change="(e) => moveItem(it, e.target.value)">
                         <option value="">Mover para...</option>
                         <option v-for="m in store.list" :key="m.id" :value="m.id">{{ m.title }}</option>

@@ -16,17 +16,17 @@
                                 </h2>
 
                                 <span v-if="item?.completed"
-                                    class="rounded-full bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                                    class="rounded-full bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 text-micro font-bold text-emerald-700 dark:text-emerald-300">
                                     CONCLUÍDO
                                 </span>
 
                                 <span v-else-if="locked"
-                                    class="rounded-full bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300">
+                                    class="rounded-full bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 text-micro font-bold text-rose-700 dark:text-rose-300">
                                     BLOQUEADO
                                 </span>
 
                                 <span v-else
-                                    class="rounded-full bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:text-blue-300">
+                                    class="rounded-full bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 text-micro font-bold text-blue-700 dark:text-blue-300">
                                     EM ANDAMENTO
                                 </span>
                             </div>

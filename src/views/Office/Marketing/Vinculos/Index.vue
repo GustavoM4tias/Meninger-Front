@@ -144,7 +144,7 @@ function statusBadge(s) {
             <div :class="['text-3xl font-bold tabular-nums leading-none', toneClasses[healthTone].ring]">
               {{ funnel.coverage_pct }}<span class="text-lg">%</span>
             </div>
-            <div class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle mt-1">cobertura</div>
+            <div class="text-micro uppercase tracking-wider font-mono text-ink-subtle mt-1">cobertura</div>
           </div>
         </div>
 
@@ -160,12 +160,12 @@ function statusBadge(s) {
               </span>
             </div>
             <span class="text-xl font-semibold text-ink tabular-nums leading-none mt-1">{{ fmtInt(c.value) }}</span>
-            <span class="text-[11px] text-ink-muted">{{ c.label }}</span>
+            <span class="text-micro text-ink-muted">{{ c.label }}</span>
           </div>
         </div>
 
         <!-- Contexto: cobertura mede só o fluxo ao vivo; espelho histórico à parte -->
-        <div class="mb-5 text-[11px] text-ink-subtle flex items-start gap-1.5">
+        <div class="mb-5 text-micro text-ink-subtle flex items-start gap-1.5">
           <i class="fas fa-circle-info mt-0.5"></i>
           <span>
             A <b>cobertura</b> mede só os leads que entraram pelo fluxo ao vivo (entregues ÷ ao vivo).
@@ -184,7 +184,7 @@ function statusBadge(s) {
               Campanhas sem vínculo represando leads
             </h2>
             <span v-if="held.campaigns.filter(c => !c.is_bound).length"
-              class="inline-flex rounded-full bg-red-500/10 text-red-600 dark:text-red-300 text-[11px] font-semibold px-2 py-0.5">
+              class="inline-flex rounded-full bg-red-500/10 text-red-600 dark:text-red-300 text-micro font-semibold px-2 py-0.5">
               {{ held.campaigns.filter(c => !c.is_bound).length }}
             </span>
           </div>
@@ -197,11 +197,11 @@ function statusBadge(s) {
             <table v-else class="min-w-full text-sm">
               <thead class="bg-surface-sunken/30 border-b border-line">
                 <tr>
-                  <th class="px-3 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
-                  <th class="px-3 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Conta</th>
-                  <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-                  <th class="px-3 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Motivo</th>
-                  <th class="px-3 py-2.5 text-right text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Leads represados</th>
+                  <th class="px-3 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
+                  <th class="px-3 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Conta</th>
+                  <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                  <th class="px-3 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Motivo</th>
+                  <th class="px-3 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads represados</th>
                   <th class="px-3 py-2.5 w-28"></th>
                 </tr>
               </thead>
@@ -217,14 +217,14 @@ function statusBadge(s) {
                     <div v-else class="text-ink font-medium leading-tight truncate max-w-[280px]" :title="c.name || c.campaign_id">
                       {{ c.name || '(não sincronizada)' }}
                     </div>
-                    <div class="text-[10px] font-mono text-ink-subtle">#{{ c.campaign_id }}</div>
+                    <div class="text-micro font-mono text-ink-subtle">#{{ c.campaign_id }}</div>
                   </td>
                   <td class="px-3 py-2.5 text-xs text-ink-muted truncate max-w-[160px]">{{ c.account_name || '—' }}</td>
                   <td class="px-3 py-2.5 text-center">
-                    <span v-if="!c.not_synced" :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium', statusBadge(c.effective_status).cls]">
+                    <span v-if="!c.not_synced" :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge(c.effective_status).cls]">
                       {{ statusBadge(c.effective_status).label }}
                     </span>
-                    <span v-else class="text-[10px] text-ink-subtle italic">fora do cache</span>
+                    <span v-else class="text-micro text-ink-subtle italic">fora do cache</span>
                   </td>
                   <td class="px-3 py-2.5 text-xs text-ink-muted">
                     <span v-if="c.not_synced">campanha não sincronizada</span>
@@ -238,10 +238,10 @@ function statusBadge(s) {
                   </td>
                   <td class="px-3 py-2.5 text-right">
                     <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
-                      class="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-2.5 py-1 text-[11px] font-medium hover:opacity-90 transition-opacity">
+                      class="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium hover:opacity-90 transition-opacity">
                       <i class="fas fa-link text-[9px]"></i>Vincular
                     </button>
-                    <span v-else class="text-[10px] text-ink-subtle italic">sincronize as campanhas</span>
+                    <span v-else class="text-micro text-ink-subtle italic">sincronize as campanhas</span>
                   </td>
                 </tr>
               </tbody>
@@ -257,7 +257,7 @@ function statusBadge(s) {
                 <i class="fas fa-rotate-right text-sky-500"></i>
                 Represados recuperáveis
               </h2>
-              <span class="text-[11px] text-ink-subtle">campanha já tem vínculo — só falta enviar ao CV</span>
+              <span class="text-micro text-ink-subtle">campanha já tem vínculo — só falta enviar ao CV</span>
             </div>
             <Button size="sm" icon="fas fa-paper-plane" :loading="sending"
               :disabled="!summary.leads_recoverable"
@@ -287,7 +287,7 @@ function statusBadge(s) {
                   class="flex-1 min-w-0 truncate text-ink text-left hover:text-accent hover:underline"
                   :title="`Abrir campanha ${c.name || c.campaign_id}`">{{ c.name || `#${c.campaign_id}` }}</button>
                 <span class="text-ink-muted">{{ fmtInt(c.held_count) }} lead(s)</span>
-                <RouterLink to="/meta?tab=captacao" class="text-[11px] text-accent hover:underline whitespace-nowrap">
+                <RouterLink to="/meta?tab=captacao" class="text-micro text-accent hover:underline whitespace-nowrap">
                   ver na inbox →
                 </RouterLink>
               </li>
@@ -302,7 +302,7 @@ function statusBadge(s) {
               <i class="fas fa-shield-halved text-amber-500"></i>
               Campanhas ativas sem vínculo (preventivo)
             </h2>
-            <span class="text-[11px] text-ink-subtle">ainda sem leads represados, mas vão gerar</span>
+            <span class="text-micro text-ink-subtle">ainda sem leads represados, mas vão gerar</span>
           </div>
           <Surface variant="raised" padding="none" class="overflow-hidden">
             <table class="min-w-full text-sm">
@@ -312,14 +312,14 @@ function statusBadge(s) {
                     <button @click="openCampaign(c.campaign_id)"
                       class="text-ink font-medium leading-tight truncate max-w-[320px] text-left hover:text-accent hover:underline block"
                       :title="`Abrir campanha ${c.name || c.campaign_id}`">{{ c.name || `#${c.campaign_id}` }}</button>
-                    <div class="text-[10px] font-mono text-ink-subtle">{{ c.account_name || '—' }}</div>
+                    <div class="text-micro font-mono text-ink-subtle">{{ c.account_name || '—' }}</div>
                   </td>
                   <td class="px-3 py-2.5 text-xs text-ink-muted">
                     {{ c.reason === 'sem_midia' ? 'sem mídia definida' : 'vínculo desativado' }}
                   </td>
                   <td class="px-3 py-2.5 text-right w-28">
                     <button @click="openCampaign(c.campaign_id)"
-                      class="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1 text-[11px] font-medium text-ink-muted hover:text-accent hover:border-accent/40 transition-colors">
+                      class="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1 text-micro font-medium text-ink-muted hover:text-accent hover:border-accent/40 transition-colors">
                       <i class="fas fa-link text-[9px]"></i>Vincular
                     </button>
                   </td>
@@ -343,7 +343,7 @@ function statusBadge(s) {
               </div>
             </div>
             <RouterLink to="/meta?tab=campanhas"
-              class="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[11px] font-medium text-ink-muted hover:text-accent hover:border-accent/40 transition-colors whitespace-nowrap">
+              class="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-micro font-medium text-ink-muted hover:text-accent hover:border-accent/40 transition-colors whitespace-nowrap">
               Disparar em Campanhas <i class="fas fa-arrow-right text-[9px]"></i>
             </RouterLink>
           </Surface>
@@ -364,7 +364,7 @@ function statusBadge(s) {
                 <i class="fas fa-file-lines text-ink-subtle text-xs"></i>
                 <span class="flex-1 min-w-0 truncate text-ink" :title="f.name">{{ f.name || `#${f.form_id}` }}</span>
                 <span class="text-ink-muted">{{ fmtInt(f.held_count) }} lead(s)</span>
-                <RouterLink to="/meta?tab=formularios" class="text-[11px] text-accent hover:underline whitespace-nowrap">
+                <RouterLink to="/meta?tab=formularios" class="text-micro text-accent hover:underline whitespace-nowrap">
                   configurar →
                 </RouterLink>
               </li>

@@ -106,21 +106,21 @@ const daysCount = computed(() => {
             : 'border-line bg-surface text-ink-muted hover:text-ink hover:bg-surface-hover']">
         <i class="fas fa-calendar-days text-[10px]"></i>
         <span class="font-mono tabular-nums">{{ rangeLabel }}</span>
-        <span v-if="daysCount" class="text-[10px] text-ink-subtle">({{ daysCount }}d)</span>
+        <span v-if="daysCount" class="text-micro text-ink-subtle">({{ daysCount }}d)</span>
         <i class="fas fa-chevron-down text-[9px] transition-transform" :class="{ 'rotate-180': customOpen }"></i>
       </button>
 
       <!-- Popover -->
       <div v-if="customOpen"
         class="absolute z-30 mt-1.5 right-0 sm:left-0 sm:right-auto w-[280px] rounded-xl border border-line bg-surface-raised shadow-elevated p-3 space-y-2.5">
-        <div class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">Intervalo personalizado</div>
+        <div class="text-micro uppercase tracking-wider font-mono text-ink-subtle">Intervalo personalizado</div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[11px] text-ink-muted mb-1">Início</label>
+            <label class="block text-micro text-ink-muted mb-1">Início</label>
             <Input v-model="customSince" type="date" size="sm" />
           </div>
           <div>
-            <label class="block text-[11px] text-ink-muted mb-1">Fim</label>
+            <label class="block text-micro text-ink-muted mb-1">Fim</label>
             <Input v-model="customUntil" type="date" size="sm" />
           </div>
         </div>

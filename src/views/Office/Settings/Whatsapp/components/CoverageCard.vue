@@ -41,7 +41,7 @@ const barCls = computed(() => {
         </div>
         <div class="text-right shrink-0">
           <p class="text-xl font-semibold text-ink leading-none">{{ pct }}%</p>
-          <p class="text-[11px] text-ink-subtle mt-1">{{ cov.withPhone }} de {{ cov.total }} ativos</p>
+          <p class="text-micro text-ink-subtle mt-1">{{ cov.withPhone }} de {{ cov.total }} ativos</p>
         </div>
       </div>
 

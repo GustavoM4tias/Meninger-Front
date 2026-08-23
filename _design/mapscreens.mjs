@@ -56,6 +56,10 @@ const routes = [];
 /* ── 3. métricas por arquivo ────────────────────────────────────────────────── */
 const HARD = /bg-white|bg-gray-|text-gray-|bg-slate-|text-slate-|border-gray-|border-slate-|dark:bg-gray-/g;
 const TINY = /text-\[(?:[1-9]|10)px\]/g;
+/* Tag <i> inteira: icone nao e texto, entao nao entra no piso de 11px.
+   Ver DESIGN-LANGUAGE.md. Contar icone aqui punia tela por marcador de lista. */
+const ICONE = /<i[^>]*>/gs;
+const semIcone = (s) => s.replace(ICONE, '');
 const BADSHADOW = /\bshadow-(sm|md|lg|xl|2xl)\b/g;
 
 function count(s, re) { return (s.match(re) || []).length; }
@@ -71,7 +75,7 @@ function metrics(file) {
     pageHeader: /<PageHeader/.test(s),
     pageHelp: /<PageHelp/.test(s),
     hardcoded: count(s, HARD),
-    tinyText: count(s, TINY),
+    tinyText: count(semIcone(s), TINY),
     badShadow: count(s, BADSHADOW),
     handModal: count(s, /fixed inset-0 z-/g),
     table: /<table/.test(s),
@@ -120,7 +124,7 @@ for (const r of routes) {
       file: path.relative(SRC, p).replace(/\\/g, '/'),
       lines: s.split('\n').length,
       hardcoded: count(s, HARD),
-      tinyText: count(s, TINY),
+      tinyText: count(semIcone(s), TINY),
       chart: /echarts/.test(s),
       table: /<table/.test(s),
       tableMobile: /<table/.test(s) && (/(md|lg|sm):hidden/.test(s) || /overflow-x-auto/.test(s)),
@@ -178,6 +182,26 @@ function score(s) {
 }
 screens.forEach((s) => { s.score = score(s); });
 screens.sort((a, b) => (a.score ?? 999) - (b.score ?? 999));
+
+/* Rota duplicada: o `path:` extraido e so o segmento do proprio bloco, entao
+   duas telas aninhadas em pais diferentes (ex.: /relatorios da Eme e
+   /comercial/relatorios) chegam aqui com o MESMO texto. Sao telas distintas -
+   arquivos distintos -, so o rotulo colidia, e no checklist parecia que uma
+   delas tinha sumido. Aqui o rotulo ganha a pasta que as separa. */
+const porRota = new Map();
+for (const s of screens) for (const r of s.routes) {
+  if (!porRota.has(r)) porRota.set(r, []);
+  porRota.get(r).push(s);
+}
+for (const [rota, lista] of porRota) {
+  if (lista.length < 2) continue;
+  for (const s of lista) {
+    const pasta = s.file.split('/').slice(0, -1).pop() || '';
+    const avo = s.file.split('/').slice(-3, -2)[0] || '';
+    const i = s.routes.indexOf(rota);
+    if (i >= 0) s.routes[i] = `${rota} [${avo}/${pasta}]`;
+  }
+}
 
 fs.writeFileSync(path.join(ROOT, 'ui-map.json'), JSON.stringify({ generated: '2026-08-20', screens }, null, 2));
 console.log('telas:', screens.length);

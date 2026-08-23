@@ -45,16 +45,16 @@ function goalLabel(g) { return GOAL_LABELS[g] || g || '—'; }
       <table class="min-w-full text-sm">
         <thead class="bg-surface-sunken/30 border-b border-line">
           <tr>
-            <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Conjunto</th>
-            <th v-if="showCampaign" class="px-3 py-2.5 text-left text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
-            <th class="px-3 py-2.5 text-center text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-            <th class="px-3 py-2.5 text-left   text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Otimização</th>
-            <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Investido</th>
-            <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
-            <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle" title="Custo por lead no período">CAC</th>
-            <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CTR</th>
-            <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">CPM</th>
-            <th class="px-3 py-2.5 text-right  text-[11px] font-mono uppercase tracking-wider text-ink-subtle">Impressões</th>
+            <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Conjunto</th>
+            <th v-if="showCampaign" class="px-3 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
+            <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+            <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Otimização</th>
+            <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">Investido</th>
+            <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
+            <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle" title="Custo por lead no período">CAC</th>
+            <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">CTR</th>
+            <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">CPM</th>
+            <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">Impressões</th>
             <th class="px-3 py-2.5 w-8"></th>
           </tr>
         </thead>
@@ -77,7 +77,7 @@ function goalLabel(g) { return GOAL_LABELS[g] || g || '—'; }
               <div class="text-ink font-medium leading-tight truncate max-w-[280px]" :title="a.name || a.id">
                 {{ a.name || '(não sincronizado)' }}
               </div>
-              <div class="text-[10px] font-mono text-ink-subtle">#{{ a.id }}</div>
+              <div class="text-micro font-mono text-ink-subtle">#{{ a.id }}</div>
             </td>
 
             <td v-if="showCampaign" class="px-3 py-2.5 text-xs text-ink-muted truncate max-w-[200px]">
@@ -85,7 +85,7 @@ function goalLabel(g) { return GOAL_LABELS[g] || g || '—'; }
             </td>
 
             <td class="px-3 py-2.5 text-center">
-              <span :class="['inline-flex rounded-md border px-2 py-0.5 text-[10px] font-medium', statusBadge(a).cls]">
+              <span :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge(a).cls]">
                 {{ statusBadge(a).label }}
               </span>
             </td>
@@ -98,9 +98,9 @@ function goalLabel(g) { return GOAL_LABELS[g] || g || '—'; }
               <span v-if="a.cac != null" class="font-medium text-ink">{{ fmtMoney(a.cac) }}</span>
               <span v-else class="text-ink-subtle italic text-xs">—</span>
             </td>
-            <td class="px-3 py-2.5 text-right text-[11px] text-ink-muted">{{ fmtPct(a.ctr) }}</td>
-            <td class="px-3 py-2.5 text-right text-[11px] text-ink-muted">{{ a.cpm != null ? fmtMoney(a.cpm) : '—' }}</td>
-            <td class="px-3 py-2.5 text-right text-[11px] text-ink-muted">{{ fmtInt(a.impressions) }}</td>
+            <td class="px-3 py-2.5 text-right text-micro text-ink-muted">{{ fmtPct(a.ctr) }}</td>
+            <td class="px-3 py-2.5 text-right text-micro text-ink-muted">{{ a.cpm != null ? fmtMoney(a.cpm) : '—' }}</td>
+            <td class="px-3 py-2.5 text-right text-micro text-ink-muted">{{ fmtInt(a.impressions) }}</td>
 
             <td class="px-3 py-2.5 text-center text-ink-subtle">
               <i class="fas fa-chevron-right text-[10px]"></i>

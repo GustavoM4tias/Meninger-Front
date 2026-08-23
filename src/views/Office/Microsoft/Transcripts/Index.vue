@@ -91,7 +91,7 @@
                   class="shrink-0 mt-0.5"></i>
               </div>
               <div v-if="m.isInstant" class="mb-2">
-                <span class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <span class="inline-flex items-center gap-1 text-micro font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <i class="fas fa-bolt text-[9px]"></i> Instantânea
                 </span>
               </div>
@@ -537,7 +537,7 @@
           icon-left="fas fa-location-dot" />
 
         <div>
-          <label class="block text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5">
+          <label class="block text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5">
             Participantes <span class="font-normal normal-case">(opcional)</span>
           </label>
           <div v-if="newRecForm.attendees.length" class="flex flex-wrap gap-1.5 mb-2">

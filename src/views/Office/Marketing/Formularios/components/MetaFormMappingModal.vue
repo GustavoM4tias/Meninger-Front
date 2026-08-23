@@ -223,7 +223,7 @@ const sections = [
             <span v-if="form?.created_time">· Criado {{ new Date(form.created_time).toLocaleDateString('pt-BR') }}</span>
           </p>
         </div>
-        <span :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-medium', statusBadge.cls]">
+        <span :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge.cls]">
           {{ statusBadge.label }}
         </span>
         <button @click="close" class="shrink-0 text-ink-subtle hover:text-ink p-1"><i class="fas fa-times"></i></button>
@@ -232,23 +232,23 @@ const sections = [
       <!-- KPI bar -->
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 px-5 py-3 border-b border-line bg-surface-sunken/30 shrink-0">
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Total</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Total</div>
           <div class="text-lg font-semibold text-ink">{{ fmtInt(stats.total) }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Últimos 30d</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Últimos 30d</div>
           <div class="text-lg font-semibold text-ink">{{ fmtInt(stats.last_30d) }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Entregues</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Entregues</div>
           <div class="text-lg font-semibold text-emerald-600 dark:text-emerald-300">{{ fmtInt(stats.delivered) }}</div>
         </div>
         <div class="text-center">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Pendentes</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Pendentes</div>
           <div class="text-lg font-semibold text-amber-600 dark:text-amber-300">{{ fmtInt(stats.held) }}</div>
         </div>
         <div class="text-center col-span-2 sm:col-span-1">
-          <div class="text-[10px] uppercase tracking-wider text-ink-subtle">Último lead</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Último lead</div>
           <div class="text-sm font-medium text-ink">{{ fmtRelative(stats.last_lead_at) }}</div>
         </div>
       </div>
@@ -301,7 +301,7 @@ const sections = [
               <!-- Pergunta -->
               <div class="min-w-0">
                 <div class="text-sm font-medium text-ink leading-tight">{{ item.question_label }}</div>
-                <div class="text-[10px] font-mono text-ink-subtle mt-0.5">
+                <div class="text-micro font-mono text-ink-subtle mt-0.5">
                   key: {{ item.question_key }}<span v-if="item.question_type"> · type: {{ item.question_type }}</span>
                 </div>
               </div>
@@ -318,13 +318,13 @@ const sections = [
 
                 <button v-if="fmDraft[item.question_key]"
                   @click="resetMappingToAuto(item.question_key)"
-                  class="text-[10px] text-ink-subtle hover:text-red-500" title="Voltar ao automático">
+                  class="text-micro text-ink-subtle hover:text-red-500" title="Voltar ao automático">
                   <i class="fas fa-rotate-left"></i>
                 </button>
               </div>
 
               <!-- Preview do que vai acontecer -->
-              <div class="md:col-span-2 text-[10px] flex items-center gap-1.5 pt-1 border-t border-line/40">
+              <div class="md:col-span-2 text-micro flex items-center gap-1.5 pt-1 border-t border-line/40">
                 <i class="fas fa-arrow-right text-ink-subtle"></i>
                 <span class="text-ink-subtle">Vai pra:</span>
                 <span class="font-mono px-1.5 py-0.5 rounded"
@@ -335,10 +335,10 @@ const sections = [
                       : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'">
                   {{ targetLabel(effectiveMapping(item)) }}
                 </span>
-                <span v-if="!fmDraft[item.question_key] && item.auto_detected" class="text-[9px] text-ink-subtle italic">
+                <span v-if="!fmDraft[item.question_key] && item.auto_detected" class="text-micro text-ink-subtle italic">
                   · via auto-detect
                 </span>
-                <span v-else-if="!fmDraft[item.question_key]" class="text-[9px] text-ink-subtle italic">
+                <span v-else-if="!fmDraft[item.question_key]" class="text-micro text-ink-subtle italic">
                   · sem match no parser → vira extra_fields
                 </span>
               </div>
@@ -395,7 +395,7 @@ const sections = [
         <!-- ── Leads recentes ────────────────────────────────────────────── -->
         <section v-show="activeSection === 'leads'" class="space-y-2">
           <div class="flex justify-between items-center">
-            <div class="text-[11px] text-ink-subtle">Últimos 20 — pra ver todos, exporte CSV.</div>
+            <div class="text-micro text-ink-subtle">Últimos 20 — pra ver todos, exporte CSV.</div>
             <Button variant="ghost" size="sm" icon="fas fa-download" :loading="downloadingCsv" @click="exportCsv(null)">Exportar CSV</Button>
           </div>
 
@@ -409,29 +409,29 @@ const sections = [
             <table class="min-w-full text-sm">
               <thead class="bg-surface-sunken/30 border-b border-line">
                 <tr>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Quando</th>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Contato</th>
-                  <th class="px-3 py-2 text-left  text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
-                  <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">CV</th>
-                  <th class="px-3 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Status</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Quando</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Contato</th>
+                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
+                  <th class="px-3 py-2 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">CV</th>
+                  <th class="px-3 py-2 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-line/60">
                 <tr v-for="l in recentLeads" :key="l.id" class="hover:bg-surface-hover/40">
-                  <td class="px-3 py-2 text-[11px] text-ink-subtle whitespace-nowrap">{{ fmtRelative(l.created_at) }}</td>
+                  <td class="px-3 py-2 text-micro text-ink-subtle whitespace-nowrap">{{ fmtRelative(l.created_at) }}</td>
                   <td class="px-3 py-2">
                     <div class="text-ink text-xs">{{ l.nome || '(sem nome)' }}</div>
-                    <div class="text-[10px] text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
+                    <div class="text-micro text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
                   </td>
-                  <td class="px-3 py-2 text-[11px] font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
+                  <td class="px-3 py-2 text-micro font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
                   <td class="px-3 py-2 text-center">
-                    <span v-if="l.cv_idlead" class="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-300">
+                    <span v-if="l.cv_idlead" class="inline-flex items-center gap-1 text-micro font-mono text-emerald-600 dark:text-emerald-300">
                       <i class="fas fa-check-circle text-[9px]"></i>#{{ l.cv_idlead }}
                     </span>
-                    <span v-else class="text-[10px] text-ink-subtle italic">sem match</span>
+                    <span v-else class="text-micro text-ink-subtle italic">sem match</span>
                   </td>
                   <td class="px-3 py-2 text-center">
-                    <span :class="['text-[11px] font-medium', statusColor(l.status)]">{{ l.status }}</span>
+                    <span :class="['text-micro font-medium', statusColor(l.status)]">{{ l.status }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -442,7 +442,7 @@ const sections = [
 
       <!-- Footer -->
       <footer class="px-5 py-3 border-t border-line flex items-center justify-between gap-2 bg-surface-sunken/30 shrink-0">
-        <div class="text-[10px] text-ink-subtle">
+        <div class="text-micro text-ink-subtle">
           Última sync: {{ form?.last_synced_at ? new Date(form.last_synced_at).toLocaleString('pt-BR') : '—' }}
         </div>
         <Button variant="secondary" size="sm" @click="close">Fechar</Button>

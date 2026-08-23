@@ -12,7 +12,7 @@
           </div>
           <div class="hidden sm:block min-w-0">
             <p class="text-sm font-semibold text-ink leading-tight">Microsoft Planner</p>
-            <p class="text-[10px] font-mono uppercase tracking-wider text-ink-subtle">Quadro Kanban</p>
+            <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Quadro Kanban</p>
           </div>
         </div>
 
@@ -165,14 +165,14 @@
               <!-- Meta -->
               <div class="mt-2 flex items-center gap-2 flex-wrap">
                 <!-- Prioridade -->
-                <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium" :class="priorityBadge(task.priority)">
+                <span class="text-micro px-1.5 py-0.5 rounded-full font-medium" :class="priorityBadge(task.priority)">
                   {{ priorityLabel(task.priority) }}
                 </span>
 
                 <!-- Vencimento -->
                 <span
                   v-if="task.dueDateTime"
-                  class="text-[10px] flex items-center gap-1"
+                  class="text-micro flex items-center gap-1"
                   :class="isOverdue(task) ? 'text-red-500' : 'text-ink-subtle'">
                   <i class="fas fa-calendar text-[9px]"></i>
                   {{ formatShortDate(task.dueDateTime) }}
@@ -181,7 +181,7 @@
                 <!-- Progresso em progresso -->
                 <span
                   v-if="task.percentComplete === 50"
-                  class="text-[10px] text-accent flex items-center gap-1">
+                  class="text-micro text-accent flex items-center gap-1">
                   <i class="fas fa-circle-half-stroke text-[9px]"></i>
                   Em progresso
                 </span>
@@ -189,7 +189,7 @@
                 <!-- Checklist count -->
                 <span
                   v-if="task.checklistItemCount > 0"
-                  class="text-[10px] text-ink-subtle flex items-center gap-1 ml-auto">
+                  class="text-micro text-ink-subtle flex items-center gap-1 ml-auto">
                   <i class="fas fa-list-check text-[9px]"></i>
                   <span class="font-mono tabular-nums">{{ task.activeChecklistItemCount }}/{{ task.checklistItemCount }}</span>
                 </span>
@@ -200,7 +200,7 @@
             <div
               v-if="!(store.tasksByBucket[bucket.id] ?? []).length"
               class="text-center py-4">
-              <p class="text-[11px] text-ink-subtle">Sem tarefas</p>
+              <p class="text-micro text-ink-subtle">Sem tarefas</p>
             </div>
           </div>
 

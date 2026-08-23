@@ -75,14 +75,14 @@ function fmtTime(dt) {
 
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <span class="text-[10px] font-mono uppercase tracking-wider"
+            <span class="text-micro font-mono uppercase tracking-wider"
               :class="isLive ? 'text-accent' : 'text-ink-subtle'">
               <span v-if="isLive" class="inline-block h-1.5 w-1.5 rounded-full bg-accent animate-pulse mr-1"></span>
               {{ whenLabel }}
             </span>
           </div>
           <p class="text-sm font-semibold text-ink truncate">{{ nextMeeting.subject }}</p>
-          <p v-if="nextMeeting.location" class="text-[11px] text-ink-subtle truncate">
+          <p v-if="nextMeeting.location" class="text-micro text-ink-subtle truncate">
             <i class="fas fa-location-dot text-[9px] mr-1"></i>{{ nextMeeting.location }}
           </p>
         </div>
@@ -90,7 +90,7 @@ function fmtTime(dt) {
 
       <!-- Resumo + ação -->
       <div class="flex items-center gap-3 shrink-0">
-        <span class="text-[11px] text-ink-subtle hidden sm:block">
+        <span class="text-micro text-ink-subtle hidden sm:block">
           <span class="font-mono tabular-nums font-semibold text-ink-muted">{{ remainingCount }}</span>
           reuniã{{ remainingCount === 1 ? 'o' : 'es' }} restante{{ remainingCount === 1 ? '' : 's' }} hoje
         </span>

@@ -28,7 +28,7 @@ function open(link) {
 <template>
     <div class="mt-2 space-y-2">
         <p v-if="action.title" class="px-0.5 text-xs font-semibold uppercase tracking-wide text-ink-subtle">{{ action.title }}</p>
-        <p v-if="action.subtitle" class="px-0.5 -mt-1 text-[11px] text-ink-subtle">{{ action.subtitle }}</p>
+        <p v-if="action.subtitle" class="px-0.5 -mt-1 text-micro text-ink-subtle">{{ action.subtitle }}</p>
 
         <div v-for="(c, i) in (action.cards || [])" :key="c.id || i"
             class="rounded-xl border border-line bg-surface-raised p-3 shadow-soft transition hover:border-accent/40">
@@ -53,7 +53,7 @@ function open(link) {
                 </div>
                 <!-- barra de progresso -->
                 <div class="mt-2">
-                    <div class="flex items-center justify-between text-[11px] text-ink-subtle">
+                    <div class="flex items-center justify-between text-micro text-ink-subtle">
                         <span>{{ c.progresso.done }}/{{ c.progresso.total }} concluídas</span>
                         <span class="flex items-center gap-2">
                             <span v-if="c.progresso.overdue" class="text-rose-500">{{ c.progresso.overdue }} atrasada(s)</span>
@@ -72,26 +72,26 @@ function open(link) {
                     <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: st(c.state_class).dot }"></span>
                     <div class="min-w-0 flex-1">
                         <p class="text-sm font-medium text-ink" :class="c.state_class === 'DONE' ? 'line-through opacity-60' : ''">{{ c.title }}</p>
-                        <p v-if="c.checklist && !action.subtitle" class="mt-0.5 truncate text-[11px] text-ink-subtle">
+                        <p v-if="c.checklist && !action.subtitle" class="mt-0.5 truncate text-micro text-ink-subtle">
                             <i class="fas fa-list-check mr-1 text-[9px]"></i>{{ c.checklist }}
                         </p>
                         <div class="mt-1 flex flex-wrap items-center gap-1">
-                            <span class="rounded-md border px-1.5 py-0.5 text-[10px] font-medium" :class="st(c.state_class).cls">{{ c.statusLabel }}</span>
+                            <span class="rounded-md border px-1.5 py-0.5 text-micro font-medium" :class="st(c.state_class).cls">{{ c.statusLabel }}</span>
                             <span v-if="c.aprovacao"
-                                class="rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                                class="rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-micro font-medium text-amber-600 dark:text-amber-400">
                                 <i class="fas fa-stamp mr-1 text-[9px]"></i>{{ c.aprovacao }}
                             </span>
-                            <span v-if="c.responsavel" class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] text-ink-muted">
+                            <span v-if="c.responsavel" class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro text-ink-muted">
                                 <i class="fas fa-user mr-1 text-[9px]"></i>{{ c.responsavel }}
                             </span>
-                            <span v-if="c.due" class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] text-ink-muted">
+                            <span v-if="c.due" class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro text-ink-muted">
                                 <i class="fas fa-calendar mr-1 text-[9px]"></i>{{ c.due }}
                             </span>
                         </div>
                     </div>
                     <button v-if="c.link" type="button" @click="open(c.link)"
                         class="inline-flex shrink-0 items-center gap-1 rounded-lg border border-line bg-surface-sunken px-2 py-1
-                               text-[11px] font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
+                               text-micro font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
                         <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
                     </button>
                 </div>

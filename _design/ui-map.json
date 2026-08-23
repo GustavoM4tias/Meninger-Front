@@ -169,7 +169,7 @@
       "pageHeader": false,
       "pageHelp": true,
       "hardcoded": 0,
-      "tinyText": 10,
+      "tinyText": 5,
       "badShadow": 1,
       "handModal": 0,
       "table": false,
@@ -192,7 +192,7 @@
       ],
       "totalLines": 883,
       "totalHardcoded": 42,
-      "totalTiny": 10,
+      "totalTiny": 5,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Ferramenta",
@@ -212,7 +212,7 @@
       "pageHeader": false,
       "pageHelp": false,
       "hardcoded": 0,
-      "tinyText": 5,
+      "tinyText": 0,
       "badShadow": 0,
       "handModal": 0,
       "table": false,
@@ -225,11 +225,11 @@
       "kids": [],
       "totalLines": 215,
       "totalHardcoded": 0,
-      "totalTiny": 5,
+      "totalTiny": 0,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Configuração",
-      "score": 64
+      "score": 65
     },
     {
       "routes": [
@@ -525,7 +525,7 @@
           "file": "views/Office/Microsoft/Sharepoint/components/FileGrid.vue",
           "lines": 286,
           "hardcoded": 27,
-          "tinyText": 4,
+          "tinyText": 3,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -542,7 +542,7 @@
       ],
       "totalLines": 1379,
       "totalHardcoded": 62,
-      "totalTiny": 4,
+      "totalTiny": 3,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Ferramenta",
@@ -619,7 +619,7 @@
           "file": "views/Office/Comercial/Buildings/components/BuildingModal.vue",
           "lines": 524,
           "hardcoded": 8,
-          "tinyText": 16,
+          "tinyText": 6,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -645,11 +645,11 @@
       ],
       "totalLines": 985,
       "totalHardcoded": 10,
-      "totalTiny": 20,
+      "totalTiny": 10,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Ferramenta",
-      "score": 73
+      "score": 75
     },
     {
       "routes": [
@@ -665,7 +665,7 @@
       "pageHeader": true,
       "pageHelp": false,
       "hardcoded": 2,
-      "tinyText": 26,
+      "tinyText": 12,
       "badShadow": 0,
       "handModal": 0,
       "table": true,
@@ -688,101 +688,7 @@
       ],
       "totalLines": 1206,
       "totalHardcoded": 2,
-      "totalTiny": 26,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
-      "score": 75
-    },
-    {
-      "routes": [
-        "eme-brain"
-      ],
-      "name": "Cérebro da Eme",
-      "file": "views/Office/Tools/EmeBrain/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 784,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": false,
-      "hardcoded": 0,
-      "tinyText": 28,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 13,
-      "divClick": 0,
-      "kids": [],
-      "totalLines": 784,
-      "totalHardcoded": 0,
-      "totalTiny": 28,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Ferramenta",
-      "score": 76
-    },
-    {
-      "routes": [
-        "projections/:id"
-      ],
-      "name": "Projeção Detalhes",
-      "file": "views/Office/Comercial/Projections/ProjectionDetail.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 652,
-      "pageContainer": true,
-      "pageHeader": false,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 6,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 10,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Comercial/Projections/components/EnterpriseFormModal.vue",
-          "lines": 368,
-          "hardcoded": 9,
-          "tinyText": 13,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Projections/components/ProjectionEditorGrid.vue",
-          "lines": 233,
-          "hardcoded": 0,
-          "tinyText": 8,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Comercial/Projections/components/ProjectionHistory.vue",
-          "lines": 109,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 1362,
-      "totalHardcoded": 9,
-      "totalTiny": 29,
+      "totalTiny": 12,
       "totalCharts": 0,
       "totalTables": 1,
       "archetype": "Operação",
@@ -802,7 +708,7 @@
       "pageHeader": true,
       "pageHelp": false,
       "hardcoded": 0,
-      "tinyText": 19,
+      "tinyText": 12,
       "badShadow": 0,
       "handModal": 0,
       "table": true,
@@ -815,222 +721,11 @@
       "kids": [],
       "totalLines": 465,
       "totalHardcoded": 0,
-      "totalTiny": 19,
+      "totalTiny": 12,
       "totalCharts": 0,
       "totalTables": 1,
       "archetype": "Operação",
-      "score": 77
-    },
-    {
-      "routes": [
-        "leads"
-      ],
-      "name": "Leads",
-      "file": "views/Office/Marketing/Leads/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 425,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 0,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 4,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Marketing/Leads/components/CaptureHeatmap.vue",
-          "lines": 107,
-          "hardcoded": 0,
-          "tinyText": 3,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/CommercialFunnel.vue",
-          "lines": 155,
-          "hardcoded": 0,
-          "tinyText": 3,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/EnterpriseDonut.vue",
-          "lines": 99,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": true,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/ExportLogModal.vue",
-          "lines": 209,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/Fila.vue",
-          "lines": 65,
-          "hardcoded": 0,
-          "tinyText": 3,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/Filas.vue",
-          "lines": 104,
-          "hardcoded": 0,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/FiltersBar.vue",
-          "lines": 153,
-          "hardcoded": 0,
-          "tinyText": 7,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/LeadDetailModal.vue",
-          "lines": 317,
-          "hardcoded": 7,
-          "tinyText": 21,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/LeadModal.vue",
-          "lines": 620,
-          "hardcoded": 0,
-          "tinyText": 8,
-          "chart": true,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/LeadsBySource.vue",
-          "lines": 72,
-          "hardcoded": 0,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/LeadsKpiCards.vue",
-          "lines": 140,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/LeadsTable.vue",
-          "lines": 174,
-          "hardcoded": 0,
-          "tinyText": 4,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/LeadsTrendCard.vue",
-          "lines": 96,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": true,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/RecentLeads.vue",
-          "lines": 114,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/Sparkline.vue",
-          "lines": 40,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Marketing/Leads/components/SummaryCards.vue",
-          "lines": 99,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 2989,
-      "totalHardcoded": 7,
-      "totalTiny": 55,
-      "totalCharts": 3,
-      "totalTables": 2,
-      "archetype": "Painel",
-      "score": 79
-    },
-    {
-      "routes": [
-        "mcmv"
-      ],
-      "name": "MCMV — Limites por Cidade",
-      "file": "views/Office/Comercial/Mcmv/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 207,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": false,
-      "hardcoded": 0,
-      "tinyText": 6,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 4,
-      "divClick": 0,
-      "kids": [],
-      "totalLines": 207,
-      "totalHardcoded": 0,
-      "totalTiny": 6,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Ferramenta",
-      "score": 79
+      "score": 78
     },
     {
       "routes": [
@@ -1046,7 +741,7 @@
       "pageHeader": true,
       "pageHelp": false,
       "hardcoded": 0,
-      "tinyText": 9,
+      "tinyText": 6,
       "badShadow": 0,
       "handModal": 0,
       "table": true,
@@ -1059,220 +754,10 @@
       "kids": [],
       "totalLines": 352,
       "totalHardcoded": 0,
-      "totalTiny": 9,
+      "totalTiny": 6,
       "totalCharts": 0,
       "totalTables": 1,
       "archetype": "Operação",
-      "score": 79
-    },
-    {
-      "routes": [
-        "teams"
-      ],
-      "name": "Teams",
-      "file": "views/Office/Microsoft/Teams/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 242,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 1,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 0,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Microsoft/Teams/components/AgendaTab.vue",
-          "lines": 304,
-          "hardcoded": 0,
-          "tinyText": 3,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Microsoft/Teams/components/CalendarMonth.vue",
-          "lines": 246,
-          "hardcoded": 0,
-          "tinyText": 8,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Microsoft/Teams/components/CalendarWeek.vue",
-          "lines": 366,
-          "hardcoded": 0,
-          "tinyText": 6,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Microsoft/Teams/components/CreateMeetingModal.vue",
-          "lines": 581,
-          "hardcoded": 25,
-          "tinyText": 4,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Microsoft/Teams/components/EventDetailModal.vue",
-          "lines": 314,
-          "hardcoded": 14,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Microsoft/Teams/components/EventListView.vue",
-          "lines": 176,
-          "hardcoded": 0,
-          "tinyText": 10,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Microsoft/Teams/components/TodayPanel.vue",
-          "lines": 118,
-          "hardcoded": 0,
-          "tinyText": 3,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 2347,
-      "totalHardcoded": 39,
-      "totalTiny": 35,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Ferramenta",
-      "score": 79
-    },
-    {
-      "routes": [
-        "validator"
-      ],
-      "name": "Validador",
-      "file": "views/Office/Tools/Validator/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 295,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": false,
-      "hardcoded": 0,
-      "tinyText": 5,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 6,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Tools/Validator/components/History.vue",
-          "lines": 66,
-          "hardcoded": 0,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Tools/Validator/components/HistoryItem.vue",
-          "lines": 35,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Tools/Validator/components/HistoryModal.vue",
-          "lines": 74,
-          "hardcoded": 0,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 470,
-      "totalHardcoded": 0,
-      "totalTiny": 9,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Ferramenta",
-      "score": 79
-    },
-    {
-      "routes": [
-        "users"
-      ],
-      "name": "Usuários",
-      "file": "views/Office/Settings/Users/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 339,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": false,
-      "hardcoded": 0,
-      "tinyText": 0,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 5,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Settings/Users/components/MicrosoftImportPanel.vue",
-          "lines": 279,
-          "hardcoded": 0,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Settings/Users/components/userModal.vue",
-          "lines": 720,
-          "hardcoded": 0,
-          "tinyText": 7,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 1338,
-      "totalHardcoded": 0,
-      "totalTiny": 8,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Configuração",
       "score": 79
     },
     {
@@ -1289,7 +774,7 @@
       "pageHeader": true,
       "pageHelp": false,
       "hardcoded": 0,
-      "tinyText": 4,
+      "tinyText": 2,
       "badShadow": 0,
       "handModal": 0,
       "table": false,
@@ -1304,7 +789,7 @@
           "file": "views/Office/Settings/Organogram/components/OrganogramFlow.vue",
           "lines": 575,
           "hardcoded": 0,
-          "tinyText": 5,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -1312,7 +797,7 @@
       ],
       "totalLines": 1224,
       "totalHardcoded": 0,
-      "totalTiny": 9,
+      "totalTiny": 4,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Configuração",
@@ -1348,112 +833,6 @@
       "totalTiny": 5,
       "totalCharts": 0,
       "totalTables": 0,
-      "archetype": "Configuração",
-      "score": 79
-    },
-    {
-      "routes": [
-        "whatsapp"
-      ],
-      "name": "WhatsApp",
-      "file": "views/Office/Settings/Whatsapp/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 76,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": false,
-      "hardcoded": 0,
-      "tinyText": 0,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 0,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Settings/Whatsapp/components/AutomationsPanel.vue",
-          "lines": 205,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Settings/Whatsapp/components/ConfigPanel.vue",
-          "lines": 286,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Settings/Whatsapp/components/CoverageCard.vue",
-          "lines": 81,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Settings/Whatsapp/components/MessagesPanel.vue",
-          "lines": 123,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Settings/Whatsapp/components/SetupWizard.vue",
-          "lines": 285,
-          "hardcoded": 0,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Settings/Whatsapp/components/StatsPanel.vue",
-          "lines": 135,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Settings/Whatsapp/components/TemplateCreateModal.vue",
-          "lines": 347,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Settings/Whatsapp/components/TemplatesPanel.vue",
-          "lines": 265,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 1803,
-      "totalHardcoded": 0,
-      "totalTiny": 5,
-      "totalCharts": 0,
-      "totalTables": 1,
       "archetype": "Configuração",
       "score": 79
     },
@@ -1790,6 +1169,194 @@
     },
     {
       "routes": [
+        "projections/:id"
+      ],
+      "name": "Projeção Detalhes",
+      "file": "views/Office/Comercial/Projections/ProjectionDetail.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 652,
+      "pageContainer": true,
+      "pageHeader": false,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 6,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 10,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Comercial/Projections/components/EnterpriseFormModal.vue",
+          "lines": 368,
+          "hardcoded": 9,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Projections/components/ProjectionEditorGrid.vue",
+          "lines": 233,
+          "hardcoded": 0,
+          "tinyText": 5,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        },
+        {
+          "file": "views/Office/Comercial/Projections/components/ProjectionHistory.vue",
+          "lines": 109,
+          "hardcoded": 0,
+          "tinyText": 1,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 1362,
+      "totalHardcoded": 9,
+      "totalTiny": 12,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 80
+    },
+    {
+      "routes": [
+        "mcmv"
+      ],
+      "name": "MCMV — Limites por Cidade",
+      "file": "views/Office/Comercial/Mcmv/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 207,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": false,
+      "hardcoded": 0,
+      "tinyText": 1,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 4,
+      "divClick": 0,
+      "kids": [],
+      "totalLines": 207,
+      "totalHardcoded": 0,
+      "totalTiny": 1,
+      "totalCharts": 0,
+      "totalTables": 0,
+      "archetype": "Ferramenta",
+      "score": 80
+    },
+    {
+      "routes": [
+        "validator"
+      ],
+      "name": "Validador",
+      "file": "views/Office/Tools/Validator/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 295,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": false,
+      "hardcoded": 0,
+      "tinyText": 2,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 6,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Tools/Validator/components/History.vue",
+          "lines": 66,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Tools/Validator/components/HistoryItem.vue",
+          "lines": 35,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Tools/Validator/components/HistoryModal.vue",
+          "lines": 74,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 470,
+      "totalHardcoded": 0,
+      "totalTiny": 2,
+      "totalCharts": 0,
+      "totalTables": 0,
+      "archetype": "Ferramenta",
+      "score": 80
+    },
+    {
+      "routes": [
+        "eme-brain"
+      ],
+      "name": "Cérebro da Eme",
+      "file": "views/Office/Tools/EmeBrain/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 784,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": false,
+      "hardcoded": 0,
+      "tinyText": 3,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 13,
+      "divClick": 0,
+      "kids": [],
+      "totalLines": 784,
+      "totalHardcoded": 0,
+      "totalTiny": 3,
+      "totalCharts": 0,
+      "totalTables": 0,
+      "archetype": "Ferramenta",
+      "score": 80
+    },
+    {
+      "routes": [
         "eme-atende"
       ],
       "name": "Eme Atende",
@@ -1802,7 +1369,7 @@
       "pageHeader": true,
       "pageHelp": false,
       "hardcoded": 0,
-      "tinyText": 1,
+      "tinyText": 0,
       "badShadow": 1,
       "handModal": 0,
       "table": false,
@@ -1815,7 +1382,7 @@
       "kids": [],
       "totalLines": 1066,
       "totalHardcoded": 0,
-      "totalTiny": 1,
+      "totalTiny": 0,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Ferramenta",
@@ -1823,7 +1390,59 @@
     },
     {
       "routes": [
-        "notifications"
+        "users"
+      ],
+      "name": "Usuários",
+      "file": "views/Office/Settings/Users/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 339,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": false,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 5,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Settings/Users/components/MicrosoftImportPanel.vue",
+          "lines": 279,
+          "hardcoded": 0,
+          "tinyText": 1,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Users/components/userModal.vue",
+          "lines": 720,
+          "hardcoded": 0,
+          "tinyText": 2,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 1338,
+      "totalHardcoded": 0,
+      "totalTiny": 3,
+      "totalCharts": 0,
+      "totalTables": 0,
+      "archetype": "Configuração",
+      "score": 80
+    },
+    {
+      "routes": [
+        "notifications [Settings/Notifications]"
       ],
       "name": "Notificações",
       "file": "views/Office/Settings/Notifications/Index.vue",
@@ -1856,6 +1475,112 @@
     },
     {
       "routes": [
+        "whatsapp"
+      ],
+      "name": "WhatsApp",
+      "file": "views/Office/Settings/Whatsapp/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 76,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": false,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 0,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Settings/Whatsapp/components/AutomationsPanel.vue",
+          "lines": 205,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Whatsapp/components/ConfigPanel.vue",
+          "lines": 286,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Whatsapp/components/CoverageCard.vue",
+          "lines": 81,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Whatsapp/components/MessagesPanel.vue",
+          "lines": 123,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Whatsapp/components/SetupWizard.vue",
+          "lines": 285,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Whatsapp/components/StatsPanel.vue",
+          "lines": 135,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        },
+        {
+          "file": "views/Office/Settings/Whatsapp/components/TemplateCreateModal.vue",
+          "lines": 347,
+          "hardcoded": 0,
+          "tinyText": 2,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Settings/Whatsapp/components/TemplatesPanel.vue",
+          "lines": 265,
+          "hardcoded": 0,
+          "tinyText": 1,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 1803,
+      "totalHardcoded": 0,
+      "totalTiny": 3,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Configuração",
+      "score": 80
+    },
+    {
+      "routes": [
         "alerts"
       ],
       "name": "Alertas",
@@ -1868,7 +1593,7 @@
       "pageHeader": true,
       "pageHelp": false,
       "hardcoded": 0,
-      "tinyText": 1,
+      "tinyText": 0,
       "badShadow": 0,
       "handModal": 0,
       "table": false,
@@ -1909,7 +1634,7 @@
       ],
       "totalLines": 1095,
       "totalHardcoded": 0,
-      "totalTiny": 1,
+      "totalTiny": 0,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Configuração",
@@ -1917,7 +1642,7 @@
     },
     {
       "routes": [
-        "notifications"
+        "notifications [Office/Notifications]"
       ],
       "name": "Caixa de Notificações",
       "file": "views/Office/Notifications/Index.vue",
@@ -1929,7 +1654,7 @@
       "pageHeader": true,
       "pageHelp": false,
       "hardcoded": 0,
-      "tinyText": 1,
+      "tinyText": 0,
       "badShadow": 0,
       "handModal": 0,
       "table": false,
@@ -1942,7 +1667,7 @@
       "kids": [],
       "totalLines": 149,
       "totalHardcoded": 0,
-      "totalTiny": 1,
+      "totalTiny": 0,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Ferramenta",
@@ -1983,6 +1708,281 @@
     },
     {
       "routes": [
+        "teams"
+      ],
+      "name": "Teams",
+      "file": "views/Office/Microsoft/Teams/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 242,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 1,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 0,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Microsoft/Teams/components/AgendaTab.vue",
+          "lines": 304,
+          "hardcoded": 0,
+          "tinyText": 3,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Microsoft/Teams/components/CalendarMonth.vue",
+          "lines": 246,
+          "hardcoded": 0,
+          "tinyText": 3,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Microsoft/Teams/components/CalendarWeek.vue",
+          "lines": 366,
+          "hardcoded": 0,
+          "tinyText": 2,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Microsoft/Teams/components/CreateMeetingModal.vue",
+          "lines": 581,
+          "hardcoded": 25,
+          "tinyText": 3,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Microsoft/Teams/components/EventDetailModal.vue",
+          "lines": 314,
+          "hardcoded": 14,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Microsoft/Teams/components/EventListView.vue",
+          "lines": 176,
+          "hardcoded": 0,
+          "tinyText": 6,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Microsoft/Teams/components/TodayPanel.vue",
+          "lines": 118,
+          "hardcoded": 0,
+          "tinyText": 2,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 2347,
+      "totalHardcoded": 39,
+      "totalTiny": 20,
+      "totalCharts": 0,
+      "totalTables": 0,
+      "archetype": "Ferramenta",
+      "score": 81
+    },
+    {
+      "routes": [
+        "leads"
+      ],
+      "name": "Leads",
+      "file": "views/Office/Marketing/Leads/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 425,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 4,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Marketing/Leads/components/CaptureHeatmap.vue",
+          "lines": 107,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/CommercialFunnel.vue",
+          "lines": 155,
+          "hardcoded": 0,
+          "tinyText": 1,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/EnterpriseDonut.vue",
+          "lines": 99,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": true,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/ExportLogModal.vue",
+          "lines": 209,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/Fila.vue",
+          "lines": 65,
+          "hardcoded": 0,
+          "tinyText": 2,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/Filas.vue",
+          "lines": 104,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/FiltersBar.vue",
+          "lines": 153,
+          "hardcoded": 0,
+          "tinyText": 7,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/LeadDetailModal.vue",
+          "lines": 317,
+          "hardcoded": 7,
+          "tinyText": 7,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/LeadModal.vue",
+          "lines": 620,
+          "hardcoded": 0,
+          "tinyText": 5,
+          "chart": true,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/LeadsBySource.vue",
+          "lines": 72,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/LeadsKpiCards.vue",
+          "lines": 140,
+          "hardcoded": 0,
+          "tinyText": 1,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/LeadsTable.vue",
+          "lines": 174,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/LeadsTrendCard.vue",
+          "lines": 96,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": true,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/RecentLeads.vue",
+          "lines": 114,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/Sparkline.vue",
+          "lines": 40,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Marketing/Leads/components/SummaryCards.vue",
+          "lines": 99,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 2989,
+      "totalHardcoded": 7,
+      "totalTiny": 23,
+      "totalCharts": 3,
+      "totalTables": 2,
+      "archetype": "Painel",
+      "score": 84
+    },
+    {
+      "routes": [
         "viabilidade/:key"
       ],
       "name": "Relatório de Investimento",
@@ -1995,7 +1995,7 @@
       "pageHeader": true,
       "pageHelp": true,
       "hardcoded": 0,
-      "tinyText": 7,
+      "tinyText": 0,
       "badShadow": 0,
       "handModal": 0,
       "table": false,
@@ -2019,7 +2019,7 @@
           "file": "views/Office/Financeiro/DeptSpending/DeptSpendingEnterpriseModal.vue",
           "lines": 250,
           "hardcoded": 1,
-          "tinyText": 2,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -2027,11 +2027,11 @@
       ],
       "totalLines": 819,
       "totalHardcoded": 2,
-      "totalTiny": 10,
+      "totalTiny": 2,
       "totalCharts": 1,
       "totalTables": 0,
       "archetype": "Painel",
-      "score": 88
+      "score": 89
     },
     {
       "routes": [
@@ -2062,7 +2062,7 @@
           "file": "views/Office/Comercial/Projections/components/EnterpriseFormModal.vue",
           "lines": 368,
           "hardcoded": 9,
-          "tinyText": 13,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -2071,7 +2071,7 @@
           "file": "views/Office/Comercial/Projections/components/ProjectionEditorGrid.vue",
           "lines": 233,
           "hardcoded": 0,
-          "tinyText": 8,
+          "tinyText": 5,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -2080,7 +2080,7 @@
           "file": "views/Office/Comercial/Projections/components/ProjectionHistory.vue",
           "lines": 109,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -2088,63 +2088,11 @@
       ],
       "totalLines": 964,
       "totalHardcoded": 9,
-      "totalTiny": 26,
+      "totalTiny": 9,
       "totalCharts": 0,
       "totalTables": 1,
       "archetype": "Operação",
-      "score": 93
-    },
-    {
-      "routes": [
-        "viabilidade"
-      ],
-      "name": "Viabilidade",
-      "file": "views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 642,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 29,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": true,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 12,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Financeiro/DeptSpending/DeptSpendingDepartmentsModal.vue",
-          "lines": 92,
-          "hardcoded": 1,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Financeiro/DeptSpending/DeptSpendingEnterpriseModal.vue",
-          "lines": 250,
-          "hardcoded": 1,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 984,
-      "totalHardcoded": 2,
-      "totalTiny": 32,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
-      "score": 94
+      "score": 95
     },
     {
       "routes": [
@@ -2175,7 +2123,7 @@
           "file": "views/Office/Marketing/Events/components/AddEventModal.vue",
           "lines": 148,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -2184,7 +2132,7 @@
           "file": "views/Office/Marketing/Events/components/EditEventModal.vue",
           "lines": 171,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -2211,7 +2159,7 @@
           "file": "views/Office/Marketing/Events/components/EventModal.vue",
           "lines": 210,
           "hardcoded": 3,
-          "tinyText": 4,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -2238,7 +2186,7 @@
           "file": "views/Office/Marketing/Events/components/PlannedItemsSection.vue",
           "lines": 67,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -2247,7 +2195,7 @@
           "file": "views/Office/Marketing/Events/components/ReportModal.vue",
           "lines": 665,
           "hardcoded": 0,
-          "tinyText": 5,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -2255,86 +2203,10 @@
       ],
       "totalLines": 2329,
       "totalHardcoded": 4,
-      "totalTiny": 27,
+      "totalTiny": 18,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Ferramenta",
-      "score": 94
-    },
-    {
-      "routes": [
-        "cancelamento-reservas"
-      ],
-      "name": "Cancelamentos CV × Sienge",
-      "file": "views/Office/Comercial/CancelamentoReservas/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 1101,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 22,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": true,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": true,
-      "skeleton": false,
-      "breakpoints": 10,
-      "divClick": 1,
-      "kids": [
-        {
-          "file": "views/Office/Comercial/CancelamentoReservas/components/ReservaCancelFilters.vue",
-          "lines": 174,
-          "hardcoded": 0,
-          "tinyText": 5,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 1275,
-      "totalHardcoded": 0,
-      "totalTiny": 27,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
-      "score": 96
-    },
-    {
-      "routes": [
-        "empresas"
-      ],
-      "name": "Sincronização de empresas",
-      "file": "views/Office/Settings/OrgSync/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 724,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 6,
-      "tinyText": 12,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": true,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 7,
-      "divClick": 0,
-      "kids": [],
-      "totalLines": 724,
-      "totalHardcoded": 6,
-      "totalTiny": 12,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Configuração",
       "score": 96
     },
     {
@@ -2379,6 +2251,134 @@
       "totalTables": 1,
       "archetype": "Operação",
       "score": 97
+    },
+    {
+      "routes": [
+        "cancelamento-reservas"
+      ],
+      "name": "Cancelamentos CV × Sienge",
+      "file": "views/Office/Comercial/CancelamentoReservas/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 1101,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 13,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": true,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": true,
+      "skeleton": false,
+      "breakpoints": 10,
+      "divClick": 1,
+      "kids": [
+        {
+          "file": "views/Office/Comercial/CancelamentoReservas/components/ReservaCancelFilters.vue",
+          "lines": 174,
+          "hardcoded": 0,
+          "tinyText": 5,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 1275,
+      "totalHardcoded": 0,
+      "totalTiny": 18,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 97
+    },
+    {
+      "routes": [
+        "empresas"
+      ],
+      "name": "Sincronização de empresas",
+      "file": "views/Office/Settings/OrgSync/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 724,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 6,
+      "tinyText": 6,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": true,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 7,
+      "divClick": 0,
+      "kids": [],
+      "totalLines": 724,
+      "totalHardcoded": 6,
+      "totalTiny": 6,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Configuração",
+      "score": 97
+    },
+    {
+      "routes": [
+        "viabilidade"
+      ],
+      "name": "Viabilidade",
+      "file": "views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 642,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 9,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": true,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 12,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Financeiro/DeptSpending/DeptSpendingDepartmentsModal.vue",
+          "lines": 92,
+          "hardcoded": 1,
+          "tinyText": 1,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Financeiro/DeptSpending/DeptSpendingEnterpriseModal.vue",
+          "lines": 250,
+          "hardcoded": 1,
+          "tinyText": 1,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 984,
+      "totalHardcoded": 2,
+      "totalTiny": 11,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 98
     },
     {
       "routes": [
@@ -2427,154 +2427,6 @@
       "totalLines": 995,
       "totalHardcoded": 5,
       "totalTiny": 0,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
-      "score": 98
-    },
-    {
-      "routes": [
-        "relatorios"
-      ],
-      "name": "",
-      "file": "views/Office/Comercial/Relatorios/Shell.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 114,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 0,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": true,
-      "skeleton": false,
-      "breakpoints": 0,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Comercial/Relatorios/components/AnalisePanel.vue",
-          "lines": 88,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Relatorios/components/KpiRow.vue",
-          "lines": 35,
-          "hardcoded": 0,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Relatorios/components/RankingTable.vue",
-          "lines": 171,
-          "hardcoded": 0,
-          "tinyText": 10,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Comercial/Relatorios/components/VendasDoGrupoModal.vue",
-          "lines": 32,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Relatorios/panels/CorretoresPanel.vue",
-          "lines": 12,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Relatorios/panels/ImobiliariasPanel.vue",
-          "lines": 12,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Relatorios/panels/LeadsAnalise.vue",
-          "lines": 122,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Relatorios/panels/LeadsPanel.vue",
-          "lines": 12,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Comercial/Relatorios/panels/ParceiroAnalise.vue",
-          "lines": 100,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 698,
-      "totalHardcoded": 0,
-      "totalTiny": 11,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
-      "score": 98
-    },
-    {
-      "routes": [
-        "consulta-cef"
-      ],
-      "name": "Consulta de nº CEF",
-      "file": "views/Office/Financeiro/ConsultaCef/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 352,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 13,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": true,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 11,
-      "divClick": 0,
-      "kids": [],
-      "totalLines": 352,
-      "totalHardcoded": 0,
-      "totalTiny": 13,
       "totalCharts": 0,
       "totalTables": 1,
       "archetype": "Operação",
@@ -2634,39 +2486,6 @@
     },
     {
       "routes": [
-        "docs"
-      ],
-      "name": "Documentação",
-      "file": "views/Office/Docs/Docs.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 1770,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 13,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 17,
-      "divClick": 0,
-      "kids": [],
-      "totalLines": 1770,
-      "totalHardcoded": 0,
-      "totalTiny": 13,
-      "totalCharts": 0,
-      "totalTables": 0,
-      "archetype": "Ferramenta",
-      "score": 98
-    },
-    {
-      "routes": [
         "stand-vendas"
       ],
       "name": "Stand de Vendas",
@@ -2679,7 +2498,7 @@
       "pageHeader": true,
       "pageHelp": true,
       "hardcoded": 0,
-      "tinyText": 5,
+      "tinyText": 3,
       "badShadow": 0,
       "handModal": 0,
       "table": true,
@@ -2720,7 +2539,7 @@
       ],
       "totalLines": 730,
       "totalHardcoded": 0,
-      "totalTiny": 7,
+      "totalTiny": 5,
       "totalCharts": 0,
       "totalTables": 1,
       "archetype": "Operação",
@@ -2825,6 +2644,39 @@
     },
     {
       "routes": [
+        "consulta-cef"
+      ],
+      "name": "Consulta de nº CEF",
+      "file": "views/Office/Financeiro/ConsultaCef/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 352,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 6,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": true,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 11,
+      "divClick": 0,
+      "kids": [],
+      "totalLines": 352,
+      "totalHardcoded": 0,
+      "totalTiny": 6,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 99
+    },
+    {
+      "routes": [
         "backup-sienge"
       ],
       "name": "Backup Sienge",
@@ -2877,40 +2729,40 @@
     },
     {
       "routes": [
-        "sobre/relatorio"
+        "docs"
       ],
-      "name": "Visão Executiva",
-      "file": "views/Office/Sobre/Relatorio.vue",
+      "name": "Documentação",
+      "file": "views/Office/Docs/Docs.vue",
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 247,
+      "lines": 1770,
       "pageContainer": true,
       "pageHeader": true,
       "pageHelp": true,
       "hardcoded": 0,
-      "tinyText": 5,
+      "tinyText": 9,
       "badShadow": 0,
       "handModal": 0,
-      "table": true,
+      "table": false,
       "tableMobile": true,
       "chart": false,
       "spinner": false,
       "skeleton": false,
-      "breakpoints": 16,
+      "breakpoints": 17,
       "divClick": 0,
       "kids": [],
-      "totalLines": 247,
+      "totalLines": 1770,
       "totalHardcoded": 0,
-      "totalTiny": 5,
+      "totalTiny": 9,
       "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
+      "totalTables": 0,
+      "archetype": "Ferramenta",
       "score": 99
     },
     {
       "routes": [
-        "relatorios"
+        "relatorios [Office/Relatorios]"
       ],
       "name": "Relatórios",
       "file": "views/Office/Relatorios/Index.vue",
@@ -3450,7 +3302,7 @@
           "file": "views/Office/Meta/Central/CredenciaisPanel.vue",
           "lines": 454,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -3458,7 +3310,7 @@
       ],
       "totalLines": 569,
       "totalHardcoded": 0,
-      "totalTiny": 2,
+      "totalTiny": 0,
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Ferramenta",
@@ -3550,6 +3402,121 @@
       "totalCharts": 0,
       "totalTables": 0,
       "archetype": "Ferramenta",
+      "score": 100
+    },
+    {
+      "routes": [
+        "relatorios [Comercial/Relatorios]"
+      ],
+      "name": "",
+      "file": "views/Office/Comercial/Relatorios/Shell.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 114,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": true,
+      "skeleton": false,
+      "breakpoints": 0,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Comercial/Relatorios/components/AnalisePanel.vue",
+          "lines": 88,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Relatorios/components/KpiRow.vue",
+          "lines": 35,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Relatorios/components/RankingTable.vue",
+          "lines": 171,
+          "hardcoded": 0,
+          "tinyText": 2,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        },
+        {
+          "file": "views/Office/Comercial/Relatorios/components/VendasDoGrupoModal.vue",
+          "lines": 32,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Relatorios/panels/CorretoresPanel.vue",
+          "lines": 12,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Relatorios/panels/ImobiliariasPanel.vue",
+          "lines": 12,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Relatorios/panels/LeadsAnalise.vue",
+          "lines": 122,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Relatorios/panels/LeadsPanel.vue",
+          "lines": 12,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Comercial/Relatorios/panels/ParceiroAnalise.vue",
+          "lines": 100,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 698,
+      "totalHardcoded": 0,
+      "totalTiny": 2,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
       "score": 100
     },
     {
@@ -4138,6 +4105,39 @@
     },
     {
       "routes": [
+        "sobre/relatorio"
+      ],
+      "name": "Visão Executiva",
+      "file": "views/Office/Sobre/Relatorio.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 247,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 1,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": true,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 16,
+      "divClick": 0,
+      "kids": [],
+      "totalLines": 247,
+      "totalHardcoded": 0,
+      "totalTiny": 1,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 100
+    },
+    {
+      "routes": [
         "/login"
       ],
       "name": "login",
@@ -4451,7 +4451,7 @@
           "file": "views/Office/Comercial/Buildings/components/BuildingModal.vue",
           "lines": 524,
           "hardcoded": 8,
-          "tinyText": 16,
+          "tinyText": 6,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4631,7 +4631,7 @@
           "file": "views/Office/Comercial/Faturamento/components/ClosingModal.vue",
           "lines": 690,
           "hardcoded": 0,
-          "tinyText": 11,
+          "tinyText": 8,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4640,7 +4640,7 @@
           "file": "views/Office/Comercial/Faturamento/components/ContractAdjustmentModal.vue",
           "lines": 454,
           "hardcoded": 0,
-          "tinyText": 5,
+          "tinyText": 4,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4658,7 +4658,7 @@
           "file": "views/Office/Comercial/Faturamento/components/EnterpriseDetailModal.vue",
           "lines": 1460,
           "hardcoded": 3,
-          "tinyText": 30,
+          "tinyText": 22,
           "chart": true,
           "table": false,
           "tableMobile": false
@@ -4667,7 +4667,7 @@
           "file": "views/Office/Comercial/Faturamento/components/EnterprisesSalesTable.vue",
           "lines": 722,
           "hardcoded": 0,
-          "tinyText": 17,
+          "tinyText": 8,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -4676,7 +4676,7 @@
           "file": "views/Office/Comercial/Faturamento/components/LandSyncConfigModal.vue",
           "lines": 1636,
           "hardcoded": 0,
-          "tinyText": 48,
+          "tinyText": 13,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4685,7 +4685,7 @@
           "file": "views/Office/Comercial/Faturamento/components/MetricsCards.vue",
           "lines": 83,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4784,7 +4784,7 @@
           "file": "views/Office/Comercial/Projections/components/EnterpriseFormModal.vue",
           "lines": 368,
           "hardcoded": 9,
-          "tinyText": 13,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4793,7 +4793,7 @@
           "file": "views/Office/Comercial/Projections/components/ProjectionEditorGrid.vue",
           "lines": 233,
           "hardcoded": 0,
-          "tinyText": 8,
+          "tinyText": 5,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -4802,7 +4802,7 @@
           "file": "views/Office/Comercial/Projections/components/ProjectionHistory.vue",
           "lines": 109,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4820,7 +4820,7 @@
           "file": "views/Office/Comercial/Relatorios/components/KpiRow.vue",
           "lines": 35,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4829,7 +4829,7 @@
           "file": "views/Office/Comercial/Relatorios/components/RankingTable.vue",
           "lines": 171,
           "hardcoded": 0,
-          "tinyText": 10,
+          "tinyText": 2,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -4910,7 +4910,7 @@
           "file": "views/Office/Comercial/Sales-Projection/components/EnterpriseComparisonTable.vue",
           "lines": 559,
           "hardcoded": 0,
-          "tinyText": 16,
+          "tinyText": 7,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -4928,7 +4928,7 @@
           "file": "views/Office/Comercial/Sales-Projection/components/ProjectionChartsModal.vue",
           "lines": 1102,
           "hardcoded": 4,
-          "tinyText": 18,
+          "tinyText": 14,
           "chart": true,
           "table": false,
           "tableMobile": false
@@ -4937,7 +4937,7 @@
           "file": "views/Office/Comercial/Sales-Projection/components/ProjectionMetricsCards.vue",
           "lines": 200,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4946,7 +4946,7 @@
           "file": "views/Office/Comercial/Sales-Projection/components/ProjectionSettingsModal.vue",
           "lines": 189,
           "hardcoded": 0,
-          "tinyText": 5,
+          "tinyText": 4,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5045,7 +5045,7 @@
           "file": "views/Office/Financeiro/DeptSpending/DeptSpendingEnterpriseModal.vue",
           "lines": 250,
           "hardcoded": 1,
-          "tinyText": 2,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5054,7 +5054,7 @@
           "file": "views/Office/Instalar/Index.vue",
           "lines": 443,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5063,7 +5063,7 @@
           "file": "views/Office/Marketing/Campanhas/components/AdSetsTable.vue",
           "lines": 114,
           "hardcoded": 6,
-          "tinyText": 3,
+          "tinyText": 1,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -5072,7 +5072,7 @@
           "file": "views/Office/Marketing/Campanhas/components/AdsGalleryView.vue",
           "lines": 163,
           "hardcoded": 1,
-          "tinyText": 10,
+          "tinyText": 3,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5090,7 +5090,7 @@
           "file": "views/Office/Marketing/Campanhas/components/CampaignDetailModal.vue",
           "lines": 1366,
           "hardcoded": 18,
-          "tinyText": 80,
+          "tinyText": 7,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -5099,7 +5099,7 @@
           "file": "views/Office/Marketing/Campanhas/components/CampaignsAdminModal.vue",
           "lines": 262,
           "hardcoded": 0,
-          "tinyText": 7,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5108,7 +5108,7 @@
           "file": "views/Office/Marketing/Campanhas/components/CampaignsCardsView.vue",
           "lines": 136,
           "hardcoded": 8,
-          "tinyText": 15,
+          "tinyText": 4,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5117,7 +5117,7 @@
           "file": "views/Office/Marketing/Campanhas/components/CampaignsFiltersBar.vue",
           "lines": 201,
           "hardcoded": 0,
-          "tinyText": 9,
+          "tinyText": 8,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5126,7 +5126,7 @@
           "file": "views/Office/Marketing/Campanhas/components/CampaignsSummaryCards.vue",
           "lines": 133,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5135,7 +5135,7 @@
           "file": "views/Office/Marketing/Campanhas/components/CampaignsTimelineView.vue",
           "lines": 206,
           "hardcoded": 7,
-          "tinyText": 6,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5144,7 +5144,7 @@
           "file": "views/Office/Marketing/Campanhas/components/CreativeLightbox.vue",
           "lines": 125,
           "hardcoded": 2,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5153,7 +5153,7 @@
           "file": "views/Office/Marketing/Campanhas/components/PeriodPicker.vue",
           "lines": 141,
           "hardcoded": 0,
-          "tinyText": 4,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5162,7 +5162,7 @@
           "file": "views/Office/Marketing/Campanhas/components/ReportKpiCards.vue",
           "lines": 145,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5171,7 +5171,7 @@
           "file": "views/Office/Marketing/Campanhas/Index.vue",
           "lines": 994,
           "hardcoded": 16,
-          "tinyText": 33,
+          "tinyText": 14,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -5198,7 +5198,7 @@
           "file": "views/Office/Marketing/Captacao/components/CaptureSummaryCards.vue",
           "lines": 160,
           "hardcoded": 2,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5207,7 +5207,7 @@
           "file": "views/Office/Marketing/Captacao/components/LeadDatesCell.vue",
           "lines": 74,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5216,7 +5216,7 @@
           "file": "views/Office/Marketing/Captacao/components/LeadDetailModal.vue",
           "lines": 475,
           "hardcoded": 0,
-          "tinyText": 30,
+          "tinyText": 10,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5225,7 +5225,7 @@
           "file": "views/Office/Marketing/Captacao/components/LeadsCardsView.vue",
           "lines": 101,
           "hardcoded": 0,
-          "tinyText": 5,
+          "tinyText": 3,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5234,7 +5234,7 @@
           "file": "views/Office/Marketing/Captacao/components/LeadsTableView.vue",
           "lines": 195,
           "hardcoded": 0,
-          "tinyText": 20,
+          "tinyText": 14,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -5324,7 +5324,7 @@
           "file": "views/Office/Marketing/Events/components/AddEventModal.vue",
           "lines": 148,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5333,7 +5333,7 @@
           "file": "views/Office/Marketing/Events/components/EditEventModal.vue",
           "lines": 171,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5360,7 +5360,7 @@
           "file": "views/Office/Marketing/Events/components/EventModal.vue",
           "lines": 210,
           "hardcoded": 3,
-          "tinyText": 4,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5387,7 +5387,7 @@
           "file": "views/Office/Marketing/Events/components/PlannedItemsSection.vue",
           "lines": 67,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5396,7 +5396,7 @@
           "file": "views/Office/Marketing/Events/components/ReportModal.vue",
           "lines": 665,
           "hardcoded": 0,
-          "tinyText": 5,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5405,7 +5405,7 @@
           "file": "views/Office/Marketing/Formularios/components/InternalLeadFormsTable.vue",
           "lines": 501,
           "hardcoded": 6,
-          "tinyText": 17,
+          "tinyText": 4,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -5414,7 +5414,7 @@
           "file": "views/Office/Marketing/Formularios/components/LeadFormEditModal.vue",
           "lines": 972,
           "hardcoded": 6,
-          "tinyText": 20,
+          "tinyText": 1,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -5423,7 +5423,7 @@
           "file": "views/Office/Marketing/Formularios/components/MetaFormMappingModal.vue",
           "lines": 453,
           "hardcoded": 6,
-          "tinyText": 21,
+          "tinyText": 2,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -5432,7 +5432,7 @@
           "file": "views/Office/Marketing/Formularios/components/MetaLeadFormsTable.vue",
           "lines": 368,
           "hardcoded": 7,
-          "tinyText": 17,
+          "tinyText": 2,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -5450,7 +5450,7 @@
           "file": "views/Office/Marketing/Leads/components/CaptureHeatmap.vue",
           "lines": 107,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5459,7 +5459,7 @@
           "file": "views/Office/Marketing/Leads/components/CommercialFunnel.vue",
           "lines": 155,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5486,7 +5486,7 @@
           "file": "views/Office/Marketing/Leads/components/Fila.vue",
           "lines": 65,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5495,7 +5495,7 @@
           "file": "views/Office/Marketing/Leads/components/Filas.vue",
           "lines": 104,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5513,7 +5513,7 @@
           "file": "views/Office/Marketing/Leads/components/LeadDetailModal.vue",
           "lines": 317,
           "hardcoded": 7,
-          "tinyText": 21,
+          "tinyText": 7,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5522,7 +5522,7 @@
           "file": "views/Office/Marketing/Leads/components/LeadModal.vue",
           "lines": 620,
           "hardcoded": 0,
-          "tinyText": 8,
+          "tinyText": 5,
           "chart": true,
           "table": false,
           "tableMobile": false
@@ -5531,7 +5531,7 @@
           "file": "views/Office/Marketing/Leads/components/LeadsBySource.vue",
           "lines": 72,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5540,7 +5540,7 @@
           "file": "views/Office/Marketing/Leads/components/LeadsKpiCards.vue",
           "lines": 140,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5549,7 +5549,7 @@
           "file": "views/Office/Marketing/Leads/components/LeadsTable.vue",
           "lines": 174,
           "hardcoded": 0,
-          "tinyText": 4,
+          "tinyText": 0,
           "chart": false,
           "table": true,
           "tableMobile": true
@@ -5585,7 +5585,7 @@
           "file": "views/Office/Marketing/Leads/components/SummaryCards.vue",
           "lines": 99,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5630,7 +5630,7 @@
           "file": "views/Office/Marketing/Vinculos/Index.vue",
           "lines": 387,
           "hardcoded": 6,
-          "tinyText": 9,
+          "tinyText": 3,
           "chart": false,
           "table": true,
           "tableMobile": false
@@ -5639,7 +5639,7 @@
           "file": "views/Office/Meta/Central/CredenciaisPanel.vue",
           "lines": 454,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5666,7 +5666,7 @@
           "file": "views/Office/Microsoft/Sharepoint/components/FileGrid.vue",
           "lines": 286,
           "hardcoded": 27,
-          "tinyText": 4,
+          "tinyText": 3,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5693,7 +5693,7 @@
           "file": "views/Office/Microsoft/Teams/components/CalendarMonth.vue",
           "lines": 246,
           "hardcoded": 0,
-          "tinyText": 8,
+          "tinyText": 3,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5702,7 +5702,7 @@
           "file": "views/Office/Microsoft/Teams/components/CalendarWeek.vue",
           "lines": 366,
           "hardcoded": 0,
-          "tinyText": 6,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5711,7 +5711,7 @@
           "file": "views/Office/Microsoft/Teams/components/CreateMeetingModal.vue",
           "lines": 581,
           "hardcoded": 25,
-          "tinyText": 4,
+          "tinyText": 3,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5729,7 +5729,7 @@
           "file": "views/Office/Microsoft/Teams/components/EventListView.vue",
           "lines": 176,
           "hardcoded": 0,
-          "tinyText": 10,
+          "tinyText": 6,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5738,7 +5738,7 @@
           "file": "views/Office/Microsoft/Teams/components/TodayPanel.vue",
           "lines": 118,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5765,7 +5765,7 @@
           "file": "views/Office/Microsoft/Transcripts/Index.vue",
           "lines": 968,
           "hardcoded": 0,
-          "tinyText": 4,
+          "tinyText": 3,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5900,7 +5900,7 @@
           "file": "views/Office/Settings/Organogram/components/OrganogramFlow.vue",
           "lines": 575,
           "hardcoded": 0,
-          "tinyText": 5,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5954,7 +5954,7 @@
           "file": "views/Office/Settings/Users/components/userModal.vue",
           "lines": 720,
           "hardcoded": 0,
-          "tinyText": 7,
+          "tinyText": 2,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -5999,7 +5999,7 @@
           "file": "views/Office/Settings/Whatsapp/components/SetupWizard.vue",
           "lines": 285,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -6026,7 +6026,7 @@
           "file": "views/Office/Settings/Whatsapp/components/TemplatesPanel.vue",
           "lines": 265,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 1,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -6080,7 +6080,7 @@
           "file": "views/Office/Tools/Validator/components/History.vue",
           "lines": 66,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -6089,7 +6089,7 @@
           "file": "views/Office/Tools/Validator/components/HistoryItem.vue",
           "lines": 35,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -6098,7 +6098,7 @@
           "file": "views/Office/Tools/Validator/components/HistoryModal.vue",
           "lines": 74,
           "hardcoded": 0,
-          "tinyText": 1,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -6106,7 +6106,7 @@
       ],
       "totalLines": 56246,
       "totalHardcoded": 317,
-      "totalTiny": 723,
+      "totalTiny": 303,
       "totalCharts": 7,
       "totalTables": 23,
       "archetype": "Especial",

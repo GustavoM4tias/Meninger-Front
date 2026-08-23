@@ -18,11 +18,11 @@
                 <span v-if="cert.expiresAt"> • Válido até {{ fmtDate(cert.expiresAt) }}</span>
             </div>
             <div class="mt-1 flex items-center gap-2">
-                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                <span class="rounded-full px-2 py-0.5 text-micro font-bold uppercase tracking-wider"
                     :class="statusChip">
                     {{ statusLabel }}
                 </span>
-                <span class="font-mono text-[10px] text-slate-400 dark:text-slate-500">{{ cert.code }}</span>
+                <span class="font-mono text-micro text-slate-400 dark:text-slate-500">{{ cert.code }}</span>
             </div>
         </div>
 

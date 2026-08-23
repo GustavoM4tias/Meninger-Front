@@ -24,9 +24,9 @@
                                 <i class="fa-solid fa-globe text-xs text-sky-500"></i>
                                 <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">Geral</span>
                                 <span
-                                    class="rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">todos</span>
+                                    class="rounded-full bg-sky-100 px-1.5 py-0.5 text-micro font-bold uppercase tracking-wider text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">todos</span>
                             </div>
-                            <p class="mt-0.5 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+                            <p class="mt-0.5 text-micro leading-snug text-slate-500 dark:text-slate-400">
                                 Todos os funcionários do Office veem este conteúdo.
                             </p>
                         </div>
@@ -43,7 +43,7 @@
                                 <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">Departamentos
                                     específicos</span>
                             </div>
-                            <p class="mt-0.5 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+                            <p class="mt-0.5 text-micro leading-snug text-slate-500 dark:text-slate-400">
                                 Só os departamentos selecionados (e administradores) veem.
                             </p>
                         </div>
@@ -72,12 +72,12 @@
 
             <!-- feedback -->
             <p v-if="mode === 'DEPARTMENTS' && !selectedIds.length"
-                class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+                class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-micro text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
                 <i class="fa-solid fa-circle-exclamation mr-1"></i>
                 Nenhum departamento selecionado — equivale a <strong>Geral</strong> (todos veem).
             </p>
             <p v-else-if="mode === 'DEPARTMENTS'"
-                class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
+                class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-micro text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
                 <i class="fa-solid fa-lock mr-1"></i>
                 Restrito a {{ selectedIds.length }} departamento(s) — fora deles, ninguém vê (exceto admin).
             </p>

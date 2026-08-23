@@ -277,7 +277,7 @@ watch(() => props.rootNode, () => {
             <!-- Marca de "ajustado" no modo edição -->
             <span v-if="data.editing && data.adjusted"
               class="absolute top-1.5 right-1.5 h-4 w-4 grid place-items-center rounded-full
-                     bg-accent text-white text-[8px] shadow-soft z-10" title="Posição ajustada">
+                     bg-accent text-white text-micro shadow-soft z-10" title="Posição ajustada">
               <i class="fas fa-pen"></i>
             </span>
             <!-- Avatar com ring colorido por nível -->
@@ -287,7 +287,7 @@ watch(() => props.rootNode, () => {
                 :class="['ring-2 ring-offset-2 ring-offset-surface-raised', ringColorForLevel(data.level), avatarBgForLevel(data.level)]" />
               <span v-if="data.hasChildren"
                 class="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full
-                       bg-accent text-white text-[10px] font-bold border-2 border-surface-raised
+                       bg-accent text-white text-micro font-bold border-2 border-surface-raised
                        grid place-items-center font-mono">
                 {{ data.childCount }}
               </span>
@@ -296,8 +296,8 @@ watch(() => props.rootNode, () => {
             <!-- Info -->
             <div class="min-w-0 flex-1 text-left">
               <p class="text-sm font-semibold text-ink truncate leading-tight">{{ data.name }}</p>
-              <p class="text-[11px] text-accent truncate font-medium leading-tight mt-0.5">{{ data.title }}</p>
-              <p v-if="data.city" class="text-[10px] text-ink-subtle font-mono truncate flex items-center gap-1 mt-1">
+              <p class="text-micro text-accent truncate font-medium leading-tight mt-0.5">{{ data.title }}</p>
+              <p v-if="data.city" class="text-micro text-ink-subtle font-mono truncate flex items-center gap-1 mt-1">
                 <i class="fas fa-location-dot text-[8px]"></i>{{ data.city }}
               </p>
             </div>
@@ -313,7 +313,7 @@ watch(() => props.rootNode, () => {
               <img :src="data.image" :alt="data.name" class="invert" />
             </div>
             <p class="font-semibold text-sm text-white text-center leading-tight">{{ data.name }}</p>
-            <p class="text-[11px] text-white/70 mt-1 font-mono flex items-center gap-1">
+            <p class="text-micro text-white/70 mt-1 font-mono flex items-center gap-1">
               <i class="fas fa-location-dot text-[9px]"></i>{{ data.city }}
             </p>
           </div>

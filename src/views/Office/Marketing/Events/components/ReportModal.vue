@@ -396,7 +396,7 @@ endDate.value = toInputDate(getEndOfWeek());
             <Input v-model="endDate" type="date" label="Fim" />
           </div>
           <div class="mt-3 px-3 py-2 rounded-md bg-surface-sunken border border-line">
-            <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Pré-visualização</p>
+            <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Pré-visualização</p>
             <p class="text-sm font-medium text-ink mt-0.5">{{ dateRangeLabel || 'Nenhum evento no período' }}</p>
           </div>
         </Surface>
@@ -404,7 +404,7 @@ endDate.value = toInputDate(getEndOfWeek());
         <Surface variant="raised" padding="sm">
           <div class="flex items-center justify-between gap-3 mb-3">
             <div class="min-w-0">
-              <p class="text-[10px] uppercase tracking-wider text-ink-subtle font-mono">Eventos</p>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Eventos</p>
               <p class="text-sm font-semibold text-ink">
                 <span class="font-mono">{{ selectedIds.size }}/{{ filteredEvents.length }}</span> selecionados
               </p>
@@ -429,12 +429,12 @@ endDate.value = toInputDate(getEndOfWeek());
 
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-ink truncate">{{ event.title }}</p>
-                <p class="text-[11px] text-ink-muted flex items-center gap-1 font-mono">
+                <p class="text-micro text-ink-muted flex items-center gap-1 font-mono">
                   <i class="far fa-clock text-[9px]"></i>
                   {{ formatDateShort(event.event_date) }}
                 </p>
                 <p v-if="event.enterprise_name"
-                  class="text-[10px] text-ink-subtle uppercase tracking-wide truncate font-mono">
+                  class="text-micro text-ink-subtle uppercase tracking-wide truncate font-mono">
                   {{ event.enterprise_name }}
                 </p>
               </div>

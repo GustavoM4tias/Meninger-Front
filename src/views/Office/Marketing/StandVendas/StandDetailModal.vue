@@ -7,23 +7,23 @@
             <!-- Resumo -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <Surface variant="flat" padding="sm" bordered>
-                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Gasto total</p>
+                    <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Gasto total</p>
                     <p class="font-mono tabular-nums font-bold text-ink">{{ fmtBRL(stand.spend_total) }}</p>
                 </Surface>
                 <Surface variant="flat" padding="sm" bordered>
-                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Construção</p>
+                    <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Construção</p>
                     <p class="font-mono tabular-nums font-bold text-ink">
                         {{ stand.status === 'defined' ? fmtBRL(stand.construction_value) : '-' }}
                     </p>
                 </Surface>
                 <Surface variant="flat" padding="sm" bordered>
-                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Manutenção</p>
+                    <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Manutenção</p>
                     <p class="font-mono tabular-nums font-bold text-ink">
                         {{ stand.status === 'defined' ? fmtBRL(stand.maintenance_value) : '-' }}
                     </p>
                 </Surface>
                 <Surface variant="flat" padding="sm" bordered>
-                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">Valor médio do modelo</p>
+                    <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Valor médio do modelo</p>
                     <p class="font-mono tabular-nums font-bold text-ink">
                         {{ (stand.model && fmtValueRange(stand.model)) || '-' }}
                     </p>
@@ -66,7 +66,7 @@
 
             <!-- Itens do modelo -->
             <div v-if="stand.model?.items?.length">
-                <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Itens do modelo</p>
+                <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Itens do modelo</p>
                 <div class="flex flex-wrap gap-1.5">
                     <span v-for="item in stand.model.items" :key="item"
                         class="px-2.5 py-1 rounded-md bg-surface-sunken border border-line text-xs text-ink">{{ item }}</span>
@@ -75,7 +75,7 @@
 
             <!-- Centros de custo -->
             <div>
-                <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Centros de custo</p>
+                <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Centros de custo</p>
                 <div class="flex flex-col gap-1.5">
                     <div v-for="cc in spendByCc" :key="cc.costCenterId"
                         class="flex items-center justify-between gap-2 text-sm">
@@ -92,7 +92,7 @@
             <div v-if="loadingSpend" class="py-6 flex justify-center"><Spinner /></div>
             <template v-else-if="spendDetail">
                 <div v-if="spendDetail.byConta.length">
-                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Por conta (2.02.07)</p>
+                    <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Por conta (2.02.07)</p>
                     <div class="flex flex-col gap-1.5">
                         <div v-for="c in spendDetail.byConta" :key="c.code"
                             class="flex items-center justify-between gap-2 text-sm">
@@ -105,7 +105,7 @@
                 </div>
 
                 <div v-if="spendDetail.byMonth.length">
-                    <p class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-2">Por mês</p>
+                    <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Por mês</p>
                     <div class="max-h-56 overflow-y-auto pr-1 flex flex-col gap-1.5">
                         <div v-for="m in [...spendDetail.byMonth].reverse()" :key="m.ym"
                             class="flex items-center justify-between gap-2 text-sm">

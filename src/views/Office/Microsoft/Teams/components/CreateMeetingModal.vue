@@ -182,7 +182,7 @@
 
               <!-- Local -->
               <div>
-                <label class="field-label">Local <span class="text-gray-400 dark:text-slate-500 font-normal text-[11px]">(opcional)</span></label>
+                <label class="field-label">Local <span class="text-gray-400 dark:text-slate-500 font-normal text-micro">(opcional)</span></label>
                 <div class="relative">
                   <i class="fas fa-location-dot absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-sm pointer-events-none"></i>
                   <input v-model="form.location" type="text" placeholder="Sala de reunião, endereço, link externo..."
@@ -195,7 +195,7 @@
                 <label class="field-label flex items-center gap-2">
                   Participantes
                   <span v-if="form.attendees.length"
-                    class="px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 text-[10px] font-bold">
+                    class="px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 text-micro font-bold">
                     {{ form.attendees.length }}
                   </span>
                 </label>
@@ -233,7 +233,7 @@
 
               <!-- Descrição -->
               <div>
-                <label class="field-label">Descrição <span class="text-gray-400 dark:text-slate-500 font-normal text-[11px]">(opcional)</span></label>
+                <label class="field-label">Descrição <span class="text-gray-400 dark:text-slate-500 font-normal text-micro">(opcional)</span></label>
                 <textarea v-model="form.body" rows="3" placeholder="Pauta, links, notas importantes..."
                   class="field-input resize-none" />
               </div>

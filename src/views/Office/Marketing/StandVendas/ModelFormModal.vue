@@ -6,7 +6,7 @@
             <Input v-model="form.name" label="Nome do modelo" placeholder="Ex.: Stand contêiner, Loja decorada..." required />
 
             <div>
-                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Valor médio (R$)</label>
+                <label class="text-micro font-medium text-ink-muted mb-1.5 block">Valor médio (R$)</label>
                 <div class="grid grid-cols-2 gap-2">
                     <Input v-model="form.avg_value_min" type="number" placeholder="De" />
                     <Input v-model="form.avg_value_max" type="number" placeholder="Até" />
@@ -15,7 +15,7 @@
             </div>
 
             <div>
-                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Metragem (m²)</label>
+                <label class="text-micro font-medium text-ink-muted mb-1.5 block">Metragem (m²)</label>
                 <div class="grid grid-cols-2 gap-2">
                     <Input v-model="form.avg_area_min" type="number" placeholder="De" />
                     <Input v-model="form.avg_area_max" type="number" placeholder="Até" />
@@ -27,7 +27,7 @@
 
             <!-- Itens do stand -->
             <div>
-                <label class="text-[11px] font-medium text-ink-muted mb-1.5 block">Itens do stand</label>
+                <label class="text-micro font-medium text-ink-muted mb-1.5 block">Itens do stand</label>
                 <div class="flex gap-2">
                     <Input v-model="newItem" placeholder="Ex.: Ar-condicionado, mobiliário, totem..."
                         class="flex-1" @keyup.enter="addItem" />

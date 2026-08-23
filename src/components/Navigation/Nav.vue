@@ -443,7 +443,7 @@ watch(() => route.fullPath, closeMobile);
             <!-- Rótulo de seção (expandido) · divisória discreta (recolhido) -->
             <li v-if="!isCollapsed"
                 :class="['select-none px-2 pb-0.5', gi === 0 ? 'pt-0.5' : 'pt-2.5']">
-              <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
+              <span class="text-micro font-semibold uppercase tracking-wider text-ink-subtle">
                 {{ grp.group }}
               </span>
             </li>

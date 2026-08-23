@@ -413,24 +413,24 @@ const closeModal = () => emit('close');
       <!-- Período exibido (mês/ano; o fechamento é mensal) -->
       <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5 flex items-end gap-3 flex-wrap">
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1">
+          <label class="block text-micro font-medium text-ink-muted mb-1">
             <i class="far fa-calendar text-[10px] mr-1 text-ink-subtle"></i>De
           </label>
           <input v-model="filtroDe" type="month"
             class="rounded-lg border border-line bg-surface-raised px-2 py-1.5 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
         </div>
         <div>
-          <label class="block text-[11px] font-medium text-ink-muted mb-1">Até</label>
+          <label class="block text-micro font-medium text-ink-muted mb-1">Até</label>
           <input v-model="filtroAte" type="month"
             class="rounded-lg border border-line bg-surface-raised px-2 py-1.5 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-accent/40" />
         </div>
         <Button variant="ghost" size="sm" icon="fas fa-rotate-left" @click="resetPeriodo">
           Ano atual
         </Button>
-        <p v-if="periodoInvalido" class="text-[11px] text-red-500 ml-auto">
+        <p v-if="periodoInvalido" class="text-micro text-red-500 ml-auto">
           O mês inicial está depois do final.
         </p>
-        <p v-else class="text-[11px] text-ink-subtle ml-auto font-mono">
+        <p v-else class="text-micro text-ink-subtle ml-auto font-mono">
           {{ resumoPeriodo.total }} mês(es) ·
           <span class="text-emerald-600 dark:text-emerald-400">{{ resumoPeriodo.consolidados }} consolidado(s)</span> ·
           {{ resumoPeriodo.abertos }} aberto(s)
@@ -469,13 +469,13 @@ const closeModal = () => emit('close');
                   {{ m.closing.open_divergences }} divergência(s)
                 </Badge>
               </p>
-              <p v-if="m.closing" class="text-[11px] text-ink-muted font-mono mt-0.5">
+              <p v-if="m.closing" class="text-micro text-ink-muted font-mono mt-0.5">
                 {{ m.closing.totals?.count ?? '—' }} venda(s) ·
                 {{ formatCurrency(m.closing.totals?.vgv_net) }} ·
                 fechado em {{ formatDateTime(m.closing.consolidated_at) }}
                 <span v-if="m.closing.consolidated_by_name">por {{ m.closing.consolidated_by_name }}</span>
               </p>
-              <p v-else class="text-[11px] text-ink-subtle mt-0.5">
+              <p v-else class="text-micro text-ink-subtle mt-0.5">
                 Sem fechamento — a Eme trata este mês como parcial.
               </p>
             </div>
@@ -542,15 +542,15 @@ const closeModal = () => emit('close');
                         <span v-if="d.contract_id" class="font-mono text-ink-subtle">· contrato {{ d.contract_id }}</span>
                         <span v-if="d.field" class="text-ink-muted">· {{ FIELD_LABEL[d.field] || d.field }}</span>
                       </p>
-                      <p v-if="d.old_value != null || d.new_value != null" class="font-mono text-[11px] text-ink-muted mt-0.5">
+                      <p v-if="d.old_value != null || d.new_value != null" class="font-mono text-micro text-ink-muted mt-0.5">
                         {{ d.old_value ?? '—' }} <i class="fas fa-arrow-right text-[8px] mx-1"></i> {{ d.new_value ?? '—' }}
                       </p>
-                      <p v-if="d.details?.customer_name || d.details?.unit_name" class="text-[11px] text-ink-subtle mt-0.5 truncate">
+                      <p v-if="d.details?.customer_name || d.details?.unit_name" class="text-micro text-ink-subtle mt-0.5 truncate">
                         {{ d.details?.customer_name }} <span v-if="d.details?.unit_name">· {{ d.details.unit_name }}</span>
                         <span v-if="d.details?.enterprise_name">· {{ d.details.enterprise_name }}</span>
                       </p>
-                      <p v-if="d.details?.why" class="text-[11px] text-ink-subtle mt-0.5">{{ d.details.why }}</p>
-                      <p class="text-[10px] text-ink-subtle font-mono mt-0.5">detectada em {{ formatDateTime(d.detected_at) }}</p>
+                      <p v-if="d.details?.why" class="text-micro text-ink-subtle mt-0.5">{{ d.details.why }}</p>
+                      <p class="text-micro text-ink-subtle font-mono mt-0.5">detectada em {{ formatDateTime(d.detected_at) }}</p>
                     </div>
                     <Button v-if="can('configure') && d.status === 'open'" variant="ghost" size="sm" icon="fas fa-check"
                       class="shrink-0" v-tippy="'Marcar como revisada (não altera o consolidado)'"
@@ -579,15 +579,15 @@ const closeModal = () => emit('close');
                         <Badge v-if="v.vigente" variant="success" size="sm">vigente</Badge>
                         <span v-else class="text-ink-subtle">substituída</span>
                       </p>
-                      <p class="text-[11px] text-ink-muted font-mono mt-0.5">
+                      <p class="text-micro text-ink-muted font-mono mt-0.5">
                         {{ v.totals?.count ?? '—' }} venda(s) ·
                         <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{{ formatCurrency(v.totals?.vgv_net) }}</span>
                         <span v-if="v.totals?.vgv_gross"> · VGV+DC {{ formatCurrency(v.totals.vgv_gross) }}</span>
                       </p>
                     </div>
                     <div class="text-right shrink-0">
-                      <p class="text-[11px] text-ink">{{ v.consolidated_by_name || 'autor não registrado' }}</p>
-                      <p class="text-[10px] text-ink-subtle font-mono">{{ formatDateTime(v.consolidated_at) }}</p>
+                      <p class="text-micro text-ink">{{ v.consolidated_by_name || 'autor não registrado' }}</p>
+                      <p class="text-micro text-ink-subtle font-mono">{{ formatDateTime(v.consolidated_at) }}</p>
                     </div>
                   </li>
                 </ul>
@@ -599,7 +599,7 @@ const closeModal = () => emit('close');
     </div>
 
     <template #footer>
-      <p class="text-[10px] text-ink-subtle leading-tight mr-auto hidden sm:block">
+      <p class="text-micro text-ink-subtle leading-tight mr-auto hidden sm:block">
         A vigilância roda todo dia após o sync de contratos.<br>
         Reconsolidar versiona a anterior e resolve as divergências abertas.
       </p>
@@ -666,7 +666,7 @@ const closeModal = () => emit('close');
         </div>
       </div>
 
-      <p class="text-[11px] text-ink-subtle">
+      <p class="text-micro text-ink-subtle">
         VGV+DC: {{ formatCurrency(pendente.totals.vgv_gross) }}
         <span v-if="pendente.totals.distratadas"> · {{ pendente.totals.distratadas }} venda(s) distratada(s) depois (contam no período)</span>
       </p>

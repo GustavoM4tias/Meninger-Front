@@ -69,9 +69,9 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
                     <!-- VGV -->
                     <div class="p-4 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
-                        <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">VGV projetado {{ r.year }}</p>
+                        <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">VGV projetado {{ r.year }}</p>
                         <p class="text-2xl font-semibold tabular-nums tracking-tight text-ink mt-1">{{ fmtCompact(r.kpis.vgv.yearVgv) }}</p>
-                        <p class="text-[11px] text-ink-muted mt-1">
+                        <p class="text-micro text-ink-muted mt-1">
                             {{ Number(r.kpis.vgv.yearUnits || 0) }} de {{ Number(r.kpis.vgv.totalUnits || 0) }} unidades
                             <template v-if="r.kpis.vgv.nextYearsVgv > 0"> · saldo {{ fmtCompact(r.kpis.vgv.nextYearsVgv) }} p/ {{ r.year + 1 }}+</template>
                         </p>
@@ -80,15 +80,15 @@
                     <div v-for="b in bucketCards" :key="b.key"
                         class="p-4 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
                         <div class="flex items-center justify-between gap-2">
-                            <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">{{ b.title }}</p>
+                            <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">{{ b.title }}</p>
                             <Badge :variant="statusVariant(b.status)" size="sm">{{ b.statusText || statusLabel(b.status) }}</Badge>
                         </div>
                         <p class="text-2xl font-semibold tabular-nums tracking-tight mt-1" :class="b.valueClass || 'text-ink'">{{ fmtBRL(b.value) }}</p>
-                        <p class="text-[11px] text-ink-muted mt-1">{{ fmtPct(b.pct) }} consumido · {{ b.tetoLabel }} {{ fmtBRL(b.teto) }}</p>
-                        <p v-if="b.note" class="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5 truncate" :title="b.note">
+                        <p class="text-micro text-ink-muted mt-1">{{ fmtPct(b.pct) }} consumido · {{ b.tetoLabel }} {{ fmtBRL(b.teto) }}</p>
+                        <p v-if="b.note" class="text-micro text-orange-600 dark:text-orange-400 mt-0.5 truncate" :title="b.note">
                             <i class="fas fa-arrow-right-arrow-left mr-0.5"></i>{{ b.note }}
                         </p>
-                        <p v-if="b.note2" class="text-[10px] text-ink-subtle mt-0.5 truncate" :title="b.note2">{{ b.note2 }}</p>
+                        <p v-if="b.note2" class="text-micro text-ink-subtle mt-0.5 truncate" :title="b.note2">{{ b.note2 }}</p>
                     </div>
                 </div>
 
@@ -104,9 +104,9 @@
                         <VChart :option="mktChartOption" autoresize class="w-full" style="height: 280px" />
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                             <div class="p-3 rounded-lg border border-line bg-surface-sunken/40">
-                                <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">Realizado (Jan-{{ shortMonth(r.monthIndex) }})</p>
+                                <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">Realizado (Jan-{{ shortMonth(r.monthIndex) }})</p>
                                 <p class="text-lg font-bold tabular-nums text-ink">{{ fmtBRL(mkt.realizadoAno) }}</p>
-                                <p class="text-[11px] text-ink-muted">
+                                <p class="text-micro text-ink-muted">
                                     {{ fmtPct(distribution.pctRealizado) }} do plano anual de MKT
                                     <span v-if="Number(mkt.lojaExcedenteAno || 0) > 0" class="text-orange-600 dark:text-orange-400">
                                         · inclui {{ fmtBRL(mkt.lojaExcedenteAno) }} da loja
@@ -114,14 +114,14 @@
                                 </p>
                             </div>
                             <div class="p-3 rounded-lg border border-line bg-surface-sunken/40">
-                                <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">Projetado ({{ shortMonth(r.monthIndex + 1) }}-Dez)</p>
+                                <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">Projetado ({{ shortMonth(r.monthIndex + 1) }}-Dez)</p>
                                 <p class="text-lg font-bold tabular-nums" :class="moneyClass(mkt.projetadoAno)">{{ fmtBRL(mkt.projetadoAno) }}</p>
-                                <p class="text-[11px] text-ink-muted">{{ fmtBRL(mkt.projetadoMes) }} / mês · saldo ÷ meses restantes</p>
+                                <p class="text-micro text-ink-muted">{{ fmtBRL(mkt.projetadoMes) }} / mês · saldo ÷ meses restantes</p>
                             </div>
                             <div class="p-3 rounded-lg border border-line bg-surface-sunken/40">
-                                <p class="text-[10px] uppercase tracking-wider font-mono text-ink-subtle">Plano do ano</p>
+                                <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">Plano do ano</p>
                                 <p class="text-lg font-bold tabular-nums text-ink">{{ fmtBRL(mkt.planoAno) }}</p>
-                                <p class="text-[11px] text-ink-muted">saldo de viabilidade {{ fmtBRL(mkt.saldo) }}</p>
+                                <p class="text-micro text-ink-muted">saldo de viabilidade {{ fmtBRL(mkt.saldo) }}</p>
                             </div>
                         </div>
                     </div>
@@ -155,7 +155,7 @@
                                     <div class="absolute top-0 bottom-0 w-0.5 bg-ink/40" :style="{ left: Math.min(100, ritmo * 100) + '%' }"
                                         v-tippy="`Ritmo linear esperado: ${fmtPct(ritmo)}`"></div>
                                 </div>
-                                <div class="flex items-center justify-between mt-1 text-[11px] text-ink-subtle flex-wrap gap-1">
+                                <div class="flex items-center justify-between mt-1 text-micro text-ink-subtle flex-wrap gap-1">
                                     <span>
                                         {{ fmtPct(b.pctConsumido) }} consumido
                                         <template v-if="Number(b.lojaExcedenteAno || 0) > 0">
@@ -169,7 +169,7 @@
                                     <span :class="b.saldo < 0 ? 'text-red-600 dark:text-red-400 font-semibold' : ''">saldo {{ fmtBRL(b.saldo) }}</span>
                                 </div>
                                 <!-- projetado p/ frente (só MKT): saldo ÷ meses restantes -->
-                                <div v-if="b.key === 'marketing'" class="mt-0.5 text-[11px] text-ink-subtle">
+                                <div v-if="b.key === 'marketing'" class="mt-0.5 text-micro text-ink-subtle">
                                     a investir pela frente: <strong class="font-mono tabular-nums"
                                         :class="Number(b.projetadoMes) < 0 ? 'text-red-600 dark:text-red-400' : 'text-ink-muted'">
                                         {{ fmtBRL(b.projetadoMes) }} / mês

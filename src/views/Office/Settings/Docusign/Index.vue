@@ -99,7 +99,7 @@
           {{ feedback.message }}
         </div>
 
-        <p class="text-[11px] text-ink-subtle">
+        <p class="text-micro text-ink-subtle">
           A conexão se renova sozinha a cada uso. Se o sistema ficar ~30 dias sem enviar nada, ela expira — basta clicar em "Conectar com DocuSign" de novo.
         </p>
       </div>
@@ -112,7 +112,7 @@
         <i :class="showAdvanced ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas text-xs text-ink-subtle"></i>
       </button>
       <div v-if="showAdvanced" class="p-5 pt-2 space-y-4 border-t border-line">
-        <p class="text-[11px] text-ink-subtle">Para conexão de servidor sem login (não expira). Exige gerar um par de chaves RSA no app DocuSign e conceder consentimento uma vez. Se a conexão rápida acima estiver ativa, ela tem prioridade.</p>
+        <p class="text-micro text-ink-subtle">Para conexão de servidor sem login (não expira). Exige gerar um par de chaves RSA no app DocuSign e conceder consentimento uma vez. Se a conexão rápida acima estiver ativa, ela tem prioridade.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="lbl">User ID (GUID do usuário impersonado)</label>

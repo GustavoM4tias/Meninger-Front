@@ -74,17 +74,17 @@ function objectiveLabel(o) {
 
       <!-- Top: status + Lead Ads + nome -->
       <div class="px-3 pt-3 pb-2 flex items-start gap-2 flex-wrap">
-        <span :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-medium', statusBadge(c).cls]">
+        <span :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge(c).cls]">
           {{ statusBadge(c).label }}
         </span>
         <span v-if="isLeadAds(c)"
-          class="inline-flex shrink-0 items-center gap-1 rounded-md border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300 px-2 py-0.5 text-[10px] font-medium"
+          class="inline-flex shrink-0 items-center gap-1 rounded-md border border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300 px-2 py-0.5 text-micro font-medium"
           title="Campanha de Lead Ads — coleta leads via formulário Meta. Os leads chegam pela Captação se a integração estiver configurada.">
           <i class="fas fa-file-lines text-[9px]"></i>Lead Ads
         </span>
         <div class="flex-1 min-w-0 w-full mt-1">
           <div class="text-sm font-medium text-ink leading-tight truncate" :title="c.name">{{ c.name }}</div>
-          <div class="text-[10px] text-ink-subtle truncate">
+          <div class="text-micro text-ink-subtle truncate">
             {{ c.account_name }}<span v-if="c.objective"> · {{ objectiveLabel(c.objective) }}</span>
           </div>
         </div>
@@ -93,16 +93,16 @@ function objectiveLabel(o) {
       <!-- Período (destaque) -->
       <div class="px-3 pb-2 grid grid-cols-2 gap-2">
         <div class="rounded bg-surface-sunken/30 px-2 py-1.5">
-          <div class="text-[9px] uppercase tracking-wider text-ink-subtle">
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">
             <i class="fas fa-play text-[7px] mr-0.5"></i>Início
           </div>
           <div class="text-xs font-mono text-ink">{{ fmtShortDate(c.start_time) }}</div>
-          <div v-if="daysRunning(c) != null" class="text-[9px] text-ink-subtle">
+          <div v-if="daysRunning(c) != null" class="text-micro text-ink-subtle">
             há {{ daysRunning(c) }} dia{{ daysRunning(c) === 1 ? '' : 's' }}
           </div>
         </div>
         <div class="rounded bg-surface-sunken/30 px-2 py-1.5">
-          <div class="text-[9px] uppercase tracking-wider text-ink-subtle">
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">
             <i class="fas fa-flag-checkered text-[7px] mr-0.5"></i>Encerramento
           </div>
           <div v-if="c.stop_time" class="text-xs font-mono text-ink">{{ fmtShortDate(c.stop_time) }}</div>
@@ -116,18 +116,18 @@ function objectiveLabel(o) {
       <!-- KPIs grandes -->
       <div class="grid grid-cols-3 gap-1 px-3 pb-3 mt-auto">
         <div class="rounded bg-surface-sunken/40 p-2">
-          <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Gasto</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
           <div class="text-sm font-semibold text-blue-600 dark:text-blue-300 leading-tight">{{ fmtMoney(c.spend, c.currency || currency) }}</div>
         </div>
         <div class="rounded bg-surface-sunken/40 p-2">
-          <div class="text-[9px] uppercase tracking-wider text-ink-subtle">Leads</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads</div>
           <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-300 leading-tight">{{ fmtInt(c.office_leads || 0) }}</div>
-          <div class="text-[9px] text-ink-subtle leading-tight">nossa base</div>
+          <div class="text-micro text-ink-subtle leading-tight">nossa base</div>
         </div>
         <div class="rounded bg-surface-sunken/40 p-2">
-          <div class="text-[9px] uppercase tracking-wider text-ink-subtle">CAC</div>
+          <div class="text-micro uppercase tracking-wider text-ink-subtle">CAC</div>
           <div class="text-sm font-semibold text-ink leading-tight">{{ c.cac != null ? fmtMoney(c.cac, c.currency || currency) : '—' }}</div>
-          <div class="text-[9px] text-ink-subtle leading-tight">nossa base</div>
+          <div class="text-micro text-ink-subtle leading-tight">nossa base</div>
         </div>
       </div>
     </button>

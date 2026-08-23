@@ -20,7 +20,7 @@ defineProps({
         <i :class="icon"></i>
       </div>
       <div class="min-w-0">
-        <p v-if="eyebrow" class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1">{{ eyebrow }}</p>
+        <p v-if="eyebrow" class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">{{ eyebrow }}</p>
         <h1 class="text-lg sm:text-2xl font-semibold text-ink tracking-tight flex items-center gap-2 min-w-0 break-words">
           <slot name="title">{{ title }}</slot>
         </h1>

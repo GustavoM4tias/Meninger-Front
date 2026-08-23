@@ -68,7 +68,7 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
         <div class="sticky top-0 z-10 flex items-baseline justify-between gap-3 mb-2 py-1
                     border-b border-line bg-surface/80 backdrop-blur">
           <h3 class="text-sm font-semibold text-ink capitalize">{{ day.label }}</h3>
-          <span class="text-[11px] font-mono text-ink-subtle tabular-nums">
+          <span class="text-micro font-mono text-ink-subtle tabular-nums">
             {{ day.items.length }} lead{{ day.items.length > 1 ? 's' : '' }}
           </span>
         </div>
@@ -80,13 +80,13 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
             <button type="button" @click="emit('open-detail', lead.id)"
               class="w-full text-left rounded-lg border border-line bg-surface-raised hover:bg-surface-hover/30
                      hover:border-accent/40 hover:shadow-soft transition-all px-3 py-2 flex items-center gap-3 min-w-0">
-              <span class="text-[11px] font-mono tabular-nums text-ink-subtle w-14 shrink-0">
+              <span class="text-micro font-mono tabular-nums text-ink-subtle w-14 shrink-0">
                 {{ fmtTime(lead.created_at) }}
               </span>
               <LeadStatusBadge :status="lead.status" size="sm" :dot="false" />
               <div class="flex-1 min-w-0">
                 <div class="text-sm text-ink truncate">{{ lead.nome || contato(lead) }}</div>
-                <div class="text-[11px] text-ink-subtle truncate">
+                <div class="text-micro text-ink-subtle truncate">
                   <span v-if="lead.meta_campaign_name">
                     <i class="fas fa-bullhorn text-[9px] mr-1"></i>{{ lead.meta_campaign_name }}
                   </span>

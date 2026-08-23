@@ -132,7 +132,7 @@
 
               <!-- Detailed Description -->
               <div>
-                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                   Descrição Detalhada <span class="text-red-500">*</span>
                 </label>
                 <textarea v-model="form.description"
@@ -144,7 +144,7 @@
 
               <!-- Steps to Reproduce -->
               <div>
-                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                   Passos para Reproduzir
                 </label>
                 <textarea v-model="form.stepsToReproduce"
@@ -171,7 +171,7 @@
 
               <!-- File Upload -->
               <div>
-                <label class="text-[11px] font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
+                <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
                   Capturas de Tela ou Arquivos
                 </label>
                 <div class="border-2 border-dashed border-line rounded-xl p-6 text-center bg-surface-sunken/40 hover:border-accent/40 transition-colors">

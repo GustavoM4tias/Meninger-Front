@@ -6,7 +6,7 @@
             <i class="fa-solid fa-magnifying-glass text-xs text-slate-400 transition group-hover:text-indigo-500"></i>
             <span class="flex-1 truncate">Buscar artigos, trilhas, tópicos…</span>
             <span
-                class="rounded-lg border border-slate-200 bg-white px-2 py-0.5 font-mono text-[11px] text-slate-400 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-500">
+                class="rounded-lg border border-slate-200 bg-white px-2 py-0.5 font-mono text-micro text-slate-400 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-500">
                 {{ shortcutHint }}
             </span>
         </button>

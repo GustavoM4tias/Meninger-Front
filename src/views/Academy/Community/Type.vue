@@ -103,25 +103,25 @@
                                         </p>
 
                                         <span v-if="Number(it.acceptedPostId) > 0"
-                                            class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                            class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-micro font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                                             <i class="fa-solid fa-circle-check text-[9px]"></i> resolvido
                                         </span>
 
                                         <span
-                                            class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                            class="rounded-full px-2 py-0.5 text-micro font-bold uppercase tracking-wider"
                                             :class="topicStatusPillClass(it)">
                                             {{ topicStatusPillLabel(it) }}
                                         </span>
 
                                         <span v-if="it.categorySlug"
-                                            class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                            class="rounded-full bg-slate-100 px-2 py-0.5 text-micro font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                                             {{ categoryName(it.categorySlug, it.type) }}
                                         </span>
                                     </div>
 
                                     <div class="flex flex-wrap items-center gap-1.5">
                                         <span v-for="tag in (it.tags || []).slice(0, 3)" :key="tag"
-                                            class="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300">
+                                            class="rounded-full bg-indigo-50 px-2 py-0.5 text-micro font-medium text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300">
                                             #{{ tag }}
                                         </span>
                                     </div>
@@ -276,7 +276,7 @@
                     </div>
 
                     <AudienceSelector v-model="form.audiences" />
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p class="text-micro text-slate-500 dark:text-slate-400">
                         <i class="fa-solid fa-circle-info mr-1"></i>
                         Você só pode selecionar públicos que enxergam o conteúdo que VOCÊ enxerga —
                         o servidor reduz automaticamente o conjunto.

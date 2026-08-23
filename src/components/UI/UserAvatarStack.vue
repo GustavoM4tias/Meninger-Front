@@ -29,7 +29,7 @@ const px = computed(() =>
             <UserAvatar :name="u.username || u.name" :src="u.avatar_url || u.src" :size="size" />
         </button>
         <span v-if="extra"
-            class="-ml-2 grid place-items-center rounded-full bg-surface-sunken text-ink-muted text-[10px] font-semibold ring-2 ring-surface"
+            class="-ml-2 grid place-items-center rounded-full bg-surface-sunken text-ink-muted text-micro font-semibold ring-2 ring-surface"
             :style="{ width: px + 'px', height: px + 'px' }">+{{ extra }}</span>
     </div>
 </template>

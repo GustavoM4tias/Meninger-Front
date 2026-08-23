@@ -138,12 +138,12 @@ function clearOverride(entId) {
 
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-ink truncate">{{ ent.name }}</p>
-                <p class="text-[10px] text-ink-subtle font-mono mt-0.5">#{{ ent.id }}</p>
+                <p class="text-micro text-ink-subtle font-mono mt-0.5">#{{ ent.id }}</p>
               </div>
 
               <div class="flex items-center gap-2 shrink-0">
                 <!-- Toggle compact -->
-                <div class="inline-flex rounded-md border border-line overflow-hidden text-[11px] font-medium">
+                <div class="inline-flex rounded-md border border-line overflow-hidden text-micro font-medium">
                   <button @click="setEnterpriseMode(ent.id, 'units')"
                     class="px-2 py-1 transition-colors"
                     :class="effectiveModeFor(ent.id) === 'units'

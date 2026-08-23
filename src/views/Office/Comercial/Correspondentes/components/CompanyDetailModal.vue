@@ -74,11 +74,11 @@ const dados = computed(() => {
             <div class="grid grid-cols-2 gap-2 mb-4">
                 <div class="rounded-xl border border-line bg-surface-sunken/50 px-3 py-2.5 text-center">
                     <p class="text-lg font-semibold text-ink leading-none">{{ equipe.length }}</p>
-                    <p class="text-[11px] text-ink-muted mt-1">com acesso ativo</p>
+                    <p class="text-micro text-ink-muted mt-1">com acesso ativo</p>
                 </div>
                 <div class="rounded-xl border border-line bg-surface-sunken/50 px-3 py-2.5 text-center">
                     <p class="text-lg font-semibold text-ink leading-none">{{ e.total_usuarios }}</p>
-                    <p class="text-[11px] text-ink-muted mt-1">cadastradas no total</p>
+                    <p class="text-micro text-ink-muted mt-1">cadastradas no total</p>
                 </div>
             </div>
 
@@ -98,7 +98,7 @@ const dados = computed(() => {
             <div v-if="dados.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
                 <div v-for="d in dados" :key="d.rotulo"
                     class="rounded-lg border border-line-subtle bg-surface-raised px-3 py-2">
-                    <p class="text-[11px] uppercase tracking-wide text-ink-subtle">{{ d.rotulo }}</p>
+                    <p class="text-micro uppercase tracking-wide text-ink-subtle">{{ d.rotulo }}</p>
                     <p class="text-sm text-ink truncate"><i :class="d.icone" class="mr-1.5 text-ink-subtle"></i>{{ d.valor }}</p>
                 </div>
             </div>
@@ -187,7 +187,7 @@ const dados = computed(() => {
                 </div>
             </div>
 
-            <p class="text-[11px] text-ink-subtle mt-3">
+            <p class="text-micro text-ink-subtle mt-3">
                 Para corrigir uma pessoa, edite ou exclua na tela do CV - a integração não tem edição.
             </p>
         </template>

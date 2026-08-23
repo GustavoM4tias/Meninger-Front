@@ -76,13 +76,13 @@ async function copyInvite(url, i) {
                     <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-1.5">
                             <p class="truncate text-sm font-semibold text-ink">{{ card.title }}</p>
-                            <span class="rounded-md border px-1.5 py-0.5 text-[10px] font-medium"
+                            <span class="rounded-md border px-1.5 py-0.5 text-micro font-medium"
                                 :class="toneClass(card.ativo ? 'emerald' : 'rose')">
                                 {{ card.ativo ? 'Ativa' : 'Inativa' }}
                             </span>
                         </div>
                         <p v-if="card.subtitle" class="mt-0.5 truncate text-xs text-ink-muted">{{ card.subtitle }}</p>
-                        <p v-if="fmtCnpj(card.cnpj)" class="mt-0.5 text-[11px] text-ink-subtle">
+                        <p v-if="fmtCnpj(card.cnpj)" class="mt-0.5 text-micro text-ink-subtle">
                             CNPJ {{ fmtCnpj(card.cnpj) }}<span v-if="card.sigla"> · Sigla {{ card.sigla }}</span>
                         </p>
                     </div>
@@ -97,15 +97,15 @@ async function copyInvite(url, i) {
                 <!-- badges: cidades, CRECI, origem -->
                 <div class="mt-2 flex flex-wrap gap-1">
                     <span v-for="c in (card.cidades || [])" :key="c"
-                        class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                        class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted">
                         <i class="fas fa-location-dot mr-1 text-[9px]"></i>{{ c }}
                     </span>
                     <span v-if="card.creci"
-                        class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                        class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted">
                         CRECI {{ card.creci }}<template v-if="card.validade_creci"> · até {{ card.validade_creci }}</template>
                     </span>
                     <span v-if="card.origem && card.origem !== 'cv'"
-                        class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                        class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted">
                         <i :class="card.origem === 'link' ? 'fas fa-link' : 'fas fa-desktop'" class="mr-1 text-[9px]"></i>
                         Cadastrada pelo Office
                     </span>
@@ -117,29 +117,29 @@ async function copyInvite(url, i) {
                     <a v-for="tel in [card.contato.celular, card.contato.telefone].filter(Boolean)" :key="tel"
                         :href="whatsappUrl(tel)" target="_blank" rel="noopener"
                         class="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1
-                               text-[11px] font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
+                               text-micro font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
                         <i class="fab fa-whatsapp"></i>{{ tel }}
                     </a>
                     <a v-if="card.contato.email" :href="mailtoUrl(card.contato.email)"
                         class="inline-flex max-w-full items-center gap-1 rounded-lg border border-line bg-surface-sunken px-2 py-1
-                               text-[11px] font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
+                               text-micro font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
                         <i class="fas fa-envelope"></i><span class="truncate">{{ card.contato.email }}</span>
                     </a>
                 </div>
 
                 <!-- gerente responsável -->
                 <div v-if="card.gerente" class="mt-2 rounded-lg border border-line bg-surface-sunken p-2">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">Gerente responsável</p>
+                    <p class="text-micro font-semibold uppercase tracking-wide text-ink-subtle">Gerente responsável</p>
                     <div class="mt-1 flex flex-wrap items-center gap-1.5">
                         <span class="text-xs font-medium text-ink">{{ card.gerente.nome }}</span>
                         <a v-if="card.gerente.celular" :href="whatsappUrl(card.gerente.celular)" target="_blank" rel="noopener"
                             class="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5
-                                   text-[10px] font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
+                                   text-micro font-medium text-emerald-600 transition hover:bg-emerald-600 hover:text-white dark:text-emerald-400">
                             <i class="fab fa-whatsapp"></i>{{ card.gerente.celular }}
                         </a>
                         <a v-if="card.gerente.email" :href="mailtoUrl(card.gerente.email)"
                             class="inline-flex max-w-full items-center gap-1 rounded-md border border-line bg-surface-raised px-1.5 py-0.5
-                                   text-[10px] font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
+                                   text-micro font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
                             <i class="fas fa-envelope"></i><span class="truncate">{{ card.gerente.email }}</span>
                         </a>
                     </div>
@@ -147,13 +147,13 @@ async function copyInvite(url, i) {
 
                 <!-- empreendimentos vinculados -->
                 <div v-if="card.empreendimentos?.length" class="mt-2">
-                    <p class="text-[10px] font-semibold uppercase tracking-wide text-ink-subtle">
+                    <p class="text-micro font-semibold uppercase tracking-wide text-ink-subtle">
                         Empreendimentos ({{ card.empreendimentos.length }})
                     </p>
                     <div class="mt-1 flex flex-wrap gap-1">
                         <button v-for="e in card.empreendimentos" :key="e.id || e.nome" type="button"
                             :disabled="!e.id" @click="e.id && open(`/comercial/buildings?open=${e.id}`)"
-                            class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-muted
+                            class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted
                                    transition enabled:hover:border-accent/40 enabled:hover:text-accent">
                             {{ e.nome }}
                         </button>
@@ -171,16 +171,16 @@ async function copyInvite(url, i) {
                     <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-1.5">
                             <p class="truncate text-sm font-semibold text-ink">{{ card.title }}</p>
-                            <span class="rounded-md border px-1.5 py-0.5 text-[10px] font-medium" :class="toneClass(card.tone)">
+                            <span class="rounded-md border px-1.5 py-0.5 text-micro font-medium" :class="toneClass(card.tone)">
                                 {{ card.statusLabel }}
                             </span>
                         </div>
-                        <p class="mt-0.5 text-[11px] text-ink-subtle">
+                        <p class="mt-0.5 text-micro text-ink-subtle">
                             {{ card.source === 'public' ? (card.multiUse ? 'Link público multi-uso' : 'Link público de uso único') : 'Cadastro pela tela' }}
                             <template v-if="card.creator"> · por {{ card.creator }}</template>
                             <template v-if="card.completedAt"> · concluído em {{ fmtDate(card.completedAt) }}</template>
                         </p>
-                        <p v-if="card.multiUse && (card.startsAt || card.endsAt)" class="mt-0.5 text-[11px] text-ink-subtle">
+                        <p v-if="card.multiUse && (card.startsAt || card.endsAt)" class="mt-0.5 text-micro text-ink-subtle">
                             Janela: {{ fmtDate(card.startsAt) || '…' }} → {{ fmtDate(card.endsAt) || '…' }}
                             <template v-if="card.submissions !== null"> · {{ card.submissions }} cadastro(s) recebido(s)</template>
                         </p>
@@ -195,10 +195,10 @@ async function copyInvite(url, i) {
 
                 <!-- link público copiável (convites em aberto) -->
                 <div v-if="card.inviteUrl" class="mt-2 flex items-center gap-1.5 rounded-lg border border-line bg-surface-sunken p-1.5">
-                    <code class="min-w-0 flex-1 truncate text-[10px] text-ink-muted">{{ card.inviteUrl }}</code>
+                    <code class="min-w-0 flex-1 truncate text-micro text-ink-muted">{{ card.inviteUrl }}</code>
                     <button type="button" @click="copyInvite(card.inviteUrl, i)"
                         class="inline-flex shrink-0 items-center gap-1 rounded-md border border-line bg-surface-raised px-2 py-1
-                               text-[10px] font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
+                               text-micro font-medium text-ink-muted transition hover:border-accent/40 hover:text-accent">
                         <i :class="copiedIdx === i ? 'fas fa-check' : 'fas fa-copy'"></i>
                         {{ copiedIdx === i ? 'Copiado!' : 'Copiar' }}
                     </button>
@@ -207,7 +207,7 @@ async function copyInvite(url, i) {
                 <!-- empreendimentos do convite -->
                 <div v-if="card.enterprises?.length" class="mt-2 flex flex-wrap gap-1">
                     <span v-for="(e, ei) in card.enterprises" :key="ei"
-                        class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-muted">
+                        class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted">
                         {{ e }}
                     </span>
                 </div>

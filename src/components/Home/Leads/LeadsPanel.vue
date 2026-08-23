@@ -11,7 +11,7 @@
                     Leads
                 </RouterLink>
                 <Favorite class="m-auto" :router="'/marketing/leads'" :section="'Leads'" />
-                <p class="text-[8px] md:text-xs text-gray-500 dark:text-gray-400">
+                <p class="text-micro md:text-xs text-gray-500 dark:text-gray-400">
                     {{ rangeLabels.this }} | {{ rangeLabels.prev }}
                 </p>
             </div>
@@ -19,13 +19,13 @@
             <!-- KPIs -->
             <div class="flex-1 grid grid-cols-2 gap-2 ps-2 md:ps-4">
                 <div class="rounded-lg my-auto ps-3 p-1.5 bg-white/60 dark:bg-gray-900/40 border-l-4 border-indigo-500">
-                    <p class="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">
+                    <p class="text-micro uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">
                         {{ legend.this }}
                     </p>
                     <p class="font-semibold text-gray-800 dark:text-gray-100 md:text-lg leading-tight">
                         {{ kpis.cur }}
                     </p>
-                    <p class="font-light text-[11px] leading-tight"
+                    <p class="font-light text-micro leading-tight"
                         :class="kpis.deltaPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
                         {{ kpis.deltaPct >= 0 ? '+' : '' }}{{ kpis.deltaPct.toFixed(1) }}%
                     </p>
@@ -33,14 +33,14 @@
 
                 <div class="rounded-lg px-3 py-2 bg-white/60 dark:bg-gray-900/40 border-l-4"
                     :class="kpis.deltaPct >= 0 ? 'border-emerald-500' : 'border-rose-600'">
-                    <p class="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">
+                    <p class="text-micro uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">
                         {{ legend.prev }}
                     </p>
                     <p class="font-semibold text-gray-800 dark:text-gray-100 md:text-lg leading-tight">
                         {{ kpis.prv }}
                     </p>
                     <p v-if="mode === 'day'"
-                        class="text-[8px] md:text-[9px] truncate text-gray-500 dark:text-gray-400 mt-0.5">
+                        class="text-micro md:text-micro truncate text-gray-500 dark:text-gray-400 mt-0.5">
                         Até {{ nowHour }}h: {{ progressPct.toFixed(1) }}% do dia anterior
                     </p>
                 </div>

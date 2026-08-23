@@ -140,11 +140,11 @@ function send(prompt) {
       </div>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-ink truncate">{{ action.fonte?.empreendimento }}</p>
-        <p class="text-[11px] text-ink-muted">
+        <p class="text-micro text-ink-muted">
           Ficha Comercial<span v-if="action.fonte?.cidade"> · {{ action.fonte.cidade }}</span><span v-if="action.fonte?.avulsa"> · Avulsa</span>
         </p>
       </div>
-      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 shrink-0"
+      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-medium ring-1 shrink-0"
         :class="statusClass(active.fonte)">
         {{ active.fonte?.mes_referencia }} · {{ active.fonte?.status }}
       </span>
@@ -152,7 +152,7 @@ function send(prompt) {
 
     <!-- Aviso: nenhuma autorizada -->
     <div v-if="action.sem_ficha_autorizada"
-      class="flex items-start gap-2 px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300">
+      class="flex items-start gap-2 px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-micro text-amber-700 dark:text-amber-300">
       <i class="fas fa-triangle-exclamation mt-0.5" />
       <span>Nenhuma ficha desta série está autorizada — dados em elaboração, sujeitos a alteração.</span>
     </div>
@@ -160,7 +160,7 @@ function send(prompt) {
     <!-- Abas recente × autorizada -->
     <div v-if="tabs.length > 1" class="flex gap-1 px-4 pt-3">
       <button v-for="t in tabs" :key="t.key" @click="activeKey = t.key"
-        class="px-2.5 py-1 rounded-lg text-[11px] font-medium ring-1 transition"
+        class="px-2.5 py-1 rounded-lg text-micro font-medium ring-1 transition"
         :class="activeKey === t.key
           ? 'bg-accent-soft text-accent ring-accent/30'
           : 'bg-surface-sunken text-ink-muted ring-line hover:text-ink'">
@@ -173,19 +173,19 @@ function send(prompt) {
       <!-- Módulos -->
       <div v-if="modules.length > 1" class="flex flex-wrap gap-1.5">
         <button v-for="(m, i) in modules" :key="i" @click="moduleIdx = i"
-          class="px-2 py-0.5 rounded-md text-[11px] ring-1 transition"
+          class="px-2 py-0.5 rounded-md text-micro ring-1 transition"
           :class="moduleIdx === i ? 'bg-accent-soft text-accent ring-accent/30' : 'bg-surface-sunken text-ink-muted ring-line hover:text-ink'">
           {{ m.modulo || `Módulo ${i + 1}` }}
         </button>
       </div>
-      <p v-else-if="mod.modulo && mod.modulo !== action.fonte?.empreendimento" class="text-[11px] text-ink-muted">
+      <p v-else-if="mod.modulo && mod.modulo !== action.fonte?.empreendimento" class="text-micro text-ink-muted">
         <i class="fas fa-cube mr-1" />{{ mod.modulo }}
       </p>
 
       <!-- Indicadores -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div v-for="ind in indicadores" :key="ind.label" class="rounded-xl bg-surface-sunken px-3 py-2">
-          <p class="text-[10px] uppercase tracking-wide text-ink-subtle">{{ ind.label }}</p>
+          <p class="text-micro uppercase tracking-wide text-ink-subtle">{{ ind.label }}</p>
           <p class="text-sm font-semibold text-ink mt-0.5">{{ ind.value }}</p>
         </div>
       </div>
@@ -193,26 +193,26 @@ function send(prompt) {
       <!-- Custos Menin × Cliente -->
       <div v-if="custos" class="grid grid-cols-2 gap-2">
         <div class="rounded-xl bg-surface-sunken px-3 py-2">
-          <p class="text-[10px] uppercase tracking-wide text-ink-subtle">Custos Menin</p>
+          <p class="text-micro uppercase tracking-wide text-ink-subtle">Custos Menin</p>
           <p class="text-sm font-semibold text-ink mt-0.5">{{ fmtBRL(custos.total_menin ?? 0) }}</p>
         </div>
         <div class="rounded-xl bg-surface-sunken px-3 py-2">
-          <p class="text-[10px] uppercase tracking-wide text-ink-subtle">Custos Cliente</p>
+          <p class="text-micro uppercase tracking-wide text-ink-subtle">Custos Cliente</p>
           <p class="text-sm font-semibold text-ink mt-0.5">{{ fmtBRL(custos.total_cliente ?? 0) }}</p>
         </div>
       </div>
 
       <!-- Campanhas -->
       <div v-if="campanhas.length">
-        <p class="text-[10px] uppercase tracking-wide text-ink-subtle mb-1.5">Campanhas</p>
+        <p class="text-micro uppercase tracking-wide text-ink-subtle mb-1.5">Campanhas</p>
         <div class="space-y-1.5">
           <div v-for="(c, i) in campanhas" :key="i"
             class="flex items-center justify-between gap-2 rounded-lg bg-surface-sunken px-3 py-1.5">
             <div class="min-w-0">
               <p class="text-xs font-medium text-ink truncate">{{ c.titulo }}</p>
-              <p v-if="c.periodo" class="text-[10px] text-ink-muted">{{ c.periodo }}</p>
+              <p v-if="c.periodo" class="text-micro text-ink-muted">{{ c.periodo }}</p>
             </div>
-            <span v-if="c.valor != null" class="text-[11px] font-medium text-ink shrink-0">
+            <span v-if="c.valor != null" class="text-micro font-medium text-ink shrink-0">
               {{ fmtBRL(c.valor) }}<span v-if="c.pago_por" class="text-ink-muted"> · {{ c.pago_por }}</span>
             </span>
           </div>
@@ -221,13 +221,13 @@ function send(prompt) {
 
       <!-- Mais detalhes (negociação + documentação + tabelas) -->
       <button @click="showDetails = !showDetails"
-        class="w-full flex items-center justify-center gap-1.5 text-[11px] text-ink-muted hover:text-accent transition py-1">
+        class="w-full flex items-center justify-center gap-1.5 text-micro text-ink-muted hover:text-accent transition py-1">
         <i class="fas text-[10px]" :class="showDetails ? 'fa-chevron-up' : 'fa-chevron-down'" />
         {{ showDetails ? 'Menos detalhes' : 'Mais detalhes' }}
       </button>
       <div v-if="showDetails" class="space-y-3">
         <div v-if="negItems.length">
-          <p class="text-[10px] uppercase tracking-wide text-ink-subtle mb-1.5">Negociação</p>
+          <p class="text-micro uppercase tracking-wide text-ink-subtle mb-1.5">Negociação</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
             <div v-for="it in negItems" :key="it.label" class="flex justify-between gap-2 text-xs">
               <span class="text-ink-muted">{{ it.label }}</span>
@@ -236,7 +236,7 @@ function send(prompt) {
           </div>
         </div>
         <div v-if="docItems.length">
-          <p class="text-[10px] uppercase tracking-wide text-ink-subtle mb-1.5">Documentação & Operacional</p>
+          <p class="text-micro uppercase tracking-wide text-ink-subtle mb-1.5">Documentação & Operacional</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
             <div v-for="it in docItems" :key="it.label" class="flex justify-between gap-2 text-xs">
               <span class="text-ink-muted truncate">{{ it.label }}</span>
@@ -245,10 +245,10 @@ function send(prompt) {
           </div>
         </div>
         <div v-if="tabelas.length">
-          <p class="text-[10px] uppercase tracking-wide text-ink-subtle mb-1.5">Tabelas de preço</p>
+          <p class="text-micro uppercase tracking-wide text-ink-subtle mb-1.5">Tabelas de preço</p>
           <div class="flex flex-wrap gap-1.5">
             <span v-for="(t, i) in tabelas" :key="i"
-              class="px-2 py-0.5 rounded-md bg-surface-sunken text-[11px] text-ink-muted ring-1 ring-line">{{ t }}</span>
+              class="px-2 py-0.5 rounded-md bg-surface-sunken text-micro text-ink-muted ring-1 ring-line">{{ t }}</span>
           </div>
         </div>
       </div>
@@ -256,7 +256,7 @@ function send(prompt) {
 
     <!-- Rodapé: sugestões + abrir ficha -->
     <div class="px-4 py-3 border-t border-line">
-      <p class="text-[11px] text-ink-subtle uppercase tracking-wide mb-2">Sugestões</p>
+      <p class="text-micro text-ink-subtle uppercase tracking-wide mb-2">Sugestões</p>
       <div class="flex flex-wrap items-center gap-1.5">
         <button v-for="s in sugestoes" :key="s.id" @click="send(s.prompt)" :disabled="aiStore.isStreaming"
           class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium ring-1 ring-line

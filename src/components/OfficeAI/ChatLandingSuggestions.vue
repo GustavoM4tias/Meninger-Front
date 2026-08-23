@@ -7,7 +7,7 @@ defineEmits(['select']);
 
 <template>
   <div v-if="suggestions.length" class="w-full">
-    <p class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle mb-3">
+    <p class="flex items-center gap-2 text-micro font-semibold uppercase tracking-wider text-ink-subtle mb-3">
       <i class="fas fa-wand-magic-sparkles text-accent/70"></i>
       Sugestões para começar
     </p>

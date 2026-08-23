@@ -44,7 +44,7 @@ const sanitizePassword = (v) => String(v || '');
         </div>
         <button v-if="step > 1 || fp.forgotPassword.value.email"
           type="button" @click="startOver"
-          class="text-[11px] text-ink-subtle hover:text-accent transition-colors">
+          class="text-micro text-ink-subtle hover:text-accent transition-colors">
           Recomeçar
         </button>
       </div>

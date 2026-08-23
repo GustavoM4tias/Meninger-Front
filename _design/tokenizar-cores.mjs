@@ -133,8 +133,8 @@ function tokenizar(src) {
     s = s.replace(SOBRA, sobraEstado);
     for (const [re, tok] of CINZAS) s = s.replace(re, tok);
     s = colapsar(s);
-    /* Piso de 11px: nada abaixo disso no Office. */
-    s = s.replace(/text-\[(?:[1-9]|10|11)px\]/g, 'text-micro');
+    /* Piso de 11px: fica com o `piso-tipografia.mjs`, que sabe isentar ícone.
+       Aqui a troca cega transformava marcador de 3px em borrão de 11px. */
     return s;
 }
 

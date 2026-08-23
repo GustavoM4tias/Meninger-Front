@@ -52,7 +52,7 @@
                             <input v-model.number="form.estimatedMinutes" type="number" min="0"
                                 class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-mono"
                                 @input="minutesLocked = true" />
-                            <div class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                            <div class="mt-1 text-micro text-slate-400 dark:text-slate-500">
                                 {{ minutesLocked ? 'Valor manual.' : 'Calculado automaticamente.' }}
                             </div>
                         </label>

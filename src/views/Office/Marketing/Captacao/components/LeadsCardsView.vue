@@ -60,7 +60,7 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
 
         <!-- Cards -->
         <div class="p-2 space-y-2 overflow-y-auto max-h-[680px]">
-          <div v-if="!grouped[col.key].length" class="text-center text-[11px] text-ink-subtle py-6">
+          <div v-if="!grouped[col.key].length" class="text-center text-micro text-ink-subtle py-6">
             sem leads
           </div>
           <button v-for="lead in grouped[col.key]" :key="lead.id"
@@ -81,15 +81,15 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
             <div class="mt-1.5 text-sm font-medium text-ink truncate" :title="lead.nome || contato(lead)">
               {{ lead.nome || contato(lead) }}
             </div>
-            <div v-if="lead.nome" class="text-[11px] text-ink-muted truncate">{{ contato(lead) }}</div>
+            <div v-if="lead.nome" class="text-micro text-ink-muted truncate">{{ contato(lead) }}</div>
             <div v-if="lead.meta_campaign_name || lead.meta_form_name || lead.lead_form_name"
-              class="mt-1 text-[10px] text-ink-subtle truncate"
+              class="mt-1 text-micro text-ink-subtle truncate"
               :title="lead.meta_campaign_name || lead.meta_form_name || lead.lead_form_name">
               <i :class="lead.meta_campaign_name ? 'fas fa-bullhorn' : lead.meta_form_name ? 'fas fa-square-poll-vertical' : 'fas fa-globe'"
                 class="text-[9px] mr-0.5"></i>
               {{ lead.meta_campaign_name || lead.meta_form_name || lead.lead_form_name }}
             </div>
-            <div class="mt-1 text-[10px] font-mono text-ink-subtle tabular-nums">
+            <div class="mt-1 text-micro font-mono text-ink-subtle tabular-nums">
               {{ fmt(lead.created_at) }}
             </div>
           </button>
