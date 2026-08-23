@@ -329,6 +329,7 @@ import Select from '@/components/UI/Select.vue';
 import Badge from '@/components/UI/Badge.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Spinner from '@/components/UI/Spinner.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const store = usePlannerStore();
 const toast = useToast();
@@ -392,10 +393,13 @@ async function confirmRenameBucket() {
 
 async function deleteBucket(bucket) {
   const count = (store.tasksByBucket[bucket.id] ?? []).length;
-  const msg = count > 0
-    ? `Excluir a coluna "${bucket.name}" e suas ${count} tarefa${count > 1 ? 's' : ''}?`
-    : `Excluir a coluna "${bucket.name}"?`;
-  if (!confirm(msg)) return;
+  if (!await pedirConfirmacao({
+    title: `Excluir a coluna "${bucket.name}"?`,
+    consequence: count > 0
+      ? `As ${count} tarefa${count > 1 ? 's' : ''} dentro dela saem junto.`
+      : 'A coluna esta vazia, nenhuma tarefa se perde.',
+    confirmLabel: 'Excluir coluna',
+  })) return;
   try {
     await store.deleteBucket(bucket);
   } catch (err) { toast.error(err.message); }

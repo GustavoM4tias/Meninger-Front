@@ -7,6 +7,7 @@ import { ref } from 'vue';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Button from '@/components/UI/Button.vue';
 import { useToast } from 'vue-toastification';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const toast = useToast();
 
@@ -30,15 +31,13 @@ const fullOpts = ref({
 });
 
 async function doFullSync() {
-    if (!confirm(
-        '🔁 Sincronizar TUDO da Meta?\n\n' +
-        'Vai rodar em sequência:\n' +
-        '  1. Forms (Meta Lead Forms)\n' +
-        `  2. Campanhas (últimos ${fullOpts.value.sinceDays} dias)\n` +
-        `  3. Anúncios (${fullOpts.value.adsAllStatuses ? 'TODAS' : 'só ATIVAS'} campanhas)\n` +
-        `  4. Leads históricos (últimos ${fullOpts.value.historicalDays} dias)\n\n` +
-        'Pode demorar alguns minutos. Tudo isso roda no cron a cada 2h em horário comercial.'
-    )) return;
+    if (!await pedirConfirmacao({
+        title: 'Sincronizar tudo da Meta agora?',
+        consequence: `Roda em sequencia: forms, campanhas dos ultimos ${fullOpts.value.sinceDays} dias, anuncios (${fullOpts.value.adsAllStatuses ? 'todas' : 'so as ativas'} campanhas) e leads historicos dos ultimos ${fullOpts.value.historicalDays} dias.`,
+        hint: 'Pode levar alguns minutos. Isso ja roda sozinho a cada 2h em horario comercial.',
+        tone: 'accent',
+        confirmLabel: 'Sincronizar tudo',
+    })) return;
     await store.runFullSync({ ...fullOpts.value });
 }
 
@@ -47,13 +46,23 @@ async function doSync() {
 }
 
 async function doImportHistorical() {
-    if (!confirm(`Importar leads históricos dos últimos ${fullOpts.value.historicalDays} dias da Meta?`)) return;
+    if (!await pedirConfirmacao({
+        title: `Importar os leads dos ultimos ${fullOpts.value.historicalDays} dias da Meta?`,
+        consequence: 'Lead que ja existe aqui e ignorado - a importacao nao duplica.',
+        tone: 'accent',
+        confirmLabel: 'Importar',
+    })) return;
     const result = await store.importHistorical({ sinceDays: fullOpts.value.historicalDays });
     if (result) toast.success(`✅ ${result.inserted} novos · ${result.duplicates} dup · ${result.errors?.length || 0} erro(s).`);
 }
 
 async function doReparse() {
-    if (!confirm('Re-processar leads com campos null?')) return;
+    if (!await pedirConfirmacao({
+        title: 'Re-processar os leads com campos vazios?',
+        consequence: 'Le de novo a resposta original da Meta e preenche o que ficou em branco. Nada e apagado.',
+        tone: 'accent',
+        confirmLabel: 'Re-processar',
+    })) return;
     const result = await store.reparseExistingLeads();
     if (result) toast.success(`✅ ${result.updated} atualizados de ${result.scanned} escaneados.`);
 }
@@ -66,14 +75,12 @@ async function doDispatchHistorical() {
         toast.warning('⚠️ Modo sombra (dry-run) ainda está LIGADO.\n\nDesligue em Configurações › Geral e salve antes de disparar — senão nada é enviado ao CV.');
         return;
     }
-    const ok = confirm(
-        `Disparar pro CV desde ${pre.cutoff}?\n\n` +
-        `• Histórico da Meta: ${pre.historical_total}\n` +
-        `• Fila segurada pela sombra (routed): ${pre.routed_pending}\n` +
-        `• Total no backlog: ${pre.total}\n\n` +
-        'Envia em lotes de 500 (resumível). Quem já existe no CV é ATUALIZADO (não duplica). ' +
-        'Histórico de campanha sem vínculo fica de fora.'
-    );
+    const ok = await pedirConfirmacao({
+        title: `Disparar ${pre.total} lead(s) para o CV desde ${pre.cutoff}?`,
+        consequence: `Sao ${pre.historical_total} do historico da Meta e ${pre.routed_pending} da fila segurada pela sombra. Quem ja existe no CV e atualizado, nao duplicado.`,
+        hint: 'Envia em lotes de 500 e da para retomar. Historico de campanha sem vinculo fica de fora.',
+        confirmLabel: 'Disparar para o CV',
+    });
     if (!ok) return;
     // 2) Disparo real do lote.
     const result = await store.dispatchHistorical({ cutoff: CUTOFF, preview: false, limit: 500 });
@@ -88,7 +95,13 @@ async function doDispatchHistorical() {
 }
 
 async function doMigrateMappings() {
-    if (!confirm('Migrar mapping form → campanhas? Roda 1x na transição.')) return;
+    if (!await pedirConfirmacao({
+        title: 'Migrar o vinculo de formulario para campanha?',
+        consequence: 'Reescreve o vinculo de cada form para a campanha correspondente.',
+        hint: 'E uma migracao de transicao: roda uma vez so.',
+        tone: 'accent',
+        confirmLabel: 'Migrar',
+    })) return;
     const result = await store.migrateMappings();
     if (result) toast.success(`✅ ${result.forms_processed} forms → ${result.campaigns_updated} campanhas atualizadas.`);
 }

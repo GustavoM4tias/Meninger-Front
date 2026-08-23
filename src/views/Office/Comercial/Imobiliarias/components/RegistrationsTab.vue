@@ -12,6 +12,7 @@ import Badge from '@/components/UI/Badge.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import DetailModal from './DetailModal.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const LP_HOST = 'https://lp.menin.com.br';
 
@@ -58,7 +59,12 @@ async function copyLink(r) {
 }
 
 async function revoke(r) {
-    if (!confirm('Revogar este link? Quem o recebeu não conseguirá mais preencher.')) return;
+    if (!await pedirConfirmacao({
+        title: 'Revogar este link de cadastro?',
+        consequence: 'Quem recebeu o link para de conseguir preencher, na hora. Quem ja enviou continua cadastrado.',
+        hint: 'Para liberar de novo e preciso gerar um link novo.',
+        confirmLabel: 'Revogar link',
+    })) return;
     try {
         await store.revokeInvite(r.id);
         toast.success('Link revogado.');

@@ -357,6 +357,8 @@ ${inputs}
 ${consentLine}  <button type="submit">${ctaText}</button>
 </form>
 <script>
+// Os alert() abaixo sao de proposito e NAO devem virar toast: este trecho e
+// copiado para o site do cliente, onde nada do Office existe.
 const f = document.getElementById('form-menin');
 f.addEventListener('submit', async (e) => {
   e.preventDefault();

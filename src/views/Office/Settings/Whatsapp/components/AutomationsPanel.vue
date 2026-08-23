@@ -12,6 +12,7 @@ import Switch from '@/components/UI/Switch.vue'
 import Input from '@/components/UI/Input.vue'
 import Select from '@/components/UI/Select.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const TA = 'w-full rounded-lg border border-line bg-surface-sunken px-3 py-2.5 text-[12.5px] font-mono leading-relaxed text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring/30 focus:border-accent/40 transition resize-y'
 const LABEL = 'block text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5'
@@ -104,7 +105,11 @@ async function createNew() {
   } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
 }
 async function remove(a) {
-  if (!confirm(`Excluir a automação "${a.name}"?`)) return
+  if (!await pedirConfirmacao({
+    title: `Excluir a automacao "${a.name}"?`,
+    consequence: 'As mensagens que ela dispararia deixam de sair, a partir de agora.',
+    confirmLabel: 'Excluir automacao',
+  })) return
   try { await api.deleteAutomation(a.id); automations.value = automations.value.filter(x => x.id !== a.id) }
   catch (e) { notify(e.message, 'err') }
 }

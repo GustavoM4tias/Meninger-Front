@@ -13,6 +13,7 @@ import Input from '@/components/UI/Input.vue'
 import Select from '@/components/UI/Select.vue'
 import SegmentedControl from '@/components/UI/SegmentedControl.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const TA = 'w-full rounded-lg border border-line bg-surface-sunken px-3 py-2.5 text-[12.5px] leading-relaxed text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring/30 focus:border-accent/40 transition resize-y'
 const LABEL = 'block text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5'
@@ -428,7 +429,11 @@ async function createKey() {
   } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
 }
 async function dropKey(k) {
-  if (!confirm(`Desativar a chave "${k.name}"? Sistemas usando ela param de conseguir postar leads.`)) return
+  if (!await pedirConfirmacao({
+    title: `Desativar a chave "${k.name}"?`,
+    consequence: 'Todo sistema que usa esta chave para de conseguir postar lead, na hora e sem aviso.',
+    confirmLabel: 'Desativar chave',
+  })) return
   try { await api.deactivateApiKey(k.id); apiKeys.value = await api.listApiKeys() }
   catch (e) { notify(e.message, 'err') }
 }

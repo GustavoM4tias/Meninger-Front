@@ -19,6 +19,7 @@ import Switch from '@/components/UI/Switch.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Favorite from '@/components/config/Favorite.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const router = useRouter();
 const perm = usePermissionStore();
@@ -152,7 +153,11 @@ async function saveItem() {
 
 async function deactivateItem(item) {
   const label = `${labelSingular.value.toLowerCase()} "${item.name}"`;
-  if (!confirm(`Desativar ${label}?`)) return;
+  if (!await pedirConfirmacao({
+    title: `Desativar ${label}?`,
+    consequence: 'Some das listas novas, mas quem ja esta classificado assim continua como esta.',
+    confirmLabel: 'Desativar',
+  })) return;
   try {
     const map = {
       positions:   store.deactivatePosition,

@@ -32,6 +32,8 @@ import {
   cityKey, buildCityCanonicalMap, canonicalCity,
 } from './projectionUtils';
 
+import { pedirConfirmacao } from '@/composables/useConfirm';
+
 const route = useRoute();
 const store = useProjectionsStore();
 const toast = useToast();
@@ -442,17 +444,29 @@ const exportSource = computed(() => {
 });
 
 /* ── Guardas / troca de período ────────────────────────────────────────────── */
+const PERGUNTA_SAIDA = {
+  consequence: 'O que voce mudou desde a ultima gravacao nao vai para o servidor.',
+  hint: 'O rascunho fica guardado neste navegador, entao da para retomar depois.',
+  confirmLabel: 'Sair sem salvar',
+};
+
 async function changePeriod(fn) {
-  if (dirty.value && !confirm('Há alterações não salvas neste período. Trocar mesmo assim? (o rascunho fica guardado)')) return;
+  if (dirty.value && !await pedirConfirmacao({
+    title: 'Trocar de periodo com alteracoes nao salvas?',
+    ...PERGUNTA_SAIDA,
+    confirmLabel: 'Trocar mesmo assim',
+  })) return;
   fn();
   await nextTick();
   await refresh();
 }
 
 function beforeUnload(e) { if (dirty.value) { e.preventDefault(); e.returnValue = ''; } }
-onBeforeRouteLeave(() => {
+/* O guard aceita promessa, entao a confirmacao do Office cabe aqui como
+   cabia o confirm() do navegador. */
+onBeforeRouteLeave(async () => {
   if (!dirty.value) return true;
-  return confirm('Você tem alterações não salvas. Sair mesmo assim? (o rascunho fica guardado)');
+  return await pedirConfirmacao({ title: 'Sair com alteracoes nao salvas?', ...PERGUNTA_SAIDA });
 });
 
 onMounted(async () => {

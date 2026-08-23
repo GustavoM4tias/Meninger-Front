@@ -203,6 +203,7 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import { useToast } from 'vue-toastification';
 import { usePlannerStore } from '@/stores/Microsoft/plannerStore';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const props = defineProps({
   task:      { type: Object, required: true },
@@ -379,7 +380,11 @@ function removeChecklistItem(id) {
 // ── Excluir ───────────────────────────────────────────────────────────────────
 
 async function confirmDelete() {
-  if (!confirm(`Excluir a tarefa "${props.task.title}"?`)) return;
+  if (!await pedirConfirmacao({
+    title: `Excluir a tarefa "${props.task.title}"?`,
+    consequence: 'Ela sai tambem do Planner no Microsoft 365, para todo mundo do plano.',
+    confirmLabel: 'Excluir tarefa',
+  })) return;
   try {
     await store.deleteTask(props.task);
     emit('deleted');

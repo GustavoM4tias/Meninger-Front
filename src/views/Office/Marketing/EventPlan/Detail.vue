@@ -26,6 +26,7 @@ import EventFormModal from './components/EventFormModal.vue';
 import ItemFormModal from './components/ItemFormModal.vue';
 import RequiredItemChoiceModal from './components/RequiredItemChoiceModal.vue';
 import PlanTimeline from './components/PlanTimeline.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const store = useEventPlanStore();
 const route = useRoute();
@@ -138,7 +139,11 @@ async function salvarEvento(payload) {
 }
 
 async function removerEvento(event) {
-    if (!confirm(`Excluir "${event.title}" e todos os itens dele?`)) return;
+    if (!await pedirConfirmacao({
+        title: `Excluir o evento "${event.title}"?`,
+        consequence: 'Os itens lancados dentro dele saem junto, e com eles o valor que somavam no plano.',
+        confirmLabel: 'Excluir evento',
+    })) return;
     try {
         await store.removeEvent(event.id);
         toast.success('Evento excluído.');
@@ -154,7 +159,11 @@ async function salvarItem(payload) {
 }
 
 async function removerItem(item) {
-    if (!confirm(`Excluir o item "${item.name}"?`)) return;
+    if (!await pedirConfirmacao({
+        title: `Excluir o item "${item.name}"?`,
+        consequence: 'O valor dele sai do total que vai a autorizacao.',
+        confirmLabel: 'Excluir item',
+    })) return;
     try {
         await store.removeItem(item.id);
         toast.success('Item excluído.');
@@ -162,10 +171,16 @@ async function removerItem(item) {
 }
 
 async function enviar() {
-    const message = plan.value?.has_pending_extras && mode.value === 'view'
-        ? 'Enviar o evento extra para validação? Os eventos já decididos continuam como estão.'
-        : 'Enviar o plano para validação? Depois de enviado ele trava para edição até ser decidido ou devolvido.';
-    if (!confirm(message)) return;
+    const pergunta = plan.value?.has_pending_extras && mode.value === 'view'
+        ? {
+            title: 'Enviar o evento extra para validacao?',
+            consequence: 'So o evento extra vai. Os eventos ja decididos continuam como estao.',
+          }
+        : {
+            title: 'Enviar o plano para validacao?',
+            consequence: 'Depois de enviado o plano trava para edicao ate ser decidido ou devolvido.',
+          };
+    if (!await pedirConfirmacao({ ...pergunta, tone: 'accent', confirmLabel: 'Enviar' })) return;
     try {
         await store.submitPlan();
         toast.success('Plano enviado para validação.');

@@ -7,6 +7,7 @@ import { usePersistedRef, clearPersisted } from '@/utils/usePersistedRef';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
 import EventFormFields from './EventFormFields.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const PERSIST_KEY = 'event:draft:add';
 
@@ -82,11 +83,14 @@ async function submit() {
   }
 }
 
-function discardDraft() {
-  if (confirm('Descartar o rascunho deste evento?')) {
-    clearPersisted(PERSIST_KEY);
-    form.value = emptyForm();
-  }
+async function discardDraft() {
+  if (!await pedirConfirmacao({
+    title: 'Descartar o rascunho deste evento?',
+    consequence: 'O que voce digitou ate aqui se perde e o formulario volta em branco.',
+    confirmLabel: 'Descartar',
+  })) return;
+  clearPersisted(PERSIST_KEY);
+  form.value = emptyForm();
 }
 
 function onKey(e) {

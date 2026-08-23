@@ -19,6 +19,7 @@ import Select from '@/components/UI/Select.vue'
 import SegmentedControl from '@/components/UI/SegmentedControl.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
 import Modal from '@/components/UI/Modal.vue'
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
@@ -201,7 +202,11 @@ async function toggleTerm(g, enabled) {
   catch (e) { notify(e.message, 'err'); g.enabled = prev }
 }
 async function removeTerm(g) {
-  if (!confirm(`Excluir o termo "${g.term}"?`)) return
+  if (!await pedirConfirmacao({
+    title: `Excluir o termo "${g.term}"?`,
+    consequence: 'A Eme deixa de saber o que ele significa e volta a responder por conta propria sobre ele.',
+    confirmLabel: 'Excluir termo',
+  })) return
   try { await api.deleteTerm(g.id); glossary.value = glossary.value.filter(x => x.id !== g.id) }
   catch (e) { notify(e.message, 'err') }
 }
@@ -226,13 +231,24 @@ async function doPublish() {
   catch (e) { notify(e.message, 'err') } finally { busy.value = false }
 }
 async function doRollback(v) {
-  if (!confirm(`Reativar a versão "${v.label}"?`)) return
+  if (!await pedirConfirmacao({
+    title: `Reativar a versao "${v.label}"?`,
+    consequence: 'A Eme passa a responder por esta versao para todo mundo, agora.',
+    hint: 'A versao que esta no ar continua no historico e da para voltar.',
+    tone: 'accent',
+    confirmLabel: 'Reativar versao',
+  })) return
   busy.value = true
   try { await api.rollback(v.id); notify('Versão reativada.'); await load() }
   catch (e) { notify(e.message, 'err') } finally { busy.value = false }
 }
 async function doDeactivate() {
-  if (!confirm('Desativar o cérebro e voltar ao comportamento padrão (fallback)?')) return
+  if (!await pedirConfirmacao({
+    title: 'Desativar o cerebro da Eme?',
+    consequence: 'Ela volta ao comportamento padrao para todo mundo: perde as regras, o glossario e o contexto configurados aqui.',
+    hint: 'As versoes ficam guardadas - da para publicar de novo depois.',
+    confirmLabel: 'Desativar cerebro',
+  })) return
   busy.value = true
   try { await api.deactivate(); notify('Desativado — fallback no ar.'); await load() }
   catch (e) { notify(e.message, 'err') } finally { busy.value = false }

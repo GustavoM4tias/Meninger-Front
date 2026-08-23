@@ -27,6 +27,7 @@ import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import Badge from '@/components/UI/Badge.vue';
 import IconButton from '@/components/UI/IconButton.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const toast = useToast();
 const router = useRouter();
@@ -87,9 +88,13 @@ function adicionarEtapa() {
     novaEtapa.value = '';
 }
 
-function removerEtapa(index) {
+async function removerEtapa(index) {
     const st = settings.value.stages[index];
-    if (!confirm(`Remover a etapa "${st.name}"? Planos em andamento nela ficam sem etapa correspondente.`)) return;
+    if (!await pedirConfirmacao({
+        title: `Remover a etapa "${st.name}"?`,
+        consequence: 'Planos que estao parados nesta etapa ficam sem etapa correspondente, e travam ate alguem move-los.',
+        confirmLabel: 'Remover etapa',
+    })) return;
     settings.value.stages.splice(index, 1);
     reordenar();
 }
@@ -171,7 +176,11 @@ async function criarPerfil() {
 }
 
 async function desativarPerfil(profile) {
-    if (!confirm(`Desativar o perfil "${profile.name}"? As decisões já registradas continuam no histórico.`)) return;
+    if (!await pedirConfirmacao({
+        title: `Desativar o perfil "${profile.name}"?`,
+        consequence: 'Ele some das escolhas novas. As decisoes ja registradas continuam no historico.',
+        confirmLabel: 'Desativar perfil',
+    })) return;
     try {
         await api.removeAuthProfile(profile.id);
         await load();

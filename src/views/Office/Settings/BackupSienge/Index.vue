@@ -13,6 +13,7 @@ import EmptyState from '@/components/UI/EmptyState.vue'
 
 import BackupFilters from './components/BackupFilters.vue'
 import RunningPipeline from './components/RunningPipeline.vue'
+import { pedirConfirmacao } from '@/composables/useConfirm';
 import {
     formatBytes, formatDate, formatDuration, formatTime,
     stageLabel, statusIcon, statusLabel, statusVariant,
@@ -240,14 +241,13 @@ async function refresh() {
 
 // ─── Ações ──────────────────────────────────────────────────────────────────
 async function onTriggerFullBackup() {
-    if (!confirm('Disparar pipeline completo?\n\n' +
-        '• Download do Sienge (~5-20 min)\n' +
-        '• pg_restore no banco staging (~15-30 min)\n' +
-        '• Validação + swap atômico (~1s)\n' +
-        '• Reaplicação de permissões\n\n' +
-        'Banco de produção fica intocado até validação OK. ' +
-        'Em caso de falha, dado antigo é preservado.\n\n' +
-        'Duração total estimada: 20-50 min.')) return
+    if (!await pedirConfirmacao({
+        title: 'Disparar o pipeline completo do backup?',
+        consequence: 'Download do Sienge, restore no banco de staging, validacao e troca atomica. Leva de 20 a 50 minutos.',
+        hint: 'A producao fica intocada ate a validacao passar. Se falhar, o dado antigo e preservado.',
+        tone: 'accent',
+        confirmLabel: 'Disparar pipeline',
+    })) return
     try {
         await store.triggerFullBackup()
         toast.success('Backup iniciado. Acompanhe o status abaixo.')
@@ -262,12 +262,12 @@ const cancelling = ref(false)
 async function onCancelRunning() {
     const running = store.runningBackup
     if (!running) return
-    const msg = 'Marcar este backup como FALHO?\n\n' +
-        'Use somente se o processo morreu fora do controle ' +
-        '(ex: redeploy do Railway durante o restore). ' +
-        'Não mata processo nenhum - apenas libera o estado pra rodar de novo.\n\n' +
-        'Se o pg_restore ainda estiver rodando no servidor, ele continua até terminar.'
-    if (!confirm(msg)) return
+    if (!await pedirConfirmacao({
+        title: 'Marcar este backup como falho?',
+        consequence: 'Isto nao mata processo nenhum: se o pg_restore ainda estiver rodando no servidor, ele continua ate o fim. So libera o estado para disparar de novo.',
+        hint: 'Use apenas quando o processo morreu fora do controle, como um redeploy no meio do restore.',
+        confirmLabel: 'Marcar como falho',
+    })) return
     cancelling.value = true
     try {
         await store.cancelBackup(running.id)

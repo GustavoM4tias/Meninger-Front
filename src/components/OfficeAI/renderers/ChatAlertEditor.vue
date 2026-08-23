@@ -13,6 +13,7 @@ import API_URL from '@/config/apiUrl';
 
 import Spinner from '@/components/UI/Spinner.vue';
 import ChatText from './ChatText.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const props = defineProps({
   action: { type: Object, required: true },
@@ -237,7 +238,11 @@ async function fireNow() {
 
 async function deleteAlert() {
   if (!props.action.alertId) return;
-  if (!confirm(`Excluir o alerta "${form.value.name}"?`)) return;
+  if (!await pedirConfirmacao({
+    title: `Excluir o alerta "${form.value.name}"?`,
+    consequence: 'A consulta para de rodar sozinha. Os avisos que ele ja mandou continuam no historico.',
+    confirmLabel: 'Excluir alerta',
+  })) return;
   try {
     await store.remove(props.action.alertId);
     toast.success('Alerta excluído');

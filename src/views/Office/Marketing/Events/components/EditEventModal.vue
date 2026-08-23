@@ -7,6 +7,7 @@ import { usePersistedRef, clearPersisted } from '@/utils/usePersistedRef';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
 import EventFormFields from './EventFormFields.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -107,11 +108,14 @@ async function submit() {
   }
 }
 
-function discardDraft() {
-  if (confirm('Descartar as alterações e voltar ao original?')) {
-    clearPersisted(persistKey.value);
-    form.value = initialForm();
-  }
+async function discardDraft() {
+  if (!await pedirConfirmacao({
+    title: 'Descartar as alteracoes e voltar ao original?',
+    consequence: 'O que voce mudou desde a ultima gravacao se perde.',
+    confirmLabel: 'Descartar alteracoes',
+  })) return;
+  clearPersisted(persistKey.value);
+  form.value = initialForm();
 }
 
 function onKey(e) {

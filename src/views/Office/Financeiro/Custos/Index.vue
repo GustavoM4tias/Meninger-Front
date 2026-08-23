@@ -627,6 +627,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Favorite from '@/components/config/Favorite.vue';
 import Export from '@/components/config/Export.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const store = useExpensesStore();
 const contractsStore = useContractsStore();
@@ -1014,11 +1015,16 @@ async function removeExpense(exp) {
   const billId = exp.billId ?? exp.bill?.id ?? null;
   const parts = Number(exp.installmentsNumber || 0);
 
-  const msg = (billId && parts > 1)
-    ? `Parcela ${exp.installmentNumber}/${parts} do Título ${billId}.\n\nAo excluir, TODAS as parcelas serão removidas. Confirmar?`
-    : 'Deseja excluir este custo?';
+  /* Excluir UMA parcela remove o titulo inteiro. Isso precisa estar escrito
+     antes do clique, e com o numero de parcelas. */
+  const pergunta = (billId && parts > 1)
+    ? {
+        title: `Excluir a parcela ${exp.installmentNumber}/${parts} do titulo ${billId}?`,
+        consequence: `As ${parts} parcelas do titulo saem juntas - nao da para excluir so esta.`,
+      }
+    : { title: 'Excluir este custo?', consequence: 'Ele sai do total do periodo.' };
 
-  if (!confirm(msg)) return;
+  if (!await pedirConfirmacao({ ...pergunta, confirmLabel: 'Excluir' })) return;
 
   try {
     await store.deleteExpense(exp.id);
@@ -1031,7 +1037,11 @@ async function removeExpense(exp) {
 
 async function removeSelectedExpenses() {
   if (!selectedExpenseIds.value.length) return;
-  if (!confirm(`Excluir ${selectedExpenseIds.value.length} custo(s) selecionado(s)?`)) return;
+  if (!await pedirConfirmacao({
+    title: `Excluir ${selectedExpenseIds.value.length} custo(s) selecionado(s)?`,
+    consequence: 'Todos saem do total do periodo de uma vez.',
+    confirmLabel: 'Excluir selecionados',
+  })) return;
 
   try {
     await Promise.all(selectedExpenseIds.value.map(id => store.deleteExpense(id)));

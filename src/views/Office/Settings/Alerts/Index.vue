@@ -15,6 +15,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import AlertEditModal from './components/AlertEditModal.vue';
 import AlertLogsModal from './components/AlertLogsModal.vue';
 import AlertShareModal from './components/AlertShareModal.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const store = useAlertStore();
 const toast = useToast();
@@ -71,7 +72,11 @@ async function onToggle(rule) {
 }
 
 async function onRemove(rule) {
-  if (!confirm(`Excluir o alerta "${rule.name}"?`)) return;
+  if (!await pedirConfirmacao({
+    title: `Excluir o alerta "${rule.name}"?`,
+    consequence: 'A consulta para de rodar sozinha. Os avisos que ele ja mandou continuam no historico.',
+    confirmLabel: 'Excluir alerta',
+  })) return;
   try { await store.remove(rule.id); toast.success('Alerta excluído.'); }
   catch { toast.error('Falha ao excluir.'); }
 }

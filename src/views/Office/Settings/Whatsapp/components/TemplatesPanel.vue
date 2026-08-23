@@ -12,6 +12,7 @@ import Button from '@/components/UI/Button.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import TemplateCreateModal from './TemplateCreateModal.vue';
 import { useToast } from 'vue-toastification';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const toast = useToast();
 
@@ -75,13 +76,22 @@ const CATEGORY_CLS = {
 const categoryCls = (c) => CATEGORY_CLS[c] || 'bg-surface-sunken text-ink-subtle border-line';
 
 const onDelete = async (t) => {
-  if (!confirm(`Excluir o template "${t.name}"? Isso remove na Meta também.`)) return;
+  if (!await pedirConfirmacao({
+    title: `Excluir o template "${t.name}"?`,
+    consequence: 'Ele sai tambem da Meta. Todo fluxo que dependia dele para de enviar.',
+    hint: 'Recriar exige nova aprovacao da Meta, que leva de minutos a horas.',
+    confirmLabel: 'Excluir template',
+  })) return;
   try {
     await store.deleteTemplate(t.name);
   } catch (e) {
     // 409 = template em uso por fluxo crítico; oferece a confirmação extra.
     const msg = String(e?.message || '');
-    if (msg.includes('TEMPLATE_IN_USE') && confirm(`${t.name} está em uso por um fluxo crítico. Excluir mesmo assim?`)) {
+    if (msg.includes('TEMPLATE_IN_USE') && await pedirConfirmacao({
+      title: `"${t.name}" esta em uso por um fluxo critico. Excluir mesmo assim?`,
+      consequence: 'O fluxo que depende dele para de enviar mensagem na hora, sem aviso para quem usa.',
+      confirmLabel: 'Excluir mesmo assim',
+    })) {
       await store.deleteTemplate(t.name, { force: true }).catch(err => toast.error('Falha ao excluir: ' + (err?.message || '')));
       return;
     }

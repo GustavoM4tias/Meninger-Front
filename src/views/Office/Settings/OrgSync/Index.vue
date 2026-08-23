@@ -26,6 +26,7 @@ import Badge from '@/components/UI/Badge.vue';
 import Modal from '@/components/UI/Modal.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Favorite from '@/components/config/Favorite.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const store = useOrgSyncStore();
 const carregamento = useCarregamentoStore();
@@ -176,10 +177,12 @@ const selectedCount = computed(() => selectedIds.value.size);
 const bulkCompanyModal = ref(false);
 const bulkCompanyValue = ref('');
 
-async function runBulk(patch, confirmMsg, successMsg) {
+/* `pergunta` e null quando a decisao ja foi tomada em outro lugar (o modal de
+   empresa em lote), para nao perguntar duas vezes a mesma coisa. */
+async function runBulk(patch, pergunta, successMsg) {
   const ids = [...selectedIds.value];
   if (!ids.length) return;
-  if (confirmMsg && !confirm(confirmMsg)) return;
+  if (pergunta && !await pedirConfirmacao(pergunta)) return;
   try {
     carregamento.iniciarCarregamento();
     const r = await store.bulkUpdate(ids, patch);
@@ -194,13 +197,22 @@ async function runBulk(patch, confirmMsg, successMsg) {
 
 const bulkActivate = () => runBulk(
   { active: true },
-  `Reativar ${selectedCount.value} empreendimento(s)?`,
+  {
+    title: `Reativar ${selectedCount.value} empreendimento(s)?`,
+    consequence: 'Eles voltam a aparecer nas liberacoes de acesso.',
+    tone: 'accent',
+    confirmLabel: 'Reativar',
+  },
   'Empreendimento(s) reativado(s)'
 );
 
 const bulkDeactivate = () => runBulk(
   { active: false },
-  `Inativar ${selectedCount.value} empreendimento(s)? Eles somem das liberações de acesso.`,
+  {
+    title: `Inativar ${selectedCount.value} empreendimento(s)?`,
+    consequence: 'Eles somem das liberacoes de acesso. Quem hoje enxerga so por causa deles perde a visao.',
+    confirmLabel: 'Inativar',
+  },
   'Empreendimento(s) inativado(s)'
 );
 
@@ -273,7 +285,11 @@ function openPair(row) {
 
 async function confirmPair(candidate) {
   const base = pairModalRow.value;
-  if (!confirm(`Parear "${base.name}" com "${candidate.name}"? Os dois registros viram UM (liberações de acesso são unificadas).`)) return;
+  if (!await pedirConfirmacao({
+    title: `Parear "${base.name}" com "${candidate.name}"?`,
+    consequence: 'Os dois registros viram um so, e as liberacoes de acesso dos dois sao unificadas.',
+    confirmLabel: 'Parear',
+  })) return;
   try {
     await store.pair(base.id, candidate.id);
     pairModalRow.value = null;
@@ -308,7 +324,14 @@ async function saveCompany() {
 
 async function toggleActive(row) {
   const acao = row.active ? 'Inativar' : 'Reativar';
-  if (!confirm(`${acao} "${row.name}"? Empreendimento inativo some das liberações de acesso.`)) return;
+  if (!await pedirConfirmacao({
+    title: `${acao} "${row.name}"?`,
+    consequence: row.active
+      ? 'Empreendimento inativo some das liberacoes de acesso.'
+      : 'Ele volta a aparecer nas liberacoes de acesso.',
+    tone: row.active ? 'danger' : 'accent',
+    confirmLabel: acao,
+  })) return;
   try {
     await store.updateEnterprise(row.id, { active: !row.active });
     await buscar(false);
