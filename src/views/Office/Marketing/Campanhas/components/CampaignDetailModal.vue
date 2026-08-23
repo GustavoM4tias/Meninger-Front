@@ -1189,7 +1189,7 @@ function onFormEditorSaved() {
             </div>
           </div>
 
-          <!-- Gráfico ECharts dual-axis: bars (spend) + line (leads) -->
+          <!-- Duas faixas dividindo o eixo de tempo: investimento e leads. -->
           <CampaignDailyChart :daily="daily" :currency="campaign?.currency || 'BRL'" />
 
           <!-- Tabela detalhada por dia -->

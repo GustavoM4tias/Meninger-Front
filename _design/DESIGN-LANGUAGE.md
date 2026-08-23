@@ -550,6 +550,36 @@ passo em que é migrada - **nunca numa varredura à parte**.
 
 ## Gráficos
 
+### Nunca dois eixos no mesmo desenho
+
+Duas medidas de escalas diferentes (dinheiro e contagem, receita e percentual)
+**não dividem um gráfico**. As duas escalas se ajustam sozinhas e independentes,
+então o ponto onde uma série "passa por cima" da outra é artefato do
+auto-escalonamento - e parece um fato. Trocar o período de 30 para 7 dias muda o
+cruzamento sem um único dado mudar, e quem leu ali um "o lead ficou mais barato"
+leu uma coisa que o gráfico nunca disse.
+
+As três saídas, nesta ordem de preferência:
+
+1. **Duas faixas dividindo o mesmo eixo de tempo** (`grid` como array, eixo de
+   categoria repetido com `gridIndex`). Cada medida com a sua escala, declarada,
+   e a comparação "no mesmo dia" continua sendo uma linha vertical. Ligue o
+   ponteiro com `axisPointer: { link: [{ xAxisIndex: 'all' }] }` e deixe o
+   rótulo de data só na faixa de baixo.
+2. **A razão entre elas**, quando a pergunta real é a razão. "Custo por lead"
+   é o número que o eixo duplo estava pedindo para a pessoa calcular no olho
+   comparando duas alturas - então calcule e mostre.
+3. **Indexar as duas a uma base comum** (100 no primeiro período), quando o que
+   importa é a variação e não o valor absoluto.
+
+A referência é `CampaignDailyChart.vue`.
+
+### A legenda usa a cor da série, não uma parecida
+
+Quadradinho de legenda escrito à mão (`bg-accent`, `bg-data-pos`) enquanto o
+gráfico desenha com `t.fill(1)` e `t.color(3)` dá uma legenda que não
+corresponde a marca nenhuma. Leia a cor do tema e aplique por `:style`.
+
 Uma biblioteca só: **ECharts**. Não introduza a segunda.
 
 ```js
