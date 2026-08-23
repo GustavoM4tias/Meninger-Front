@@ -6,6 +6,7 @@ import Button from '@/components/UI/Button.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Badge from '@/components/UI/Badge.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -474,15 +475,29 @@ async function handleRetry() {
   const isCancelled = live.value.status === 'success' && live.value.payment_status === 'cancelled';
   const isRegenerate = isPending || isCancelled;
 
-  let confirmMsg;
+  let pergunta;
   if (isPending) {
-    confirmMsg = `Este boleto ainda está EM ABERTO.\n\nSe a condição do Recurso Próprio à Vista tiver mudado, o boleto atual será CANCELADO (baixado no Ecobrança) e um novo será emitido com a condição atual e ENVIADO ao cliente. Se nada tiver mudado, nenhuma ação é feita.`;
+    pergunta = {
+      title: 'Reemitir este boleto, que ainda esta em aberto?',
+      consequence: 'Se a condicao do Recurso Proprio a Vista mudou, o boleto atual e baixado no Ecobranca e um novo vai para o cliente com a condicao de hoje.',
+      hint: 'Se nada mudou, nada acontece.',
+      confirmLabel: 'Reemitir boleto',
+    };
   } else if (isCancelled) {
-    confirmMsg = `O boleto anterior desta reserva foi baixado.\n\nGerar um NOVO boleto (com as condições atuais da série) e enviá-lo ao cliente?`;
+    pergunta = {
+      title: 'Gerar um novo boleto para esta reserva?',
+      consequence: 'O novo boleto sai com as condicoes atuais da serie e e enviado ao cliente.',
+      hint: 'O boleto anterior desta reserva ja foi baixado.',
+      confirmLabel: 'Gerar e enviar',
+    };
   } else {
-    confirmMsg = `Re-disparar emissão do boleto pra reserva ${live.value.idreserva}?`;
+    pergunta = {
+      title: `Re-disparar a emissao do boleto da reserva ${live.value.idreserva}?`,
+      consequence: 'Refaz o fluxo completo de emissao e envia o boleto ao cliente.',
+      confirmLabel: 'Re-disparar',
+    };
   }
-  if (!confirm(confirmMsg)) return;
+  if (!await pedirConfirmacao({ ...pergunta, tone: 'accent' })) return;
 
   actionState.value.retrying = true;
   try {
@@ -514,11 +529,12 @@ async function handleRetry() {
 // disso, "Gerar novo boleto" emite a nova via sem tentar a baixa automática.
 async function handleMarkCancelled() {
   if (!live.value) return;
-  const msg = `ATENÇÃO: isto NÃO baixa o boleto no Ecobrança.\n\n`
-    + `Só marque como baixado se você JÁ baixou o título ${live.value.nosso_numero || ''} diretamente no portal do Ecobrança. `
-    + `Caso contrário, o cliente ficará com dois boletos em aberto.\n\n`
-    + `Confirmo que já baixei o título no Ecobrança e quero marcar como cancelado no sistema?`;
-  if (!confirm(msg)) return;
+  if (!await pedirConfirmacao({
+    title: 'Marcar como baixado no sistema?',
+    consequence: `Isto NAO baixa o boleto no Ecobranca. Se o titulo ${live.value.nosso_numero || ''} ainda estiver ativo la, o cliente fica com dois boletos em aberto.`,
+    hint: 'So confirme se voce ja baixou o titulo direto no portal do Ecobranca.',
+    confirmLabel: 'Ja baixei, marcar como cancelado',
+  })) return;
   actionState.value.marking = true;
   actionMsg.value = null;
   try {
@@ -540,7 +556,12 @@ async function handleMarkCancelled() {
 
 async function handleCheckPayment() {
   if (!live.value) return;
-  if (!confirm('Disparar verificação imediata no Ecobrança (sem esperar 8h)?')) return;
+  if (!await pedirConfirmacao({
+    title: 'Verificar o pagamento agora, sem esperar as 8h?',
+    consequence: 'Consulta o Ecobranca na hora e atualiza a situacao deste boleto. Nada e enviado ao cliente.',
+    tone: 'accent',
+    confirmLabel: 'Verificar agora',
+  })) return;
   actionState.value.checking = true;
   try {
     const r = await store.triggerPaymentCheck(live.value.id);

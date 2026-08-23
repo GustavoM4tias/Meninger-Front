@@ -72,6 +72,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
     // Filtros expandidos (alinhados com o backend listHistory). Arrays viram CSV
     // na query string; strings vazias são omitidas.
     const historyFilter = ref({
+        forma: [],
         status: ['success', 'error', 'processing', 'queued'], // multi: default sem 'skipped' (Sem série)
         paymentStatus: [],     // multi: pending/paid/cancelled/error
         empreendimento: [],    // multi (nomes exatos)
@@ -112,6 +113,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         const f = historyFilter.value;
         if (Array.isArray(f.status) && f.status.length) params.set('status', f.status.join(','));
         if (Array.isArray(f.paymentStatus) && f.paymentStatus.length) params.set('paymentStatus', f.paymentStatus.join(','));
+        if (Array.isArray(f.forma) && f.forma.length) params.set('forma', f.forma.join(','));
         if (Array.isArray(f.empreendimento) && f.empreendimento.length) params.set('empreendimento', f.empreendimento.join(','));
         if (f.idreserva) params.set('idreserva', f.idreserva);
         if (f.dateFrom)  params.set('dateFrom', f.dateFrom);

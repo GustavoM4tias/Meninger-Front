@@ -795,6 +795,12 @@
               </span>
             </template>
 
+            <template #cell-forma="{ row }">
+              <Badge :variant="formaVariant(row.forma)" size="sm">
+                <i :class="formaIcon(row.forma)" class="mr-1"></i>{{ formaLabel(row.forma) }}
+              </Badge>
+            </template>
+
             <template #cell-valor="{ row }">
               <span class="metric text-sm">{{ row.valor ? formatCurrency(row.valor) : '-' }}</span>
             </template>
@@ -894,6 +900,7 @@ import { useIncrementalList } from '@/composables/useIncrementalList';
 // Componentes próprios desta tela
 import BoletoFilters from './components/BoletoFilters.vue';
 import BoletoDetailModal from './components/BoletoDetailModal.vue';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const store = useBoletoStore();
 // Ações desta tela (lib/screenCapabilities.js no back): view/operate seguem a
@@ -1067,6 +1074,8 @@ async function handleSave() {
    Ordenação é `manual-sort`: a tabela recebe a lista já fatiada pelo scroll. */
 const COLUNAS = [
   { key: 'idreserva', label: '#Reserva', priority: 1, sortable: true, width: '8rem' },
+  // Boleto ou cartão: a mesma cobrança do ato, formas diferentes.
+  { key: 'forma', label: 'Forma', priority: 2, sortable: true, width: '7rem' },
   { key: 'titular_nome', label: 'Titular / Empreendimento', priority: 1, sortable: true },
   { key: 'status', label: 'Emissão', priority: 1, sortable: true, width: '10rem' },
   { key: 'valor', label: 'Valor', priority: 2, numeric: true, sortable: true, width: '8rem' },
@@ -1147,6 +1156,12 @@ watch(sentinela, (el) => inc.observar(el));
 /* Selo do pagamento pelos tokens. O `statusVariant` da emissão já existia mais
    abaixo, com skipped/queued - não duplicar. */
 const paymentVariant = (s) => ({ paid: 'success', cancelled: 'neutral', pending: 'warning' }[s] || 'neutral');
+
+/* Forma de pagamento. Os registros antigos vêm sem o campo porque nasceram
+   quando só existia boleto - tratamos a ausência como boleto. */
+const formaLabel = (f) => ({ boleto: 'Boleto', cartao: 'Cartão' }[f] || 'Boleto');
+const formaIcon = (f) => (f === 'cartao' ? 'fas fa-credit-card' : 'fas fa-barcode');
+const formaVariant = (f) => (f === 'cartao' ? 'info' : 'neutral');
 
 // ── Etapa CV: links diretos + badge na cor do workflow do CV ─────────────────
 const cvReservaUrl = (item) => `https://menin.cvcrm.com.br/gestor/comercial/reservas/${item.idreserva}/administrar`;
@@ -1333,18 +1348,24 @@ async function saveRule() {
 }
 
 async function confirmDeleteRule(rule) {
-  if (!confirm(`Excluir regra do empreendimento ${rule.empreendimento_nome || rule.idempreendimento_cv}?`)) return;
+  if (!await pedirConfirmacao({
+    title: `Excluir a regra de ${rule.empreendimento_nome || rule.idempreendimento_cv}?`,
+    consequence: 'Os boletos ja emitidos continuam como estao. Os proximos deste empreendimento passam a usar a regra geral.',
+    confirmLabel: 'Excluir regra',
+  })) return;
   await store.deleteComissionRule(rule.id);
 }
 
 async function handleSyncTemplate() {
   const isCreate = !store.whatsappTemplate?.approved_locally;
   if (isCreate) {
-    const ok = confirm(
-      'Enviar o template "boleto_caixa_ato_v1" para a Meta?\n\n'
-      + 'O template ficará em revisão por alguns minutos/horas antes de ser aprovado.\n'
-      + 'Enquanto não estiver aprovado, envios por WhatsApp falharão.'
-    );
+    const ok = await pedirConfirmacao({
+      title: 'Enviar o template "boleto_caixa_ato_v1" para a Meta?',
+      consequence: 'Enquanto a Meta nao aprovar, todo envio de boleto por WhatsApp falha.',
+      hint: 'A revisao da Meta leva de alguns minutos a algumas horas.',
+      tone: 'accent',
+      confirmLabel: 'Enviar para revisao',
+    });
     if (!ok) return;
   }
   await store.syncWhatsappTemplate();

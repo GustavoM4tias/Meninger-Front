@@ -34,6 +34,7 @@ const DEFAULT_DATE_TO   = toIsoDateLocal(today);
 const local = ref({
   status: ['success', 'error', 'processing', 'queued'], // default sem "Sem série"
   paymentStatus: [],
+  forma: [],            // boleto | cartao — vazio = as duas
   empreendimento: [],
   idreserva: '',
   dateFrom: DEFAULT_DATE_FROM,
@@ -96,6 +97,15 @@ const selectedCvRepasseLabels = computed({
   set: (labels) => { local.value.cvRepasse = labels.map(l => cvRepByLabel.value[l]).filter(Boolean); },
 });
 
+// Forma de pagamento: as duas maneiras de cobrar o MESMO ato. Vazio = as duas.
+const formaToLabel = { boleto: 'Boleto Caixa', cartao: 'Link de cartão' };
+const labelToForma = Object.fromEntries(Object.entries(formaToLabel).map(([v, l]) => [l, v]));
+const formaLabels = Object.values(formaToLabel);
+const selectedFormaLabels = computed({
+  get: () => (local.value.forma || []).map(v => formaToLabel[v] || v),
+  set: (labels) => { local.value.forma = labels.map(l => labelToForma[l] || l); },
+});
+
 // V-model adaptado: MultiSelector trabalha com labels; convertemos pra valores.
 const selectedStatusLabels = computed({
   get: () => local.value.status.map(v => statusToLabel[v] || v),
@@ -112,6 +122,7 @@ function syncFiltersFromUrl() {
   if (!Object.keys(q).length) return;
   if (q.status) local.value.status = String(q.status).split(',').filter(Boolean);
   if (q.paymentStatus) local.value.paymentStatus = String(q.paymentStatus).split(',').filter(Boolean);
+  if (q.forma) local.value.forma = String(q.forma).split(',').filter(Boolean);
   if (q.empreendimento) local.value.empreendimento = String(q.empreendimento).split(',').filter(Boolean);
   if (q.idreserva) local.value.idreserva = String(q.idreserva);
   if (q.dateFrom) local.value.dateFrom = String(q.dateFrom);
@@ -127,6 +138,7 @@ function syncUrlFromFilters() {
   const f = local.value;
   if (f.status.length)          q.status = f.status.join(',');
   if (f.paymentStatus.length)   q.paymentStatus = f.paymentStatus.join(',');
+  if (f.forma?.length)          q.forma = f.forma.join(',');
   if (f.empreendimento.length)  q.empreendimento = f.empreendimento.join(',');
   if (f.idreserva)              q.idreserva = f.idreserva;
   if (f.dateFrom)               q.dateFrom = f.dateFrom;
@@ -150,7 +162,7 @@ function clearFilters() {
   // Limpa tudo mas mantém o range padrão de 30 dias — evita "ah, sumiu tudo"
   // quando o usuário clica Limpar e nada aparece porque base é gigante.
   local.value = {
-    status: ['success', 'error', 'processing', 'queued'], paymentStatus: [], empreendimento: [],
+    status: ['success', 'error', 'processing', 'queued'], paymentStatus: [], forma: [], empreendimento: [],
     idreserva: '', dateFrom: DEFAULT_DATE_FROM, dateTo: DEFAULT_DATE_TO,
     dateField: 'created_at', q: '', cvSituacao: [], cvRepasse: [],
   };
@@ -167,6 +179,7 @@ const activeFiltersCount = computed(() => {
   const f = local.value;
   if (f.status.length) n++;
   if (f.paymentStatus.length) n++;
+  if (f.forma?.length) n++;
   if (f.empreendimento.length) n++;
   if (f.idreserva) n++;
   if (f.dateFrom)  n++;
@@ -224,6 +237,14 @@ onMounted(async () => {
         :label="local.dateField === 'paid_at' ? 'Pago a partir de' : 'Emitido a partir de'" />
       <Input v-model="local.dateTo" type="date"
         :label="local.dateField === 'paid_at' ? 'Pago até' : 'Emitido até'" />
+
+      <div>
+        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+          <i class="fas fa-money-check-dollar text-micro mr-1 text-ink-subtle"></i>Forma de pagamento
+        </label>
+        <MultiSelector v-model="selectedFormaLabels"
+          :options="formaLabels" placeholder="Boleto e cartão" :select-all="false" />
+      </div>
 
       <div>
         <label class="block text-micro font-medium text-ink-muted mb-1.5">
