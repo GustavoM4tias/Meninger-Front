@@ -71,171 +71,112 @@
         </div>
 
         <!-- Lista -->
-        <Surface variant="raised" padding="none" class="overflow-hidden">
-          <div v-if="store.historyLoading" class="py-14 grid place-items-center">
-            <Spinner />
-          </div>
+        <!-- A listagem é o primitivo. Era tabela à mão + lista de cartões
+             escrita em paralelo, e as duas versões divergiram: ORDENAR só
+             existia no cabeçalho da tabela, então quem abria no celular não
+             tinha como ordenar por nada. A ordenação vinha do servidor e os
+             botões estavam presos ao monitor. -->
+        <DataTable
+          :columns="histColumns"
+          :rows="store.history"
+          row-key="id"
+          :loading="store.historyLoading"
+          manual-sort
+          clickable
+          v-model:sort-by="ordenarPor"
+          v-model:sort-dir="ordenarDir"
+          empty-icon="fas fa-inbox"
+          empty-title="Nenhum cancelamento registrado"
+          empty-text="Quando o CV disparar o webhook de cancelamento de reserva, os casos aparecem aqui."
+          @row-click="openDetail">
 
-          <EmptyState v-else-if="!store.history.length"
-            icon="fas fa-inbox"
-            title="Nenhum cancelamento registrado"
-            description="Quando o CV disparar o webhook de cancelamento de reserva, os casos aparecem aqui." />
-
-          <template v-else>
-            <!-- Desktop: tabela -->
-            <div class="hidden md:block overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="text-left text-micro uppercase tracking-wider text-ink-subtle border-b border-line">
-                    <th v-for="col in histColumns" :key="col.key"
-                      class="px-4 py-3 font-medium"
-                      :class="[
-                        col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left',
-                        col.sortable ? 'select-none cursor-pointer hover:text-ink transition-colors' : '',
-                      ]"
-                      @click="col.sortable && store.setSort(col.key)">
-                      <span class="inline-flex items-center gap-1.5"
-                        :class="col.align === 'right' ? 'flex-row-reverse' : ''">
-                        {{ col.label }}
-                        <i v-if="col.sortable" class="text-[9px]" :class="sortIcon(col.key)"></i>
-                      </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in store.history" :key="item.id"
-                    class="border-b border-line last:border-0 hover:bg-surface-hover cursor-pointer transition-colors"
-                    @click="openDetail(item)">
-                    <td class="px-4 py-3 font-mono text-ink-muted whitespace-nowrap">
-                      #{{ item.id }}
-                      <span v-if="item.casos_count > 1"
-                        class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-micro font-semibold bg-ink/5 text-ink-muted border border-line align-middle"
-                        :title="`${item.casos_count} ocorrências desta reserva - abra o caso para ver todas`">
-                        <i class="fas fa-layer-group text-[9px]"></i> {{ item.casos_count }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3">
-                      <div class="font-medium text-ink">{{ item.titular_nome || '-' }}</div>
-                      <div class="text-xs text-ink-muted">Reserva {{ item.idreserva }}</div>
-                    </td>
-                    <td class="px-4 py-3">
-                      <div class="text-ink">{{ item.unidade_nome || '-' }}</div>
-                      <div class="text-xs text-ink-muted">{{ item.empreendimento || '-' }}</div>
-                    </td>
-                    <td class="px-4 py-3">
-                      <div v-if="item.contrato_numero" class="font-mono text-xs text-ink">{{ item.contrato_numero }}</div>
-                      <div v-else class="text-xs text-ink-subtle">sem contrato</div>
-                    </td>
-                    <td class="px-4 py-3">
-                      <Badge :variant="statusMeta(item.status).variant" size="sm" dot>
-                        {{ statusMeta(item.status).label }}
-                      </Badge>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-center">
-                      <div class="flex flex-wrap gap-1 justify-center">
-                        <a v-if="item.cv_situacao" :href="cvReservaUrl(item)" target="_blank" rel="noopener" @click.stop
-                          class="inline-flex items-center gap-1 px-2.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
-                          :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)"
-                          :title="`Reserva: ${item.cv_situacao} - abrir no CV`">
-                          <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
-                        </a>
-                        <a v-if="item.cv_situacao_repasse" :href="cvRepasseUrl(item)" target="_blank" rel="noopener" @click.stop
-                          class="inline-flex items-center gap-1 px-2.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity"
-                          :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)"
-                          :title="`Repasse: ${item.cv_situacao_repasse} - abrir no CV`">
-                          <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
-                        </a>
-                        <span v-if="!item.cv_situacao && !item.cv_situacao_repasse" class="text-xs text-ink-subtle">-</span>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3">
-                      <div class="flex flex-wrap gap-1">
-                        <Badge v-if="item.sienge_contrato_excluido" variant="danger" size="sm" outlined>Contrato excluído</Badge>
-                        <Badge v-if="item.cv_unidade_disponibilizada" variant="success" size="sm" outlined>Unidade liberada</Badge>
-                        <span v-if="!item.sienge_contrato_excluido && !item.cv_unidade_disponibilizada"
-                          class="text-xs text-ink-subtle">nenhuma</span>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-right text-xs text-ink-muted whitespace-nowrap">
-                      {{ formatDateTime(item.createdAt ?? item.created_at) }}
-                    </td>
-                    <td class="pr-3 py-3 text-right">
-                      <a :href="cvReservaUrl(item)" target="_blank" rel="noopener" @click.stop
-                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-subtle hover:text-accent hover:bg-surface-sunken transition-colors"
-                        title="Abrir reserva no CV">
-                        <i class="fas fa-arrow-up-right-from-square text-xs"></i>
-                      </a>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Mobile: cards -->
-            <div class="md:hidden divide-y divide-line">
-              <div v-for="item in store.history" :key="item.id"
-                class="w-full text-left px-4 py-3 active:bg-surface-hover cursor-pointer"
-                @click="openDetail(item)">
-                <div class="flex items-center justify-between gap-2 mb-1">
-                  <span class="font-medium text-ink truncate">{{ item.titular_nome || `Reserva ${item.idreserva}` }}</span>
-                  <div class="flex items-center gap-1 shrink-0">
-                    <Badge :variant="statusMeta(item.status).variant" size="sm" dot>
-                      {{ statusMeta(item.status).label }}
-                    </Badge>
-                    <a :href="cvReservaUrl(item)" target="_blank" rel="noopener" @click.stop
-                      class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-ink-subtle active:text-accent"
-                      title="Abrir reserva no CV">
-                      <i class="fas fa-arrow-up-right-from-square text-xs"></i>
-                    </a>
-                  </div>
-                </div>
-                <div class="text-xs text-ink-muted">
-                  Reserva {{ item.idreserva }} · {{ item.unidade_nome || '-' }} · {{ item.empreendimento || '-' }}
-                </div>
-                <div v-if="item.cv_situacao || item.cv_situacao_repasse || item.casos_count > 1"
-                  class="flex flex-wrap items-center gap-1 mt-1.5">
-                  <span v-if="item.cv_situacao"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted"
-                    :style="cvBadgeStyle(item.cv_situacao_cor_bg, item.cv_situacao_cor_nome)">
-                    <i class="fas fa-flag text-[9px]"></i>{{ item.cv_situacao }}
-                  </span>
-                  <span v-if="item.cv_situacao_repasse"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted"
-                    :style="cvBadgeStyle(item.cv_repasse_cor_bg, item.cv_repasse_cor_nome)">
-                    <i class="fas fa-building-columns text-[9px]"></i>{{ item.cv_situacao_repasse }}
-                  </span>
-                  <span v-if="item.casos_count > 1"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold bg-ink/5 text-ink-muted border border-line">
-                    <i class="fas fa-layer-group text-[9px]"></i> {{ item.casos_count }} ocorrências
-                  </span>
-                </div>
-                <div class="flex items-center justify-between mt-1.5">
-                  <div class="flex flex-wrap gap-1">
-                    <Badge v-if="item.sienge_contrato_excluido" variant="danger" size="sm" outlined>Contrato excluído</Badge>
-                    <Badge v-if="item.cv_unidade_disponibilizada" variant="success" size="sm" outlined>Unidade liberada</Badge>
-                  </div>
-                  <span class="text-micro text-ink-subtle">{{ formatDateTime(item.createdAt ?? item.created_at) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Paginação -->
-            <div v-if="store.totalPages > 1"
-              class="flex items-center justify-between gap-3 px-4 py-3 border-t border-line">
-              <span class="text-xs text-ink-muted">
-                <span class="font-mono tabular-nums">{{ store.historyTotal }}</span> registros
-              </span>
-              <div class="flex gap-1 flex-wrap justify-end">
-                <button v-for="p in store.totalPages" :key="p"
-                  @click="store.setPage(p)"
-                  class="h-8 min-w-8 px-2.5 rounded-lg text-sm font-medium transition-colors"
-                  :class="store.historyPage === p ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-hover'">
-                  {{ p }}
-                </button>
-              </div>
-            </div>
+          <template #cell-caso="{ row }">
+            <span class="font-mono text-ink-muted whitespace-nowrap">#{{ row.id }}</span>
+            <span v-if="row.casos_count > 1"
+              class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-micro font-semibold bg-ink/5 text-ink-muted border border-line align-middle"
+              :title="`${row.casos_count} ocorrências desta reserva - abra o caso para ver todas`">
+              <i class="fas fa-layer-group text-[9px]"></i> {{ row.casos_count }}
+            </span>
           </template>
-        </Surface>
+
+          <template #cell-titular="{ row }">
+            <span class="font-medium text-ink">{{ row.titular_nome || '-' }}</span>
+            <span class="block text-xs text-ink-muted font-normal">Reserva {{ row.idreserva }}</span>
+          </template>
+
+          <template #cell-unidade="{ row }">
+            <span class="text-ink">{{ row.unidade_nome || '-' }}</span>
+            <span class="block text-xs text-ink-muted">{{ row.empreendimento || '-' }}</span>
+          </template>
+
+          <template #cell-contrato="{ row }">
+            <span v-if="row.contrato_numero" class="font-mono text-xs text-ink">{{ row.contrato_numero }}</span>
+            <span v-else class="text-xs text-ink-subtle">sem contrato</span>
+          </template>
+
+          <template #cell-status="{ row }">
+            <Badge :variant="statusMeta(row.status).variant" size="sm" dot>
+              {{ statusMeta(row.status).label }}
+            </Badge>
+          </template>
+
+          <!-- Reserva e repasse são workflows diferentes no CV: a reserva pode
+               estar em Pendência enquanto o repasse segue noutra etapa. -->
+          <template #cell-_etapa="{ row }">
+            <span class="flex flex-wrap gap-1">
+              <a v-if="row.cv_situacao" :href="cvReservaUrl(row)" target="_blank" rel="noopener" @click.stop
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity focus-ring"
+                :style="cvBadgeStyle(row.cv_situacao_cor_bg, row.cv_situacao_cor_nome)"
+                :title="`Reserva: ${row.cv_situacao} - abrir no CV`">
+                <i class="fas fa-flag text-[9px]"></i>{{ row.cv_situacao }}
+              </a>
+              <a v-if="row.cv_situacao_repasse" :href="cvRepasseUrl(row)" target="_blank" rel="noopener" @click.stop
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-micro font-semibold border border-line bg-surface-sunken text-ink-muted hover:opacity-80 transition-opacity focus-ring"
+                :style="cvBadgeStyle(row.cv_repasse_cor_bg, row.cv_repasse_cor_nome)"
+                :title="`Repasse: ${row.cv_situacao_repasse} - abrir no CV`">
+                <i class="fas fa-building-columns text-[9px]"></i>{{ row.cv_situacao_repasse }}
+              </a>
+              <span v-if="!row.cv_situacao && !row.cv_situacao_repasse" class="text-xs text-ink-subtle">-</span>
+            </span>
+          </template>
+
+          <template #cell-_acoes="{ row }">
+            <span class="flex flex-wrap gap-1">
+              <Badge v-if="row.sienge_contrato_excluido" variant="danger" size="sm" outlined>Contrato excluído</Badge>
+              <Badge v-if="row.cv_unidade_disponibilizada" variant="success" size="sm" outlined>Unidade liberada</Badge>
+              <span v-if="!row.sienge_contrato_excluido && !row.cv_unidade_disponibilizada"
+                class="text-xs text-ink-subtle">nenhuma</span>
+            </span>
+          </template>
+
+          <template #cell-quando="{ row }">
+            <span class="whitespace-nowrap">{{ formatDateTime(row.createdAt ?? row.created_at) }}</span>
+          </template>
+
+          <template #actions="{ row }">
+            <a :href="cvReservaUrl(row)" target="_blank" rel="noopener"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-ink-subtle hover:text-accent hover:bg-surface-sunken transition-colors focus-ring"
+              title="Abrir reserva no CV">
+              <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+            </a>
+          </template>
+        </DataTable>
+
+        <!-- Paginação -->
+        <div v-if="store.totalPages > 1"
+          class="flex items-center justify-between gap-3 mt-3 px-1">
+          <span class="text-xs text-ink-muted">
+            <span class="font-mono tabular-nums">{{ store.historyTotal }}</span> registros
+          </span>
+          <div class="flex gap-1 flex-wrap justify-end">
+            <button v-for="p in store.totalPages" :key="p" type="button"
+              @click="store.setPage(p)"
+              class="h-10 min-w-10 px-2.5 rounded-lg text-sm font-medium transition-colors focus-ring"
+              :class="store.historyPage === p ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-hover'">
+              {{ p }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- ── TAB: Configurações ──────────────────────────────────────────────── -->
@@ -659,7 +600,10 @@
         <!-- Linha do tempo -->
         <div>
           <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle mb-2">Linha do tempo</h3>
-          <div v-if="store.timelineLoading" class="py-6 grid place-items-center"><Spinner /></div>
+          <!-- Esqueleto na FORMA da linha do tempo, nao roda no meio do vazio:
+               o bloco ja nasce com a altura que vai ter, entao o conteudo nao
+               empurra o resto do modal quando chega. -->
+          <Skeleton v-if="store.timelineLoading" variant="row" :lines="3" class="ml-2" />
           <div v-else-if="store.timelineError" class="text-sm text-data-neg">{{ store.timelineError }}</div>
           <ol v-else class="relative border-l border-line ml-2 space-y-3">
             <li v-for="evt in store.timelineEvents" :key="evt.id" class="ml-4">
@@ -719,7 +663,8 @@ import Switch from '@/components/UI/Switch.vue';
 import Modal from '@/components/UI/Modal.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
-import Spinner from '@/components/UI/Spinner.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
+import DataTable from '@/components/UI/DataTable.vue';
 import ReservaCancelFilters from './components/ReservaCancelFilters.vue';
 
 const store = useReservaCancelStore();
@@ -871,17 +816,32 @@ function formatDoc(v) {
 }
 
 // ── Colunas ordenáveis do histórico ───────────────────────────────────────────
+/* `priority` decide a ORDEM de aparicao no celular, nunca o que existe:
+   1 = titulo do cartao, 2 = corpo, 3 = atras de "Ver detalhes". Quem abre no
+   telefone precisa saber DE QUEM e a reserva e em que pe esta - o numero
+   interno do caso pode esperar um toque. */
 const histColumns = [
-  { key: 'caso',     label: 'Caso',             align: 'left',  sortable: true },
-  { key: 'titular',  label: 'Reserva / Titular', align: 'left', sortable: true },
-  { key: 'unidade',  label: 'Unidade',          align: 'left',  sortable: true },
-  { key: 'contrato', label: 'Contrato Sienge',  align: 'left',  sortable: true },
-  { key: 'status',   label: 'Status',           align: 'left',  sortable: true },
-  { key: '_etapa',   label: 'Etapa CV',         align: 'center',  sortable: false },
-  { key: '_acoes',   label: 'Ações executadas', align: 'left',  sortable: false },
-  { key: 'quando',   label: 'Quando',           align: 'right', sortable: true },
-  { key: '_link',    label: '',                 align: 'right', sortable: false },
+  { key: 'titular',  label: 'Reserva / Titular',  priority: 1, sortable: true },
+  { key: 'status',   label: 'Status',             priority: 1, sortable: true },
+  { key: 'unidade',  label: 'Unidade',            priority: 2, sortable: true },
+  { key: '_etapa',   label: 'Etapa CV',           priority: 2 },
+  { key: '_acoes',   label: 'Ações executadas',  priority: 2 },
+  { key: 'quando',   label: 'Quando',             priority: 2, sortable: true, numeric: true },
+  { key: 'contrato', label: 'Contrato Sienge',    priority: 3, sortable: true },
+  { key: 'caso',     label: 'Caso',               priority: 3, sortable: true },
 ];
+
+/* Quem ordena e o SERVIDOR (a lista chega paginada, entao ordenar so a pagina
+   seria pior que nao ordenar) - dai o `manual-sort`. O DataTable avisa coluna
+   e direcao, e a store aplica os dois de uma vez. */
+const ordenarPor = computed({
+  get: () => store.sortBy,
+  set: (v) => store.applySort(v, store.sortDir),
+});
+const ordenarDir = computed({
+  get: () => store.sortDir,
+  set: (v) => store.applySort(store.sortBy, v),
+});
 
 // ── Etapa CV: badge na cor do workflow do CV, clicável ────────────────────────
 // Reserva e repasse são workflows diferentes no CV: a reserva pode estar em
@@ -894,12 +854,6 @@ function cvBadgeStyle(bg, txt) {
   return { backgroundColor: bg, color: txt || '#fff', borderColor: 'transparent' };
 }
 
-function sortIcon(key) {
-  if (store.sortBy !== key) return 'fas fa-sort text-ink-subtle/40';
-  return store.sortDir === 'asc'
-    ? 'fas fa-sort-up text-accent'
-    : 'fas fa-sort-down text-accent';
-}
 
 function toggleStatusFilter(value) {
   const arr = store.historyFilter.status;

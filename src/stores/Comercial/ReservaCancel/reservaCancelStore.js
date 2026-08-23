@@ -122,6 +122,23 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
         fetchHistory();
     }
 
+    /* Ordenacao EXPLICITA (coluna e direcao de uma vez), que e o que o
+       DataTable manda. Ele avisa a coluna e a direcao em dois eventos
+       separados no mesmo clique, entao a busca e adiada para a proxima
+       microtarefa: sem isso, um clique no cabecalho viraria DUAS consultas ao
+       servidor, e a segunda chegaria por cima da primeira. */
+    let buscaAgendada = null;
+    function applySort(by, dir) {
+        sortBy.value = by || 'caso';
+        sortDir.value = dir === 'desc' ? 'desc' : 'asc';
+        historyPage.value = 1;
+        if (buscaAgendada) return;
+        buscaAgendada = Promise.resolve().then(() => {
+            buscaAgendada = null;
+            fetchHistory();
+        });
+    }
+
     function resetHistoryFilters() {
         historyFilter.value = {
             status: [], empreendimento: [], cvSituacao: [], cvRepasse: [],
@@ -217,7 +234,7 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
     return {
         settings, settingsLoading, settingsError, settingsSaved, fetchSettings, saveSettings,
         history, historyTotal, historyPage, historyLimit, historyLoading, historyError,
-        historyFilter, groupByReserva, fetchHistory, setPage, setSort, sortBy, sortDir, totalPages, resetHistoryFilters,
+        historyFilter, groupByReserva, fetchHistory, setPage, setSort, applySort, sortBy, sortDir, totalPages, resetHistoryFilters,
         stats, fetchStats, facets, fetchFacets,
         timelineLoading, timelineError, timelineEvents, timelineHistory, timelineAttempts, timelineCv, fetchTimeline,
         retryHistoryItem, processManual, simulateWebhook,

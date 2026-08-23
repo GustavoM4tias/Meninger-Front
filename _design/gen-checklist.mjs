@@ -1,8 +1,15 @@
 /** Gera o checklist markdown a partir do ui-map.json. */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = process.argv[2];
+/* Ancorado no PROPRIO arquivo, nao no diretorio de onde se chama. Antes era
+   `process.argv[2]`, entao rodar da raiz do front em vez de dentro de
+   `_design/` apontava para a pasta errada, o script morria - e quem tinha
+   silenciado a saida ficava lendo o mapa da semana passada achando que era
+   o de agora. O argumento continua valendo, para poder apontar outro repo. */
+const AQUI = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = process.argv[2] ? path.resolve(process.argv[2]) : path.join(AQUI, '..');
 const OUT = path.join(ROOT, '_design');
 fs.mkdirSync(OUT, { recursive: true });
 

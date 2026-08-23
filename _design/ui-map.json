@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-20",
+  "generated": "2026-08-23",
   "screens": [
     {
       "routes": [
@@ -10,7 +10,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 635,
+      "lines": 623,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -61,7 +61,7 @@
         },
         {
           "file": "views/Office/Microsoft/Sharepoint/components/FilePreview.vue",
-          "lines": 313,
+          "lines": 305,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -75,7 +75,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1383,
+      "totalLines": 1363,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -572,7 +572,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 366,
+      "lines": 371,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -591,7 +591,7 @@
       "breakpoints": 3,
       "divClick": 0,
       "kids": [],
-      "totalLines": 366,
+      "totalLines": 371,
       "totalHardcoded": 6,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -809,7 +809,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1304,
+      "lines": 1287,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -889,7 +889,7 @@
           "skeleton": true
         }
       ],
-      "totalLines": 2115,
+      "totalLines": 2098,
       "totalHardcoded": 2,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -1076,7 +1076,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 331,
+      "lines": 338,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -1095,7 +1095,7 @@
       "breakpoints": 7,
       "divClick": 0,
       "kids": [],
-      "totalLines": 331,
+      "totalLines": 338,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -1211,7 +1211,7 @@
       "kids": [
         {
           "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
-          "lines": 54,
+          "lines": 53,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -1376,7 +1376,7 @@
         },
         {
           "file": "views/Office/Checklist/components/TaskDrawer.vue",
-          "lines": 725,
+          "lines": 728,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -1420,7 +1420,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 3101,
+      "totalLines": 3103,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -1460,7 +1460,7 @@
       "kids": [
         {
           "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
-          "lines": 54,
+          "lines": 53,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -1625,7 +1625,7 @@
         },
         {
           "file": "views/Office/Checklist/components/TaskDrawer.vue",
-          "lines": 725,
+          "lines": 728,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -1669,7 +1669,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 2898,
+      "totalLines": 2900,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -1709,7 +1709,7 @@
       "kids": [
         {
           "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
-          "lines": 54,
+          "lines": 53,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -1874,7 +1874,7 @@
         },
         {
           "file": "views/Office/Checklist/components/TaskDrawer.vue",
-          "lines": 725,
+          "lines": 728,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -1918,7 +1918,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 2682,
+      "totalLines": 2684,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -2120,7 +2120,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 369,
+      "lines": 378,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -2230,7 +2230,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1305,
+      "totalLines": 1314,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -2249,7 +2249,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 495,
+      "lines": 510,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -2359,7 +2359,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1431,
+      "totalLines": 1446,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -2531,7 +2531,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 278,
+      "lines": 276,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -2552,7 +2552,7 @@
       "kids": [
         {
           "file": "views/Office/Marketing/Events/components/AddEventModal.vue",
-          "lines": 148,
+          "lines": 152,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -2567,7 +2567,7 @@
         },
         {
           "file": "views/Office/Marketing/Events/components/EditEventModal.vue",
-          "lines": 171,
+          "lines": 175,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -2686,7 +2686,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 2329,
+      "totalLines": 2335,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -2804,7 +2804,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1101,
+      "lines": 1055,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -2815,13 +2815,13 @@
       "badShadow": 0,
       "nativo": 0,
       "handModal": 0,
-      "table": true,
+      "table": false,
       "tableMobile": true,
       "chart": false,
-      "spinner": true,
-      "skeleton": false,
-      "breakpoints": 10,
-      "divClick": 1,
+      "spinner": false,
+      "skeleton": true,
+      "breakpoints": 8,
+      "divClick": 0,
       "kids": [
         {
           "file": "views/Office/Comercial/CancelamentoReservas/components/ReservaCancelFilters.vue",
@@ -2839,14 +2839,14 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1275,
+      "totalLines": 1229,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
       "totalCharts": 0,
       "chartsSemTema": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
+      "totalTables": 0,
+      "archetype": "Ferramenta",
       "score": 100
     },
     {
@@ -3041,7 +3041,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 650,
+      "lines": 664,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -3106,7 +3106,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1360,
+      "totalLines": 1374,
       "totalHardcoded": 1,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -3304,7 +3304,7 @@
         },
         {
           "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
-          "lines": 403,
+          "lines": 419,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -3333,7 +3333,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 7741,
+      "totalLines": 7757,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -3352,7 +3352,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1600,
+      "lines": 1589,
       "telaCheia": true,
       "pageContainer": false,
       "pageHeader": false,
@@ -3360,7 +3360,7 @@
       "chartTheme": false,
       "hardcoded": 0,
       "tinyText": 0,
-      "badShadow": 3,
+      "badShadow": 2,
       "nativo": 0,
       "handModal": 0,
       "table": false,
@@ -3493,7 +3493,7 @@
         },
         {
           "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
-          "lines": 403,
+          "lines": 419,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -3522,7 +3522,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 8625,
+      "totalLines": 8630,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -3637,7 +3637,7 @@
         },
         {
           "file": "views/Office/Comercial/Imobiliarias/components/RegistrationsTab.vue",
-          "lines": 181,
+          "lines": 187,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -3666,7 +3666,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1457,
+      "totalLines": 1463,
       "totalHardcoded": 1,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4031,7 +4031,7 @@
         },
         {
           "file": "views/Office/Comercial/Conditions/components/SignaturePanel.vue",
-          "lines": 403,
+          "lines": 419,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -4060,7 +4060,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 7484,
+      "totalLines": 7500,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4079,7 +4079,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1117,
+      "lines": 1127,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -4114,7 +4114,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1222,
+      "totalLines": 1232,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4171,7 +4171,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1385,
+      "lines": 1406,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -4192,7 +4192,7 @@
       "kids": [
         {
           "file": "views/Office/Financeiro/CobrancaAto/components/BoletoDetailModal.vue",
-          "lines": 1060,
+          "lines": 1081,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -4207,7 +4207,7 @@
         },
         {
           "file": "views/Office/Financeiro/CobrancaAto/components/BoletoFilters.vue",
-          "lines": 278,
+          "lines": 299,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -4236,7 +4236,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 3029,
+      "totalLines": 3092,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4276,7 +4276,7 @@
       "kids": [
         {
           "file": "views/Office/Tools/PaymentoFlow/components/CreateLaunchModal.vue",
-          "lines": 1108,
+          "lines": 1111,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -4350,7 +4350,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 3471,
+      "totalLines": 3474,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4369,7 +4369,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 242,
+      "lines": 226,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -4405,7 +4405,7 @@
         },
         {
           "file": "views/Office/Microsoft/Teams/components/CalendarMonth.vue",
-          "lines": 246,
+          "lines": 250,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -4435,7 +4435,7 @@
         },
         {
           "file": "views/Office/Microsoft/Teams/components/CreateMeetingModal.vue",
-          "lines": 581,
+          "lines": 573,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -4450,7 +4450,7 @@
         },
         {
           "file": "views/Office/Microsoft/Teams/components/EventDetailModal.vue",
-          "lines": 314,
+          "lines": 307,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -4494,7 +4494,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 2347,
+      "totalLines": 2320,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4513,7 +4513,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 496,
+      "lines": 500,
       "telaCheia": true,
       "pageContainer": false,
       "pageHeader": false,
@@ -4534,7 +4534,7 @@
       "kids": [
         {
           "file": "views/Office/Microsoft/Planner/components/TaskDetailModal.vue",
-          "lines": 390,
+          "lines": 395,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -4548,7 +4548,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 886,
+      "totalLines": 895,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4727,7 +4727,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 798,
+      "lines": 810,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -4746,7 +4746,7 @@
       "breakpoints": 13,
       "divClick": 0,
       "kids": [],
-      "totalLines": 798,
+      "totalLines": 810,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4765,7 +4765,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1083,
+      "lines": 1091,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -4773,7 +4773,7 @@
       "chartTheme": false,
       "hardcoded": 0,
       "tinyText": 0,
-      "badShadow": 1,
+      "badShadow": 0,
       "nativo": 0,
       "handModal": 0,
       "table": false,
@@ -4784,7 +4784,7 @@
       "breakpoints": 13,
       "divClick": 2,
       "kids": [],
-      "totalLines": 1083,
+      "totalLines": 1091,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -5001,7 +5001,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 724,
+      "lines": 747,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -5020,7 +5020,7 @@
       "breakpoints": 7,
       "divClick": 0,
       "kids": [],
-      "totalLines": 724,
+      "totalLines": 747,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -5098,7 +5098,7 @@
       "kids": [
         {
           "file": "views/Office/Settings/Whatsapp/components/AutomationsPanel.vue",
-          "lines": 205,
+          "lines": 209,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -5113,7 +5113,7 @@
         },
         {
           "file": "views/Office/Settings/Whatsapp/components/ConfigPanel.vue",
-          "lines": 286,
+          "lines": 307,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -5203,7 +5203,7 @@
         },
         {
           "file": "views/Office/Settings/Whatsapp/components/TemplatesPanel.vue",
-          "lines": 265,
+          "lines": 278,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -5217,7 +5217,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1817,
+      "totalLines": 1855,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -5274,7 +5274,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 224,
+      "lines": 229,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -5339,7 +5339,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1109,
+      "totalLines": 1114,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,

@@ -4,8 +4,15 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = process.argv[2];
+/* Ancorado no PROPRIO arquivo, nao no diretorio de onde se chama. Antes era
+   `process.argv[2]`, entao rodar da raiz do front em vez de dentro de
+   `_design/` apontava para a pasta errada, o script morria - e quem tinha
+   silenciado a saida ficava lendo o mapa da semana passada achando que era
+   o de agora. O argumento continua valendo, para poder apontar outro repo. */
+const AQUI = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = process.argv[2] ? path.resolve(process.argv[2]) : path.join(AQUI, '..');
 const SRC = path.join(ROOT, 'src');
 
 const read = (p) => fs.readFileSync(p, 'utf8');
@@ -250,7 +257,9 @@ for (const [rota, lista] of porRota) {
   }
 }
 
-fs.writeFileSync(path.join(ROOT, 'ui-map.json'), JSON.stringify({ generated: '2026-08-20', screens }, null, 2));
+fs.writeFileSync(path.join(ROOT, 'ui-map.json'), /* Data REAL da geracao. Era literal '2026-08-20', entao o checklist
+   jurava estar fresco meses depois. */
+JSON.stringify({ generated: new Date().toISOString().slice(0, 10), screens }, null, 2));
 console.log('telas:', screens.length);
 const scored = screens.filter((s) => s.score !== null);
 console.log('score medio:', Math.round(scored.reduce((a, s) => a + s.score, 0) / scored.length), '| pontuadas:', scored.length);
