@@ -58,7 +58,7 @@ const HARD = /bg-white|bg-gray-|text-gray-|bg-slate-|text-slate-|border-gray-|bo
 const TINY = /text-\[(?:[1-9]|10)px\]/g;
 /* Tag <i> inteira: icone nao e texto, entao nao entra no piso de 11px.
    Ver DESIGN-LANGUAGE.md. Contar icone aqui punia tela por marcador de lista. */
-const ICONE = /<i[^>]*>/gs;
+const ICONE = /<i[ >][^>]*>|<i>/gs;
 const semIcone = (s) => s.replace(ICONE, '');
 const BADSHADOW = /\bshadow-(sm|md|lg|xl|2xl)\b/g;
 
