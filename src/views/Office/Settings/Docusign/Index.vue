@@ -1,21 +1,30 @@
 <template>
-  <div class="max-w-3xl mx-auto px-4 py-6 space-y-5">
-
-    <!-- Header -->
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
-        <img src="/icons/docusign.png" alt="DocuSign" class="w-10 h-10" />
-      </div>
-      <div>
-        <h1 class="text-lg font-bold text-ink">DocuSign - Assinatura Digital</h1>
-        <p class="text-xs text-ink-subtle">Conecte sua conta DocuSign. Os assinantes das fichas são configurados nas Configurações das Fichas Comerciais.</p>
-      </div>
-    </div>
+  <PageContainer size="md">
+    <PageHeader
+      title="DocuSign"
+      subtitle="Conecte a conta que assina os documentos"
+      icon-img="/icons/docusign.png">
+      <template #actions>
+        <PageHelp
+          storage-key="docusign"
+          title="Como conectar o DocuSign"
+          intro="Esta tela liga o Office a UMA conta DocuSign. Quem assina cada documento não se define aqui, e sim nas Configurações das Fichas Comerciais."
+          :steps="[
+            { title: 'Conexão rápida', text: 'É o caminho recomendado: você faz login no DocuSign e autoriza o Office. Serve para a maioria dos casos.' },
+            { title: 'Conexão avançada (JWT)', text: 'Só quando a empresa exige integração de servidor, sem login humano. Precisa de chave privada e consentimento do administrador da conta DocuSign.' },
+            { title: 'Teste antes de confiar', text: 'O botão Testar confirma que a credencial ainda vale. Faça isso depois de qualquer troca de senha ou de chave.' },
+          ]"
+          :tips="[
+            'Desconectar não apaga documento nenhum, mas trava novos envios até reconectar.',
+            'Se a assinatura parar de funcionar sem ninguém ter mexido aqui, o mais provável é o token ter expirado: use Testar.',
+          ]" />
+      </template>
+    </PageHeader>
 
     <!-- Status -->
     <div v-if="settings" class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-sm flex-wrap"
       :class="settings.connected
-        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+        ? 'bg-data-pos/10 border-data-pos/25 text-data-pos'
         : 'bg-surface-sunken border-line text-ink-muted'">
       <div class="flex items-center gap-2 min-w-0">
         <i :class="settings.connected ? 'fa-circle-check' : 'fa-circle-xmark'" class="fas"></i>
@@ -30,7 +39,7 @@
         <button @click="testConnection" :disabled="testing" class="px-3 py-1.5 text-xs font-semibold text-ink bg-surface-raised border border-line rounded-lg hover:bg-surface-raised/70 disabled:opacity-50 transition">
           <i :class="testing ? 'fa-spinner fa-spin' : 'fa-plug'" class="fas mr-1"></i> Testar
         </button>
-        <button v-if="settings.connected" @click="disconnect" class="px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 transition">
+        <button v-if="settings.connected" @click="pedindoDesconectar = true" class="px-3 py-1.5 text-xs font-semibold text-data-neg bg-data-neg/10 border border-data-neg/25 rounded-lg hover:bg-data-neg/10 transition">
           <i class="fas fa-link-slash mr-1"></i> Desconectar
         </button>
       </div>
@@ -38,8 +47,8 @@
 
     <!-- Conexão rápida (login) -->
     <div class="bg-surface-raised rounded-2xl border border-line shadow-sm overflow-hidden">
-      <div class="px-5 py-3.5 border-b border-line bg-gray-50/60 dark:bg-gray-800/40">
-        <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide"><i class="fas fa-bolt text-violet-500 mr-1.5"></i> Conexão rápida (recomendada) - login no DocuSign</p>
+      <div class="px-5 py-3.5 border-b border-line bg-surface-sunken">
+        <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide"><i class="fas fa-bolt text-accent mr-1.5"></i> Conexão rápida (recomendada) - login no DocuSign</p>
       </div>
       <div class="p-5 space-y-4">
 
@@ -54,7 +63,7 @@
             <div>
               <label class="lbl">
                 Secret Key
-                <span v-if="settings?.has_secret_key" class="ml-2 normal-case font-normal text-green-600 dark:text-green-400"><i class="fas fa-check mr-0.5"></i>salva — cole outra só para trocar</span>
+                <span v-if="settings?.has_secret_key" class="ml-2 normal-case font-normal text-data-pos"><i class="fas fa-check mr-0.5"></i>salva — cole outra só para trocar</span>
               </label>
               <input v-model="form.secret_key" type="password" class="inp" autocomplete="new-password" data-1p-ignore data-lpignore="true" :placeholder="settings?.has_secret_key ? '(mantida)' : 'cole a secret key'" />
             </div>
@@ -74,7 +83,7 @@
           <div class="flex items-center gap-2">
             <code class="flex-1 min-w-0 px-3 py-2 text-xs bg-surface-sunken border border-line rounded-lg truncate">{{ redirectUri }}</code>
             <button @click="copyRedirect" class="px-3 py-2 text-xs font-semibold text-ink bg-surface-sunken border border-line rounded-lg hover:bg-surface-sunken/70 transition flex-shrink-0">
-              <i :class="copied ? 'fa-check text-green-500' : 'fa-copy'" class="fas"></i>
+              <i :class="copied ? 'fa-check text-data-pos' : 'fa-copy'" class="fas"></i>
             </button>
           </div>
         </div>
@@ -86,7 +95,7 @@
             <button @click="save" :disabled="saving" class="px-4 py-2 text-xs font-semibold text-ink bg-surface-sunken border border-line rounded-lg hover:bg-surface-sunken/70 disabled:opacity-50 transition">
               <i :class="saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'" class="fas mr-1"></i> Salvar
             </button>
-            <button @click="connect" :disabled="connecting" class="px-4 py-2 text-xs font-semibold text-white bg-violet-600 rounded-lg hover:bg-violet-700 disabled:opacity-50 transition">
+            <button @click="connect" :disabled="connecting" class="px-4 py-2 text-xs font-semibold text-white bg-accent rounded-lg hover:bg-accent disabled:opacity-50 transition">
               <i :class="connecting ? 'fa-spinner fa-spin' : 'fa-right-to-bracket'" class="fas mr-1"></i> Conectar com DocuSign
             </button>
           </div>
@@ -94,8 +103,8 @@
 
         <div v-if="feedback" class="px-3.5 py-2.5 rounded-lg text-xs border"
           :class="feedback.ok
-            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
-            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'">
+            ? 'bg-data-pos/10 border-data-pos/25 text-data-pos'
+            : 'bg-data-neg/10 border-data-neg/25 text-data-neg'">
           {{ feedback.message }}
         </div>
 
@@ -126,13 +135,13 @@
         <div>
           <label class="lbl">
             RSA Private Key (PEM)
-            <span v-if="settings?.has_private_key" class="ml-2 normal-case font-normal text-green-600 dark:text-green-400"><i class="fas fa-check mr-0.5"></i>já cadastrada</span>
+            <span v-if="settings?.has_private_key" class="ml-2 normal-case font-normal text-data-pos"><i class="fas fa-check mr-0.5"></i>já cadastrada</span>
           </label>
           <textarea v-model="form.private_key" rows="5" class="inp resize-none font-mono text-xs"
             :placeholder="settings?.has_private_key ? '(mantida — cole uma nova apenas para substituir)' : '-----BEGIN RSA PRIVATE KEY-----'"></textarea>
         </div>
         <div class="flex items-center justify-end gap-2">
-          <button @click="openConsent" class="px-3.5 py-2 text-xs font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/40 transition">
+          <button @click="openConsent" class="px-3.5 py-2 text-xs font-semibold text-accent bg-accent/10 border border-accent/25 rounded-lg hover:bg-accent/10  transition">
             <i class="fas fa-user-check mr-1"></i> Consentimento
           </button>
           <button @click="save" :disabled="saving" class="px-4 py-2 text-xs font-semibold text-ink bg-surface-sunken border border-line rounded-lg hover:bg-surface-sunken/70 disabled:opacity-50 transition">
@@ -144,13 +153,20 @@
 
     <!-- Como funciona -->
     <div class="bg-surface-raised rounded-2xl border border-line shadow-sm p-5 text-xs text-ink-muted space-y-1.5">
-      <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2"><i class="fas fa-circle-info text-violet-500 mr-1.5"></i> Como funciona</p>
+      <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2"><i class="fas fa-circle-info text-accent mr-1.5"></i> Como funciona</p>
       <p>1. Configure os <strong>assinantes e o modo de assinatura</strong> em Fichas Comerciais → Configurações.</p>
       <p>2. Após <strong>autorizar</strong> uma ficha, a aba <strong>Assinatura</strong> dela permite enviar o documento pelo DocuSign.</p>
       <p>3. Quando todos assinam, o <strong>PDF assinado</strong> (com certificado) é salvo automaticamente e fica anexado na ficha.</p>
     </div>
 
-  </div>
+  </PageContainer>
+
+  <ConfirmDialog :open="pedindoDesconectar" tone="danger"
+    title="Desconectar do DocuSign?"
+    consequence="Novos envios para assinatura param de funcionar na hora, em todas as fichas."
+    hint="Documentos já assinados e envelopes em andamento não são afetados. Reconectar restabelece o envio."
+    confirm-label="Desconectar" :loading="desconectando"
+    @confirm="disconnect" @cancel="pedindoDesconectar = false" />
 </template>
 
 <script setup>
@@ -158,6 +174,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 import API_URL from '@/config/apiUrl';
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 
 const store = useConditionsStore();
 const route = useRoute();
@@ -223,14 +243,20 @@ async function connect() {
     }
 }
 
+const pedindoDesconectar = ref(false);
+const desconectando = ref(false);
+
 async function disconnect() {
-    if (!window.confirm('Desconectar do DocuSign? Envios de assinatura param de funcionar até reconectar.')) return;
+    pedindoDesconectar.value = false;
+    desconectando.value = true;
     try {
         await store.disconnectDocusign();
         feedback.value = { ok: true, message: 'Desconectado.' };
         await load();
     } catch (e) {
         feedback.value = { ok: false, message: e.message || 'Erro ao desconectar.' };
+    } finally {
+        desconectando.value = false;
     }
 }
 
@@ -282,5 +308,5 @@ onMounted(async () => {
 
 <style scoped>
 .lbl { @apply block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5; }
-.inp { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15 transition-all duration-150; }
+.inp { @apply w-full px-3.5 py-2.5 text-sm text-ink bg-surface-raised/60 border border-line rounded-md shadow-sm placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 transition-all duration-150; }
 </style>

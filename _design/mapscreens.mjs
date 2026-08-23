@@ -74,6 +74,7 @@ function metrics(file) {
     pageContainer: /<PageContainer/.test(s),
     pageHeader: /<PageHeader/.test(s),
     pageHelp: /<PageHelp/.test(s),
+    chartTheme: /useChartTheme/.test(s),
     hardcoded: count(s, HARD),
     tinyText: count(semIcone(s), TINY),
     badShadow: count(s, BADSHADOW),
@@ -128,6 +129,12 @@ for (const r of routes) {
       chart: /echarts/.test(s),
       table: /<table/.test(s),
       tableMobile: /<table/.test(s) && (/(md|lg|sm):hidden/.test(s) || /overflow-x-auto/.test(s)),
+      chartTheme: /useChartTheme/.test(s),
+      /* casca tambem no filho: ha rota que so repassa (ver score) */
+      pageContainer: /<PageContainer/.test(s),
+      pageHeader: /<PageHeader/.test(s),
+      pageHelp: /<PageHelp/.test(s),
+      skeleton: /animate-shimmer|Skeleton/.test(s),
     };
   });
 
@@ -144,7 +151,19 @@ for (const r of routes) {
     totalLines: m.lines + kidStats.reduce((a, k) => a + k.lines, 0),
     totalHardcoded: m.hardcoded + kidStats.reduce((a, k) => a + k.hardcoded, 0),
     totalTiny: m.tinyText + kidStats.reduce((a, k) => a + k.tinyText, 0),
+    /* A casca conta na ARVORE, nao so no arquivo da rota. Ha rota que e um
+       repasse de 8 linhas para um componente que TEM PageContainer/Header
+       (ex.: /account -> components/Form.vue): pontuar so o arquivo da rota
+       dizia "sem casca" para uma tela que tem. */
+    pageContainer: m.pageContainer || kidStats.some((k) => k.pageContainer),
+    pageHeader: m.pageHeader || kidStats.some((k) => k.pageHeader),
+    pageHelp: m.pageHelp || kidStats.some((k) => k.pageHelp),
+    skeleton: m.skeleton || kidStats.some((k) => k.skeleton),
     totalCharts: (m.chart ? 1 : 0) + kidStats.filter((k) => k.chart).length,
+    /* Grafico SEM o tema compartilhado. Antes a penalidade era por existir
+       grafico ("nenhum usa tema comum ainda"), o que deixou de ser verdade. */
+    chartsSemTema: (m.chart && !m.chartTheme ? 1 : 0)
+      + kidStats.filter((k) => k.chart && !k.chartTheme).length,
     totalTables: (m.table ? 1 : 0) + kidStats.filter((k) => k.table).length,
     /* A tabela quase sempre mora num componente-filho, não no arquivo da tela.
        Antes só o arquivo da tela era checado, então telas com plano mobile
@@ -176,7 +195,7 @@ function score(s) {
   v -= Math.min(25, s.totalHardcoded * 0.4);
   v -= Math.min(15, s.totalTiny * 0.15);
   if (s.totalTables && !s.tableMobile) v -= 10;
-  if (s.totalCharts) v -= 10; // nenhum gráfico usa tema comum ainda
+  if (s.chartsSemTema) v -= 10;   // grafico com hex cravado, fora do tema
   if (s.handModal) v -= 5;
   return Math.max(0, Math.round(v));
 }

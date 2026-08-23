@@ -4,7 +4,7 @@ Gerado por `_design/mapscreens.mjs` em 2026-08-20. Para atualizar os números de
 mexer nas telas, rode de novo e o checklist se refaz.
 
 - **66** telas pontuadas (+ 6 especiais fora do score)
-- **Score médio: 86/100**
+- **Score médio: 87/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
 ## Como marcar
@@ -17,16 +17,9 @@ carga com `Skeleton`, alvo de toque >= 40px e PageHelp escrito.
 
 ---
 
-## Onda 1 - Reconstrução  `4 telas`
+## Onda 1 - Reconstrução  `2 telas`
 
 Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é uma tarefa própria.
-
-### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
-
-- [ ] **Configurações DocuSign** `/docusign` · ` 48`
-      <sub>views/Office/Settings/Docusign/Index.vue · 287L · sem container, sem header, sem help, 4 cor fixa</sub>
-- [ ] **Minha Conta** `/account` · ` 50`
-      <sub>views/Office/Settings/Account/Index.vue · 894L (+6 comp.) · sem container, sem header, sem help</sub>
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
@@ -64,16 +57,9 @@ Score 55 a 74. Estrutura existe, falta token, help ou plano mobile.
 - [ ] **SharePoint** `/sharepoint` · ` 70`
       <sub>views/Office/Microsoft/Sharepoint/Index.vue · 1379L (+3 comp.) · 62 cor fixa, 1 modal na mão</sub>
 
-## Onda 3 - Acabamento  `25 telas`
+## Onda 3 - Acabamento  `24 telas`
 
 Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tabela.
-
-### Painel · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
-
-- [ ] **Leads** `/leads` · ` 87`
-      <sub>views/Office/Marketing/Leads/Index.vue · 2989L (+16 comp.) · 7 cor fixa, 3 gráfico, 2 tabela</sub>
-- [ ] **Relatório de Investimento** `/viabilidade/:key` · ` 89`
-      <sub>views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue · 819L (+2 comp.) · 2 cor fixa, 1 gráfico</sub>
 
 ### Detalhe · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
 
@@ -101,6 +87,8 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
       <sub>views/Office/Marketing/EventPlan/Settings.vue · 1291L (+6 comp.) · sem help</sub>
 - [ ] **Usuários** `/users` · ` 80`
       <sub>views/Office/Settings/Users/Index.vue · 1338L (+2 comp.) · sem help</sub>
+- [ ] **Minha Conta** `/account` · ` 80`
+      <sub>views/Office/Settings/Account/Index.vue · 894L (+6 comp.) · sem help</sub>
 - [ ] **Organograma** `/organograma` · ` 80`
       <sub>views/Office/Settings/Organogram/Index.vue · 1224L (+1 comp.) · sem help</sub>
 - [ ] **Cargos** `/management` · ` 80`
@@ -133,9 +121,16 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
 - [ ] **Teams** `/teams` · ` 84`
       <sub>views/Office/Microsoft/Teams/Index.vue · 2347L (+7 comp.) · 39 cor fixa</sub>
 
-## Onda 4 - Manutenção  `29 telas`
+## Onda 4 - Manutenção  `32 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
+
+### Painel · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
+
+- [ ] **Leads** `/leads` · ` 97`
+      <sub>views/Office/Marketing/Leads/Index.vue · 2989L (+16 comp.) · 7 cor fixa, 3 gráfico, 2 tabela</sub>
+- [ ] **Relatório de Investimento** `/viabilidade/:key` · ` 99`
+      <sub>views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue · 819L (+2 comp.) · 2 cor fixa, 1 gráfico</sub>
 
 ### Operação · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
@@ -178,6 +173,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Settings/Integrity/Index.vue · 228L · ok</sub>
 - [ ] **Alçadas** `/permissions` · `100`
       <sub>views/Office/Settings/Permissions/Index.vue · 2115L (+4 comp.) · ok</sub>
+- [ ] **Configurações DocuSign** `/docusign` · `100`
+      <sub>views/Office/Settings/Docusign/Index.vue · 313L · ok</sub>
 - [ ] **Backup Sienge** `/backup-sienge` · `100`
       <sub>views/Office/Settings/BackupSienge/Index.vue · 1010L (+2 comp.) · 1 tabela</sub>
 
@@ -219,7 +216,7 @@ Não seguem o esqueleto de página por natureza (login, shell, home da Eme, inst
 - [ ] **Config** `/` · `--`
       <sub>views/Office/Config/OfficeShell.vue · 212L (+2 comp.) · sem container, sem header, sem help, 1 gráfico</sub>
 - [ ] **Home**  · `--`
-      <sub>views/Office/Home.vue · 56246L (+199 comp.) · sem container, sem header, sem help, 317 cor fixa, 7 gráfico, 23 tabela sem mobile</sub>
+      <sub>views/Office/Home.vue · 56246L (+199 comp.) · 317 cor fixa, 7 gráfico, 23 tabela sem mobile</sub>
 - [ ] **layouts** `/academy` · `--`
       <sub>views/Academy/layouts/AcademyOfficeArea.vue · 483L (+3 comp.) · sem container, sem header, sem help, 129 cor fixa</sub>
 
