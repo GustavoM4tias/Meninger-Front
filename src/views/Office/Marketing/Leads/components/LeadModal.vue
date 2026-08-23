@@ -561,10 +561,10 @@ const onLimpar = () => {
               <!-- Linha 2: Imobiliária / Corretor / Mídia / Empreendimentos -->
               <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
                 <span class="inline-flex items-center gap-1.5 max-w-[180px] truncate">
-                  <i class="fas fa-building text-[10px] text-indigo-500"></i>{{ brokerOf(l) }}
+                  <i class="fas fa-building text-[10px] text-accent"></i>{{ brokerOf(l) }}
                 </span>
                 <span class="inline-flex items-center gap-1.5 max-w-[180px] truncate">
-                  <i class="fas fa-user-tie text-[10px] text-orange-500"></i>{{ l.corretor?.nome || '—' }}
+                  <i class="fas fa-user-tie text-[10px] text-data-warn"></i>{{ l.corretor?.nome || '—' }}
                 </span>
                 <span v-if="l.midia_principal" class="inline-flex items-center gap-1.5 max-w-[160px] truncate">
                   <i class="fas fa-bullhorn text-[10px] text-pink-500"></i>{{ l.midia_principal }}
@@ -578,7 +578,7 @@ const onLimpar = () => {
 
               <!-- Cancelamento -->
               <div v-if="cancelReasonOf(l)"
-                class="mt-2 flex items-start gap-1.5 text-xs text-red-600 dark:text-red-400">
+                class="mt-2 flex items-start gap-1.5 text-xs text-data-neg">
                 <i class="fas fa-ban shrink-0 mt-0.5 text-[10px]"></i>
                 <span class="font-medium">{{ cancelReasonOf(l) }}</span>
               </div>
@@ -586,13 +586,13 @@ const onLimpar = () => {
               <!-- Anotação -->
               <div v-if="annotationOf(l)"
                 class="mt-2 flex items-start gap-1.5 text-xs text-ink-muted">
-                <i class="fas fa-comment-dots shrink-0 mt-0.5 text-teal-500 text-[10px]"></i>
+                <i class="fas fa-comment-dots shrink-0 mt-0.5 text-series-3 text-micro"></i>
                 <span class="line-clamp-2 italic">{{ annotationOf(l) }}</span>
               </div>
             </article>
 
             <p class="pt-3 text-xs text-ink-muted flex items-center gap-1.5 font-mono">
-              <i class="far fa-calendar text-emerald-500"></i>{{ periodoTexto }}
+              <i class="far fa-calendar text-data-pos"></i>{{ periodoTexto }}
             </p>
           </div>
         </div>

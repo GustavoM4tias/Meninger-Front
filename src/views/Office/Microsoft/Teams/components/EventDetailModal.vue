@@ -9,7 +9,7 @@
                     max-sm:max-w-full max-sm:h-full max-sm:max-h-full max-sm:rounded-none" @click.stop>
 
           <!-- Color bar -->
-          <div :class="event.isOnlineMeeting ? 'bg-purple-600' : 'bg-blue-500'" class="h-1.5 rounded-t-2xl shrink-0"></div>
+          <div :class="event.isOnlineMeeting ? 'bg-accent' : 'bg-accent'" class="h-1.5 rounded-t-2xl shrink-0"></div>
 
           <!-- Header -->
           <div class="px-6 pt-5 pb-3 shrink-0">
@@ -17,22 +17,22 @@
               <div class="min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                   <span v-if="event.isOnlineMeeting"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold">
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-semibold">
                     <i class="fas fa-video text-xs"></i> Teams
                   </span>
                   <span v-if="event.isCancelled"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-xs font-semibold">
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-data-neg/10 text-data-neg text-xs font-semibold">
                     Cancelado
                   </span>
                   <span v-if="event.isRecurring"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-sunken text-gray-500 dark:text-slate-400 text-xs">
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-sunken text-ink-muted text-xs">
                     <i class="fas fa-rotate text-xs"></i> Recorrente
                   </span>
                 </div>
                 <h2 class="text-lg font-bold text-ink leading-snug">{{ event.subject }}</h2>
               </div>
               <button @click="$emit('close')"
-                class="w-8 h-8 rounded-lg bg-surface-sunken flex items-center justify-center text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0 mt-0.5">
+                class="w-8 h-8 rounded-lg bg-surface-sunken flex items-center justify-center text-ink-subtle hover:text-ink-muted dark:hover:text-ink-subtle transition-colors shrink-0 mt-0.5">
                 <i class="fas fa-xmark text-sm"></i>
               </button>
             </div>
@@ -60,13 +60,13 @@
             <div v-if="event.organizer?.name" class="flex items-center gap-3 text-sm text-ink-muted">
               <i class="fas fa-user w-4 text-center shrink-0"></i>
               <span>{{ event.organizer.name }}
-                <span v-if="event.organizer.email" class="text-gray-400 dark:text-slate-500 text-xs ml-1">{{ event.organizer.email }}</span>
+                <span v-if="event.organizer.email" class="text-ink-subtle text-xs ml-1">{{ event.organizer.email }}</span>
               </span>
             </div>
 
             <!-- Attendees -->
             <div v-if="event.attendees?.length" class="flex items-start gap-3 text-sm">
-              <i class="fas fa-users w-4 text-center text-gray-400 dark:text-slate-500 shrink-0 mt-0.5"></i>
+              <i class="fas fa-users w-4 text-center text-ink-subtle shrink-0 mt-0.5"></i>
               <div>
                 <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1.5">Participantes</p>
                 <div class="flex flex-col gap-1">
@@ -84,7 +84,7 @@
 
             <!-- Body preview -->
             <div v-if="event.bodyPreview" class="flex items-start gap-3 text-sm">
-              <i class="fas fa-align-left w-4 text-center text-gray-400 dark:text-slate-500 shrink-0 mt-0.5"></i>
+              <i class="fas fa-align-left w-4 text-center text-ink-subtle shrink-0 mt-0.5"></i>
               <p class="text-ink-muted leading-relaxed line-clamp-4">{{ event.bodyPreview }}</p>
             </div>
 
@@ -95,7 +95,7 @@
 
             <!-- Join Teams -->
             <a v-if="event.joinUrl" :href="event.joinUrl" target="_blank" rel="noopener"
-              class="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors">
+              class="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors">
               <i class="fas fa-video"></i> Entrar na reunião
             </a>
 
@@ -119,7 +119,7 @@
 
             <!-- Edit event -->
             <button v-if="!event.isCancelled" @click="$emit('edit', event); $emit('close')"
-              class="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-sm transition-colors">
+              class="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent/10 border border-accent/25 text-accent hover:bg-accent/10  text-sm transition-colors">
               <i class="fas fa-pen text-xs"></i> Editar
             </button>
 
@@ -128,7 +128,7 @@
 
             <!-- Ação destrutiva: organizador cancela (notifica); participante remove do calendário -->
             <button v-if="!event.isCancelled" @click="openConfirm"
-              class="flex items-center gap-2 px-3 py-2 min-h-10 rounded-xl border border-red-200 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm transition-colors">
+              class="flex items-center gap-2 px-3 py-2 min-h-10 rounded-xl border border-data-neg/25 text-data-neg hover:bg-data-neg/10  text-sm transition-colors">
               <i :class="isOrganizer ? 'fas fa-ban' : 'fas fa-trash-can'" class="text-xs"></i>
               {{ isOrganizer ? 'Cancelar' : 'Remover' }}
             </button>
@@ -136,39 +136,39 @@
 
           <!-- Confirmação (com escolha ocorrência/série p/ recorrentes) -->
           <Transition name="confirm">
-            <div v-if="confirmOpen" class="px-6 py-4 border-t border-red-100 dark:border-red-900 bg-red-50 dark:bg-red-900/20 rounded-b-2xl max-sm:rounded-none shrink-0">
+            <div v-if="confirmOpen" class="px-6 py-4 border-t border-data-neg/25  bg-data-neg/10 rounded-b-2xl max-sm:rounded-none shrink-0">
 
               <!-- Recorrente: escolher alcance -->
               <template v-if="event.isRecurring">
-                <p class="text-sm text-red-700 dark:text-red-300 font-medium mb-2">
+                <p class="text-sm text-data-neg font-medium mb-2">
                   {{ isOrganizer ? 'Cancelar reunião recorrente' : 'Remover reunião recorrente' }}
                 </p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                   <button @click="chosenScope = 'occurrence'"
                     :class="chosenScope === 'occurrence'
-                      ? 'border-red-400 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200'
-                      : 'border-red-200 dark:border-red-800 text-red-500 hover:bg-red-100/50 dark:hover:bg-red-900/30'"
+                      ? 'border-data-neg bg-data-neg/10 text-data-neg'
+                      : 'border-data-neg/25 text-data-neg hover:bg-data-neg/10 '"
                     class="min-h-10 px-3 py-2 rounded-lg border text-sm font-medium text-left transition-colors">
                     <i class="fas fa-calendar-day mr-1.5 text-xs"></i> Somente esta ocorrência
                   </button>
                   <button @click="chosenScope = 'series'"
                     :class="chosenScope === 'series'
-                      ? 'border-red-400 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-200'
-                      : 'border-red-200 dark:border-red-800 text-red-500 hover:bg-red-100/50 dark:hover:bg-red-900/30'"
+                      ? 'border-data-neg bg-data-neg/10 text-data-neg'
+                      : 'border-data-neg/25 text-data-neg hover:bg-data-neg/10 '"
                     class="min-h-10 px-3 py-2 rounded-lg border text-sm font-medium text-left transition-colors">
                     <i class="fas fa-rotate mr-1.5 text-xs"></i> Toda a série
                   </button>
                 </div>
               </template>
-              <p v-else class="text-sm text-red-700 dark:text-red-300 font-medium mb-3">
+              <p v-else class="text-sm text-data-neg font-medium mb-3">
                 {{ isOrganizer ? 'Cancelar e notificar participantes?' : 'Remover este evento do seu calendário?' }}
               </p>
 
               <!-- Comentário: só nos caminhos de cancel que o Graph aceita comentário -->
               <input v-if="showComment" v-model="cancelComment" type="text" placeholder="Motivo (opcional)"
-                class="w-full px-3 py-2 min-h-10 rounded-lg border border-red-200 dark:border-red-700 bg-surface-raised text-sm text-ink focus:outline-none focus:ring-2 focus:ring-red-400 mb-3" />
+                class="w-full px-3 py-2 min-h-10 rounded-lg border border-data-neg/25 bg-surface-raised text-sm text-ink focus:outline-none focus:ring-2 focus:ring-data-neg mb-3" />
               <p v-if="isOrganizer && event.isRecurring && chosenScope === 'occurrence'"
-                class="text-xs text-red-600/80 dark:text-red-300/70 mb-3">
+                class="text-xs text-data-neg  mb-3">
                 Os participantes serão avisados da exclusão desta ocorrência.
               </p>
 
@@ -178,7 +178,7 @@
                   Voltar
                 </button>
                 <button @click="doDestroy" :disabled="busy || (event.isRecurring && !chosenScope)"
-                  class="px-3 py-2 min-h-10 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
+                  class="px-3 py-2 min-h-10 rounded-lg text-sm font-medium text-white bg-data-neg hover:bg-data-neg/85 disabled:opacity-50 transition-colors">
                   <i v-if="busy" class="fas fa-circle-notch animate-spin mr-1"></i>
                   {{ isOrganizer ? 'Sim, cancelar' : 'Sim, remover' }}
                 </button>
@@ -296,11 +296,11 @@ function statusLabel(s) {
 }
 function statusClass(s) {
   const map = {
-    accepted: 'text-green-600 dark:text-green-400',
-    declined: 'text-red-500 dark:text-red-400',
-    tentativelyAccepted: 'text-yellow-600 dark:text-yellow-400',
+    accepted: 'text-data-pos',
+    declined: 'text-data-neg',
+    tentativelyAccepted: 'text-data-warn',
   };
-  return map[s] || 'text-gray-400 dark:text-slate-500';
+  return map[s] || 'text-ink-subtle';
 }
 </script>
 

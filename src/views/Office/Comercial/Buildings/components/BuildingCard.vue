@@ -15,12 +15,12 @@ const buildingType = computed(() => props.building.tipo_empreendimento?.[0]?.nom
 
 // Mapping: stage → variant + accent color
 const stageMeta = computed(() => ({
-  'Pré-Lançamento':    { variant: 'success', accent: 'bg-emerald-500', icon: 'fas fa-map-location-dot' },
-  'Lançamento':        { variant: 'info',    accent: 'bg-sky-500',     icon: 'fas fa-bullhorn' },
-  'Em construção':     { variant: 'warning', accent: 'bg-amber-500',   icon: 'fas fa-helmet-safety' },
-  'Finalizado':        { variant: 'danger',  accent: 'bg-rose-500',    icon: 'fas fa-key' },
-  'Portal do Cliente': { variant: 'accent',  accent: 'bg-purple-500',  icon: 'fas fa-door-open' },
-}[stage.value] || { variant: 'neutral', accent: 'bg-slate-500', icon: 'fas fa-building' }));
+  'Pré-Lançamento':    { variant: 'success', accent: 'bg-data-pos', icon: 'fas fa-map-location-dot' },
+  'Lançamento':        { variant: 'info',    accent: 'bg-accent',     icon: 'fas fa-bullhorn' },
+  'Em construção':     { variant: 'warning', accent: 'bg-data-warn',   icon: 'fas fa-helmet-safety' },
+  'Finalizado':        { variant: 'danger',  accent: 'bg-data-neg',    icon: 'fas fa-key' },
+  'Portal do Cliente': { variant: 'accent',  accent: 'bg-accent',  icon: 'fas fa-door-open' },
+}[stage.value] || { variant: 'neutral', accent: 'bg-data-neutral', icon: 'fas fa-building' }));
 
 const showBuildingDetails = () => emit('click', props.building);
 </script>

@@ -66,23 +66,23 @@ const kpis = computed(() => {
     const spark = (pred) => seriesValues(props.leads, props.from, props.to, pred);
 
     return [
-        { key: 'total', label: 'Total de leads', icon: 'fas fa-users', accent: 'text-blue-500 bg-blue-500/10',
+        { key: 'total', label: 'Total de leads', icon: 'fas fa-users', accent: 'text-accent bg-accent/10',
           sparkColor: '#3b82f6', series: spark(null),
           value: props.total, delta: delta(props.total, props.prevTotal), invert: false },
-        { key: 'atd', label: 'Em atendimento', icon: 'fas fa-headset', accent: 'text-violet-500 bg-violet-500/10',
+        { key: 'atd', label: 'Em atendimento', icon: 'fas fa-headset', accent: 'text-accent bg-accent/10',
           sparkColor: '#8b5cf6', series: spark(l => matchSituacao(l, SERIES_KW.atendimento)),
           value: atd, delta: delta(atd, atdP), invert: false },
-        { key: 'qual', label: 'Qualificados', icon: 'fas fa-star', accent: 'text-amber-500 bg-amber-500/10',
+        { key: 'qual', label: 'Qualificados', icon: 'fas fa-star', accent: 'text-data-warn bg-data-warn/10',
           sparkColor: '#f59e0b', series: spark(l => matchSituacao(l, SERIES_KW.qualificado)),
           value: qual, delta: delta(qual, qualP), invert: false },
-        { key: 'res', label: 'Reservas', icon: 'fas fa-handshake', accent: 'text-emerald-500 bg-emerald-500/10',
+        { key: 'res', label: 'Reservas', icon: 'fas fa-handshake', accent: 'text-data-pos bg-data-pos/10',
           sparkColor: '#10b981', series: spark(l => matchSituacao(l, SERIES_KW.reserva)),
           value: res, delta: delta(res, resP), invert: false },
-        { key: 'conv', label: 'Conversão', icon: 'fas fa-percent', accent: 'text-teal-500 bg-teal-500/10',
+        { key: 'conv', label: 'Conversão', icon: 'fas fa-percent', accent: 'text-series-3 bg-series-3/10',
           sparkColor: '#14b8a6',
           series: spark(l => matchSituacao(l, SERIES_KW.qualificado) || matchSituacao(l, SERIES_KW.reserva)),
           value: conv, isPct: true, delta: conv != null && convP != null ? delta(conv, convP) : null, invert: false },
-        { key: 'desc', label: 'Descartados', icon: 'fas fa-ban', accent: 'text-rose-500 bg-rose-500/10',
+        { key: 'desc', label: 'Descartados', icon: 'fas fa-ban', accent: 'text-data-neg bg-data-neg/10',
           sparkColor: '#f43f5e', series: spark(l => matchSituacao(l, SERIES_KW.descartado)),
           value: desc, delta: delta(desc, descP), invert: true },
     ];
@@ -100,8 +100,8 @@ function deltaView(k) {
     return {
         text: `${up ? '+' : ''}${k.delta.toFixed(k.delta >= 100 ? 0 : 1)}%`,
         icon: up ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down',
-        cls: good ? 'text-emerald-600 dark:text-emerald-300 bg-emerald-500/10'
-                  : 'text-red-600 dark:text-red-300 bg-red-500/10',
+        cls: good ? 'text-data-pos bg-data-pos/10'
+                  : 'text-data-neg bg-data-neg/10',
     };
 }
 </script>

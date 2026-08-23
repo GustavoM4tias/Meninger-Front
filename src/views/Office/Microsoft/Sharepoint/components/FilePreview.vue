@@ -3,38 +3,38 @@
     <Transition name="preview">
       <div
         v-if="item"
-        class="fixed inset-0 z-[9000] flex flex-col bg-gray-950/95 backdrop-blur"
+        class="fixed inset-0 z-[9000] flex flex-col bg-surface backdrop-blur"
         @click.self="emit('close')"
       >
         <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-3 bg-gray-900 border-b border-gray-800 shrink-0">
+        <div class="flex items-center justify-between px-5 py-3 bg-surface border-b border-line shrink-0">
           <div class="flex items-center gap-3 min-w-0">
             <i :class="fileIconClass(item.ext)" class="text-xl shrink-0"></i>
             <div class="min-w-0">
               <p class="text-sm font-semibold text-white truncate">{{ item.name }}</p>
-              <p class="text-xs text-gray-400">{{ formatSize(item.size) }} · {{ formatDate(item.lastModified) }}</p>
+              <p class="text-xs text-ink-subtle">{{ formatSize(item.size) }} · {{ formatDate(item.lastModified) }}</p>
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0 ml-4">
             <button
               @click="handleDownload"
               :disabled="downloadingFile"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 transition-colors disabled:opacity-50">
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-sunken hover:bg-surface-raised text-xs text-ink transition-colors disabled:opacity-50">
               <i v-if="downloadingFile" class="fas fa-circle-notch animate-spin"></i>
               <i v-else class="fas fa-download"></i>
               Baixar
             </button>
             <button v-if="item.webUrl"
               @click="openInNewTab"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 transition-colors">
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-sunken hover:bg-surface-raised text-xs text-ink transition-colors">
               <i class="fas fa-up-right-from-square"></i> Nova guia
             </button>
             <button @click="openInNativeApp"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs text-white transition-colors">
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-xs text-white transition-colors">
               <i class="fas fa-arrow-up-right-from-square"></i> Abrir no aplicativo
             </button>
             <button @click="emit('close')"
-              class="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-300 hover:text-white transition-colors ml-1">
+              class="w-8 h-8 rounded-lg bg-surface-sunken hover:bg-surface-raised flex items-center justify-center text-ink-subtle hover:text-white transition-colors ml-1">
               <i class="fas fa-xmark"></i>
             </button>
           </div>
@@ -44,8 +44,8 @@
         <div class="flex-1 overflow-hidden flex items-center justify-center p-4">
 
           <!-- Loading state -->
-          <div v-if="previewLoading" class="flex flex-col items-center gap-3 text-gray-400">
-            <i class="fas fa-circle-notch animate-spin text-3xl text-blue-400"></i>
+          <div v-if="previewLoading" class="flex flex-col items-center gap-3 text-ink-subtle">
+            <i class="fas fa-circle-notch animate-spin text-3xl text-accent"></i>
             <span class="text-sm">Carregando preview...</span>
           </div>
 
@@ -72,8 +72,8 @@
           <!-- Audio -->
           <template v-else-if="isAudio">
             <div class="flex flex-col items-center gap-6">
-              <div class="w-32 h-32 rounded-2xl bg-gray-800 flex items-center justify-center">
-                <i class="fas fa-music text-5xl text-purple-400"></i>
+              <div class="w-32 h-32 rounded-2xl bg-surface-sunken flex items-center justify-center">
+                <i class="fas fa-music text-5xl text-accent"></i>
               </div>
               <audio :src="item.downloadUrl" controls class="w-80" />
             </div>
@@ -81,17 +81,17 @@
 
           <!-- Text / Code — via proxy -->
           <template v-else-if="isText">
-            <div class="w-full h-full overflow-auto bg-gray-900 rounded-lg p-5">
-              <div v-if="textLoading" class="flex items-center justify-center h-full text-gray-400">
+            <div class="w-full h-full overflow-auto bg-surface rounded-lg p-5">
+              <div v-if="textLoading" class="flex items-center justify-center h-full text-ink-subtle">
                 <i class="fas fa-circle-notch animate-spin mr-2"></i> Carregando...
               </div>
-              <pre v-else class="text-xs text-gray-300 font-mono whitespace-pre-wrap leading-relaxed">{{ textContent }}</pre>
+              <pre v-else class="text-xs text-ink-subtle font-mono whitespace-pre-wrap leading-relaxed">{{ textContent }}</pre>
             </div>
           </template>
 
           <!-- Office files: embed via Office Online Viewer -->
           <template v-else-if="isOffice">
-            <div class="w-full h-full rounded-lg overflow-hidden bg-white">
+            <div class="w-full h-full rounded-lg overflow-hidden bg-surface-raised">
               <iframe
                 :src="`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(item.webUrl)}`"
                 class="w-full h-full border-0"
@@ -123,12 +123,12 @@ const PreviewUnsupported = defineComponent({
   emits: ['open'],
   setup(p, { emit: e }) {
     return () => h('div', { class: 'flex flex-col items-center gap-4 text-center' }, [
-      h('div', { class: 'w-24 h-24 rounded-2xl bg-gray-800 flex items-center justify-center' },
-        [h('i', { class: `${EXT_ICONS[p.item?.ext?.toLowerCase()] || 'fas fa-file text-gray-400'} text-5xl` })]),
-      h('p', { class: 'text-gray-300 font-medium' }, 'Pré-visualização não disponível'),
-      h('p', { class: 'text-gray-500 text-sm max-w-xs' }, 'Use "Abrir no aplicativo" para acessar.'),
+      h('div', { class: 'w-24 h-24 rounded-2xl bg-surface-sunken flex items-center justify-center' },
+        [h('i', { class: `${EXT_ICONS[p.item?.ext?.toLowerCase()] || 'fas fa-file text-ink-subtle'} text-5xl` })]),
+      h('p', { class: 'text-ink-subtle font-medium' }, 'Pré-visualização não disponível'),
+      h('p', { class: 'text-ink-muted text-sm max-w-xs' }, 'Use "Abrir no aplicativo" para acessar.'),
       h('button', {
-        class: 'px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors',
+        class: 'px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors',
         onClick: () => e('open'),
       }, [h('i', { class: 'fas fa-arrow-up-right-from-square mr-1.5' }), 'Abrir no aplicativo']),
     ]);
@@ -275,20 +275,20 @@ onUnmounted(() => {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const EXT_ICONS = {
-  xlsx: 'fas fa-file-excel text-green-500', xls: 'fas fa-file-excel text-green-500',
-  docx: 'fas fa-file-word text-blue-500', doc: 'fas fa-file-word text-blue-500',
-  pptx: 'fas fa-file-powerpoint text-orange-500', ppt: 'fas fa-file-powerpoint text-orange-500',
-  pdf: 'fas fa-file-pdf text-red-500',
-  png: 'fas fa-file-image text-purple-500', jpg: 'fas fa-file-image text-purple-500',
-  jpeg: 'fas fa-file-image text-purple-500', gif: 'fas fa-file-image text-purple-500',
-  svg: 'fas fa-file-image text-purple-500', webp: 'fas fa-file-image text-purple-500',
+  xlsx: 'fas fa-file-excel text-data-pos', xls: 'fas fa-file-excel text-data-pos',
+  docx: 'fas fa-file-word text-accent', doc: 'fas fa-file-word text-accent',
+  pptx: 'fas fa-file-powerpoint text-data-warn', ppt: 'fas fa-file-powerpoint text-data-warn',
+  pdf: 'fas fa-file-pdf text-data-neg',
+  png: 'fas fa-file-image text-accent', jpg: 'fas fa-file-image text-accent',
+  jpeg: 'fas fa-file-image text-accent', gif: 'fas fa-file-image text-accent',
+  svg: 'fas fa-file-image text-accent', webp: 'fas fa-file-image text-accent',
   mp4: 'fas fa-file-video text-pink-500', mov: 'fas fa-file-video text-pink-500',
-  mp3: 'fas fa-file-audio text-yellow-400', wav: 'fas fa-file-audio text-yellow-400',
-  txt: 'fas fa-file-lines text-gray-300', csv: 'fas fa-file-csv text-teal-400',
-  json: 'fas fa-file-code text-gray-300',
-  zip: 'fas fa-file-zipper text-amber-500', rar: 'fas fa-file-zipper text-amber-500',
+  mp3: 'fas fa-file-audio text-data-warn', wav: 'fas fa-file-audio text-data-warn',
+  txt: 'fas fa-file-lines text-ink-subtle', csv: 'fas fa-file-csv text-teal-400',
+  json: 'fas fa-file-code text-ink-subtle',
+  zip: 'fas fa-file-zipper text-data-warn', rar: 'fas fa-file-zipper text-data-warn',
 };
-function fileIconClass(ext) { return EXT_ICONS[ext?.toLowerCase()] || 'fas fa-file text-gray-400'; }
+function fileIconClass(ext) { return EXT_ICONS[ext?.toLowerCase()] || 'fas fa-file text-ink-subtle'; }
 
 function formatSize(bytes) {
   if (!bytes) return '';

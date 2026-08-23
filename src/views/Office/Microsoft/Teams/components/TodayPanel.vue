@@ -97,7 +97,7 @@ function fmtTime(dt) {
         <a v-if="nextMeeting.joinUrl" :href="nextMeeting.joinUrl" target="_blank" rel="noopener"
           class="inline-flex items-center gap-2 px-4 min-h-10 rounded-lg text-xs font-semibold text-white
                  transition-colors shadow-soft"
-          :class="isLive ? 'bg-accent hover:bg-accent-hover' : 'bg-purple-600 hover:bg-purple-700'">
+          :class="isLive ? 'bg-accent hover:bg-accent-hover' : 'bg-accent hover:bg-accent-hover'">
           <i class="fas fa-video text-[10px]"></i> Entrar
         </a>
       </div>

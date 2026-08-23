@@ -57,12 +57,12 @@ function overflowCount(day) { return Math.max(0, dayEvents(day).length - MAX_VIS
 function chipClass(ev) {
   if (ev.isCancelled)     return 'bg-surface-sunken text-ink-subtle line-through border-line';
   if (ev.isAllDay)        return 'bg-accent text-white border-accent';
-  if (ev.isOnlineMeeting) return 'bg-purple-500/15 text-purple-700 dark:text-purple-200 border-purple-500/30';
+  if (ev.isOnlineMeeting) return 'bg-accent/15 text-accent border-accent/30';
   return 'bg-accent-soft text-accent border-accent/30';
 }
 function dotClass(ev) {
   if (ev.isCancelled)     return 'bg-ink-subtle';
-  if (ev.isOnlineMeeting) return 'bg-purple-500';
+  if (ev.isOnlineMeeting) return 'bg-accent';
   return 'bg-accent';
 }
 

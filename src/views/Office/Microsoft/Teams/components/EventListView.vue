@@ -44,7 +44,7 @@ const groupedEvents = computed(() => {
 
 function barClass(ev) {
   if (ev.isCancelled)     return 'bg-ink-subtle/40';
-  if (ev.isOnlineMeeting) return 'bg-purple-500';
+  if (ev.isOnlineMeeting) return 'bg-accent';
   return 'bg-accent';
 }
 </script>
@@ -125,7 +125,7 @@ function barClass(ev) {
               {{ ev.subject }}
             </span>
             <span v-if="ev.isOnlineMeeting"
-              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 text-micro font-semibold shrink-0">
+              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-accent/15 text-accent text-micro font-semibold shrink-0">
               <i class="fas fa-video text-[8px]"></i> Teams
             </span>
             <span v-if="ev.isRecurring"
@@ -133,7 +133,7 @@ function barClass(ev) {
               <i class="fas fa-rotate text-[8px]"></i> Recorrente
             </span>
             <span v-if="ev.isCancelled"
-              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 text-micro font-semibold shrink-0">
+              class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-data-neg/15 text-data-neg text-micro font-semibold shrink-0">
               Cancelado
             </span>
           </div>
@@ -158,7 +158,7 @@ function barClass(ev) {
         <div class="shrink-0 flex items-center gap-1.5 self-center">
           <a v-if="ev.joinUrl && !ev.isCancelled" :href="ev.joinUrl" target="_blank" rel="noopener"
             @click.stop
-            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-purple-600 hover:bg-purple-700
+            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-accent hover:bg-accent-hover
                    text-white text-xs font-semibold transition-all shadow-soft
                    sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100">
             <i class="fas fa-video text-[10px]"></i>

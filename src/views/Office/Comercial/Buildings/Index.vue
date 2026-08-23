@@ -102,11 +102,11 @@ const visibleSections = computed(() => {
 });
 
 const sectionMeta = (key) => ({
-  'Pré Lançamentos':   { icon: 'fas fa-map-location-dot', accent: 'text-emerald-500' },
-  'Lançamentos':       { icon: 'fas fa-bullhorn',         accent: 'text-sky-500' },
-  'Em Obras':          { icon: 'fas fa-helmet-safety',    accent: 'text-amber-500' },
-  'Finalizados':       { icon: 'fas fa-key',              accent: 'text-rose-500' },
-  'Portal do Cliente': { icon: 'fas fa-door-open',        accent: 'text-purple-500' },
+  'Pré Lançamentos':   { icon: 'fas fa-map-location-dot', accent: 'text-data-pos' },
+  'Lançamentos':       { icon: 'fas fa-bullhorn',         accent: 'text-accent' },
+  'Em Obras':          { icon: 'fas fa-helmet-safety',    accent: 'text-data-warn' },
+  'Finalizados':       { icon: 'fas fa-key',              accent: 'text-data-neg' },
+  'Portal do Cliente': { icon: 'fas fa-door-open',        accent: 'text-accent' },
 }[key] || { icon: 'fas fa-building', accent: 'text-accent' });
 </script>
 

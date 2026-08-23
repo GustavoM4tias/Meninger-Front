@@ -157,7 +157,7 @@ async function confirmDelete() {
         <Input v-model="startMonth" type="month" label="Mês inicial" />
         <Input v-model="endMonth" type="month" label="Mês final" />
       </div>
-      <p v-if="!validRange" class="mt-2 text-xs text-red-600 dark:text-red-400 flex items-center gap-1.5">
+      <p v-if="!validRange" class="mt-2 text-xs text-data-neg flex items-center gap-1.5">
         <i class="fas fa-circle-exclamation"></i> Intervalo inválido: o mês inicial deve ser menor ou igual ao final.
       </p>
     </section>
@@ -206,12 +206,12 @@ async function confirmDelete() {
           </RouterLink>
           <span class="flex-1"></span>
           <button v-if="!p.is_active" @click="activate(p)" v-tippy:top="'Tornar a projeção ativa'"
-            class="h-8 px-2.5 rounded-lg text-xs text-ink-muted hover:bg-emerald-500/10 hover:text-emerald-600 transition-colors flex items-center gap-1.5">
+            class="h-8 px-2.5 rounded-lg text-xs text-ink-muted hover:bg-data-pos/10 hover:text-data-pos transition-colors flex items-center gap-1.5">
             <i class="fas fa-circle-check"></i> Ativar
           </button>
           <button @click="askDelete(p)"
             :disabled="p.is_locked" v-tippy:top="p.is_locked ? 'Desbloqueie antes de excluir' : 'Excluir projeção'"
-            class="h-8 w-8 grid place-items-center rounded-lg text-ink-muted hover:bg-red-500/10 hover:text-red-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-ink-muted">
+            class="h-8 w-8 grid place-items-center rounded-lg text-ink-muted hover:bg-data-neg/10 hover:text-data-neg transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-ink-muted">
             <i class="fas fa-trash-can text-sm"></i>
           </button>
         </div>
@@ -235,7 +235,7 @@ async function confirmDelete() {
     <!-- Modal excluir -->
     <Modal :open="!!deleteTarget" size="md" title="Excluir projeção" @close="deleteTarget = null">
       <div v-if="deleteTarget" class="space-y-3">
-        <div class="rounded-lg p-3 border border-red-500/20 bg-red-500/10 text-sm text-red-700 dark:text-red-300">
+        <div class="rounded-lg p-3 border border-data-neg/20 bg-data-neg/10 text-sm text-data-neg">
           <i class="fas fa-triangle-exclamation mr-1.5"></i>
           Isto remove <strong>{{ deleteTarget.name }}</strong> e todas as suas metas, ajustes e histórico. Não dá para desfazer.
         </div>

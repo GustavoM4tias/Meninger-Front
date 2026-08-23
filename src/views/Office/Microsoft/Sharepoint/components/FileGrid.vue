@@ -8,12 +8,12 @@
       </span>
       <div class="flex items-center gap-1">
         <button @click="viewMode = 'grid'"
-          :class="viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'"
+          :class="viewMode === 'grid' ? 'bg-accent/10 text-accent  ' : 'text-ink-subtle hover:text-ink-muted dark:hover:text-ink-subtle'"
           class="w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-colors">
           <i class="fas fa-grip"></i>
         </button>
         <button @click="viewMode = 'list'"
-          :class="viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'"
+          :class="viewMode === 'list' ? 'bg-accent/10 text-accent  ' : 'text-ink-subtle hover:text-ink-muted dark:hover:text-ink-subtle'"
           class="w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-colors">
           <i class="fas fa-list"></i>
         </button>
@@ -56,22 +56,22 @@
         class="group relative flex flex-col items-center gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all duration-150"
         :class="[
           dragOverId === item.id && item.isFolder
-            ? 'bg-blue-50 border-blue-400 dark:bg-blue-900/30 dark:border-blue-500 scale-105'
+            ? 'bg-accent/10 border-accent   scale-105'
             : item.isFolder
-              ? 'border-transparent hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-900/20 dark:hover:border-blue-800'
-              : 'border-transparent hover:bg-gray-50 hover:border-gray-200 dark:hover:bg-gray-800 dark:hover:border-gray-700',
+              ? 'border-transparent hover:bg-accent/10 hover:border-accent/25  '
+              : 'border-transparent hover:bg-surface-sunken hover:border-line hover:bg-surface-sunken dark:hover:border-line',
           draggingId === item.id ? 'opacity-40' : ''
         ]">
 
         <!-- Favorite star -->
         <div v-if="sp.isFavorited(item.id)"
           class="absolute top-1.5 left-1.5 w-4 h-4 flex items-center justify-center">
-          <i class="fas fa-star text-amber-400 text-[10px]"></i>
+          <i class="fas fa-star text-data-warn text-[10px]"></i>
         </div>
 
         <!-- Icon -->
         <div class="w-12 h-12 flex items-center justify-center">
-          <i v-if="item.isFolder" class="fas fa-folder text-4xl text-yellow-400"></i>
+          <i v-if="item.isFolder" class="fas fa-folder text-4xl text-data-warn"></i>
           <i v-else :class="fileIconClass(item.ext)" class="text-4xl"></i>
         </div>
 
@@ -93,12 +93,12 @@
           class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
           <button @click.stop="emit('action', 'preview', item)"
             title="Visualizar"
-            class="w-6 h-6 rounded-md bg-white dark:bg-gray-700 shadow flex items-center justify-center text-blue-600 hover:text-blue-800 dark:text-blue-400">
+            class="w-6 h-6 rounded-md bg-surface-sunken shadow flex items-center justify-center text-accent hover:text-accent">
             <i class="fas fa-eye text-[10px]"></i>
           </button>
           <button @click.stop="emit('action', 'download', item)"
             title="Baixar"
-            class="w-6 h-6 rounded-md bg-white dark:bg-gray-700 shadow flex items-center justify-center text-green-600 hover:text-green-800 dark:text-green-400">
+            class="w-6 h-6 rounded-md bg-surface-sunken shadow flex items-center justify-center text-data-pos hover:text-data-pos">
             <i class="fas fa-download text-[10px]"></i>
           </button>
         </div>
@@ -129,7 +129,7 @@
 
         <!-- Icon -->
         <div class="w-8 h-8 flex items-center justify-center shrink-0">
-          <i v-if="item.isFolder" class="fas fa-folder text-2xl text-yellow-400"></i>
+          <i v-if="item.isFolder" class="fas fa-folder text-2xl text-data-warn"></i>
           <i v-else :class="fileIconClass(item.ext)" class="text-2xl"></i>
         </div>
 
@@ -137,7 +137,7 @@
         <span class="flex-1 text-sm text-ink truncate">{{ item.name }}</span>
 
         <!-- Favorite -->
-        <i v-if="sp.isFavorited(item.id)" class="fas fa-star text-amber-400 text-xs shrink-0"></i>
+        <i v-if="sp.isFavorited(item.id)" class="fas fa-star text-data-warn text-xs shrink-0"></i>
 
         <!-- Meta -->
         <span class="text-xs text-ink-subtle w-20 text-right shrink-0 hidden sm:block">
@@ -151,15 +151,15 @@
         <!-- Actions (visible on hover) -->
         <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
           <button v-if="!item.isFolder" @click.stop="emit('action', 'preview', item)"
-            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-accent  hover:bg-accent/10  transition-colors">
             <i class="fas fa-eye text-xs"></i>
           </button>
           <button v-if="!item.isFolder" @click.stop="emit('action', 'download', item)"
-            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-data-pos  hover:bg-data-pos/10  transition-colors">
             <i class="fas fa-download text-xs"></i>
           </button>
           <button @click.stop="openCtx({ clientX: $event.clientX, clientY: $event.clientY }, item)"
-            class="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-surface-hover transition-colors">
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink dark:hover:text-ink hover:bg-surface-hover transition-colors">
             <i class="fas fa-ellipsis-vertical text-xs"></i>
           </button>
         </div>
@@ -245,21 +245,21 @@ function openCtx(e, item) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const EXT_ICONS = {
-  xlsx: 'fas fa-file-excel text-green-600', xls: 'fas fa-file-excel text-green-600',
-  docx: 'fas fa-file-word text-blue-600', doc: 'fas fa-file-word text-blue-600',
-  pptx: 'fas fa-file-powerpoint text-orange-500', ppt: 'fas fa-file-powerpoint text-orange-500',
-  pdf: 'fas fa-file-pdf text-red-500',
-  png: 'fas fa-file-image text-purple-500', jpg: 'fas fa-file-image text-purple-500',
-  jpeg: 'fas fa-file-image text-purple-500', gif: 'fas fa-file-image text-purple-500',
-  svg: 'fas fa-file-image text-purple-500', webp: 'fas fa-file-image text-purple-500',
+  xlsx: 'fas fa-file-excel text-data-pos', xls: 'fas fa-file-excel text-data-pos',
+  docx: 'fas fa-file-word text-accent', doc: 'fas fa-file-word text-accent',
+  pptx: 'fas fa-file-powerpoint text-data-warn', ppt: 'fas fa-file-powerpoint text-data-warn',
+  pdf: 'fas fa-file-pdf text-data-neg',
+  png: 'fas fa-file-image text-accent', jpg: 'fas fa-file-image text-accent',
+  jpeg: 'fas fa-file-image text-accent', gif: 'fas fa-file-image text-accent',
+  svg: 'fas fa-file-image text-accent', webp: 'fas fa-file-image text-accent',
   mp4: 'fas fa-file-video text-pink-500', mov: 'fas fa-file-video text-pink-500',
   avi: 'fas fa-file-video text-pink-500',
-  mp3: 'fas fa-file-audio text-yellow-500', wav: 'fas fa-file-audio text-yellow-500',
-  txt: 'fas fa-file-lines text-gray-500', csv: 'fas fa-file-csv text-teal-600',
-  json: 'fas fa-file-code text-gray-600', js: 'fas fa-file-code text-yellow-500',
-  zip: 'fas fa-file-zipper text-amber-600', rar: 'fas fa-file-zipper text-amber-600',
+  mp3: 'fas fa-file-audio text-data-warn', wav: 'fas fa-file-audio text-data-warn',
+  txt: 'fas fa-file-lines text-ink-muted', csv: 'fas fa-file-csv text-teal-600',
+  json: 'fas fa-file-code text-ink-muted', js: 'fas fa-file-code text-data-warn',
+  zip: 'fas fa-file-zipper text-data-warn', rar: 'fas fa-file-zipper text-data-warn',
 };
-function fileIconClass(ext) { return EXT_ICONS[ext?.toLowerCase()] || 'fas fa-file text-gray-400'; }
+function fileIconClass(ext) { return EXT_ICONS[ext?.toLowerCase()] || 'fas fa-file text-ink-subtle'; }
 
 function formatSize(bytes) {
   if (!bytes) return '';

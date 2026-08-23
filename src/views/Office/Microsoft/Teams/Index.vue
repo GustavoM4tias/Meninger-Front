@@ -171,16 +171,16 @@ function showToast(message, type = 'success') {
           <div v-if="notifications.length" class="space-y-2 mb-4">
             <div v-for="notif in notifications" :key="notif.id"
               class="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl
-                     bg-amber-500/10 border border-amber-500/30 surface-gradient">
+                     bg-data-warn/10 border border-data-warn/30 surface-gradient">
               <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                <div class="h-9 w-9 rounded-lg bg-amber-500 flex items-center justify-center shrink-0">
+                <div class="h-9 w-9 rounded-lg bg-data-warn flex items-center justify-center shrink-0">
                   <i class="fas fa-bell text-white text-sm"></i>
                 </div>
                 <div class="min-w-0">
-                  <p class="text-sm font-semibold text-amber-700 dark:text-amber-200 truncate">
+                  <p class="text-sm font-semibold text-data-warn truncate">
                     {{ notif.event.subject }}
                   </p>
-                  <p class="text-xs text-amber-600 dark:text-amber-400">
+                  <p class="text-xs text-data-warn">
                     Começa em <span class="font-mono font-bold">{{ minutesUntil(notif.event.start) }}</span> min
                     <span v-if="notif.event.location"> · {{ notif.event.location }}</span>
                   </p>
@@ -188,11 +188,11 @@ function showToast(message, type = 'success') {
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 <a v-if="notif.event.joinUrl" :href="notif.event.joinUrl" target="_blank" rel="noopener"
-                  class="inline-flex items-center gap-1.5 px-3 py-2 min-h-10 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors">
+                  class="inline-flex items-center gap-1.5 px-3 py-2 min-h-10 rounded-lg bg-data-warn hover:bg-data-warn/85 text-white text-xs font-semibold transition-colors">
                   <i class="fas fa-video text-[10px]"></i> Entrar agora
                 </a>
                 <button @click="dismissNotification(notif.id)"
-                  class="h-10 w-10 rounded-lg flex items-center justify-center text-amber-500 hover:bg-amber-500/20 transition-colors">
+                  class="h-10 w-10 rounded-lg flex items-center justify-center text-data-warn hover:bg-data-warn/20 transition-colors">
                   <i class="fas fa-xmark text-xs"></i>
                 </button>
               </div>
@@ -218,11 +218,11 @@ function showToast(message, type = 'success') {
         <div v-if="toast.show"
           class="fixed bottom-5 right-5 z-[99999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-overlay border text-sm max-w-sm"
           :class="toast.type === 'success'
-            ? 'bg-surface-raised border-emerald-500/30 text-emerald-600 dark:text-emerald-300'
-            : 'bg-surface-raised border-red-500/30 text-red-600 dark:text-red-400'">
+            ? 'bg-surface-raised border-data-pos/30 text-data-pos'
+            : 'bg-surface-raised border-data-neg/30 text-data-neg'">
           <i :class="toast.type === 'success'
-            ? 'fas fa-circle-check text-emerald-500'
-            : 'fas fa-circle-exclamation text-red-500'" class="text-base shrink-0"></i>
+            ? 'fas fa-circle-check text-data-pos'
+            : 'fas fa-circle-exclamation text-data-neg'" class="text-base shrink-0"></i>
           <span>{{ toast.message }}</span>
         </div>
       </Transition>

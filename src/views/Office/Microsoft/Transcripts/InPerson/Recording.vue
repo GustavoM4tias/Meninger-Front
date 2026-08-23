@@ -1,13 +1,11 @@
 <template>
   <!-- ── Tela de gravação ───────────────────────────────────────────────────────── -->
-  <div class="min-h-screen flex flex-col relative overflow-hidden bg-surface-base">
+  <div class="min-h-screen flex flex-col relative overflow-hidden bg-surface">
 
-    <!-- Gradientes de fundo -->
-    <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-violet-500/5 dark:bg-violet-700/8 rounded-full blur-3xl" />
-      <div class="absolute bottom-0 right-0 w-[400px] h-[400px] bg-purple-500/5 dark:bg-purple-700/5 rounded-full blur-3xl" />
-    </div>
-    <!-- Grid decorativo -->
+    <!-- Textura de fundo: grade fina, sem véu de cor.
+         Os dois blobs de `bg-accent/5 blur-3xl` que ficavam aqui eram
+         exatamente a "camada translúcida sobre área larga" que o
+         DESIGN-LANGUAGE proíbe - lavavam o contraste do que fica por cima. -->
     <div class="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
 
     <!-- Header -->
@@ -40,12 +38,12 @@
         <!-- Badge de status -->
         <transition name="fade">
           <div v-if="store.isRecording"
-            class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/25 text-red-500 dark:text-red-400 text-xs font-semibold tracking-wide uppercase">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-data-neg/10 border border-data-neg/25 text-data-neg text-xs font-semibold tracking-wide uppercase">
+            <span class="w-1.5 h-1.5 rounded-full bg-data-neg animate-pulse"></span>
             Gravando
           </div>
           <div v-else-if="store.isPaused"
-            class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-semibold tracking-wide uppercase">
+            class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-data-warn/10 border border-data-warn/25 text-data-warn text-xs font-semibold tracking-wide uppercase">
             <i class="fas fa-pause text-[10px]"></i>
             Pausado
           </div>
@@ -68,7 +66,7 @@
 
         <!-- Anéis de pulso externos -->
         <div v-for="ring in 4" :key="ring"
-          class="absolute rounded-full border border-violet-500/10 transition-all duration-300"
+          class="absolute rounded-full border border-accent/10 transition-all duration-300"
           :style="ringStyle(ring)" />
 
         <!-- Anel rotativo com gradiente -->
@@ -89,12 +87,12 @@
 
           <!-- Ponto central pulsante (quando gravando) -->
           <div v-if="store.isRecording"
-            class="absolute w-3 h-3 rounded-full bg-violet-400 shadow-lg shadow-violet-400/50 animate-pulse" />
+            class="absolute w-3 h-3 rounded-full bg-accent shadow-lg shadow-violet-400/50 animate-pulse" />
         </div>
 
         <!-- Partículas orbitais -->
         <div v-for="p in 3" :key="p" class="absolute" :style="orbitalStyle(p)">
-          <div class="w-1.5 h-1.5 rounded-full bg-violet-400/60 shadow-sm shadow-violet-400/40" />
+          <div class="w-1.5 h-1.5 rounded-full bg-accent/60 shadow-sm shadow-violet-400/40" />
         </div>
       </div>
 
@@ -109,7 +107,7 @@
       <div class="w-full max-w-2xl">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xs font-semibold text-ink-subtle uppercase tracking-widest flex items-center gap-2">
-            <i class="fas fa-wave-square text-violet-500 text-[10px]"></i>
+            <i class="fas fa-wave-square text-accent text-[10px]"></i>
             Transcrição ao vivo
           </h3>
           <span class="text-xs text-ink-subtle font-mono tabular-nums">{{ store.cues.length }} segmentos</span>
@@ -123,13 +121,13 @@
           <TransitionGroup name="cue">
             <div v-for="(cue, i) in store.cues" :key="i"
               class="flex gap-3 text-sm leading-relaxed">
-              <span class="text-violet-500 dark:text-violet-400 shrink-0 font-mono text-xs mt-0.5 tabular-nums">{{ cue.startStr }}</span>
+              <span class="text-accent shrink-0 font-mono text-xs mt-0.5 tabular-nums">{{ cue.startStr }}</span>
               <span class="text-ink-muted">{{ cue.text }}</span>
             </div>
           </TransitionGroup>
           <!-- Resultado interim -->
           <div v-if="store.interimText" class="flex gap-3 text-sm leading-relaxed">
-            <span class="text-violet-400/50 shrink-0 font-mono text-xs mt-0.5">{{ store.timerDisplay }}</span>
+            <span class="text-accent shrink-0 font-mono text-xs mt-0.5">{{ store.timerDisplay }}</span>
             <span class="text-ink-subtle italic">{{ store.interimText }}<span class="animate-pulse">▌</span></span>
           </div>
         </div>
@@ -140,7 +138,7 @@
         <Button v-if="store.isPaused"
           variant="primary"
           icon="fas fa-play"
-          class="!bg-violet-600 hover:!bg-violet-700"
+          class="!bg-accent hover:!bg-accent"
           @click="store.resume()">
           Retomar
         </Button>
@@ -159,8 +157,8 @@
       <Surface v-if="!store.hasMicSupport"
         variant="raised"
         padding="sm"
-        class="border-red-500/30 bg-red-500/10">
-        <div class="flex items-center gap-2 text-red-600 dark:text-red-400 text-xs">
+        class="border-data-neg/30 bg-data-neg/10">
+        <div class="flex items-center gap-2 text-data-neg text-xs">
           <i class="fas fa-circle-exclamation"></i>
           Microfone não disponível ou não permitido. Verifique as permissões do navegador.
         </div>
@@ -174,8 +172,8 @@
       @close="confirmStop = false">
       <div class="text-center space-y-4">
         <div class="flex justify-center">
-          <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/30 grid place-items-center">
-            <i class="fas fa-stop text-red-500"></i>
+          <div class="w-12 h-12 rounded-xl bg-data-neg/10 border border-data-neg/30 grid place-items-center">
+            <i class="fas fa-stop text-data-neg"></i>
           </div>
         </div>
         <p class="text-sm text-ink-muted">
@@ -190,7 +188,7 @@
       </template>
       <div class="text-center -mt-1">
         <button @click="handleDiscard"
-          class="text-xs text-ink-subtle hover:text-red-500 transition-colors">
+          class="text-xs text-ink-subtle hover:text-data-neg transition-colors">
           Descartar sem salvar
         </button>
       </div>

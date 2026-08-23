@@ -54,11 +54,11 @@ const locationText = computed(() => {
 // Cor do banner muda conforme o status (mantém o "tech feel")
 const bannerGradient = computed(() => {
   const s = props.lead?.situacao_nome || '';
-  if (['Vendido', 'Venda Realizada'].includes(s))   return 'from-emerald-700 via-emerald-600 to-teal-600';
-  if (['Cancelado', 'Descartado'].includes(s))      return 'from-slate-700 via-slate-600 to-slate-700';
-  if (['Em Negociação', 'Reservado', 'Com Reserva'].includes(s)) return 'from-amber-700 via-orange-600 to-amber-600';
-  if (['Em Análise de Crédito'].includes(s))        return 'from-purple-700 via-violet-600 to-purple-600';
-  return 'from-blue-700 via-blue-600 to-indigo-600';
+  if (['Vendido', 'Venda Realizada'].includes(s))   return 'from-data-pos via-data-pos to-series-3';
+  if (['Cancelado', 'Descartado'].includes(s))      return 'from-ink-muted via-ink-subtle to-ink-muted';
+  if (['Em Negociação', 'Reservado', 'Com Reserva'].includes(s)) return 'from-data-warn via-orange-600 to-data-warn';
+  if (['Em Análise de Crédito'].includes(s))        return 'from-accent via-violet-600 to-accent';
+  return 'from-accent via-blue-600 to-accent';
 });
 
 const statusVariant = computed(() => {
@@ -117,14 +117,14 @@ const quickLinks = computed(() => [
         <!-- Decoração: pontinhos + glow sutil -->
         <div class="pointer-events-none absolute inset-0 opacity-30"
           style="background-image:radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px); background-size: 18px 18px;"></div>
-        <div class="pointer-events-none absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+        <div class="pointer-events-none absolute -top-16 -right-16 w-64 h-64 bg-surface-raised/10 rounded-full blur-3xl"></div>
 
         <div class="relative flex items-start justify-between gap-3">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap mb-2">
               <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
-                           bg-white/20 backdrop-blur border border-white/20 text-white">
-                <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+                           bg-surface-raised/20 backdrop-blur border border-white/20 text-white">
+                <span class="h-1.5 w-1.5 rounded-full bg-surface-raised"></span>
                 {{ lead.situacao_nome || 'Sem situação' }}
               </span>
               <span class="text-micro text-white/70 font-mono">#{{ lead.idlead }}</span>
@@ -139,7 +139,7 @@ const quickLinks = computed(() => [
 
           <button @click="$emit('fechar')" aria-label="Fechar"
             class="h-9 w-9 grid place-items-center rounded-lg
-                   bg-white/15 hover:bg-white/25 backdrop-blur
+                   bg-surface-raised/15 hover:bg-surface-raised/25 backdrop-blur
                    text-white transition-colors shrink-0">
             <i class="fas fa-xmark"></i>
           </button>
@@ -150,7 +150,7 @@ const quickLinks = computed(() => [
           <a v-for="link in quickLinks" :key="link.label"
             :href="link.url" target="_blank" rel="noopener noreferrer"
             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                   bg-white/15 hover:bg-white/30 backdrop-blur border border-white/20
+                   bg-surface-raised/15 hover:bg-surface-raised/30 backdrop-blur border border-white/20
                    text-white text-xs font-medium transition-all hover:-translate-y-0.5">
             <img v-if="link.img" :src="link.img" :alt="link.label" class="h-3.5" />
             <i v-else-if="link.icon" :class="link.icon" class="text-[10px]"></i>
@@ -175,18 +175,18 @@ const quickLinks = computed(() => [
             </div>
             <div class="min-w-0">
               <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1">
-                <i class="fab fa-whatsapp text-emerald-500 text-[9px] mr-1"></i>Telefone
+                <i class="fab fa-whatsapp text-data-pos text-[9px] mr-1"></i>Telefone
               </p>
               <a v-if="lead.telefone"
                 :href="`https://wa.me/55${lead.telefone.replace(/\D/g, '')}`" target="_blank"
-                class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline truncate block">
+                class="text-sm text-data-pos hover:underline truncate block">
                 {{ lead.telefone }}
               </a>
               <span v-else class="text-sm text-ink-subtle">—</span>
             </div>
             <div class="min-w-0">
               <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1">
-                <i class="fas fa-location-dot text-red-400 text-[9px] mr-1"></i>Localização
+                <i class="fas fa-location-dot text-data-neg text-[9px] mr-1"></i>Localização
               </p>
               <p class="text-sm text-ink truncate">{{ locationText || '—' }}</p>
             </div>
@@ -247,10 +247,10 @@ const quickLinks = computed(() => [
 
         <!-- Cancelamento -->
         <section v-if="cancelInfo"
-          class="rounded-xl border border-red-500/20 bg-red-500/10 overflow-hidden">
-          <div class="flex items-center gap-2 px-3 py-2 border-b border-red-500/20">
-            <i class="fas fa-ban text-red-500 text-xs"></i>
-            <p class="text-micro font-mono uppercase tracking-wider text-red-700 dark:text-red-300">
+          class="rounded-xl border border-data-neg/20 bg-data-neg/10 overflow-hidden">
+          <div class="flex items-center gap-2 px-3 py-2 border-b border-data-neg/20">
+            <i class="fas fa-ban text-data-neg text-xs"></i>
+            <p class="text-micro font-mono uppercase tracking-wider text-data-neg">
               Motivo de cancelamento / descarte
             </p>
           </div>

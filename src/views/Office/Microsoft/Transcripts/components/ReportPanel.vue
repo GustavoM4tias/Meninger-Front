@@ -15,7 +15,7 @@
       </span>
       <div class="flex flex-wrap gap-1 ml-auto">
         <span v-for="tag in report.tags" :key="tag"
-          class="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs">
+          class="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs">
           #{{ tag }}
         </span>
       </div>
@@ -23,7 +23,7 @@
 
     <!-- Resumo executivo -->
     <section v-if="report.resumo">
-      <h3 class="section-title"><i class="fas fa-align-left text-blue-500"></i> Resumo Executivo</h3>
+      <h3 class="section-title"><i class="fas fa-align-left text-accent"></i> Resumo Executivo</h3>
       <div class="bg-surface-raised rounded-xl border border-line p-4">
         <p class="text-sm text-ink-muted leading-relaxed whitespace-pre-wrap">{{ report.resumo }}</p>
       </div>
@@ -31,11 +31,11 @@
 
     <!-- Pauta -->
     <section v-if="report.pauta?.length">
-      <h3 class="section-title"><i class="fas fa-list-check text-indigo-500"></i> Pauta Discutida</h3>
+      <h3 class="section-title"><i class="fas fa-list-check text-accent"></i> Pauta Discutida</h3>
       <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
         <div v-for="(item, i) in report.pauta" :key="i"
           class="flex items-start gap-3 px-4 py-3 text-sm text-ink-muted">
-          <span class="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{{ i+1 }}</span>
+          <span class="w-5 h-5 rounded-full bg-accent/10 text-accent flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{{ i+1 }}</span>
           {{ item }}
         </div>
       </div>
@@ -43,7 +43,7 @@
 
     <!-- KPIs -->
     <section v-if="report.kpis?.length">
-      <h3 class="section-title"><i class="fas fa-chart-bar text-green-500"></i> KPIs & Métricas</h3>
+      <h3 class="section-title"><i class="fas fa-chart-bar text-data-pos"></i> KPIs & Métricas</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div v-for="(kpi, i) in report.kpis" :key="i"
           class="bg-surface-raised rounded-xl border border-line p-4">
@@ -57,11 +57,11 @@
 
     <!-- Decisões -->
     <section v-if="report.decisoes?.length">
-      <h3 class="section-title"><i class="fas fa-gavel text-amber-500"></i> Decisões Tomadas</h3>
+      <h3 class="section-title"><i class="fas fa-gavel text-data-warn"></i> Decisões Tomadas</h3>
       <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
         <div v-for="(dec, i) in report.decisoes" :key="i"
           class="flex items-start gap-3 px-4 py-3 text-sm text-ink-muted">
-          <i class="fas fa-check-circle text-amber-500 mt-0.5 shrink-0"></i>
+          <i class="fas fa-check-circle text-data-warn mt-0.5 shrink-0"></i>
           {{ dec }}
         </div>
       </div>
@@ -69,15 +69,15 @@
 
     <!-- Ações -->
     <section v-if="report.acoes?.length">
-      <h3 class="section-title"><i class="fas fa-bolt text-red-500"></i> Ações & Responsabilidades</h3>
+      <h3 class="section-title"><i class="fas fa-bolt text-data-neg"></i> Ações & Responsabilidades</h3>
       <div class="bg-surface-raised rounded-xl border border-line overflow-hidden">
         <table class="w-full text-sm">
           <thead>
             <tr class="bg-surface-sunken/60 text-left">
-              <th class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Tarefa</th>
-              <th class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide hidden sm:table-cell">Responsável</th>
-              <th class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide hidden md:table-cell">Prazo</th>
-              <th class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Prioridade</th>
+              <th class="px-4 py-2 text-xs font-semibold text-ink-muted uppercase tracking-wide">Tarefa</th>
+              <th class="px-4 py-2 text-xs font-semibold text-ink-muted uppercase tracking-wide hidden sm:table-cell">Responsável</th>
+              <th class="px-4 py-2 text-xs font-semibold text-ink-muted uppercase tracking-wide hidden md:table-cell">Prazo</th>
+              <th class="px-4 py-2 text-xs font-semibold text-ink-muted uppercase tracking-wide">Prioridade</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-line">
@@ -100,28 +100,28 @@
 
     <!-- Checklist -->
     <section v-if="report.checklist?.length">
-      <h3 class="section-title"><i class="fas fa-square-check text-teal-500"></i> Checklist</h3>
+      <h3 class="section-title"><i class="fas fa-square-check text-series-3"></i> Checklist</h3>
       <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
         <div v-for="(item, i) in checklistLocal" :key="i"
           class="flex items-center gap-3 px-4 py-3">
           <input type="checkbox" v-model="item.concluido"
             class="w-4 h-4 accent-teal-500 cursor-pointer shrink-0" />
-          <span :class="item.concluido ? 'line-through text-gray-400 dark:text-slate-500' : 'text-ink-muted'"
+          <span :class="item.concluido ? 'line-through text-ink-subtle' : 'text-ink-muted'"
             class="text-sm flex-1 transition-all">
             {{ item.item }}
           </span>
-          <span v-if="item.responsavel" class="text-xs text-gray-400 dark:text-slate-500 shrink-0">{{ item.responsavel }}</span>
+          <span v-if="item.responsavel" class="text-xs text-ink-subtle shrink-0">{{ item.responsavel }}</span>
         </div>
       </div>
     </section>
 
     <!-- Próximos passos -->
     <section v-if="report.proximos_passos?.length">
-      <h3 class="section-title"><i class="fas fa-arrow-right text-purple-500"></i> Próximos Passos</h3>
+      <h3 class="section-title"><i class="fas fa-arrow-right text-accent"></i> Próximos Passos</h3>
       <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
         <div v-for="(step, i) in report.proximos_passos" :key="i"
           class="flex items-start gap-3 px-4 py-3 text-sm text-ink-muted">
-          <span class="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{{ i+1 }}</span>
+          <span class="w-5 h-5 rounded-full bg-accent/10 text-accent flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{{ i+1 }}</span>
           {{ step }}
         </div>
       </div>
@@ -129,10 +129,10 @@
 
     <!-- Pontos de atenção -->
     <section v-if="report.pontos_atencao?.length">
-      <h3 class="section-title"><i class="fas fa-triangle-exclamation text-orange-500"></i> Pontos de Atenção</h3>
+      <h3 class="section-title"><i class="fas fa-triangle-exclamation text-data-warn"></i> Pontos de Atenção</h3>
       <div class="space-y-2">
         <div v-for="(ponto, i) in report.pontos_atencao" :key="i"
-          class="flex items-start gap-3 px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/50 text-sm text-orange-800 dark:text-orange-300">
+          class="flex items-start gap-3 px-4 py-3 rounded-xl bg-data-warn/10 border border-data-warn/25/50 text-sm text-data-warn">
           <i class="fas fa-exclamation-circle mt-0.5 shrink-0"></i>
           {{ ponto }}
         </div>
@@ -141,7 +141,7 @@
 
     <!-- Participantes -->
     <section v-if="report.participantes?.length">
-      <h3 class="section-title"><i class="fas fa-users text-sky-500"></i> Participantes</h3>
+      <h3 class="section-title"><i class="fas fa-users text-accent"></i> Participantes</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div v-for="(p, i) in report.participantes" :key="i"
           class="flex items-start gap-3 bg-surface-raised rounded-xl border border-line p-4">
@@ -162,11 +162,11 @@
     <div class="flex items-center justify-end gap-2 pt-2 flex-wrap">
       <button @click="$emit('email')"
         class="flex items-center gap-2 px-4 py-2 rounded-xl border border-line text-sm text-ink-muted hover:bg-surface-hover transition-colors">
-        <i class="fas fa-envelope text-purple-500"></i> Enviar por e-mail
+        <i class="fas fa-envelope text-accent"></i> Enviar por e-mail
       </button>
       <button @click="printReport"
         class="flex items-center gap-2 px-4 py-2 rounded-xl border border-line text-sm text-ink-muted hover:bg-surface-hover transition-colors">
-        <i class="fas fa-file-pdf text-red-500"></i> Exportar PDF
+        <i class="fas fa-file-pdf text-data-neg"></i> Exportar PDF
       </button>
     </div>
 
@@ -200,10 +200,10 @@ function sentimentIcon(s) {
 }
 function sentimentClass(s) {
   const m = {
-    positivo: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+    positivo: 'bg-data-pos/10 text-data-pos',
     neutro:   'bg-surface-sunken text-ink-muted',
-    negativo: 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400',
-    misto:    'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300',
+    negativo: 'bg-data-neg/10 text-data-neg',
+    misto:    'bg-data-warn/10 text-data-warn',
   };
   return m[s] || m.neutro;
 }
@@ -215,8 +215,8 @@ function priorityLabel(p) {
 }
 function priorityClass(p) {
   const m = {
-    alta:  'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400',
-    media: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300',
+    alta:  'bg-data-neg/10 text-data-neg',
+    media: 'bg-data-warn/10 text-data-warn',
     baixa: 'bg-surface-sunken text-ink-muted',
   };
   return m[p] || m.baixa;

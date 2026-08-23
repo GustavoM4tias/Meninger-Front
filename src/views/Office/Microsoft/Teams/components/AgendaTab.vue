@@ -190,33 +190,33 @@ function onEventError(message) { emit('toast', `Erro: ${message}`, 'error'); }
     <Transition name="slide">
       <div v-if="instantMeeting"
         class="flex flex-wrap items-center gap-3 p-3.5 rounded-xl mb-4
-               bg-emerald-500/10 border border-emerald-500/30 surface-gradient">
-        <div class="h-10 w-10 rounded-xl bg-emerald-600 grid place-items-center shrink-0">
+               bg-data-pos/10 border border-data-pos/30 surface-gradient">
+        <div class="h-10 w-10 rounded-xl bg-data-pos grid place-items-center shrink-0">
           <i class="fas fa-video text-white"></i>
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-200 truncate">
+          <p class="text-sm font-semibold text-data-pos truncate">
             {{ instantMeeting.subject }}
           </p>
-          <p class="text-xs text-emerald-600 dark:text-emerald-400">Reunião ativa · link pronto para compartilhar</p>
+          <p class="text-xs text-data-pos">Reunião ativa · link pronto para compartilhar</p>
         </div>
         <div class="flex items-center gap-2 shrink-0 flex-wrap">
           <a :href="instantMeeting.joinUrl" target="_blank" rel="noopener"
-            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors">
+            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-data-pos hover:bg-data-pos/85 text-white text-xs font-semibold transition-colors">
             <i class="fas fa-video text-[10px]"></i> Entrar agora
           </a>
           <button @click="copyInstantLink"
-            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-surface-raised border border-emerald-500/30
-                   text-emerald-700 dark:text-emerald-300 text-xs font-medium hover:bg-emerald-500/10 transition-colors">
+            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-surface-raised border border-data-pos/30
+                   text-data-pos text-xs font-medium hover:bg-data-pos/10 transition-colors">
             <i class="fas fa-link text-[10px]"></i> Copiar link
           </button>
           <a :href="instantMailto"
-            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-surface-raised border border-emerald-500/30
-                   text-emerald-700 dark:text-emerald-300 text-xs font-medium hover:bg-emerald-500/10 transition-colors">
+            class="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-lg bg-surface-raised border border-data-pos/30
+                   text-data-pos text-xs font-medium hover:bg-data-pos/10 transition-colors">
             <i class="fas fa-envelope text-[10px]"></i> Convidar
           </a>
           <button @click="instantMeeting = null" aria-label="Fechar"
-            class="h-10 w-10 rounded-lg text-emerald-500 hover:bg-emerald-500/20 grid place-items-center transition-colors">
+            class="h-10 w-10 rounded-lg text-data-pos hover:bg-data-pos/20 grid place-items-center transition-colors">
             <i class="fas fa-xmark text-xs"></i>
           </button>
         </div>
@@ -254,10 +254,10 @@ function onEventError(message) { emit('toast', `Erro: ${message}`, 'error'); }
           class="max-sm:!h-10 max-sm:!w-10" @click="ts.fetchCurrent()" />
         <IconButton :icon="creatingInstant ? 'fas fa-circle-notch fa-spin' : 'fas fa-bolt'"
           size="sm" label="Reunião instantânea" :disabled="creatingInstant"
-          class="max-sm:!h-10 max-sm:!w-10 !text-emerald-600 dark:!text-emerald-400"
+          class="max-sm:!h-10 max-sm:!w-10 !text-data-pos dark:!text-data-pos"
           @click="openCreateModal('instant')" />
         <Button variant="primary" size="sm" icon="fas fa-plus"
-          class="!bg-purple-600 hover:!bg-purple-700 max-sm:!min-h-10"
+          class="!bg-accent hover:!bg-accent max-sm:!min-h-10"
           @click="openCreateModal()">
           Novo evento
         </Button>

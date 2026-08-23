@@ -29,10 +29,10 @@ const de = ref('');
 const ate = ref('');
 
 const FORMATOS = {
-  pdf:   { label: 'PDF',   icon: 'fas fa-file-pdf',   cls: 'text-red-500 bg-red-500/10' },
-  html:  { label: 'HTML',  icon: 'fas fa-file-code',  cls: 'text-sky-500 bg-sky-500/10' },
-  excel: { label: 'Excel', icon: 'fas fa-file-excel', cls: 'text-emerald-500 bg-emerald-500/10' },
-  csv:   { label: 'CSV',   icon: 'fas fa-file-csv',   cls: 'text-amber-500 bg-amber-500/10' },
+  pdf:   { label: 'PDF',   icon: 'fas fa-file-pdf',   cls: 'text-data-neg bg-data-neg/10' },
+  html:  { label: 'HTML',  icon: 'fas fa-file-code',  cls: 'text-accent bg-accent/10' },
+  excel: { label: 'Excel', icon: 'fas fa-file-excel', cls: 'text-data-pos bg-data-pos/10' },
+  csv:   { label: 'CSV',   icon: 'fas fa-file-csv',   cls: 'text-data-warn bg-data-warn/10' },
 };
 const fmtOf = (f) => FORMATOS[f] || { label: f || '—', icon: 'fas fa-file', cls: 'text-ink-muted bg-surface-sunken' };
 
@@ -139,7 +139,7 @@ function limpar() {
     </div>
 
     <div v-if="erro"
-      class="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+      class="mb-3 rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-sm text-data-neg flex items-center gap-2">
       <i class="fas fa-circle-exclamation"></i>{{ erro }}
     </div>
 

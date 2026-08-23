@@ -230,7 +230,7 @@ function pickLink(e) {
           <Input v-model.number="manual.defaultMarketingPct" type="number" label="Marketing (%)" />
           <Input v-model.number="manual.defaultCommissionPct" type="number" label="Comissão (%)" />
         </div>
-        <p v-if="!canManual" class="text-xs text-amber-600 dark:text-amber-400">
+        <p v-if="!canManual" class="text-xs text-data-warn">
           <i class="fas fa-circle-exclamation mr-1"></i> Nome e cidade são obrigatórios.
         </p>
       </div>
@@ -240,7 +240,7 @@ function pickLink(e) {
     <div v-else class="space-y-4">
       <!-- Vínculo com CC do Sienge -->
       <div class="rounded-xl border p-3"
-        :class="(row?.erp_id || linkPick) ? 'border-line' : 'border-dashed border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/20'">
+        :class="(row?.erp_id || linkPick) ? 'border-line' : 'border-dashed border-data-warn/25 bg-data-warn/10 '">
         <div class="flex items-center justify-between gap-2">
           <div class="min-w-0">
             <p class="text-micro font-bold text-ink-subtle uppercase tracking-widest mb-1">
@@ -248,10 +248,10 @@ function pickLink(e) {
             </p>
             <p v-if="linkPick" class="text-sm font-semibold text-accent truncate">
               CC {{ linkPick.id }} <span class="font-normal text-ink-muted">• {{ linkPick.name }}</span>
-              <span class="ml-1.5 text-micro font-semibold text-amber-600 dark:text-amber-400">(aplica ao confirmar)</span>
+              <span class="ml-1.5 text-micro font-semibold text-data-warn">(aplica ao confirmar)</span>
             </p>
             <p v-else-if="row?.erp_id" class="text-sm font-semibold text-ink truncate">CC {{ row.erp_id }}</p>
-            <p v-else class="text-sm font-medium text-amber-700 dark:text-amber-400">
+            <p v-else class="text-sm font-medium text-data-warn">
               <i class="fas fa-triangle-exclamation text-xs mr-1"></i>Sem vínculo (manual)
             </p>
           </div>
@@ -300,32 +300,32 @@ function pickLink(e) {
         </div>
 
         <template v-if="stock">
-          <div class="h-3 w-full rounded-full bg-emerald-400 overflow-hidden flex"
+          <div class="h-3 w-full rounded-full bg-data-pos overflow-hidden flex"
             v-tippy="`Vendidos: ${stock.sold} · Reservados: ${stock.reserved} · Disponíveis: ${stock.available} · Bloqueados: ${stock.blocked}`">
-            <div class="h-full bg-rose-500 transition-all duration-700" :style="{ width: stockPct(stock.sold) + '%' }" />
-            <div class="h-full bg-amber-400 transition-all duration-700" :style="{ width: stockPct(stock.reserved) + '%' }" />
+            <div class="h-full bg-data-neg transition-all duration-700" :style="{ width: stockPct(stock.sold) + '%' }" />
+            <div class="h-full bg-data-warn transition-all duration-700" :style="{ width: stockPct(stock.reserved) + '%' }" />
             <div class="h-full bg-slate-400 transition-all duration-700" :style="{ width: stockPct(stock.blocked) + '%' }" />
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-3">
-            <div class="text-center px-1 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40">
-              <p class="text-micro text-rose-500 font-bold uppercase tracking-wide">Vendidos</p>
-              <p class="text-base font-black text-rose-700 dark:text-rose-400 tabular-nums leading-none mt-0.5">{{ stock.sold }}</p>
-              <p class="text-micro text-rose-400 tabular-nums">{{ stockPct(stock.sold) }}%</p>
+            <div class="text-center px-1 py-1.5 rounded-lg bg-data-neg/10  border border-data-neg/25 ">
+              <p class="text-micro text-data-neg font-bold uppercase tracking-wide">Vendidos</p>
+              <p class="text-base font-black text-data-neg tabular-nums leading-none mt-0.5">{{ stock.sold }}</p>
+              <p class="text-micro text-data-neg tabular-nums">{{ stockPct(stock.sold) }}%</p>
             </div>
-            <div class="text-center px-1 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40">
-              <p class="text-micro text-amber-500 font-bold uppercase tracking-wide">Reservados</p>
-              <p class="text-base font-black text-amber-700 dark:text-amber-400 tabular-nums leading-none mt-0.5">{{ stock.reserved }}</p>
-              <p class="text-micro text-amber-400 tabular-nums">{{ stockPct(stock.reserved) }}%</p>
+            <div class="text-center px-1 py-1.5 rounded-lg bg-data-warn/10  border border-data-warn/25 ">
+              <p class="text-micro text-data-warn font-bold uppercase tracking-wide">Reservados</p>
+              <p class="text-base font-black text-data-warn tabular-nums leading-none mt-0.5">{{ stock.reserved }}</p>
+              <p class="text-micro text-data-warn tabular-nums">{{ stockPct(stock.reserved) }}%</p>
             </div>
-            <div class="text-center px-1 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
-              <p class="text-micro text-emerald-600 font-bold uppercase tracking-wide">Disponíveis</p>
-              <p class="text-base font-black text-emerald-700 dark:text-emerald-400 tabular-nums leading-none mt-0.5">{{ stock.available }}</p>
-              <p class="text-micro text-emerald-500 tabular-nums">{{ stockPct(stock.available) }}%</p>
+            <div class="text-center px-1 py-1.5 rounded-lg bg-data-pos/10  border border-data-pos/25 ">
+              <p class="text-micro text-data-pos font-bold uppercase tracking-wide">Disponíveis</p>
+              <p class="text-base font-black text-data-pos tabular-nums leading-none mt-0.5">{{ stock.available }}</p>
+              <p class="text-micro text-data-pos tabular-nums">{{ stockPct(stock.available) }}%</p>
             </div>
-            <div class="text-center px-1 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
-              <p class="text-micro text-slate-500 font-bold uppercase tracking-wide">Bloqueados</p>
-              <p class="text-base font-black text-slate-600 dark:text-slate-400 tabular-nums leading-none mt-0.5">{{ stock.blocked }}</p>
-              <p class="text-micro text-slate-400 tabular-nums">{{ stockPct(stock.blocked) }}%</p>
+            <div class="text-center px-1 py-1.5 rounded-lg bg-surface-sunken border border-line">
+              <p class="text-micro text-ink-muted font-bold uppercase tracking-wide">Bloqueados</p>
+              <p class="text-base font-black text-ink-muted tabular-nums leading-none mt-0.5">{{ stock.blocked }}</p>
+              <p class="text-micro text-ink-subtle tabular-nums">{{ stockPct(stock.blocked) }}%</p>
             </div>
           </div>
         </template>

@@ -34,9 +34,9 @@ const meta = (a) => META[a] || { label: a, icon: 'fas fa-clock-rotate-left', ton
 
 const toneClass = {
   accent:  'bg-accent-soft text-accent border-accent/20',
-  emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  amber:   'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  sky:     'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+  emerald: 'bg-data-pos/10 text-data-pos border-data-pos/20',
+  amber:   'bg-data-warn/10 text-data-warn border-data-warn/20',
+  sky:     'bg-accent/10 text-accent border-accent/20',
   slate:   'bg-surface-sunken text-ink-muted border-line',
 };
 

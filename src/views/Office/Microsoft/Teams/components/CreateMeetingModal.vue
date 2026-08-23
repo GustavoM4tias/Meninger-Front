@@ -12,7 +12,7 @@
           <div :class="headerGradient" class="px-6 pt-5 pb-4 shrink-0">
             <div class="flex items-center justify-between mb-4">
               <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-surface-raised/20 flex items-center justify-center shrink-0 shadow-sm">
                   <i :class="headerIcon" class="text-white text-base"></i>
                 </div>
                 <h2 class="text-base font-bold text-white tracking-tight">
@@ -20,7 +20,7 @@
                 </h2>
               </div>
               <button @click="close"
-                class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center text-white/80 hover:text-white transition-colors">
+                class="w-8 h-8 rounded-xl bg-surface-raised/15 hover:bg-surface-raised/25 flex items-center justify-center text-white/80 hover:text-white transition-colors">
                 <i class="fas fa-xmark"></i>
               </button>
             </div>
@@ -30,8 +30,8 @@
               <button v-for="t in EVENT_TYPES" :key="t.value"
                 @click="form.type = t.value"
                 :class="form.type === t.value
-                  ? 'bg-white/25 text-white ring-1 ring-white/30 shadow-inner'
-                  : 'bg-white/8 text-white/50 hover:bg-white/15 hover:text-white/80'"
+                  ? 'bg-surface-raised/25 text-white ring-1 ring-white/30 shadow-inner'
+                  : 'bg-surface-raised/8 text-white/50 hover:bg-surface-raised/15 hover:text-white/80'"
                 class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-xs font-semibold transition-all">
                 <i :class="t.icon" class="text-base"></i>
                 <span>{{ t.label }}</span>
@@ -44,40 +44,40 @@
 
             <!-- Edição de evento recorrente: escolher alcance -->
             <div v-if="isEdit && props.editEvent?.isRecurring"
-              class="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
-              <p class="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-2">
+              class="p-3 rounded-xl bg-accent/10 border border-accent/25">
+              <p class="text-xs font-semibold text-accent mb-2">
                 <i class="fas fa-rotate mr-1"></i> Este evento é recorrente. O que você quer editar?
               </p>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button type="button" @click="setEditScope('occurrence')"
                   :class="editScope === 'occurrence'
-                    ? 'border-purple-400 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200'
-                    : 'border-purple-200 dark:border-purple-800 text-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/30'"
+                    ? 'border-accent bg-accent/10 text-accent'
+                    : 'border-accent/25 text-accent hover:bg-accent/10 '"
                   class="min-h-10 px-3 py-2 rounded-lg border text-sm font-medium text-left transition-colors">
                   <i class="fas fa-calendar-day mr-1.5 text-xs"></i> Somente esta ocorrência
                 </button>
                 <button type="button" @click="setEditScope('series')"
                   :class="editScope === 'series'
-                    ? 'border-purple-400 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200'
-                    : 'border-purple-200 dark:border-purple-800 text-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/30'"
+                    ? 'border-accent bg-accent/10 text-accent'
+                    : 'border-accent/25 text-accent hover:bg-accent/10 '"
                   class="min-h-10 px-3 py-2 rounded-lg border text-sm font-medium text-left transition-colors">
                   <i class="fas fa-rotate mr-1.5 text-xs"></i> Toda a série
                 </button>
               </div>
-              <p v-if="seriesLoading" class="text-xs text-purple-500 mt-2">
+              <p v-if="seriesLoading" class="text-xs text-accent mt-2">
                 <i class="fas fa-circle-notch animate-spin mr-1"></i> Carregando dados da série...
               </p>
             </div>
 
             <!-- Instant info card -->
             <div v-if="form.type === 'instant'"
-              class="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-              <div class="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center shrink-0">
+              class="flex items-start gap-3 p-4 rounded-xl bg-data-pos/10 border border-data-pos/25">
+              <div class="w-8 h-8 rounded-lg bg-data-pos flex items-center justify-center shrink-0">
                 <i class="fas fa-bolt text-white text-sm"></i>
               </div>
               <div>
-                <p class="text-sm font-semibold text-green-800 dark:text-green-200">Reunião instantânea</p>
-                <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">
+                <p class="text-sm font-semibold text-data-pos">Reunião instantânea</p>
+                <p class="text-xs text-data-pos mt-0.5">
                   Criada imediatamente. Você receberá o link para compartilhar com os participantes.
                 </p>
               </div>
@@ -86,7 +86,7 @@
             <!-- Assunto -->
             <div>
               <label class="field-label">
-                Assunto <span class="text-red-400 font-bold">*</span>
+                Assunto <span class="text-data-neg font-bold">*</span>
               </label>
               <input v-model="form.subject" type="text"
                 :placeholder="subjectPlaceholder"
@@ -99,12 +99,12 @@
               <!-- All-day toggle -->
               <label class="flex items-center gap-3 cursor-pointer group select-none">
                 <button @click="form.isAllDay = !form.isAllDay" type="button"
-                  :class="form.isAllDay ? 'bg-purple-600' : 'bg-surface-sunken'"
-                  class="relative w-10 h-5 rounded-full transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1">
+                  :class="form.isAllDay ? 'bg-accent' : 'bg-surface-sunken'"
+                  class="relative w-10 h-5 rounded-full transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1">
                   <div :class="form.isAllDay ? 'translate-x-5' : 'translate-x-0.5'"
-                    class="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-150"></div>
+                    class="absolute top-0.5 w-4 h-4 rounded-full bg-surface-raised shadow-sm transition-transform duration-150"></div>
                 </button>
-                <span class="text-sm text-ink-muted group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors">
+                <span class="text-sm text-ink-muted group-hover:text-ink dark:group-hover:text-ink transition-colors">
                   Evento de dia inteiro
                 </span>
               </label>
@@ -151,13 +151,13 @@
                 </div>
                 <Transition name="expand">
                   <div v-if="form.recurrenceType"
-                    class="grid grid-cols-2 gap-3 pl-4 border-l-2 border-purple-300 dark:border-purple-700">
+                    class="grid grid-cols-2 gap-3 pl-4 border-l-2 border-accent/25">
                     <div>
                       <label class="field-label">A cada</label>
                       <div class="flex items-center gap-2">
                         <input v-model.number="form.recurrenceInterval" type="number" min="1" max="99"
                           class="field-input w-16 text-center" />
-                        <span class="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">{{ recurrenceUnitLabel }}</span>
+                        <span class="text-xs text-ink-muted whitespace-nowrap">{{ recurrenceUnitLabel }}</span>
                       </div>
                     </div>
                     <div>
@@ -182,9 +182,9 @@
 
               <!-- Local -->
               <div>
-                <label class="field-label">Local <span class="text-gray-400 dark:text-slate-500 font-normal text-micro">(opcional)</span></label>
+                <label class="field-label">Local <span class="text-ink-subtle font-normal text-micro">(opcional)</span></label>
                 <div class="relative">
-                  <i class="fas fa-location-dot absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-sm pointer-events-none"></i>
+                  <i class="fas fa-location-dot absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle text-sm pointer-events-none"></i>
                   <input v-model="form.location" type="text" placeholder="Sala de reunião, endereço, link externo..."
                     class="field-input pl-9" />
                 </div>
@@ -195,13 +195,13 @@
                 <label class="field-label flex items-center gap-2">
                   Participantes
                   <span v-if="form.attendees.length"
-                    class="px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 text-micro font-bold">
+                    class="px-1.5 py-0.5 rounded-full bg-accent/10 text-accent text-micro font-bold">
                     {{ form.attendees.length }}
                   </span>
                 </label>
                 <div class="flex gap-2 mb-2">
                   <div class="relative flex-1">
-                    <i class="fas fa-at absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-sm pointer-events-none"></i>
+                    <i class="fas fa-at absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle text-sm pointer-events-none"></i>
                     <input v-model="attendeeInput" type="email"
                       @keydown.enter.prevent="addAttendee"
                       @keydown.comma.prevent="addAttendee"
@@ -215,16 +215,16 @@
                 </div>
                 <div v-if="form.attendees.length" class="flex flex-wrap gap-1.5">
                   <span v-for="(a, i) in form.attendees" :key="i"
-                    class="flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium border border-purple-100 dark:border-purple-800/60">
+                    class="flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium border border-accent/25 ">
                     <i class="fas fa-user text-[9px] opacity-60"></i>
                     {{ a }}
                     <button @click="form.attendees.splice(i, 1)"
-                      class="w-4 h-4 rounded-full flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500 transition-colors">
+                      class="w-4 h-4 rounded-full flex items-center justify-center hover:bg-data-neg/10  hover:text-data-neg transition-colors">
                       <i class="fas fa-xmark text-[9px]"></i>
                     </button>
                   </span>
                 </div>
-                <p v-else class="text-xs text-gray-400 dark:text-slate-500 mt-1.5 flex items-center gap-1">
+                <p v-else class="text-xs text-ink-subtle mt-1.5 flex items-center gap-1">
                   <i class="fas fa-info-circle text-[10px]"></i>
                   <span v-if="form.type === 'meeting'">Convite Teams será enviado automaticamente por e-mail.</span>
                   <span v-else>Adicione participantes para enviar convites.</span>
@@ -233,7 +233,7 @@
 
               <!-- Descrição -->
               <div>
-                <label class="field-label">Descrição <span class="text-gray-400 dark:text-slate-500 font-normal text-micro">(opcional)</span></label>
+                <label class="field-label">Descrição <span class="text-ink-subtle font-normal text-micro">(opcional)</span></label>
                 <textarea v-model="form.body" rows="3" placeholder="Pauta, links, notas importantes..."
                   class="field-input resize-none" />
               </div>
@@ -242,13 +242,13 @@
           </div>
 
           <!-- ── Footer ── -->
-          <div class="flex items-center gap-3 px-6 py-4 shrink-0 border-t border-line bg-gray-50/50 dark:bg-gray-900">
+          <div class="flex items-center gap-3 px-6 py-4 shrink-0 border-t border-line bg-surface">
             <button @click="close"
               class="px-4 py-2 rounded-xl text-sm text-ink-muted border border-line hover:bg-surface-hover transition-colors">
               Cancelar
             </button>
             <div class="flex-1"></div>
-            <p v-if="!canSubmit && form.subject.trim() === ''" class="text-xs text-gray-400 dark:text-slate-500">
+            <p v-if="!canSubmit && form.subject.trim() === ''" class="text-xs text-ink-subtle">
               Preencha o assunto para continuar
             </p>
             <button @click="submit" :disabled="!canSubmit || submitting || seriesLoading"
@@ -448,9 +448,9 @@ watch(() => props.modelValue, (v) => {
 // ── Computed UI ───────────────────────────────────────────────────────────────
 
 const headerGradient = computed(() => {
-  if (form.value.type === 'instant') return 'bg-gradient-to-br from-green-500 to-emerald-600';
-  if (form.value.type === 'event')   return 'bg-gradient-to-br from-blue-500 to-blue-700';
-  return 'bg-gradient-to-br from-purple-600 to-violet-700';
+  if (form.value.type === 'instant') return 'bg-gradient-to-br from-data-pos to-data-pos';
+  if (form.value.type === 'event')   return 'bg-gradient-to-br from-accent to-accent';
+  return 'bg-gradient-to-br from-accent to-accent';
 });
 
 const headerIcon = computed(() => {
@@ -461,9 +461,9 @@ const headerIcon = computed(() => {
 });
 
 const submitBtnClass = computed(() => {
-  if (form.value.type === 'instant') return 'bg-green-600 hover:bg-green-700';
+  if (form.value.type === 'instant') return 'bg-data-pos hover:bg-data-pos/85';
   if (form.value.type === 'event')   return 'bg-accent hover:bg-accent-hover';
-  return 'bg-purple-600 hover:bg-purple-700';
+  return 'bg-accent hover:bg-accent-hover';
 });
 
 const submitLabel = computed(() => {
@@ -568,7 +568,7 @@ async function submit() {
   @apply block text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1;
 }
 .field-input {
-  @apply w-full px-3 py-2 rounded-xl border border-line bg-surface-raised text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow;
+  @apply w-full px-3 py-2 rounded-xl border border-line bg-surface-raised text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition-shadow;
 }
 
 .modal-enter-active { transition: opacity 0.15s, transform 0.15s; }

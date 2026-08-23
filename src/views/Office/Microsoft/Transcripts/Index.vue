@@ -16,7 +16,7 @@
           variant="primary"
           size="sm"
           icon="fas fa-microphone"
-          class="!bg-purple-600 hover:!bg-purple-700 max-sm:!min-h-10"
+          class="!bg-accent hover:!bg-accent max-sm:!min-h-10"
           @click="openNewRecordingModal">
           Nova gravação
         </Button>
@@ -35,19 +35,19 @@
       <Surface v-if="recStore.isActive"
         variant="raised"
         padding="sm"
-        class="mb-4 border-violet-500/30 bg-violet-500/10 surface-gradient cursor-pointer"
+        class="mb-4 border-accent/30 bg-accent/10 surface-gradient cursor-pointer"
         @click="router.push('/microsoft/inperson/recording')">
         <div class="flex items-center justify-between gap-4">
           <div class="flex items-center gap-2.5 min-w-0">
             <div class="relative w-4 h-4 grid place-items-center shrink-0">
-              <div class="absolute inset-0 rounded-full bg-red-400/30 animate-ping"></div>
-              <div class="w-2 h-2 rounded-full bg-red-500"></div>
+              <div class="absolute inset-0 rounded-full bg-data-neg/30 animate-ping"></div>
+              <div class="w-2 h-2 rounded-full bg-data-neg"></div>
             </div>
-            <span class="text-sm font-semibold text-violet-700 dark:text-violet-300">Gravando agora</span>
-            <span class="text-sm text-violet-500 dark:text-violet-400 truncate">· {{ recStore.title }}</span>
+            <span class="text-sm font-semibold text-accent">Gravando agora</span>
+            <span class="text-sm text-accent truncate">· {{ recStore.title }}</span>
           </div>
           <div class="flex items-center gap-3 shrink-0">
-            <span class="font-mono text-sm font-bold text-violet-700 dark:text-violet-300 tabular-nums">
+            <span class="font-mono text-sm font-bold text-accent tabular-nums">
               {{ recStore.timerDisplay }}
             </span>
             <IconButton
@@ -55,9 +55,9 @@
               :label="recStore.isPaused ? 'Retomar' : 'Pausar'"
               variant="ghost"
               size="sm"
-              class="!text-violet-600 hover:!bg-violet-500/20"
+              class="!text-accent hover:!bg-accent/20"
               @click.stop="recStore.isPaused ? recStore.resume() : recStore.pause()" />
-            <span class="text-xs text-violet-500 hidden sm:flex items-center gap-1">
+            <span class="text-xs text-accent hidden sm:flex items-center gap-1">
               Abrir <i class="fas fa-arrow-up-right-from-square text-[9px]"></i>
             </span>
           </div>
@@ -82,16 +82,16 @@
             <div v-else v-for="m in ts.meetings" :key="m.eventId"
               @click="selectMeeting(m)"
               :class="ts.selectedMeeting?.eventId === m.eventId
-                ? 'border-purple-500/40 bg-purple-500/10'
-                : 'border-line bg-surface-raised hover:border-purple-500/30 hover:bg-surface-hover'"
+                ? 'border-accent/40 bg-accent/10'
+                : 'border-line bg-surface-raised hover:border-accent/30 hover:bg-surface-hover'"
               class="rounded-2xl border p-4 cursor-pointer transition-all group shadow-soft">
               <div class="flex items-start justify-between gap-2 mb-2">
                 <p class="text-sm font-semibold text-ink leading-snug line-clamp-2 flex-1">{{ m.subject }}</p>
-                <i :class="m.isInstant ? 'fas fa-bolt text-amber-500' : 'fas fa-video text-purple-500'"
+                <i :class="m.isInstant ? 'fas fa-bolt text-data-warn' : 'fas fa-video text-accent'"
                   class="shrink-0 mt-0.5"></i>
               </div>
               <div v-if="m.isInstant" class="mb-2">
-                <span class="inline-flex items-center gap-1 text-micro font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <span class="inline-flex items-center gap-1 text-micro font-medium px-2 py-0.5 rounded-full bg-data-warn/10 text-data-warn">
                   <i class="fas fa-bolt text-[9px]"></i> Instantânea
                 </span>
               </div>
@@ -119,7 +119,7 @@
                   <i class="fas fa-file-lines"></i> Transcrição disponível
                 </span>
                 <span v-else-if="meetingStatus(m) === 'has-report'"
-                  class="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                  class="inline-flex items-center gap-1 text-xs text-data-pos font-medium">
                   <i class="fas fa-robot"></i> Relatório IA pronto
                 </span>
                 <span v-else class="text-xs text-ink-subtle">Clique para verificar</span>
@@ -138,7 +138,7 @@
               description="Nenhum relatório gerado ainda." />
             <div v-else v-for="r in ts.reports" :key="r.id"
               @click="ts.openSavedReport(r.id)"
-              class="rounded-2xl border border-line bg-surface-raised hover:border-purple-500/30 hover:bg-surface-hover p-4 cursor-pointer transition-all shadow-soft">
+              class="rounded-2xl border border-line bg-surface-raised hover:border-accent/30 hover:bg-surface-hover p-4 cursor-pointer transition-all shadow-soft">
               <p class="text-sm font-semibold text-ink line-clamp-2 mb-1">{{ r.subject }}</p>
               <p class="text-xs text-ink-muted mb-2">{{ fmtDate(r.meetingDate) }}</p>
               <div v-if="r.summaryPreview" class="text-xs text-ink-subtle line-clamp-2 mb-2">{{ r.summaryPreview }}</div>
@@ -150,7 +150,7 @@
                   <span class="font-mono tabular-nums">{{ r.kpiCount }}</span> KPIs
                 </Badge>
                 <span v-for="tag in (r.tagsPreview || []).slice(0, 2)" :key="tag"
-                  class="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                  class="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent">
                   #{{ tag }}
                 </span>
               </div>
@@ -168,7 +168,7 @@
                 title="Nenhuma gravação ainda"
                 description="Gravação presencial com transcrição em tempo real." />
               <Button variant="primary" icon="fas fa-microphone"
-                class="!bg-purple-600 hover:!bg-purple-700 mt-4 mx-auto"
+                class="!bg-accent hover:!bg-accent mt-4 mx-auto"
                 @click="openNewRecordingModal">
                 Gravar agora
               </Button>
@@ -176,12 +176,12 @@
             <div v-else v-for="m in ipMeetings" :key="m.id"
               @click="selectIpMeeting(m)"
               :class="ipSelected?.id === m.id
-                ? 'border-purple-500/40 bg-purple-500/10'
-                : 'border-line bg-surface-raised hover:border-purple-500/30 hover:bg-surface-hover'"
+                ? 'border-accent/40 bg-accent/10'
+                : 'border-line bg-surface-raised hover:border-accent/30 hover:bg-surface-hover'"
               class="rounded-2xl border p-4 cursor-pointer transition-all shadow-soft">
               <div class="flex items-start justify-between gap-2 mb-2">
                 <p class="text-sm font-semibold text-ink leading-snug line-clamp-2 flex-1">{{ m.title }}</p>
-                <i class="fas fa-microphone text-purple-500 shrink-0 mt-0.5 text-xs"></i>
+                <i class="fas fa-microphone text-accent shrink-0 mt-0.5 text-xs"></i>
               </div>
               <div class="flex items-center gap-2 text-xs text-ink-muted mb-2">
                 <i class="fas fa-calendar-day"></i>
@@ -190,7 +190,7 @@
               </div>
               <div class="mt-1 flex items-center gap-1">
                 <span v-if="m.status === 'summarized'"
-                  class="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                  class="inline-flex items-center gap-1 text-xs text-data-pos font-medium">
                   <i class="fas fa-robot"></i> Relatório IA pronto
                 </span>
                 <span v-else-if="m.status === 'recorded'"
@@ -198,7 +198,7 @@
                   <i class="fas fa-file-lines"></i> Gravação disponível
                 </span>
                 <span v-else-if="m.status === 'recording'"
-                  class="inline-flex items-center gap-1 text-xs text-red-500 font-medium">
+                  class="inline-flex items-center gap-1 text-xs text-data-neg font-medium">
                   <i class="fas fa-circle animate-pulse"></i> Em andamento
                 </span>
                 <span v-else class="text-xs text-ink-subtle">{{ m.status }}</span>
@@ -223,7 +223,7 @@
             <!-- Loading transcript -->
             <div v-else-if="ts.loadingTranscript || ts.checkingTranscript"
               class="h-full flex flex-col items-center justify-center gap-3 text-ink-muted py-24">
-              <i class="fas fa-circle-notch animate-spin text-3xl text-purple-500"></i>
+              <i class="fas fa-circle-notch animate-spin text-3xl text-accent"></i>
               <p class="text-sm">{{ ts.checkingTranscript ? 'Verificando transcrição...' : 'Carregando transcrição...' }}</p>
             </div>
 
@@ -246,7 +246,7 @@
                       E-mail
                     </Button>
                     <a v-if="ts.selectedMeeting.joinUrl" :href="ts.selectedMeeting.joinUrl" target="_blank" rel="noopener"
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors">
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-white text-xs font-medium transition-colors">
                       <i class="fas fa-video"></i> Entrar
                     </a>
                   </div>
@@ -269,18 +269,18 @@
                   <button v-for="t in ts.transcriptInfo.transcripts" :key="t.id"
                     @click="loadTranscript(t)"
                     :class="activeTranscriptId === t.id
-                      ? 'border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-300'
-                      : 'border-line text-ink-muted hover:border-purple-500/30'"
+                      ? 'border-accent/40 bg-accent/10 text-accent'
+                      : 'border-line text-ink-muted hover:border-accent/30'"
                     class="px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors">
                     Transcrição {{ fmtDateShort(t.createdAt) }}
-                    <span v-if="t.reportReady" class="ml-1 text-emerald-500"><i class="fas fa-robot"></i></span>
+                    <span v-if="t.reportReady" class="ml-1 text-data-pos"><i class="fas fa-robot"></i></span>
                   </button>
                 </div>
 
                 <!-- Load transcript button -->
                 <div v-if="!ts.cues.length && !ts.loadingTranscript" class="text-center py-8">
                   <Button variant="primary" icon="fas fa-download"
-                    class="!bg-purple-600 hover:!bg-purple-700"
+                    class="!bg-accent hover:!bg-accent"
                     @click="loadTranscript(ts.transcriptInfo.transcripts[0])">
                     Carregar transcrição
                   </Button>
@@ -325,15 +325,15 @@
                   <div v-show="contentTab === 'report'">
                     <!-- Generate button -->
                     <Surface v-if="!ts.report && !ts.generatingReport" variant="raised" padding="lg" class="text-center surface-gradient">
-                      <div class="w-16 h-16 rounded-2xl bg-purple-500/10 grid place-items-center mx-auto mb-4">
-                        <i class="fas fa-robot text-3xl text-purple-500"></i>
+                      <div class="w-16 h-16 rounded-2xl bg-accent/10 grid place-items-center mx-auto mb-4">
+                        <i class="fas fa-robot text-3xl text-accent"></i>
                       </div>
                       <p class="text-sm font-medium text-ink mb-1">Relatório não gerado</p>
                       <p class="text-xs text-ink-subtle mb-4 max-w-xs mx-auto">
                         O Gemini vai analisar a transcrição e gerar um relatório completo com resumo, KPIs, ações, checklist e muito mais.
                       </p>
                       <Button variant="primary" icon="fas fa-wand-magic-sparkles"
-                        class="!bg-purple-600 hover:!bg-purple-700 mx-auto"
+                        class="!bg-accent hover:!bg-accent mx-auto"
                         @click="doGenerateReport">
                         Gerar Relatório com IA
                       </Button>
@@ -341,8 +341,8 @@
 
                     <!-- Generating spinner -->
                     <Surface v-else-if="ts.generatingReport" variant="raised" padding="lg" class="text-center">
-                      <div class="w-16 h-16 rounded-2xl bg-purple-500/10 grid place-items-center mx-auto mb-4 animate-pulse">
-                        <i class="fas fa-robot text-3xl text-purple-500"></i>
+                      <div class="w-16 h-16 rounded-2xl bg-accent/10 grid place-items-center mx-auto mb-4 animate-pulse">
+                        <i class="fas fa-robot text-3xl text-accent"></i>
                       </div>
                       <p class="text-sm font-medium text-ink mb-1">Analisando com Gemini...</p>
                       <p class="text-xs text-ink-subtle">Isso pode levar alguns instantes dependendo do tamanho da reunião</p>
@@ -352,7 +352,7 @@
                     <div v-else-if="ts.report" class="space-y-2">
                       <div class="flex justify-end gap-2">
                         <button @click="doGenerateReport(true)"
-                          class="text-xs text-ink-subtle hover:text-purple-500 transition-colors">
+                          class="text-xs text-ink-subtle hover:text-accent transition-colors">
                           <i class="fas fa-rotate-right mr-1"></i> Regenerar
                         </button>
                       </div>
@@ -378,7 +378,7 @@
                 :description="ipMeetings.length ? 'Escolha uma gravação na lista para ver o resumo e transcrição.' : 'Grave sua primeira reunião presencial com transcrição em tempo real.'" />
               <div class="flex justify-center mt-4">
                 <Button variant="primary" icon="fas fa-microphone"
-                  class="!bg-purple-600 hover:!bg-purple-700"
+                  class="!bg-accent hover:!bg-accent"
                   @click="openNewRecordingModal">
                   Nova gravação
                 </Button>
@@ -388,7 +388,7 @@
             <!-- Loading -->
             <div v-else-if="ipDetailLoading"
               class="h-full flex flex-col items-center justify-center gap-3 text-ink-muted py-24">
-              <i class="fas fa-circle-notch animate-spin text-3xl text-purple-500"></i>
+              <i class="fas fa-circle-notch animate-spin text-3xl text-accent"></i>
               <p class="text-sm">Carregando...</p>
             </div>
 
@@ -436,15 +436,15 @@
               <div v-show="ipContentTab === 'report'">
                 <!-- Generate button -->
                 <Surface v-if="!ipReport && !ipGenerating" variant="raised" padding="lg" class="text-center surface-gradient">
-                  <div class="w-16 h-16 rounded-2xl bg-purple-500/10 grid place-items-center mx-auto mb-4">
-                    <i class="fas fa-robot text-3xl text-purple-500"></i>
+                  <div class="w-16 h-16 rounded-2xl bg-accent/10 grid place-items-center mx-auto mb-4">
+                    <i class="fas fa-robot text-3xl text-accent"></i>
                   </div>
                   <p class="text-sm font-medium text-ink mb-1">Relatório não gerado</p>
                   <p class="text-xs text-ink-subtle mb-4 max-w-xs mx-auto">
                     O Gemini vai analisar a transcrição e gerar um relatório completo com resumo, ações, decisões e muito mais.
                   </p>
                   <Button variant="primary" icon="fas fa-wand-magic-sparkles"
-                    class="!bg-purple-600 hover:!bg-purple-700 mx-auto"
+                    class="!bg-accent hover:!bg-accent mx-auto"
                     :disabled="!ipCues.length"
                     @click="ipGenReport()">
                     Gerar Relatório com IA
@@ -454,8 +454,8 @@
 
                 <!-- Generating -->
                 <Surface v-else-if="ipGenerating" variant="raised" padding="lg" class="text-center">
-                  <div class="w-16 h-16 rounded-2xl bg-purple-500/10 grid place-items-center mx-auto mb-4 animate-pulse">
-                    <i class="fas fa-robot text-3xl text-purple-500"></i>
+                  <div class="w-16 h-16 rounded-2xl bg-accent/10 grid place-items-center mx-auto mb-4 animate-pulse">
+                    <i class="fas fa-robot text-3xl text-accent"></i>
                   </div>
                   <p class="text-sm font-medium text-ink mb-1">Analisando com Gemini...</p>
                   <p class="text-xs text-ink-subtle">Isso pode levar alguns instantes</p>
@@ -465,7 +465,7 @@
                 <div v-else-if="ipReport" class="space-y-2">
                   <div class="flex justify-end">
                     <button @click="ipGenReport(true)"
-                      class="text-xs text-ink-subtle hover:text-purple-500 transition-colors">
+                      class="text-xs text-ink-subtle hover:text-accent transition-colors">
                       <i class="fas fa-rotate-right mr-1"></i> Regenerar
                     </button>
                   </div>
@@ -542,9 +542,9 @@
           </label>
           <div v-if="newRecForm.attendees.length" class="flex flex-wrap gap-1.5 mb-2">
             <span v-for="(a, i) in newRecForm.attendees" :key="i"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-700 dark:text-violet-300 text-xs">
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs">
               {{ a.name }}
-              <button @click="newRecForm.attendees.splice(i, 1)" class="hover:text-red-500 transition-colors">
+              <button @click="newRecForm.attendees.splice(i, 1)" class="hover:text-data-neg transition-colors">
                 <i class="fas fa-times text-[9px]"></i>
               </button>
             </span>
@@ -564,10 +564,10 @@
         </div>
 
         <!-- Aviso microfone -->
-        <Surface variant="raised" padding="sm" class="border-amber-500/30 bg-amber-500/10">
+        <Surface variant="raised" padding="sm" class="border-data-warn/30 bg-data-warn/10">
           <div class="flex items-start gap-2">
-            <i class="fas fa-circle-info text-amber-500 dark:text-amber-400 text-sm mt-0.5 shrink-0"></i>
-            <p class="text-xs text-amber-700 dark:text-amber-300/80 leading-relaxed">
+            <i class="fas fa-circle-info text-data-warn text-sm mt-0.5 shrink-0"></i>
+            <p class="text-xs text-data-warn/80 leading-relaxed">
               O navegador solicitará permissão ao microfone. Recomendado: <strong>Chrome</strong> ou Edge.
             </p>
           </div>
@@ -578,7 +578,7 @@
         <Button variant="ghost" @click="showNewRecordingModal = false">Cancelar</Button>
         <Button
           variant="primary"
-          class="!bg-purple-600 hover:!bg-purple-700"
+          class="!bg-accent hover:!bg-accent"
           :icon="newRecStarting ? 'fas fa-circle-notch fa-spin' : 'fas fa-microphone'"
           :disabled="!newRecForm.title.trim() || newRecStarting"
           @click="handleStartNewRecording">
@@ -619,9 +619,9 @@
         <div v-if="toast.show"
           class="fixed bottom-5 right-5 z-[99999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-overlay border bg-surface-raised text-sm max-w-sm"
           :class="toast.type === 'success'
-            ? 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-            : 'border-red-500/30 text-red-600 dark:text-red-400'">
-          <i :class="toast.type === 'success' ? 'fas fa-circle-check text-emerald-500' : 'fas fa-circle-exclamation text-red-500'" class="text-base shrink-0"></i>
+            ? 'border-data-pos/30 text-data-pos'
+            : 'border-data-neg/30 text-data-neg'">
+          <i :class="toast.type === 'success' ? 'fas fa-circle-check text-data-pos' : 'fas fa-circle-exclamation text-data-neg'" class="text-base shrink-0"></i>
           <span>{{ toast.message }}</span>
         </div>
       </Transition>
@@ -779,7 +779,7 @@ function speakerColor(speaker) { return speakerMap.value[speaker] || '#6b7280'; 
 function highlightSearch(text) {
   if (!transcriptSearch.value.trim()) return text;
   const q = transcriptSearch.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(new RegExp(`(${q})`, 'gi'), '<mark class="bg-yellow-200 dark:bg-yellow-700 rounded px-0.5">$1</mark>');
+  return text.replace(new RegExp(`(${q})`, 'gi'), '<mark class="bg-data-warn/10  rounded px-0.5">$1</mark>');
 }
 
 // ── InPerson tab ──────────────────────────────────────────────────────────────

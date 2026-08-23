@@ -96,7 +96,7 @@ function deltaBadge(d) {
     const up = d >= 0;
     return {
         text: `${up ? '+' : ''}${d.toFixed(d >= 100 ? 0 : 1)}%`,
-        cls: up ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300',
+        cls: up ? 'text-data-pos' : 'text-data-neg',
         icon: up ? 'fa-arrow-up' : 'fa-arrow-down',
     };
 }
@@ -114,7 +114,7 @@ function clickStage(st) {
         <i class="fas fa-filter text-accent"></i>Funil comercial
       </h2>
       <div v-if="conversao != null" class="flex items-baseline gap-1.5">
-        <span class="text-2xl font-bold text-emerald-600 dark:text-emerald-300 tabular-nums">{{ conversao }}%</span>
+        <span class="text-2xl font-bold text-data-pos tabular-nums">{{ conversao }}%</span>
         <span class="text-micro text-ink-subtle">qualificados + reservas</span>
       </div>
     </div>
@@ -142,7 +142,7 @@ function clickStage(st) {
     <!-- Rodapé: descartados + outros -->
     <div v-if="descartados || outros" class="mt-4 pt-3 border-t border-line/60 flex items-center gap-4 text-xs">
       <span v-if="descartados" class="flex items-center gap-1.5 text-ink-muted">
-        <i class="fas fa-ban text-red-400"></i>
+        <i class="fas fa-ban text-data-neg"></i>
         <b class="text-ink">{{ fmtInt(descartados) }}</b> descartado(s)
       </span>
       <span v-if="outros" class="flex items-center gap-1.5 text-ink-muted">

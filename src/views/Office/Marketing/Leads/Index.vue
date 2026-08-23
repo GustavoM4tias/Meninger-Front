@@ -351,11 +351,11 @@ onUnmounted(() => {
 
       <!-- Erro -->
       <div v-if="error"
-        class="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+        class="mb-4 rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-sm text-data-neg flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ error }}
       </div>
       <div v-if="exportError"
-        class="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+        class="mb-4 rounded-lg border border-data-warn/20 bg-data-warn/10 px-3 py-2.5 text-sm text-data-warn flex items-center gap-2">
         <i class="fas fa-triangle-exclamation"></i>{{ exportError }}
       </div>
 

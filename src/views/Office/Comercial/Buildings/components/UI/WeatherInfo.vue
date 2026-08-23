@@ -121,7 +121,7 @@ const formattedTime = computed(() => {
     <div v-if="weather" class="relative group">
       <!-- Ícone do tempo -->
       <div v-if="weatherIcon" class="flex justify-center items-center cursor-pointer">
-        <i :class="weatherIcon" class="text-6xl text-blue-50 drop-shadow"></i>
+        <i :class="weatherIcon" class="text-6xl text-accent drop-shadow"></i>
       </div>
 
       <!-- Tooltip bonito e clean (abre para baixo — o hero do modal é baixo e cortava para cima) -->

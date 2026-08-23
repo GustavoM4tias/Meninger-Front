@@ -152,7 +152,7 @@ function eventClass(ev) {
   if (ev.isCancelled)
     return 'bg-surface-sunken border-line text-ink-subtle line-through';
   if (ev.isOnlineMeeting)
-    return 'bg-purple-500/15 border-purple-500/40 text-purple-700 dark:text-purple-200 hover:bg-purple-500/25';
+    return 'bg-accent/15 border-accent/40 text-accent hover:bg-accent/25';
   return 'bg-accent-soft border-accent/40 text-accent hover:bg-accent/20';
 }
 
@@ -308,8 +308,8 @@ const gridCols = computed(() => `56px repeat(${props.weekDays.length}, minmax(0,
             <div v-if="isToday(day) && nowOffset >= 0"
               class="absolute inset-x-0 flex items-center z-30 pointer-events-none"
               :style="{ top: nowOffset + 'px' }">
-              <div class="h-2 w-2 rounded-full bg-red-500 -ml-1 shrink-0 ring-2 ring-surface-raised"></div>
-              <div class="flex-1 h-px bg-red-500"></div>
+              <div class="h-2 w-2 rounded-full bg-data-neg -ml-1 shrink-0 ring-2 ring-surface-raised"></div>
+              <div class="flex-1 h-px bg-data-neg"></div>
             </div>
 
             <!-- Eventos (posicionados lado a lado quando há sobreposição) -->

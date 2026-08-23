@@ -16,7 +16,7 @@ const open = ref(false);
       :aria-expanded="open">
       <!-- Status dot -->
       <span class="h-2 w-2 rounded-full shrink-0"
-        :class="fila.corretores_e_imobiliarias?.length ? 'bg-emerald-500' : 'bg-ink-subtle'"></span>
+        :class="fila.corretores_e_imobiliarias?.length ? 'bg-data-pos' : 'bg-ink-subtle'"></span>
 
       <h3 class="flex-1 text-sm font-medium text-ink truncate text-left" :title="fila.nome">
         {{ fila.nome }}

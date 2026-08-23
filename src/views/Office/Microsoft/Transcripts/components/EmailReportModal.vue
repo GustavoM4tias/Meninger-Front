@@ -11,7 +11,7 @@
           <!-- Header -->
           <div class="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center">
+              <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent flex items-center justify-center">
                 <i class="fas fa-envelope text-white text-sm"></i>
               </div>
               <div>
@@ -19,7 +19,7 @@
                 <p class="text-xs text-ink-muted truncate max-w-xs">{{ meeting?.subject }}</p>
               </div>
             </div>
-            <button @click="$emit('close')" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:bg-surface-hover transition-colors">
+            <button @click="$emit('close')" class="w-8 h-8 rounded-lg flex items-center justify-center text-ink-subtle hover:bg-surface-hover transition-colors">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -30,15 +30,15 @@
             <!-- Destinatários -->
             <div>
               <label class="block text-xs font-semibold text-ink-muted mb-2">
-                <i class="fas fa-users mr-1 text-purple-500"></i> Destinatários
+                <i class="fas fa-users mr-1 text-accent"></i> Destinatários
               </label>
               <!-- Chips -->
               <div class="flex flex-wrap gap-1.5 mb-2">
                 <span v-for="(email, i) in recipients" :key="email"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-medium">
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">
                   <i class="fas fa-circle-user text-xs opacity-60"></i>
                   {{ email }}
-                  <button @click="removeRecipient(i)" class="ml-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors">
+                  <button @click="removeRecipient(i)" class="ml-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center hover:bg-accent/10  transition-colors">
                     <i class="fas fa-times text-[9px]"></i>
                   </button>
                 </span>
@@ -51,33 +51,33 @@
                   @keydown.tab.prevent="addEmail"
                   type="email"
                   placeholder="nome@empresa.com"
-                  class="flex-1 px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                  class="flex-1 px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent placeholder:text-ink-subtle dark:placeholder:text-ink-muted"
                 />
                 <button @click="addEmail" :disabled="!newEmail.trim()"
-                  class="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors disabled:opacity-40 shrink-0">
+                  class="px-3 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors disabled:opacity-40 shrink-0">
                   <i class="fas fa-plus"></i>
                 </button>
               </div>
-              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">Pressione Enter para adicionar · Participantes da reunião são pré-selecionados</p>
+              <p class="text-xs text-ink-subtle mt-1.5">Pressione Enter para adicionar · Participantes da reunião são pré-selecionados</p>
             </div>
 
             <!-- Assunto -->
             <div>
               <label class="block text-xs font-semibold text-ink-muted mb-2">
-                <i class="fas fa-pen mr-1 text-purple-500"></i> Assunto
+                <i class="fas fa-pen mr-1 text-accent"></i> Assunto
               </label>
               <input v-model="subject" type="text"
-                class="w-full px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                class="w-full px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent" />
             </div>
 
             <!-- Observações -->
             <div>
               <label class="block text-xs font-semibold text-ink-muted mb-2">
-                <i class="fas fa-comment-alt mr-1 text-purple-500"></i> Observações <span class="font-normal text-gray-400 dark:text-gray-500">(opcional)</span>
+                <i class="fas fa-comment-alt mr-1 text-accent"></i> Observações <span class="font-normal text-ink-subtle">(opcional)</span>
               </label>
               <textarea v-model="observations" rows="3"
                 placeholder="Adicione um comentário ou nota que será incluído no e-mail..."
-                class="w-full px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none" />
+                class="w-full px-3 py-2 rounded-xl border border-line bg-surface-sunken text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent placeholder:text-ink-subtle dark:placeholder:text-ink-muted resize-none" />
             </div>
 
             <!-- Preview do que será enviado -->
@@ -85,25 +85,25 @@
               <p class="text-xs font-semibold text-ink-muted mb-2">O e-mail incluirá:</p>
               <ul class="space-y-1">
                 <li v-if="report?.resumo" class="flex items-center gap-2 text-xs text-ink-muted">
-                  <i class="fas fa-check text-green-500 w-3"></i> Resumo executivo
+                  <i class="fas fa-check text-data-pos w-3"></i> Resumo executivo
                 </li>
                 <li v-if="report?.decisoes?.length" class="flex items-center gap-2 text-xs text-ink-muted">
-                  <i class="fas fa-check text-green-500 w-3"></i> {{ report.decisoes.length }} decisões
+                  <i class="fas fa-check text-data-pos w-3"></i> {{ report.decisoes.length }} decisões
                 </li>
                 <li v-if="report?.acoes?.length" class="flex items-center gap-2 text-xs text-ink-muted">
-                  <i class="fas fa-check text-green-500 w-3"></i> {{ report.acoes.length }} ações & responsabilidades
+                  <i class="fas fa-check text-data-pos w-3"></i> {{ report.acoes.length }} ações & responsabilidades
                 </li>
                 <li v-if="report?.kpis?.length" class="flex items-center gap-2 text-xs text-ink-muted">
-                  <i class="fas fa-check text-green-500 w-3"></i> {{ report.kpis.length }} KPIs
+                  <i class="fas fa-check text-data-pos w-3"></i> {{ report.kpis.length }} KPIs
                 </li>
                 <li v-if="report?.proximos_passos?.length" class="flex items-center gap-2 text-xs text-ink-muted">
-                  <i class="fas fa-check text-green-500 w-3"></i> Próximos passos
+                  <i class="fas fa-check text-data-pos w-3"></i> Próximos passos
                 </li>
               </ul>
             </div>
 
             <!-- Erro -->
-            <div v-if="error" class="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-600 dark:text-red-400">
+            <div v-if="error" class="flex items-start gap-2 p-3 rounded-xl bg-data-neg/10 border border-data-neg/25 text-xs text-data-neg">
               <i class="fas fa-circle-exclamation shrink-0 mt-0.5"></i>
               {{ error }}
             </div>
@@ -112,14 +112,14 @@
 
           <!-- Footer -->
           <div class="flex items-center justify-between gap-3 px-6 py-4 border-t border-line shrink-0">
-            <p class="text-xs text-gray-400 dark:text-gray-500">{{ recipients.length }} destinatário(s)</p>
+            <p class="text-xs text-ink-subtle">{{ recipients.length }} destinatário(s)</p>
             <div class="flex gap-2">
               <button @click="$emit('close')"
                 class="px-4 py-2 rounded-xl border border-line text-sm text-ink-muted hover:bg-surface-hover transition-colors">
                 Cancelar
               </button>
               <button @click="send" :disabled="sending || !recipients.length"
-                class="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-sm font-semibold transition-all shadow-md shadow-purple-200 dark:shadow-purple-900/30 disabled:opacity-40 disabled:cursor-not-allowed">
+                class="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-accent to-accent hover:from-accent hover:to-accent text-white text-sm font-semibold transition-all shadow-md shadow-purple-200 dark:shadow-purple-900/30 disabled:opacity-40 disabled:cursor-not-allowed">
                 <i class="fas" :class="sending ? 'fa-circle-notch animate-spin' : 'fa-paper-plane'"></i>
                 {{ sending ? 'Enviando...' : 'Enviar' }}
               </button>

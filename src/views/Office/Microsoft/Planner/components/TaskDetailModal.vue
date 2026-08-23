@@ -13,20 +13,20 @@
               @blur="saveTitle"
               @keydown.enter="saveTitle"
               @keydown.escape="editingTitle = false"
-              class="w-full text-base font-semibold text-ink bg-transparent border-b-2 border-blue-500 outline-none pb-0.5"
+              class="w-full text-base font-semibold text-ink bg-transparent border-b-2 border-accent outline-none pb-0.5"
             />
             <h2
               v-else
-              class="text-base font-semibold text-ink cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition"
+              class="text-base font-semibold text-ink cursor-pointer hover:text-accent  transition"
               @click="startEditTitle"
             >
               {{ task.title }}
             </h2>
-            <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+            <p class="text-xs text-ink-subtle mt-0.5">
               {{ bucketName }} · {{ planName }}
             </p>
           </div>
-          <button @click="$emit('close')" class="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-surface-hover transition shrink-0">
+          <button @click="$emit('close')" class="p-1.5 rounded-lg text-ink-subtle hover:text-ink-muted dark:hover:text-ink-subtle hover:bg-surface-hover transition shrink-0">
             <i class="fas fa-xmark text-sm"></i>
           </button>
         </div>
@@ -39,16 +39,16 @@
 
             <!-- Progresso -->
             <div class="space-y-1">
-              <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Status</label>
+              <label class="text-micro font-semibold text-ink-subtle uppercase tracking-wide">Status</label>
               <button
                 @click="toggleComplete"
                 :disabled="store.savingTask"
                 class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition"
                 :class="task.percentComplete === 100
-                  ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-400'
+                  ? 'bg-data-pos/10 border-data-pos/25 text-data-pos   '
                   : task.percentComplete === 50
-                    ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-400'
-                    : 'bg-gray-50 border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'"
+                    ? 'bg-accent/10 border-accent/25 text-accent   '
+                    : 'bg-surface-sunken border-line text-ink-muted bg-surface-sunken border-line text-ink-subtle'"
               >
                 <i :class="task.percentComplete === 100 ? 'fas fa-circle-check' : task.percentComplete === 50 ? 'fas fa-circle-half-stroke' : 'far fa-circle'"></i>
                 {{ task.percentComplete === 100 ? 'Concluída' : task.percentComplete === 50 ? 'Em progresso' : 'A fazer' }}
@@ -57,7 +57,7 @@
 
             <!-- Prioridade -->
             <div class="space-y-1">
-              <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Prioridade</label>
+              <label class="text-micro font-semibold text-ink-subtle uppercase tracking-wide">Prioridade</label>
               <select
                 v-model="form.priority"
                 @change="savePriority"
@@ -73,23 +73,23 @@
 
             <!-- Vencimento -->
             <div class="space-y-1">
-              <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Vencimento</label>
+              <label class="text-micro font-semibold text-ink-subtle uppercase tracking-wide">Vencimento</label>
               <input
                 type="date"
                 v-model="form.dueDate"
                 @change="saveDueDate"
-                class="w-full px-2 py-2 text-xs rounded-lg border border-line bg-surface-raised/60 text-ink outline-none focus:border-blue-400 transition"
+                class="w-full px-2 py-2 text-xs rounded-lg border border-line bg-surface-raised/60 text-ink outline-none focus:border-accent transition"
               />
             </div>
           </div>
 
           <!-- Coluna (Bucket) -->
           <div class="space-y-1">
-            <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Coluna</label>
+            <label class="text-micro font-semibold text-ink-subtle uppercase tracking-wide">Coluna</label>
             <select
               v-model="form.bucketId"
               @change="saveBucket"
-              class="w-full px-3 py-2 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink outline-none focus:border-blue-400 transition"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink outline-none focus:border-accent transition"
             >
               <option v-for="b in store.bucketsOrdered" :key="b.id" :value="b.id">{{ b.name }}</option>
             </select>
@@ -97,21 +97,21 @@
 
           <!-- Descrição -->
           <div class="space-y-1.5">
-            <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Descrição</label>
+            <label class="text-micro font-semibold text-ink-subtle uppercase tracking-wide">Descrição</label>
             <textarea
               v-model="form.description"
               @blur="saveDescription"
               rows="3"
               placeholder="Adicione uma descrição..."
-              class="w-full px-3 py-2.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 resize-none transition"
+              class="w-full px-3 py-2.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 resize-none transition"
             ></textarea>
           </div>
 
           <!-- Checklist -->
           <div class="space-y-2">
             <div class="flex items-center justify-between">
-              <label class="text-micro font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide">Checklist</label>
-              <span v-if="checklist.length > 0" class="text-micro text-gray-400 dark:text-slate-500">
+              <label class="text-micro font-semibold text-ink-subtle uppercase tracking-wide">Checklist</label>
+              <span v-if="checklist.length > 0" class="text-micro text-ink-subtle">
                 {{ checklist.filter(i => i.isChecked).length }}/{{ checklist.length }}
               </span>
             </div>
@@ -119,7 +119,7 @@
             <!-- Barra de progresso -->
             <div v-if="checklist.length > 0" class="w-full h-1.5 bg-surface-sunken rounded-full overflow-hidden">
               <div
-                class="h-full bg-blue-500 rounded-full transition-all duration-300"
+                class="h-full bg-accent rounded-full transition-all duration-300"
                 :style="{ width: `${checklistProgress}%` }"
               ></div>
             </div>
@@ -143,7 +143,7 @@
                 >{{ item.title }}</span>
                 <button
                   @click="removeChecklistItem(item.id)"
-                  class="opacity-0 group-hover:opacity-100 text-gray-300 dark:text-slate-600 hover:text-red-500 transition p-0.5"
+                  class="opacity-0 group-hover:opacity-100 text-ink-muted hover:text-data-neg transition p-0.5"
                 >
                   <i class="fas fa-xmark text-xs"></i>
                 </button>
@@ -157,7 +157,7 @@
                 type="text"
                 placeholder="Adicionar item..."
                 @keydown.enter="addChecklistItem"
-                class="flex-1 px-3 py-1.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:border-blue-400 transition"
+                class="flex-1 px-3 py-1.5 text-sm rounded-lg border border-line bg-surface-raised/60 text-ink placeholder:text-ink-subtle dark:placeholder:text-ink-muted outline-none focus:border-accent transition"
               />
               <button
                 @click="addChecklistItem"
@@ -171,7 +171,7 @@
 
           <!-- Rodapé com info -->
           <div class="pt-2 border-t border-line space-y-1">
-            <p v-if="task.createdDateTime" class="text-xs text-gray-400 dark:text-slate-500">
+            <p v-if="task.createdDateTime" class="text-xs text-ink-subtle">
               Criada em {{ formatDate(task.createdDateTime) }}
             </p>
           </div>
@@ -181,15 +181,15 @@
         <div class="shrink-0 p-4 border-t border-line flex justify-between items-center">
           <button
             @click="confirmDelete"
-            class="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg transition"
+            class="flex items-center gap-1.5 text-xs text-data-neg hover:text-data-neg hover:bg-data-neg/10  px-3 py-2 rounded-lg transition"
           >
             <i class="fas fa-trash text-xs"></i>
             Excluir tarefa
           </button>
-          <div v-if="saving" class="text-xs text-gray-400 dark:text-slate-500 flex items-center gap-1.5">
+          <div v-if="saving" class="text-xs text-ink-subtle flex items-center gap-1.5">
             <i class="fas fa-spinner animate-spin text-xs"></i> Salvando...
           </div>
-          <div v-else-if="savedMsg" class="text-xs text-green-500 flex items-center gap-1.5">
+          <div v-else-if="savedMsg" class="text-xs text-data-pos flex items-center gap-1.5">
             <i class="fas fa-check text-xs"></i> Salvo
           </div>
         </div>
@@ -253,10 +253,10 @@ const checklistProgress = computed(() => {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function priorityClass(p) {
-  if (p <= 1) return 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400';
-  if (p <= 3) return 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-700 dark:text-orange-400';
-  if (p <= 6) return 'bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-400';
-  return 'bg-gray-50 border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300';
+  if (p <= 1) return 'bg-data-neg/10 border-data-neg/25 text-data-neg   ';
+  if (p <= 3) return 'bg-data-warn/10 border-data-warn/25 text-data-warn   ';
+  if (p <= 6) return 'bg-data-warn/10 border-data-warn/25 text-data-warn   ';
+  return 'bg-surface-sunken border-line text-ink-muted bg-surface-sunken border-line text-ink-subtle';
 }
 
 function formatDate(iso) {

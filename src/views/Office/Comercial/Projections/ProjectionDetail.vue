@@ -548,8 +548,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 
     <!-- ═══════ Rascunho pendente ═══════ -->
     <div v-if="pendingDraft"
-      class="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-      <p class="text-sm text-amber-700 dark:text-amber-300">
+      class="mb-4 rounded-xl border border-data-warn/30 bg-data-warn/10 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+      <p class="text-sm text-data-warn">
         <i class="fas fa-triangle-exclamation mr-1.5"></i>
         Você tem um rascunho não salvo deste período.
       </p>
@@ -614,7 +614,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
     </section>
 
     <!-- ═══════ Grade ═══════ -->
-    <div v-if="!rangeValid" class="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-400">
+    <div v-if="!rangeValid" class="rounded-xl border border-data-neg/30 bg-data-neg/10 p-4 text-sm text-data-neg">
       <i class="fas fa-circle-exclamation mr-1.5"></i> Período inválido: o mês inicial deve ser menor ou igual ao final.
     </div>
 
@@ -633,7 +633,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 
     <Modal :open="confirmOpen" size="md" title="Confirmar remoção" @close="confirmOpen = false">
       <p class="text-sm text-ink-muted mb-3">
-        Ao salvar, {{ removalNames.length }} empreendimento(s) e suas metas serão <strong class="text-red-500">removidos</strong> desta projeção:
+        Ao salvar, {{ removalNames.length }} empreendimento(s) e suas metas serão <strong class="text-data-neg">removidos</strong> desta projeção:
       </p>
       <ul class="rounded-lg border border-line bg-surface-sunken divide-y divide-line-subtle max-h-52 overflow-auto text-sm">
         <li v-for="n in removalNames" :key="n" class="px-3 py-2 text-ink">{{ n }}</li>

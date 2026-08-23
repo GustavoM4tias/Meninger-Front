@@ -97,7 +97,7 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
                     <p class="font-medium text-ink truncate">{{ row.name }}</p>
                     <p class="text-micro text-ink-subtle font-mono">
                       <span v-if="row.erp_id">CC {{ row.erp_id }}</span>
-                      <span v-else class="text-amber-600 dark:text-amber-400">manual</span>
+                      <span v-else class="text-data-warn">manual</span>
                       <span v-if="row.city"> • {{ row.city }}</span>
                       <span v-if="row.category && row.category !== NO_CATEGORY" class="text-accent"> • {{ row.category }}</span>
                     </p>
@@ -111,7 +111,7 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
                       <i class="fas fa-sliders text-xs"></i>
                     </button>
                     <button v-tippy:left="'Remover empreendimento'" @click="emit('remove', row)"
-                      class="h-7 w-7 grid place-items-center rounded-md text-ink-muted hover:bg-red-500/10 hover:text-red-500 transition-colors">
+                      class="h-7 w-7 grid place-items-center rounded-md text-ink-muted hover:bg-data-neg/10 hover:text-data-neg transition-colors">
                       <i class="fas fa-trash-can text-xs"></i>
                     </button>
                   </div>
@@ -197,7 +197,7 @@ const uid = (r) => `${r.enterprise_key}|${r.alias_id || 'default'}`;
             <button @click="emit('edit', row)" class="h-9 w-9 grid place-items-center rounded-lg text-ink-muted hover:bg-surface-sunken hover:text-accent">
               <i class="fas fa-sliders text-sm"></i>
             </button>
-            <button @click="emit('remove', row)" class="h-9 w-9 grid place-items-center rounded-lg text-ink-muted hover:bg-red-500/10 hover:text-red-500">
+            <button @click="emit('remove', row)" class="h-9 w-9 grid place-items-center rounded-lg text-ink-muted hover:bg-data-neg/10 hover:text-data-neg">
               <i class="fas fa-trash-can text-sm"></i>
             </button>
           </div>

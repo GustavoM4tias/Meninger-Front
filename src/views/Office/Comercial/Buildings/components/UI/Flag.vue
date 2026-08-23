@@ -14,18 +14,18 @@ const props = defineProps({
 
 // Objeto que mapeia os valores de `stage` para classes CSS
 const stageClasses = {
-    'Pré-Lançamento': 'bg-emerald-500',
-    'Lançamento': 'bg-sky-500',
-    'Em construção': 'bg-amber-400',
-    'Finalizado': 'bg-red-500',
-    'Portal do Cliente': 'bg-purple-600'
+    'Pré-Lançamento': 'bg-data-pos',
+    'Lançamento': 'bg-accent',
+    'Em construção': 'bg-data-warn',
+    'Finalizado': 'bg-data-neg',
+    'Portal do Cliente': 'bg-accent'
 };
 </script>
 
 <template>
     <div :class="[
-        'flag absolute z-50 py-1 text-gray-100 font-semibold shadow-lg',
-        stageClasses[stage] || 'bg-blue-500',
+        'flag absolute z-50 py-1 text-ink font-semibold shadow-lg',
+        stageClasses[stage] || 'bg-accent',
         rotate ? 'rotate pe-6 ps-3' : 'ps-6 pe-3'
     ]">
         {{ stage }}

@@ -43,14 +43,14 @@ const fmtMoney = (v) => {
 
 // ── Status helpers ─────────────────────────────────────────
 const UNIT_STATUS = {
-  1: { text: 'Disponível',     dot: 'bg-emerald-500', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/20' },
-  2: { text: 'Reserva início', dot: 'bg-blue-500',    cls: 'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20' },
-  3: { text: 'Vendido',        dot: 'bg-rose-500',    cls: 'bg-rose-500/10 text-rose-600 dark:text-rose-300 border-rose-500/20' },
-  4: { text: 'Bloqueado',      dot: 'bg-slate-400',   cls: 'bg-surface-sunken text-ink-muted border-line' },
-  5: { text: 'Reserva ativa',  dot: 'bg-yellow-500',  cls: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-300 border-yellow-500/20' },
+  1: { text: 'Disponível',     dot: 'bg-data-pos', cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' },
+  2: { text: 'Reserva início', dot: 'bg-accent',    cls: 'bg-accent/10 text-accent border-accent/20' },
+  3: { text: 'Vendido',        dot: 'bg-data-neg',    cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' },
+  4: { text: 'Bloqueado',      dot: 'bg-data-neutral',   cls: 'bg-surface-sunken text-ink-muted border-line' },
+  5: { text: 'Reserva ativa',  dot: 'bg-data-warn',  cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' },
 };
 const getUnitStatus = (u) => UNIT_STATUS[u.situacao?.situacao_mapa_disponibilidade] || {
-  text: 'Não informado', dot: 'bg-slate-400', cls: 'bg-surface-sunken text-ink-muted border-line',
+  text: 'Não informado', dot: 'bg-data-neutral', cls: 'bg-surface-sunken text-ink-muted border-line',
 };
 
 // ── Resumo ─────────────────────────────────────────────────
@@ -86,9 +86,9 @@ const unitStatusCounts = computed(() => {
 
 const kpiCards = computed(() => [
   { label: 'Unidades',       value: totalUnits.value, icon: 'fas fa-house', accent: 'text-accent bg-accent-soft' },
-  { label: 'Blocos',         value: totalBlocks.value, icon: 'fas fa-building', accent: 'text-emerald-500 bg-emerald-500/10' },
-  { label: 'Etapas',         value: props.building.etapas?.length || 0, icon: 'fas fa-layer-group', accent: 'text-purple-500 bg-purple-500/10' },
-  { label: 'Materiais',      value: props.building.materiais_campanha?.length || 0, icon: 'fas fa-images', accent: 'text-amber-500 bg-amber-500/10' },
+  { label: 'Blocos',         value: totalBlocks.value, icon: 'fas fa-building', accent: 'text-data-pos bg-data-pos/10' },
+  { label: 'Etapas',         value: props.building.etapas?.length || 0, icon: 'fas fa-layer-group', accent: 'text-accent bg-accent/10' },
+  { label: 'Materiais',      value: props.building.materiais_campanha?.length || 0, icon: 'fas fa-images', accent: 'text-data-warn bg-data-warn/10' },
 ]);
 
 const materialsCount = computed(() =>
@@ -101,11 +101,11 @@ const tabOptions = computed(() => [
 ]);
 
 const statusBreakdown = computed(() => [
-  { key: 'disponivel',     label: 'Disponíveis',    value: unitStatusCounts.value.disponivel,     dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' },
-  { key: 'reserva_inicio', label: 'Reserva início', value: unitStatusCounts.value.reserva_inicio, dot: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-400' },
-  { key: 'reserva_ativa',  label: 'Reservas ativas', value: unitStatusCounts.value.reserva_ativa, dot: 'bg-yellow-500',  text: 'text-yellow-600 dark:text-yellow-400' },
-  { key: 'vendido',        label: 'Vendidas',       value: unitStatusCounts.value.vendido,        dot: 'bg-rose-500',    text: 'text-rose-600 dark:text-rose-400' },
-  { key: 'bloqueado',      label: 'Bloqueadas',     value: unitStatusCounts.value.bloqueado,      dot: 'bg-slate-400',   text: 'text-ink-muted' },
+  { key: 'disponivel',     label: 'Disponíveis',    value: unitStatusCounts.value.disponivel,     dot: 'bg-data-pos', text: 'text-data-pos' },
+  { key: 'reserva_inicio', label: 'Reserva início', value: unitStatusCounts.value.reserva_inicio, dot: 'bg-accent',    text: 'text-accent' },
+  { key: 'reserva_ativa',  label: 'Reservas ativas', value: unitStatusCounts.value.reserva_ativa, dot: 'bg-data-warn',  text: 'text-data-warn' },
+  { key: 'vendido',        label: 'Vendidas',       value: unitStatusCounts.value.vendido,        dot: 'bg-data-neg',    text: 'text-data-neg' },
+  { key: 'bloqueado',      label: 'Bloqueadas',     value: unitStatusCounts.value.bloqueado,      dot: 'bg-data-neutral',   text: 'text-ink-muted' },
 ]);
 
 const cvLink = computed(() =>
@@ -167,7 +167,7 @@ onMounted(fetchWeather);
         <!-- Close button -->
         <button @click="closeModal" aria-label="Fechar"
           class="absolute top-4 right-4 h-9 w-9 grid place-items-center rounded-lg
-                 bg-white/15 hover:bg-white/30 backdrop-blur-md text-white border border-white/20
+                 bg-surface-raised/15 hover:bg-surface-raised/30 backdrop-blur-md text-white border border-white/20
                  transition-colors z-10">
           <i class="fas fa-xmark text-sm"></i>
         </button>
@@ -182,14 +182,14 @@ onMounted(fetchWeather);
           <div class="flex flex-wrap gap-1.5 mb-2">
             <span v-if="stage"
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md
-                     bg-white/20 backdrop-blur-md border border-white/30
+                     bg-surface-raised/20 backdrop-blur-md border border-white/30
                      text-white text-xs font-semibold">
-              <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+              <span class="h-1.5 w-1.5 rounded-full bg-surface-raised"></span>
               {{ stage }}
             </span>
             <span v-for="chip in stageChips.slice(1)" :key="chip"
               class="inline-flex items-center px-2 py-0.5 rounded-md
-                     bg-white/15 backdrop-blur-md border border-white/20
+                     bg-surface-raised/15 backdrop-blur-md border border-white/20
                      text-white/90 text-micro font-medium">
               {{ chip }}
             </span> 
@@ -324,7 +324,7 @@ onMounted(fetchWeather);
               <div class="space-y-2">
                 <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
                   <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Previsão de entrega</p>
-                  <p class="text-base font-bold text-amber-500 dark:text-amber-300 tabular-nums">
+                  <p class="text-base font-bold text-data-warn tabular-nums">
                     {{ formatDate(building.data_entrega) }}
                   </p>
                 </div>
@@ -365,7 +365,7 @@ onMounted(fetchWeather);
             <!-- Materiais campanha -->
             <Surface v-if="building.materiais_campanha?.length" variant="raised" padding="md" class="space-y-3">
               <div class="flex items-center gap-2 mb-1">
-                <i class="fas fa-images text-amber-500 text-sm"></i>
+                <i class="fas fa-images text-data-warn text-sm"></i>
                 <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Materiais de campanha</h3>
                 <Badge variant="neutral" size="sm" class="ml-auto">{{ building.materiais_campanha.length }}</Badge>
               </div>
@@ -375,7 +375,7 @@ onMounted(fetchWeather);
                   target="_blank" rel="noopener" @click.stop
                   class="flex items-center gap-2.5 rounded-lg border border-line bg-surface-sunken p-2.5
                          hover:bg-surface-hover hover:border-accent/30 transition-colors group">
-                  <i :class="mat.tipo === 'youtube' ? 'fab fa-youtube text-rose-500' : 'fas fa-file text-accent'"
+                  <i :class="mat.tipo === 'youtube' ? 'fab fa-youtube text-data-neg' : 'fas fa-file text-accent'"
                     class="text-base shrink-0"></i>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-ink truncate group-hover:text-accent transition-colors">{{ mat.nome }}</p>
@@ -391,7 +391,7 @@ onMounted(fetchWeather);
             <!-- Plantas -->
             <Surface v-if="building.plantas_mapeadas?.length" variant="raised" padding="md" class="space-y-3">
               <div class="flex items-center gap-2">
-                <i class="fas fa-drafting-compass text-teal-500 text-sm"></i>
+                <i class="fas fa-drafting-compass text-series-3 text-sm"></i>
                 <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Plantas mapeadas</h3>
                 <Badge variant="neutral" size="sm" class="ml-auto">{{ building.plantas_mapeadas.length }}</Badge>
               </div>
@@ -412,7 +412,7 @@ onMounted(fetchWeather);
           <!-- Mapa -->
           <Surface v-if="building.latitude && building.longitude" variant="raised" padding="md" class="space-y-2">
             <div class="flex items-center gap-2">
-              <i class="fas fa-map-location-dot text-sky-500 text-sm"></i>
+              <i class="fas fa-map-location-dot text-accent text-sm"></i>
               <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Mapa</h3>
             </div>
             <div class="rounded-lg overflow-hidden border border-line">
@@ -442,7 +442,7 @@ onMounted(fetchWeather);
           <div v-else class="space-y-5">
                   <div v-for="etapa in building.etapas" :key="etapa.idetapa">
                     <div class="flex items-center gap-2 mb-3">
-                      <i class="fas fa-layer-group text-purple-500 text-xs"></i>
+                      <i class="fas fa-layer-group text-accent text-xs"></i>
                       <h4 class="text-sm font-semibold text-ink">{{ etapa.nome }}</h4>
                       <Badge variant="accent" size="sm">{{ etapa.blocos?.length || 0 }} bloco{{ (etapa.blocos?.length || 0) === 1 ? '' : 's' }}</Badge>
                     </div>
@@ -479,7 +479,7 @@ onMounted(fetchWeather);
                                   </span>
                                 </div>
                                 <p v-if="unidade.valor"
-                                  class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">
+                                  class="text-sm font-semibold text-data-pos mt-1 tabular-nums">
                                   {{ fmtMoney(unidade.valor) }}
                                 </p>
                               </div>
@@ -506,9 +506,9 @@ onMounted(fetchWeather);
       <button v-if="can('sync')" @click="syncTables" :disabled="syncingTables"
         v-tippy="'Puxa do CV as tabelas de preço deste empreendimento (usadas nas fichas comerciais)'"
         class="mr-auto inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-line bg-surface-raised hover:bg-surface-hover text-sm font-medium transition-colors shadow-soft disabled:opacity-50"
-        :class="syncResult && !syncResult.ok ? 'text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800' : 'text-ink'">
+        :class="syncResult && !syncResult.ok ? 'text-data-neg border-data-neg/25' : 'text-ink'">
         <i class="fas text-xs"
-          :class="syncingTables ? 'fa-spinner fa-spin' : syncResult?.ok ? 'fa-check text-emerald-500' : syncResult ? 'fa-triangle-exclamation' : 'fa-rotate'"></i>
+          :class="syncingTables ? 'fa-spinner fa-spin' : syncResult?.ok ? 'fa-check text-data-pos' : syncResult ? 'fa-triangle-exclamation' : 'fa-rotate'"></i>
         <span>{{ syncLabel }}</span>
       </button>
       <Button variant="ghost" @click="closeModal">Fechar</Button>

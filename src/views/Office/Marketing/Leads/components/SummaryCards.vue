@@ -30,17 +30,17 @@ const iconFor = (status) => ({
 }[status] || 'fas fa-circle');
 
 const accentFor = (status) => ({
-  'Em Atendimento':                  'text-orange-500 bg-orange-500/10',
-  'Aguardando Atendimento Corretor': 'text-amber-500  bg-amber-500/10',
-  'Com Reserva':                     'text-yellow-500 bg-yellow-500/10',
-  '1ª Tentativa de Contato':         'text-sky-500    bg-sky-500/10',
-  'Novo Lead':                       'text-blue-500   bg-blue-500/10',
-  'Descartado':                      'text-red-500    bg-red-500/10',
-  'Em Análise de Crédito':           'text-purple-500 bg-purple-500/10',
-  'Lead Qualificado':                'text-emerald-500 bg-emerald-500/10',
-  'Em Negociação':                   'text-emerald-500 bg-emerald-500/10',
-  'Venda Realizada':                 'text-green-500  bg-green-500/10',
-  'Atendimento Externo':             'text-indigo-500 bg-indigo-500/10',
+  'Em Atendimento':                  'text-data-warn bg-data-warn/10',
+  'Aguardando Atendimento Corretor': 'text-data-warn  bg-data-warn/10',
+  'Com Reserva':                     'text-data-warn bg-data-warn/10',
+  '1ª Tentativa de Contato':         'text-accent    bg-accent/10',
+  'Novo Lead':                       'text-accent   bg-accent/10',
+  'Descartado':                      'text-data-neg    bg-data-neg/10',
+  'Em Análise de Crédito':           'text-accent bg-accent/10',
+  'Lead Qualificado':                'text-data-pos bg-data-pos/10',
+  'Em Negociação':                   'text-data-pos bg-data-pos/10',
+  'Venda Realizada':                 'text-data-pos  bg-data-pos/10',
+  'Atendimento Externo':             'text-accent bg-accent/10',
 }[status] || 'text-ink-muted bg-surface-sunken');
 
 const totalLeads = computed(() => props.kpi.total ?? 0);

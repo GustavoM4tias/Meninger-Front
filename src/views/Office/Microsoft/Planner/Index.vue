@@ -151,8 +151,8 @@
                   @click.stop="store.toggleTaskComplete(task)"
                   class="mt-0.5 shrink-0 w-4 h-4 rounded border flex items-center justify-center transition"
                   :class="task.percentComplete === 100
-                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                    : 'border-line hover:border-emerald-400'">
+                    ? 'bg-data-pos border-data-pos text-white'
+                    : 'border-line hover:border-data-pos'">
                   <i v-if="task.percentComplete === 100" class="fas fa-check text-[8px]"></i>
                 </button>
                 <span
@@ -173,7 +173,7 @@
                 <span
                   v-if="task.dueDateTime"
                   class="text-micro flex items-center gap-1"
-                  :class="isOverdue(task) ? 'text-red-500' : 'text-ink-subtle'">
+                  :class="isOverdue(task) ? 'text-data-neg' : 'text-ink-subtle'">
                   <i class="fas fa-calendar text-[9px]"></i>
                   {{ formatShortDate(task.dueDateTime) }}
                 </span>
@@ -457,9 +457,9 @@ function priorityLabel(p) {
 }
 
 function priorityBadge(p) {
-  if (p <= 1) return 'bg-red-500/10 text-red-600 dark:text-red-400';
-  if (p <= 3) return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
-  if (p <= 6) return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+  if (p <= 1) return 'bg-data-neg/10 text-data-neg';
+  if (p <= 3) return 'bg-data-warn/10 text-data-warn';
+  if (p <= 6) return 'bg-data-warn/10 text-data-warn';
   return 'bg-surface-sunken text-ink-muted';
 }
 

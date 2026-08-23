@@ -238,14 +238,14 @@
       :title="`Excluir ${deleteModal.item?.isFolder ? 'pasta' : 'arquivo'}`"
       @close="deleteModal.show = false; deleteModal.confirmed = false">
       <div class="space-y-3">
-        <div class="w-12 h-12 rounded-2xl bg-red-500/10 grid place-items-center">
-          <i class="fas fa-trash text-red-500 text-xl"></i>
+        <div class="w-12 h-12 rounded-2xl bg-data-neg/10 grid place-items-center">
+          <i class="fas fa-trash text-data-neg text-xl"></i>
         </div>
         <p class="text-sm text-ink-muted">
           Tem certeza que deseja excluir <strong class="text-ink">{{ deleteModal.item?.name }}</strong>?
           Esta ação não pode ser desfeita.
         </p>
-        <p v-if="deleteModal.confirmed" class="text-xs text-red-500 font-medium">
+        <p v-if="deleteModal.confirmed" class="text-xs text-data-neg font-medium">
           Confirme a exclusão definitiva:
         </p>
       </div>
@@ -304,9 +304,9 @@
         <div v-if="toast.show"
           class="fixed bottom-5 right-5 z-[99999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-overlay border bg-surface-raised text-sm max-w-sm"
           :class="toast.type === 'success'
-            ? 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-            : 'border-red-500/30 text-red-600 dark:text-red-400'">
-          <i :class="toast.type === 'success' ? 'fas fa-circle-check text-emerald-500' : 'fas fa-circle-exclamation text-red-500'" class="text-base shrink-0"></i>
+            ? 'border-data-pos/30 text-data-pos'
+            : 'border-data-neg/30 text-data-neg'">
+          <i :class="toast.type === 'success' ? 'fas fa-circle-check text-data-pos' : 'fas fa-circle-exclamation text-data-neg'" class="text-base shrink-0"></i>
           <span>{{ toast.message }}</span>
         </div>
       </Transition>

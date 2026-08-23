@@ -11,34 +11,34 @@
         <!-- File name header -->
         <div class="px-3 py-2 mb-0.5 border-b border-line">
           <div class="flex items-center gap-2 min-w-0">
-            <i :class="item?.isFolder ? 'fas fa-folder text-yellow-400' : fileIconClass(item?.ext)" class="text-sm shrink-0"></i>
+            <i :class="item?.isFolder ? 'fas fa-folder text-data-warn' : fileIconClass(item?.ext)" class="text-sm shrink-0"></i>
             <span class="text-xs font-semibold text-ink-muted truncate">{{ item?.name }}</span>
           </div>
         </div>
 
         <template v-if="item?.isFolder">
-          <CtxItem icon="fas fa-folder-open text-blue-500" label="Abrir" @click="act('open')" />
-          <CtxItem icon="fas fa-arrow-up-right-from-square text-gray-400" label="Abrir em nova guia" @click="act('open-new-tab')" />
+          <CtxItem icon="fas fa-folder-open text-accent" label="Abrir" @click="act('open')" />
+          <CtxItem icon="fas fa-arrow-up-right-from-square text-ink-subtle" label="Abrir em nova guia" @click="act('open-new-tab')" />
           <CtxDivider />
-          <CtxItem :icon="isFavorited ? 'fas fa-star text-amber-400' : 'far fa-star text-amber-400'" :label="isFavorited ? 'Remover favorito' : 'Favoritar'" @click="act('favorite')" />
+          <CtxItem :icon="isFavorited ? 'fas fa-star text-data-warn' : 'far fa-star text-data-warn'" :label="isFavorited ? 'Remover favorito' : 'Favoritar'" @click="act('favorite')" />
           <CtxDivider />
-          <CtxItem icon="fas fa-pen text-gray-500" label="Renomear" @click="act('rename')" />
-          <CtxItem icon="fas fa-trash text-red-500" label="Excluir" @click="act('delete')" :danger="true" />
+          <CtxItem icon="fas fa-pen text-ink-muted" label="Renomear" @click="act('rename')" />
+          <CtxItem icon="fas fa-trash text-data-neg" label="Excluir" @click="act('delete')" :danger="true" />
         </template>
 
         <template v-else>
-          <CtxItem icon="fas fa-eye text-blue-500" label="Visualizar" @click="act('preview')" />
-          <CtxItem icon="fas fa-arrow-up-right-from-square text-gray-400" label="Abrir no aplicativo" @click="act('open-app')" />
-          <CtxItem icon="fas fa-up-right-from-square text-gray-400" label="Abrir em nova guia" @click="act('open-new-tab')" />
+          <CtxItem icon="fas fa-eye text-accent" label="Visualizar" @click="act('preview')" />
+          <CtxItem icon="fas fa-arrow-up-right-from-square text-ink-subtle" label="Abrir no aplicativo" @click="act('open-app')" />
+          <CtxItem icon="fas fa-up-right-from-square text-ink-subtle" label="Abrir em nova guia" @click="act('open-new-tab')" />
           <CtxDivider />
-          <CtxItem icon="fas fa-share-nodes text-green-500" label="Compartilhar..." @click="act('share')" />
-          <CtxItem icon="fas fa-link text-gray-500" label="Copiar link" @click="act('copy-link')" />
+          <CtxItem icon="fas fa-share-nodes text-data-pos" label="Compartilhar..." @click="act('share')" />
+          <CtxItem icon="fas fa-link text-ink-muted" label="Copiar link" @click="act('copy-link')" />
           <CtxDivider />
-          <CtxItem icon="fas fa-download text-blue-500" label="Baixar" @click="act('download')" />
-          <CtxItem :icon="isFavorited ? 'fas fa-star text-amber-400' : 'far fa-star text-amber-400'" :label="isFavorited ? 'Remover favorito' : 'Favoritar'" @click="act('favorite')" />
+          <CtxItem icon="fas fa-download text-accent" label="Baixar" @click="act('download')" />
+          <CtxItem :icon="isFavorited ? 'fas fa-star text-data-warn' : 'far fa-star text-data-warn'" :label="isFavorited ? 'Remover favorito' : 'Favoritar'" @click="act('favorite')" />
           <CtxDivider />
-          <CtxItem icon="fas fa-pen text-gray-500" label="Renomear" @click="act('rename')" />
-          <CtxItem icon="fas fa-trash text-red-500" label="Excluir" @click="act('delete')" :danger="true" />
+          <CtxItem icon="fas fa-pen text-ink-muted" label="Renomear" @click="act('rename')" />
+          <CtxItem icon="fas fa-trash text-data-neg" label="Excluir" @click="act('delete')" :danger="true" />
         </template>
       </div>
     </Transition>
@@ -57,7 +57,7 @@ const CtxItem = defineComponent({
       class: [
         'flex items-center gap-3 w-full px-3 py-1.5 text-sm transition-colors text-left',
         props.danger
-          ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+          ? 'text-data-neg hover:bg-data-neg/10 '
           : 'text-ink hover:bg-surface-hover',
       ],
       onClick: () => emit('click'),
@@ -120,21 +120,21 @@ onUnmounted(() => {
 
 // ── Icon map ─────────────────────────────────────────────────────────────────
 const EXT_ICONS = {
-  xlsx: 'fas fa-file-excel text-green-600', xls: 'fas fa-file-excel text-green-600',
-  docx: 'fas fa-file-word text-blue-600', doc: 'fas fa-file-word text-blue-600',
-  pptx: 'fas fa-file-powerpoint text-orange-500', ppt: 'fas fa-file-powerpoint text-orange-500',
-  pdf: 'fas fa-file-pdf text-red-500',
-  png: 'fas fa-file-image text-purple-500', jpg: 'fas fa-file-image text-purple-500',
-  jpeg: 'fas fa-file-image text-purple-500', gif: 'fas fa-file-image text-purple-500',
-  svg: 'fas fa-file-image text-purple-500', webp: 'fas fa-file-image text-purple-500',
+  xlsx: 'fas fa-file-excel text-data-pos', xls: 'fas fa-file-excel text-data-pos',
+  docx: 'fas fa-file-word text-accent', doc: 'fas fa-file-word text-accent',
+  pptx: 'fas fa-file-powerpoint text-data-warn', ppt: 'fas fa-file-powerpoint text-data-warn',
+  pdf: 'fas fa-file-pdf text-data-neg',
+  png: 'fas fa-file-image text-accent', jpg: 'fas fa-file-image text-accent',
+  jpeg: 'fas fa-file-image text-accent', gif: 'fas fa-file-image text-accent',
+  svg: 'fas fa-file-image text-accent', webp: 'fas fa-file-image text-accent',
   mp4: 'fas fa-file-video text-pink-500', mov: 'fas fa-file-video text-pink-500',
   avi: 'fas fa-file-video text-pink-500',
-  mp3: 'fas fa-file-audio text-yellow-500', wav: 'fas fa-file-audio text-yellow-500',
-  txt: 'fas fa-file-lines text-gray-500', csv: 'fas fa-file-csv text-teal-600',
-  json: 'fas fa-file-code text-gray-600', js: 'fas fa-file-code text-yellow-500',
-  zip: 'fas fa-file-zipper text-amber-600', rar: 'fas fa-file-zipper text-amber-600',
+  mp3: 'fas fa-file-audio text-data-warn', wav: 'fas fa-file-audio text-data-warn',
+  txt: 'fas fa-file-lines text-ink-muted', csv: 'fas fa-file-csv text-teal-600',
+  json: 'fas fa-file-code text-ink-muted', js: 'fas fa-file-code text-data-warn',
+  zip: 'fas fa-file-zipper text-data-warn', rar: 'fas fa-file-zipper text-data-warn',
 };
-function fileIconClass(ext) { return EXT_ICONS[ext?.toLowerCase()] || 'fas fa-file text-gray-400'; }
+function fileIconClass(ext) { return EXT_ICONS[ext?.toLowerCase()] || 'fas fa-file text-ink-subtle'; }
 </script>
 
 <style scoped>
