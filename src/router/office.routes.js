@@ -362,6 +362,14 @@ export default [
                         meta: { requiresAuth: true, searchable: true, content: 'Histórico de emissão de boletos via Caixa Econômica Federal: filtros, reprocessamento, reenvio ao cliente e conferência de pagamento' },
                     },
                     {
+                        path: 'link-cartao',
+                        name: 'Link de Cartão',
+                        component: () => import('@/views/Office/Financeiro/LinkCartao/Index.vue'),
+                        // Sem requiresAdmin: a tela entra pela alçada e as ações
+                        // internas seguem as capacidades declaradas no backend.
+                        meta: { requiresAuth: true, searchable: true, content: 'Link de pagamento no cartão de crédito via portal Userede: credenciais, teto por link, limite de parcelas e prazo de vencimento' },
+                    },
+                    {
                         path: 'paymentflow',
                         name: 'Fluxo de Pagamento',
                         component: () => import('@/views/Office/Tools/PaymentoFlow/Index.vue'),

@@ -199,6 +199,10 @@ export const navRegistry = [
                     // reprocessamento vão por alçada; a aba Configurações
                     // continua só para admin (dentro da própria tela).
                     { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode' },
+                    // Configuração da emissão de link de pagamento no cartão
+                    // (portal Userede). Hoje só configuração, que é admin pela
+                    // capacidade `configure` em lib/screenCapabilities.js.
+                    { route: '/financeiro/link-cartao', name: 'Link de Cartão', icon: 'fas fa-credit-card' },
                 ],
             },
             {
