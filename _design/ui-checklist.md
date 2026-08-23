@@ -4,7 +4,7 @@ Gerado por `_design/mapscreens.mjs` em 2026-08-20. Para atualizar os números de
 mexer nas telas, rode de novo e o checklist se refaz.
 
 - **66** telas pontuadas (+ 6 especiais fora do score)
-- **Score médio: 88/100**
+- **Score médio: 90/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
 ## Como marcar
@@ -26,36 +26,25 @@ Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é 
 - [ ] **InPersonRecording** `/inperson/recording` · ` 50`
       <sub>views/Office/Microsoft/Transcripts/InPerson/Recording.vue · 372L · sem container, sem header, sem help</sub>
 
-## Onda 2 - Alinhamento  `8 telas`
+## Onda 2 - Alinhamento  `4 telas`
 
 Score 55 a 74. Estrutura existe, falta token, help ou plano mobile.
 
 ### Detalhe · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
 
-- [ ] **Detalhes Suporte** `/support/:id` · ` 65`
-      <sub>views/Office/Support/SupportDetails.vue · 381L · sem header, sem help</sub>
 - [ ] **Visualizar Relatório** `/relatorios/:id/view` · ` 70`
       <sub>views/Office/Relatorios/View.vue · 464L · sem container, sem header</sub>
 - [ ] **Ficha Comercial Detalhe** `/conditions/:id` · ` 70`
       <sub>views/Office/Comercial/Conditions/Detail.vue · 8573L (+10 comp.) · sem container, sem header</sub>
 
-### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
-
-- [ ] **MCMV Configurações** `/mcmv/settings` · ` 65`
-      <sub>views/Office/Comercial/Mcmv/Settings.vue · 215L · sem header, sem help</sub>
-- [ ] **Painel de Alertas** `/alerts/admin` · ` 70`
-      <sub>views/Office/Settings/Alerts/Admin/Index.vue · 127L · sem help, 1 tabela sem mobile</sub>
-
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
 - [ ] **Builder de Relatório** `/relatorios/:id` · ` 70`
       <sub>views/Office/Relatorios/Builder.vue · 328L · sem container, sem header</sub>
-- [ ] **Link de Cartão** `/link-cartao` · ` 70`
-      <sub>views/Office/Financeiro/LinkCartao/Index.vue · 340L · sem container, sem header, 1 cor fixa</sub>
 - [ ] **Planner** `/planner` · ` 70`
       <sub>views/Office/Microsoft/Planner/Index.vue · 883L (+1 comp.) · sem container, sem header</sub>
 
-## Onda 3 - Acabamento  `23 telas`
+## Onda 3 - Acabamento  `24 telas`
 
 Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tabela.
 
@@ -97,6 +86,8 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
       <sub>views/Office/Settings/Whatsapp/Index.vue · 1803L (+8 comp.) · sem help, 1 tabela</sub>
 - [ ] **Alertas** `/alerts` · ` 80`
       <sub>views/Office/Settings/Alerts/Index.vue · 1095L (+3 comp.) · sem help</sub>
+- [ ] **Painel de Alertas** `/alerts/admin` · ` 90`
+      <sub>views/Office/Settings/Alerts/Admin/Index.vue · 149L · 1 tabela sem mobile</sub>
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
@@ -117,7 +108,7 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
 - [ ] **Suporte** `/support` · ` 80`
       <sub>views/Office/Support/Support.vue · 187L · sem help</sub>
 
-## Onda 4 - Manutenção  `34 telas`
+## Onda 4 - Manutenção  `37 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
 
@@ -127,6 +118,11 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue · 819L (+2 comp.) · 2 cor fixa, 1 gráfico</sub>
 - [ ] **Leads** `/leads` · `100`
       <sub>views/Office/Marketing/Leads/Index.vue · 2989L (+16 comp.) · 3 gráfico, 2 tabela</sub>
+
+### Detalhe · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
+
+- [ ] **Detalhes Suporte** `/support/:id` · `100`
+      <sub>views/Office/Support/SupportDetails.vue · 401L · ok</sub>
 
 ### Operação · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
@@ -163,6 +159,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 
 - [ ] **Sincronização de empresas** `/empresas` · ` 98`
       <sub>views/Office/Settings/OrgSync/Index.vue · 724L · 6 cor fixa, 1 tabela</sub>
+- [ ] **MCMV Configurações** `/mcmv/settings` · `100`
+      <sub>views/Office/Comercial/Mcmv/Settings.vue · 229L · ok</sub>
 - [ ] **Fichas Comerciais Configurações** `/conditions/settings` · `100`
       <sub>views/Office/Comercial/Conditions/Settings.vue · 7468L (+10 comp.) · ok</sub>
 - [ ] **Integridade** `/integrity` · `100`
@@ -192,6 +190,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Comercial/Conditions/Index.vue · 7725L (+10 comp.) · ok</sub>
 - [ ] **Correspondentes** `/correspondentes` · `100`
       <sub>views/Office/Comercial/Correspondentes/Index.vue · 1534L (+6 comp.) · ok</sub>
+- [ ] **Link de Cartão** `/link-cartao` · `100`
+      <sub>views/Office/Financeiro/LinkCartao/Index.vue · 339L · 1 cor fixa</sub>
 - [ ] **Fluxo de Pagamento** `/paymentflow` · `100`
       <sub>views/Office/Tools/PaymentoFlow/Index.vue · 3471L (+5 comp.) · ok</sub>
 - [ ] **Teams** `/teams` · `100`

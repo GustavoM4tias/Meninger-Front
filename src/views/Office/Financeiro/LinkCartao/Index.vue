@@ -1,15 +1,12 @@
 <template>
-  <div class="p-4 md:p-6 space-y-5 max-w-5xl mx-auto">
-
-    <!-- ── Cabeçalho ─────────────────────────────────────────────────────── -->
-    <div class="flex items-start justify-between gap-3 flex-wrap">
-      <div class="min-w-0">
-        <h1 class="text-xl font-semibold text-ink">Link de Cartão</h1>
-        <p class="text-sm text-ink-muted mt-0.5">
-          Emissão de link de pagamento no cartão de crédito pelo portal Userede.
-        </p>
-      </div>
-      <div class="flex items-center gap-2 flex-wrap">
+  <PageContainer size="lg">
+    <PageHeader
+      title="Link de Cartão"
+      subtitle="Emissão de link de pagamento no cartão pelo portal Userede"
+      icon="fas fa-credit-card">
+      <template #actions>
+        <!-- Estado da automação junto do título: é o que decide se a tela
+             está fazendo alguma coisa agora. -->
         <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-sunken border border-line">
           <span class="relative flex h-2.5 w-2.5">
             <span v-if="form.active"
@@ -36,8 +33,8 @@
             'O limite de parcelas é um teto. Quem escolhe em quantas vezes pagar é o cliente, até esse número.',
             'O portal da Rede não aceita link acima de R$ 30 mil, parcelamento acima de 12x nem vencimento além de 15 dias.',
           ]" />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <Surface v-if="store.settingsError" variant="raised" padding="sm"
       class="border-rose-500/30 bg-rose-500/10">
@@ -248,7 +245,7 @@
       </span>
     </div>
 
-  </div>
+  </PageContainer>
 </template>
 
 <script setup>
@@ -258,7 +255,9 @@ import { useUseredeStore } from '@/stores/Financeiro/LinkCartao/useredeStore';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
-import PageHelp from '@/components/UI/PageHelp.vue';
+import PageHelp from '@/components/UI/PageHelp.vue'
+import PageContainer from '@/components/UI/PageContainer.vue'
+import PageHeader from '@/components/UI/PageHeader.vue';
 
 const store = useUseredeStore();
 

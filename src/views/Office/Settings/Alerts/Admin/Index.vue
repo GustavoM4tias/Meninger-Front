@@ -12,6 +12,8 @@ import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
 
 const router = useRouter();
 const toast = useToast();
@@ -47,13 +49,33 @@ const cards = (s) => [
       subtitle="Visão geral de todos os alertas do sistema e do uso por usuário."
       eyebrow="Notificações · Admin">
       <template #actions>
-        <Button variant="ghost" icon="fas fa-arrow-left" @click="router.push('/settings/alerts')">
-          Voltar
+        <PageHelp
+          storage-key="alertas-admin"
+          title="Como ler o painel de alertas"
+          intro="Esta é a visão de quem administra: quantos alertas existem no sistema, quem os criou e o que está sendo compartilhado. Os alertas em si continuam sendo de cada pessoa."
+          :steps="[
+            { title: 'Leia os totais', text: 'Os quatro cartões dizem o tamanho do uso: quantos alertas existem, quantos estão ativos e quantos dispararam.' },
+            { title: 'Veja os compartilhamentos', text: 'Compartilhar um alerta cria uma cópia para quem aceita. Pendente é convite ainda não respondido.' },
+            { title: 'Cheque o uso por pessoa', text: 'A lista mostra quem concentra alertas. Muita gente com muitos alertas ativos costuma virar excesso de notificação.' },
+          ]"
+          :tips="[
+            'Alerta desativado não dispara, mas continua contando no total: por isso os dois números diferem.',
+            'Você vê os números aqui, não o conteúdo do alerta de cada um.',
+          ]" />
+        <Button variant="ghost" size="sm" icon="fas fa-arrow-left" @click="router.push('/settings/alerts')">
+          <span class="hidden sm:inline">Voltar</span>
         </Button>
       </template>
     </PageHeader>
 
-    <div v-if="loading" class="py-16 grid place-items-center"><Spinner /></div>
+    <!-- Carregando: a forma dos quatro cartoes e dos blocos, para nao saltar -->
+    <div v-if="loading" class="space-y-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Skeleton v-for="i in 4" :key="i" variant="stat" />
+      </div>
+      <Skeleton variant="card" class="h-24" />
+      <Skeleton variant="table" />
+    </div>
 
     <EmptyState v-else-if="!stats"
       icon="fas fa-chart-line" title="Sem dados"

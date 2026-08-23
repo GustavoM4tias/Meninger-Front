@@ -7,6 +7,8 @@ import PageContainer from '@/components/UI/PageContainer.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 
 const store = useMcmvStore();
 const router = useRouter();
@@ -69,17 +71,29 @@ function fmtVigencia(v) {
   <div class="min-h-[calc(100vh-3.5rem)] relative">
     <PageContainer size="md">
 
-      <!-- Header com voltar -->
-      <div class="flex items-center gap-3 mb-6">
-        <IconButton icon="fas fa-arrow-left" size="md" label="Voltar"
-          @click="router.back()" />
-        <div class="min-w-0">
-          <h1 class="text-xl font-semibold text-ink">Tabela MCMV — Configurações</h1>
-          <p class="text-sm text-ink-muted mt-0.5">
-            Importe a planilha oficial de municípios (atualizada anualmente pela CEF/MDIC)
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Tabela MCMV"
+        subtitle="A planilha oficial de municípios que define as faixas"
+        icon="fas fa-table-list">
+        <template #actions>
+          <PageHelp
+            storage-key="mcmv-settings"
+            title="Como atualizar a tabela MCMV"
+            intro="A faixa MCMV de cada município sai desta tabela. Ela é publicada pela CEF/MDIC e muda de tempos em tempos - enquanto não for trocada aqui, o sistema continua respondendo pela versão antiga."
+            :steps="[
+              { title: 'Baixe a planilha oficial', text: 'O arquivo tem nome no padrão TABELA_MUNICIPIOS_VIGENCIA_*.xlsx. Use o original, sem abrir e salvar por cima: o Excel às vezes reescreve colunas.' },
+              { title: 'Envie aqui', text: 'Arraste ou escolha o arquivo. A importação substitui a tabela inteira, não mescla com a anterior.' },
+              { title: 'Confira a vigência', text: 'Depois de importar, o bloco Tabela atual mostra quantos municípios entraram e de qual vigência. Se o número destoar, a planilha provavelmente veio errada.' },
+            ]"
+            :tips="[
+              'Importar afeta toda consulta de MCMV do sistema na hora seguinte, inclusive as da Eme.',
+              'Município fora da tabela fica sem faixa: a consulta responde que não encontrou, e não um palpite.',
+            ]" />
+          <Button variant="ghost" size="sm" icon="fas fa-arrow-left" @click="router.back()">
+            <span class="hidden sm:inline">Voltar</span>
+          </Button>
+        </template>
+      </PageHeader>
 
       <div class="space-y-4">
 

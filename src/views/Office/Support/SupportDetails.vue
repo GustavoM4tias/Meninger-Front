@@ -8,6 +8,8 @@ import { useToast } from 'vue-toastification';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Select from '@/components/UI/Select.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
@@ -157,12 +159,30 @@ const changeStatus = async () => {
   <div class="min-h-[calc(100vh-3.5rem)]">
     <PageContainer size="full">
 
-      <!-- Back Button -->
-      <RouterLink :to="{ name: 'Suporte' }"
-        class="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-ink mb-5 transition-colors">
-        <i class="fas fa-arrow-left text-xs"></i>
-        <span>Voltar para lista</span>
-      </RouterLink>
+      <PageHeader
+        :title="ticket ? `Chamado #${ticket.id}` : 'Chamado'"
+        subtitle="Acompanhamento e conversa com quem abriu"
+        icon="fas fa-life-ring">
+        <template #actions>
+          <PageHelp
+            storage-key="suporte-detalhe"
+            title="Como tocar um chamado"
+            intro="Esta é a conversa de um chamado. Tudo que você escreve aqui vai para quem abriu, então vale escrever como resposta, não como anotação interna."
+            :steps="[
+              { title: 'Leia o histórico', text: 'A linha do tempo mostra a ordem real dos fatos: o que foi pedido, o que já foi respondido e o que mudou de status.' },
+              { title: 'Responda', text: 'A resposta notifica quem abriu. Se precisar de mais informação para seguir, peça de forma específica: pedir o print da tela resolve mais rápido do que dizer que não reproduziu.' },
+              { title: 'Feche quando resolver', text: 'Fechar arquiva o chamado, mas ele continua consultável e pode ser reaberto se o problema voltar.' },
+            ]"
+            :tips="[
+              'Mudar a prioridade muda a ordem na fila de todo mundo, não só a sua visão.',
+              'Chamado sem resposta é o que mais gera reabertura: mesmo um aviso curto de que alguém já está olhando evita o segundo chamado sobre o mesmo assunto.',
+            ]" />
+          <Button variant="ghost" size="sm" icon="fas fa-arrow-left"
+            @click="router.push({ name: 'Suporte' })">
+            <span class="hidden sm:inline">Lista</span>
+          </Button>
+        </template>
+      </PageHeader>
 
       <div v-if="ticket" class="space-y-5">
 
