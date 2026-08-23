@@ -60,7 +60,7 @@ const cols = computed(() => {
         :class="tone(toneOf(s)).dot"
       ></span>
 
-      <p class="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ink-subtle">
+      <p class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
         <span
           v-if="hasTone(s)" aria-hidden="true"
           class="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
@@ -81,7 +81,7 @@ const cols = computed(() => {
         <span v-if="s.hint" class="text-ink-subtle truncate">{{ s.hint }}</span>
       </p>
 
-      <span v-if="clickable" aria-hidden="true" class="absolute right-2.5 bottom-2 text-[10px] text-ink-subtle">
+      <span v-if="clickable" aria-hidden="true" class="absolute right-2.5 bottom-2 text-micro text-ink-subtle">
         <i class="fas fa-up-right-from-square" />
       </span>
     </div>

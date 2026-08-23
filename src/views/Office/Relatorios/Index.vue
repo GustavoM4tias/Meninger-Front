@@ -8,6 +8,8 @@ import PageHelp from '@/components/UI/PageHelp.vue'
 import Button from '@/components/UI/Button.vue'
 import Badge from '@/components/UI/Badge.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
+import Skeleton from '@/components/UI/Skeleton.vue'
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue'
 import DeleteReportModal from '@/components/Reports/eme/DeleteReportModal.vue'
 import TransferOwnerModal from '@/components/Reports/eme/TransferOwnerModal.vue'
 import { useReportsStore } from '@/stores/Reports/reportsStore.js'
@@ -61,9 +63,20 @@ async function restaurar(r) {
   showFlash(`"${r.title}" restaurado.`, null)
 }
 
-async function excluirDeVez(r) {
-  if (!window.confirm(`Excluir "${r.title}" definitivamente? Esta ação não pode ser desfeita.`)) return
-  await store.purgeReport(r.id)
+/* Exclusão definitiva sai da lixeira: aqui NÃO existe desfazer, e é a única
+   ação do módulo assim. O `confirm()` do navegador não deixava isso claro nem
+   dizia quantos dias ainda restavam de recuperação. */
+const purgar = ref(null)
+const purgando = ref(false)
+
+async function confirmarPurga() {
+  purgando.value = true
+  try {
+    await store.purgeReport(purgar.value.id)
+    purgar.value = null
+  } finally {
+    purgando.value = false
+  }
 }
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : '-')
@@ -136,7 +149,7 @@ async function onTransferred() {
       <!-- Aviso com desfazer -->
       <Transition name="fade">
         <div v-if="flash" class="mb-4 flex items-center gap-3 rounded-xl border border-line bg-surface-raised shadow-soft px-4 py-2.5">
-          <i class="fas fa-circle-check text-emerald-500" />
+          <i class="fas fa-circle-check text-data-pos" />
           <span class="text-sm text-ink">{{ flash.text }}</span>
           <button v-if="flash.undo" class="ml-auto text-sm font-medium text-accent hover:opacity-80" @click="flash.undo()">
             Desfazer
@@ -147,8 +160,9 @@ async function onTransferred() {
         </div>
       </Transition>
 
-      <div v-if="store.loadingList" class="py-16 text-center text-ink-subtle">
-        <i class="fas fa-circle-notch fa-spin text-xl" />
+      <!-- Carregando: a forma das fileiras de relatório, para a lista não saltar -->
+      <div v-if="store.loadingList" class="space-y-3">
+        <Skeleton v-for="i in 4" :key="i" variant="row" />
       </div>
 
       <template v-else>
@@ -181,7 +195,7 @@ async function onTransferred() {
                 <button class="text-xs text-accent hover:opacity-80 font-medium" @click="restaurar(r)">
                   <i class="fas fa-trash-arrow-up mr-1" />Restaurar
                 </button>
-                <button class="ml-auto text-xs text-rose-500 hover:opacity-80" @click="excluirDeVez(r)">
+                <button class="ml-auto text-xs text-data-neg hover:opacity-80" @click="purgar = r">
                   Excluir de vez
                 </button>
               </div>
@@ -195,9 +209,9 @@ async function onTransferred() {
             <h2 class="text-sm font-semibold uppercase tracking-wider text-ink-subtle mb-3">Relatórios</h2>
 
             <!-- Sem responsável: nada quebra, mas precisa de dono para edição -->
-            <div v-if="orfaos.length" class="mb-3 flex items-start gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5">
-              <i class="fas fa-user-slash text-amber-600 dark:text-amber-400 mt-0.5" />
-              <p class="text-xs text-amber-700 dark:text-amber-400">
+            <div v-if="orfaos.length" class="mb-3 flex items-start gap-2.5 rounded-xl border border-data-warn/40 bg-data-warn/10 px-4 py-2.5">
+              <i class="fas fa-user-slash text-data-warn mt-0.5" />
+              <p class="text-xs text-data-warn">
                 <strong>{{ orfaos.length }} relatório(s) sem responsável ativo.</strong>
                 Continuam visíveis para quem tem acesso, mas só admins podem editá-los.
                 Use o botão de transferir no card para reatribuir.
@@ -223,17 +237,17 @@ async function onTransferred() {
                   </Badge>
                 </div>
                 <p v-if="r.enterpriseName" class="text-xs text-ink-muted"><i class="fas fa-building mr-1.5 text-ink-subtle" />{{ r.enterpriseName }}</p>
-                <p v-if="semResponsavel(r)" class="flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400">
+                <p v-if="semResponsavel(r)" class="flex items-center gap-1.5 text-micro text-data-warn">
                   <i class="fas fa-user-slash" />
                   Sem responsável<template v-if="r.owner"> ({{ r.owner.username }} inativo)</template>
                 </p>
                 <div class="mt-auto flex items-center gap-2 pt-1">
                   <Badge :variant="visBadge(r).variant" size="sm" dot>{{ visBadge(r).label }}</Badge>
-                  <span class="text-[11px] text-ink-subtle ml-auto">{{ fmtDate(r.updatedAt || r.updated_at) }}</span>
+                  <span class="text-micro text-ink-subtle ml-auto">{{ fmtDate(r.updatedAt || r.updated_at) }}</span>
                   <button
                     class="w-7 h-7 rounded-lg transition"
                     :class="semResponsavel(r)
-                      ? 'text-amber-600 dark:text-amber-400 hover:bg-surface-sunken'
+                      ? 'text-data-warn hover:bg-surface-sunken'
                       : 'text-ink-subtle hover:text-accent hover:bg-surface-sunken'"
                     title="Transferir responsabilidade"
                     @click.stop="transferReport = r"
@@ -244,7 +258,7 @@ async function onTransferred() {
                     @click.stop="router.push(`/relatorios/${r.id}`)"
                   ><i class="fas fa-wand-magic-sparkles text-xs" /></button>
                   <button
-                    class="w-7 h-7 rounded-lg text-ink-subtle hover:text-rose-500 hover:bg-surface-sunken transition"
+                    class="w-7 h-7 rounded-lg text-ink-subtle hover:text-data-neg hover:bg-surface-sunken transition"
                     title="Excluir"
                     @click.stop="deleteId = r.id"
                   ><i class="far fa-trash-can text-xs" /></button>
@@ -271,15 +285,15 @@ async function onTransferred() {
                 <div class="flex items-start justify-between gap-2">
                   <h3 class="font-medium text-ink leading-snug">{{ r.title }}</h3>
                   <button
-                    class="w-7 h-7 rounded-lg text-ink-subtle opacity-0 group-hover/shared:opacity-100 hover:text-rose-500 hover:bg-surface-sunken transition flex-shrink-0"
+                    class="w-7 h-7 rounded-lg text-ink-subtle opacity-0 group-hover/shared:opacity-100 hover:text-data-neg hover:bg-surface-sunken transition flex-shrink-0"
                     title="Remover da minha lista"
                     @click.stop="sairDoCompartilhado(r)"
                   ><i class="fas fa-xmark text-xs" /></button>
                 </div>
                 <p v-if="r.enterpriseName" class="text-xs text-ink-muted"><i class="fas fa-building mr-1.5 text-ink-subtle" />{{ r.enterpriseName }}</p>
                 <div class="mt-auto flex items-center gap-2 pt-1">
-                  <span class="text-[11px] text-ink-subtle">compartilhado por {{ r.owner?.username || '-' }}</span>
-                  <span class="text-[11px] text-ink-subtle ml-auto">{{ fmtDate(r.updatedAt || r.updated_at) }}</span>
+                  <span class="text-micro text-ink-subtle">compartilhado por {{ r.owner?.username || '-' }}</span>
+                  <span class="text-micro text-ink-subtle ml-auto">{{ fmtDate(r.updatedAt || r.updated_at) }}</span>
                 </div>
               </article>
             </div>
@@ -301,6 +315,13 @@ async function onTransferred() {
       @transferred="onTransferred"
     />
   </div>
+
+  <ConfirmDialog :open="!!purgar" tone="danger"
+    :title="`Excluir ${purgar?.title} definitivamente?`"
+    :consequence="`O relatório sai da lixeira agora e não tem como recuperar${diasRestantes(purgar?.deletedAt || purgar?.deleted_at) ? ' — ele ainda teria ' + diasRestantes(purgar?.deletedAt || purgar?.deleted_at) + ' dia(s) de recuperação' : ''}.`"
+    hint="Links públicos e compartilhamentos dele param de funcionar na hora."
+    confirm-label="Excluir para sempre" :loading="purgando"
+    @confirm="confirmarPurga" @cancel="purgar = null" />
 </template>
 
 <style scoped>

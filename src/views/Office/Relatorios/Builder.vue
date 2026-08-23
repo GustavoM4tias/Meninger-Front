@@ -6,6 +6,9 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from '@/components/UI/Button.vue'
 import Badge from '@/components/UI/Badge.vue'
+import PageHelp from '@/components/UI/PageHelp.vue'
+import Skeleton from '@/components/UI/Skeleton.vue'
+import { useToast } from 'vue-toastification'
 import ReportRenderer from '@/components/Reports/ReportRenderer.vue'
 import ReportFilterBar from '@/components/Reports/ReportFilterBar.vue'
 import { useReportLiveData } from '@/components/Reports/useReportLiveData.js'
@@ -18,6 +21,7 @@ import { useReportsStore } from '@/stores/Reports/reportsStore.js'
 const route = useRoute()
 const router = useRouter()
 const store = useReportsStore()
+const toast = useToast()
 
 const rendererRef = ref(null)
 const mobileTab = ref('chat') // chat | preview (só no mobile)
@@ -34,6 +38,7 @@ const showAddBlock = ref(false)
 const addAfterId = ref(null)
 const publishing = ref(false)
 const publishedFlash = ref(false)
+const erroPublicar = ref('')
 const atualizando = ref(false)
 
 // Atualiza os dados do relatório ao vivo: o backend reexecuta as consultas
@@ -93,12 +98,17 @@ function openAddBlock(afterId) {
 
 async function publicar() {
   publishing.value = true
+  erroPublicar.value = ''
   try {
     await store.publish()
     publishedFlash.value = true
     setTimeout(() => { publishedFlash.value = false }, 2500)
   } catch (e) {
-    window.alert(e.payload?.error || e.message)
+    /* Era `window.alert`: caixa do navegador, sem contexto e fora do tema.
+       Publicar falha por regra de negócio (bloco sem dado, alçada), então a
+       mensagem precisa ficar legível ao lado do que a causou. */
+    erroPublicar.value = e.payload?.error || e.message
+    toast.error(erroPublicar.value)
   } finally {
     publishing.value = false
   }
@@ -139,7 +149,7 @@ watch(() => store.highlightId, (id) => {
 
       <div class="min-w-0">
         <p class="text-sm font-semibold text-ink truncate">{{ store.report?.title || 'Relatório' }}</p>
-        <p class="text-[11px] text-ink-subtle truncate">
+        <p class="text-micro text-ink-subtle truncate">
           {{ store.report?.enterpriseName || 'Sem empreendimento' }}
           · {{ store.report?.dataMode === 'live' ? 'dados ao vivo' : 'dados congelados' }}
         </p>
@@ -149,6 +159,22 @@ watch(() => store.highlightId, (id) => {
       </Badge>
 
       <div class="ml-auto flex items-center gap-1.5 flex-shrink-0">
+        <PageHelp
+          storage-key="relatorio-builder"
+          label=""
+          title="Como montar um relatório com a Eme"
+          intro="Você conversa com a Eme à esquerda e o relatório vai se montando à direita. Nada fica visível para os outros até você Publicar."
+          :steps="[
+            { title: 'Peça em português', text: 'Descreva o que quer ver. A Eme escolhe as consultas, monta os blocos e escreve os números; cada bloco aparece na hora, à direita.' },
+            { title: 'Ajuste bloco a bloco', text: 'Clique num bloco para selecioná-lo e peça o ajuste à Eme, ou remova. Dá para selecionar vários e pedir de uma vez.' },
+            { title: 'Desfaça sem medo', text: 'Ctrl+Z desfaz e Ctrl+Shift+Z refaz, e os botões no topo dizem o que será desfeito.' },
+            { title: 'Publique', text: 'Publicar é o que torna o relatório visível para quem você compartilhar. Antes disso é rascunho, só seu.' },
+          ]"
+          :tips="[
+            'Relatório ao vivo reexecuta as consultas em Atualizar dados; o congelado é um retrato da data em que foi feito, de propósito.',
+            'Se o relatório tem filtros, eles aparecem aqui do mesmo jeito que o leitor vai ver — teste antes de publicar.',
+            'Link público só existe depois de publicar, e vale para quem tiver o endereço.',
+          ]" />
         <!-- Só em relatório ao vivo: em modo fixo os números são um retrato
              congelado de propósito, e atualizar descaracterizaria o documento. -->
         <Button
@@ -172,11 +198,31 @@ watch(() => store.highlightId, (id) => {
       </div>
     </div>
 
-    <div v-if="store.loadingReport" class="flex-1 flex items-center justify-center text-ink-subtle">
-      <i class="fas fa-circle-notch fa-spin text-xl" />
+    <!-- Carregando: as duas colunas do builder (Eme e relatório), para o
+         layout não saltar quando o rascunho chega. -->
+    <div v-if="store.loadingReport" class="flex-1 min-h-0 flex flex-col sm:flex-row">
+      <div class="sm:w-[400px] lg:w-[440px] sm:flex-shrink-0 p-4 space-y-3 border-r border-line">
+        <Skeleton variant="text" :lines="2" />
+        <Skeleton variant="card" class="h-24" />
+        <Skeleton variant="card" class="h-16" />
+      </div>
+      <div class="flex-1 p-6 space-y-4">
+        <Skeleton variant="title" class="max-w-sm" />
+        <Skeleton variant="card" class="h-32" />
+        <Skeleton variant="chart" />
+      </div>
     </div>
 
-    <div v-else class="flex-1 min-h-0 flex flex-col sm:flex-row">
+    <p v-if="erroPublicar"
+      class="flex items-start gap-2 px-3 sm:px-5 py-2 text-xs text-data-neg bg-data-neg/10 border-b border-data-neg/25">
+      <i class="fas fa-circle-exclamation mt-0.5 shrink-0" />
+      <span class="flex-1 min-w-0">{{ erroPublicar }}</span>
+      <button class="text-data-neg/70 hover:text-data-neg shrink-0" aria-label="Fechar" @click="erroPublicar = ''">
+        <i class="fas fa-xmark" />
+      </button>
+    </p>
+
+    <div v-if="!store.loadingReport" class="flex-1 min-h-0 flex flex-col sm:flex-row">
       <!-- Abas (mobile) -->
       <div class="sm:hidden flex border-b border-line flex-shrink-0">
         <button
@@ -220,8 +266,8 @@ watch(() => store.highlightId, (id) => {
             <i class="fas fa-square-check" />
             <span class="font-medium">{{ selCount }} bloco(s) selecionado(s)</span>
             <span class="hidden sm:inline opacity-80">- peça o ajuste à Eme ou remova</span>
-            <button class="ml-auto px-2 py-0.5 rounded hover:bg-white/20 transition" @click="store.clearSelection()">Limpar</button>
-            <button class="px-2 py-0.5 rounded hover:bg-white/20 transition" @click="store.removeBlocks([...store.selectedIds])">
+            <button class="ml-auto px-2 py-0.5 rounded hover:bg-surface-raised/20 transition" @click="store.clearSelection()">Limpar</button>
+            <button class="px-2 py-0.5 rounded hover:bg-surface-raised/20 transition" @click="store.removeBlocks([...store.selectedIds])">
               <i class="far fa-trash-can mr-1" />Remover
             </button>
           </div>
@@ -260,14 +306,14 @@ watch(() => store.highlightId, (id) => {
                    pedaço está com o número da última publicação, não em branco -->
               <div
                 v-if="live.datasetErrors.value.length"
-                class="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+                class="mt-2 rounded-lg border border-data-warn/40 bg-data-warn/10 px-3 py-2 text-xs text-data-warn"
               >
                 <i class="fas fa-triangle-exclamation mr-1.5" />
                 <span v-for="(d, i) in live.datasetErrors.value" :key="d.id">
                   <template v-if="i">; </template>{{ d.label }}: {{ d.error }}
                 </span>
               </div>
-              <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">{{ live.error.value }}</p>
+              <p v-if="live.error.value" class="mt-2 text-xs text-data-neg">{{ live.error.value }}</p>
             </template>
           </ReportRenderer>
         </template>

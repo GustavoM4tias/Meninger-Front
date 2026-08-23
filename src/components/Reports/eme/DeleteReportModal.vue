@@ -65,7 +65,7 @@ async function confirm() {
       <!-- Impacto -->
       <ul class="rounded-xl border border-line bg-surface-raised divide-y divide-line/70 text-sm">
         <li v-if="impact.hasPublicLink" class="flex items-start gap-2.5 px-4 py-2.5">
-          <i class="fas fa-globe text-amber-500 mt-0.5 w-4 text-center flex-shrink-0" />
+          <i class="fas fa-globe text-data-warn mt-0.5 w-4 text-center flex-shrink-0" />
           <span class="text-ink">
             O <strong>link público será desativado imediatamente</strong>.
             <span v-if="impact.publicViews" class="text-ink-subtle">Teve {{ impact.publicViews }} acesso(s).</span>
@@ -104,7 +104,7 @@ async function confirm() {
         </span>
       </p>
 
-      <p v-if="error" class="rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 text-sm px-3 py-2">{{ error }}</p>
+      <p v-if="error" class="rounded-lg bg-data-neg/10 text-data-neg text-sm px-3 py-2">{{ error }}</p>
     </div>
 
     <template #footer>

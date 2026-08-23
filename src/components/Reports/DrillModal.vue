@@ -96,7 +96,7 @@ function fechar() {
     <template v-else-if="data">
       <!-- Busca local na lista -->
       <div class="relative mb-3">
-        <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-ink-subtle" />
+        <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-micro text-ink-subtle" />
         <input
           v-model="busca"
           type="text"
@@ -112,7 +112,7 @@ function fechar() {
               <tr class="border-b-2 border-accent/30 bg-surface-sunken">
                 <th
                   v-for="c in columns" :key="c.key"
-                  class="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-accent whitespace-nowrap bg-surface-sunken"
+                  class="px-3.5 py-2.5 text-left text-micro font-semibold uppercase tracking-wider text-accent whitespace-nowrap bg-surface-sunken"
                 >{{ c.label }}</th>
               </tr>
             </thead>
@@ -136,7 +136,7 @@ function fechar() {
                     class="inline-flex items-center gap-1.5 text-accent hover:opacity-80 whitespace-nowrap"
                     @click.stop
                   >
-                    <i class="fas fa-arrow-up-right-from-square text-[10px]" />{{ c.linkLabel || 'Abrir' }}
+                    <i class="fas fa-arrow-up-right-from-square text-micro" />{{ c.linkLabel || 'Abrir' }}
                   </a>
                   <template v-else>{{ celula(r[c.key]) }}</template>
                 </td>
@@ -151,7 +151,7 @@ function fechar() {
         </div>
       </div>
 
-      <p v-if="data.truncated" class="mt-2 text-[11px] text-ink-subtle">
+      <p v-if="data.truncated" class="mt-2 text-micro text-ink-subtle">
         <i class="fas fa-circle-info mr-1" />Mostrando os primeiros {{ data.rows.length }} de {{ data.total }} registros.
       </p>
     </template>

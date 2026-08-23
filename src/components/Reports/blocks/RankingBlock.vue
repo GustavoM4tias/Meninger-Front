@@ -79,13 +79,13 @@ const rows = computed(() =>
       >
         <div class="flex items-baseline gap-2 mb-1">
           <span
-            class="w-5 h-5 rounded-md text-[10px] font-semibold flex items-center justify-center flex-shrink-0 tabular-nums"
+            class="w-5 h-5 rounded-md text-micro font-semibold flex items-center justify-center flex-shrink-0 tabular-nums"
             :class="r.pos <= 3 ? 'text-white' : 'bg-surface-sunken text-ink-subtle'"
             :style="r.pos <= 3 ? { backgroundColor: r.color } : null"
           >{{ r.pos }}</span>
           <span class="text-sm text-ink truncate">{{ r.label }}</span>
           <span class="ml-auto text-sm font-semibold text-ink tabular-nums whitespace-nowrap">{{ formatValue(r.value, format) }}</span>
-          <span v-if="showShare" class="text-[11px] text-ink-subtle tabular-nums w-11 text-right flex-shrink-0">{{ r.share }}%</span>
+          <span v-if="showShare" class="text-micro text-ink-subtle tabular-nums w-11 text-right flex-shrink-0">{{ r.share }}%</span>
         </div>
         <div class="h-1.5 rounded-full bg-surface-sunken overflow-hidden ml-7">
           <div
@@ -93,7 +93,7 @@ const rows = computed(() =>
             :style="{ width: r.width + '%', backgroundColor: r.color, opacity: r.pos <= 3 ? 1 : 0.7 }"
           />
         </div>
-        <p v-if="r.note" class="ml-7 mt-0.5 text-[11px] text-ink-subtle">{{ r.note }}</p>
+        <p v-if="r.note" class="ml-7 mt-0.5 text-micro text-ink-subtle">{{ r.note }}</p>
       </li>
     </ol>
 

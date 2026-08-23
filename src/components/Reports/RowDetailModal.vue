@@ -49,7 +49,7 @@ const campos = computed(() => {
         v-for="campo in campos" :key="campo.key"
         class="py-2.5 grid grid-cols-[minmax(0,40%)_1fr] gap-3 items-baseline"
       >
-        <dt class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle truncate" :title="campo.label">
+        <dt class="text-micro font-semibold uppercase tracking-wider text-ink-subtle truncate" :title="campo.label">
           {{ campo.label }}
         </dt>
         <dd class="text-sm text-ink break-words">
@@ -58,7 +58,7 @@ const campos = computed(() => {
             :href="campo.href" target="_blank" rel="noopener noreferrer"
             class="inline-flex items-center gap-1.5 text-accent hover:opacity-80"
           >
-            <i class="fas fa-arrow-up-right-from-square text-[10px]" />{{ campo.hrefLabel }}
+            <i class="fas fa-arrow-up-right-from-square text-micro" />{{ campo.hrefLabel }}
           </a>
           <template v-else>{{ campo.valor }}</template>
         </dd>

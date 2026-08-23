@@ -82,11 +82,11 @@ const placeholder = computed(() => {
           { key: 'memory', label: 'Memória', icon: 'fas fa-brain' },
         ]"
         :key="t.key"
-        class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg text-[11px] transition"
+        class="flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg text-micro transition"
         :class="tab === t.key ? 'bg-accent-soft text-accent font-medium' : 'text-ink-subtle hover:bg-surface-sunken'"
         @click="tab = t.key"
       >
-        <i :class="t.icon" class="text-[10px]" />
+        <i :class="t.icon" class="text-micro" />
         <span class="truncate">{{ t.label }}</span>
       </button>
     </div>
@@ -120,7 +120,7 @@ const placeholder = computed(() => {
       <div v-if="!emptyThread && store.blockCount > 0 && !store.isStreaming" class="px-3 pb-1.5 flex flex-wrap gap-1.5 flex-shrink-0">
         <button
           v-for="c in REFINERS" :key="c.label"
-          class="px-2.5 py-1 rounded-full border border-line bg-surface text-[11px] text-ink-muted hover:border-accent hover:text-accent transition"
+          class="px-2.5 py-1 rounded-full border border-line bg-surface text-micro text-ink-muted hover:border-accent hover:text-accent transition"
           @click="send(c.text)"
         >{{ c.label }}</button>
       </div>
@@ -173,7 +173,7 @@ const placeholder = computed(() => {
       <div v-if="selCount" class="mb-2 flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-xs text-accent">
         <span class="font-medium">{{ selCount }} selecionado(s)</span>
         <button class="ml-auto hover:opacity-70" @click="store.clearSelection()">Limpar</button>
-        <button class="text-rose-600 dark:text-rose-400 hover:opacity-70" @click="store.removeBlocks([...store.selectedIds])">
+        <button class="text-data-neg hover:opacity-70" @click="store.removeBlocks([...store.selectedIds])">
           <i class="far fa-trash-can mr-1" />Remover
         </button>
       </div>
@@ -187,7 +187,7 @@ const placeholder = computed(() => {
           <button class="flex-shrink-0" @click.stop="store.toggleBlock(sec.id)">
             <i :class="store.selectedIds.includes(sec.id) ? 'fas fa-square-check text-accent' : 'far fa-square text-ink-subtle'" class="text-xs" />
           </button>
-          <span v-if="sec.num" class="w-5 h-5 rounded-full border border-accent/40 text-accent text-[10px] flex items-center justify-center flex-shrink-0">{{ sec.num }}</span>
+          <span v-if="sec.num" class="w-5 h-5 rounded-full border border-accent/40 text-accent text-micro flex items-center justify-center flex-shrink-0">{{ sec.num }}</span>
           <span class="truncate">{{ sec.title }}</span>
         </div>
         <div
@@ -197,10 +197,10 @@ const placeholder = computed(() => {
           @click="emit('goto-block', child.id)"
         >
           <button class="flex-shrink-0 ml-1" @click.stop="store.toggleBlock(child.id)">
-            <i :class="store.selectedIds.includes(child.id) ? 'fas fa-square-check text-accent' : 'far fa-square text-ink-subtle'" class="text-[10px]" />
+            <i :class="store.selectedIds.includes(child.id) ? 'fas fa-square-check text-accent' : 'far fa-square text-ink-subtle'" class="text-micro" />
           </button>
           <span class="truncate">{{ child.label }}</span>
-          <span class="ml-auto text-[10px] text-ink-subtle flex-shrink-0">{{ BLOCK_LABELS[child.type] }}</span>
+          <span class="ml-auto text-micro text-ink-subtle flex-shrink-0">{{ BLOCK_LABELS[child.type] }}</span>
         </div>
       </div>
       <p v-if="!outline.length" class="text-xs text-ink-subtle px-2.5 py-4 text-center">Nenhum bloco ainda.</p>
@@ -238,7 +238,7 @@ const placeholder = computed(() => {
           class="group/mem rounded-lg border border-line bg-surface px-2.5 py-2 flex items-start gap-2"
         >
           <i
-            class="mt-0.5 text-[10px] flex-shrink-0"
+            class="mt-0.5 text-micro flex-shrink-0"
             :class="m.source === 'user' ? 'fas fa-user text-ink-subtle' : 'fas fa-wand-magic-sparkles text-accent'"
             :title="m.source === 'user' ? 'Escrita por você' : 'Anotada pela Eme'"
           />
@@ -249,12 +249,12 @@ const placeholder = computed(() => {
               :class="m.pinned ? 'text-accent' : 'text-ink-subtle opacity-0 group-hover/mem:opacity-100 hover:text-accent'"
               :title="m.pinned ? 'Desafixar' : 'Fixar (nunca é removida automaticamente)'"
               @click="store.updateMemory(m.id, { pinned: !m.pinned })"
-            ><i class="fas fa-thumbtack text-[10px]" /></button>
+            ><i class="fas fa-thumbtack text-micro" /></button>
             <button
-              class="w-6 h-6 rounded text-ink-subtle opacity-0 group-hover/mem:opacity-100 hover:text-rose-500 transition"
+              class="w-6 h-6 rounded text-ink-subtle opacity-0 group-hover/mem:opacity-100 hover:text-data-neg transition"
               title="Esquecer"
               @click="store.deleteMemory(m.id)"
-            ><i class="far fa-trash-can text-[10px]" /></button>
+            ><i class="far fa-trash-can text-micro" /></button>
           </div>
         </li>
       </ul>
@@ -273,7 +273,7 @@ const placeholder = computed(() => {
           <span class="mt-0.5 w-8 h-8 rounded-lg flex-shrink-0 border border-line" :style="{ backgroundColor: t.swatch }" />
           <span class="min-w-0">
             <span class="block text-sm font-medium" :class="store.theme === key ? 'text-accent' : 'text-ink'">{{ t.label }}</span>
-            <span class="block text-[11px] text-ink-subtle leading-snug">{{ t.description }}</span>
+            <span class="block text-micro text-ink-subtle leading-snug">{{ t.description }}</span>
           </span>
           <i v-if="store.theme === key" class="fas fa-check text-accent text-xs mt-1 flex-shrink-0" />
         </button>

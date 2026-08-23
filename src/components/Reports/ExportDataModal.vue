@@ -57,12 +57,12 @@ function confirmar() {
     </template>
 
     <p v-if="resumoFiltros" class="mb-3 text-xs text-ink-muted flex items-start gap-1.5">
-      <i class="fas fa-filter text-[10px] mt-0.5 text-ink-subtle" />
+      <i class="fas fa-filter text-micro mt-0.5 text-ink-subtle" />
       <span>{{ resumoFiltros }}</span>
     </p>
 
     <div class="flex items-center justify-between mb-2">
-      <span class="text-[11px] uppercase tracking-wider text-ink-subtle">Dados disponíveis</span>
+      <span class="text-micro uppercase tracking-wider text-ink-subtle">Dados disponíveis</span>
       <button
         type="button"
         class="text-xs font-medium text-accent hover:underline min-h-10 px-1"
@@ -88,13 +88,13 @@ function confirmar() {
           />
           <span class="min-w-0">
             <span class="block text-sm text-ink leading-tight truncate">{{ d.label }}</span>
-            <span v-if="d.hint" class="block text-[11px] text-ink-subtle leading-tight truncate">{{ d.hint }}</span>
+            <span v-if="d.hint" class="block text-micro text-ink-subtle leading-tight truncate">{{ d.hint }}</span>
           </span>
         </label>
       </li>
     </ul>
 
-    <p v-if="nenhum" class="mt-3 text-[11px] text-amber-600 dark:text-amber-400">
+    <p v-if="nenhum" class="mt-3 text-micro text-data-warn">
       Escolha ao menos uma consulta para exportar.
     </p>
 

@@ -96,7 +96,7 @@ async function add(type) {
   >
     <div class="space-y-4">
       <div v-for="g in GROUPS" :key="g.title">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle mb-1.5">{{ g.title }}</p>
+        <p class="text-micro font-semibold uppercase tracking-wider text-ink-subtle mb-1.5">{{ g.title }}</p>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <button
             v-for="type in g.items" :key="type"
@@ -105,13 +105,13 @@ async function add(type) {
           >
             <i :class="ICONS[type]" class="text-accent text-sm w-4 text-center flex-shrink-0" />
             <span class="text-xs text-ink truncate">{{ BLOCK_LABELS[type] || type }}</span>
-            <i v-if="!DIRECT[type]" class="fas fa-wand-magic-sparkles text-[9px] text-ink-subtle ml-auto flex-shrink-0" title="A Eme busca os dados" />
+            <i v-if="!DIRECT[type]" class="fas fa-wand-magic-sparkles text-micro text-ink-subtle ml-auto flex-shrink-0" title="A Eme busca os dados" />
           </button>
         </div>
       </div>
 
       <div class="rounded-xl border border-line bg-surface-sunken px-3 py-2.5">
-        <label class="block text-[11px] font-semibold uppercase tracking-wider text-ink-subtle mb-1.5">
+        <label class="block text-micro font-semibold uppercase tracking-wider text-ink-subtle mb-1.5">
           Instrução para a Eme (opcional)
         </label>
         <input
@@ -120,7 +120,7 @@ async function add(type) {
           placeholder="Ex.: leads por origem, só dos últimos 30 dias"
           class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus-ring"
         />
-        <p class="mt-1.5 text-[11px] text-ink-subtle">
+        <p class="mt-1.5 text-micro text-ink-subtle">
           <i class="fas fa-wand-magic-sparkles mr-1" />Blocos marcados com a varinha são montados pela Eme com dados reais.
         </p>
       </div>

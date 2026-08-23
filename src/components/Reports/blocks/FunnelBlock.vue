@@ -51,7 +51,7 @@ const rows = computed(() =>
       <li v-for="(r, i) in rows" :key="i">
         <div v-if="r.convPct !== null" class="flex items-center gap-2 pl-1 py-0.5">
           <svg class="w-3 h-3 text-ink-subtle" viewBox="0 0 12 12" fill="none"><path d="M6 1v8M3 6.5 6 9.5 9 6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="text-[11px] tabular-nums" :class="r.convPct >= 50 ? 'text-emerald-600 dark:text-emerald-400' : r.convPct >= 20 ? 'text-ink-muted' : 'text-amber-600 dark:text-amber-400'">
+          <span class="text-micro tabular-nums" :class="r.convPct >= 50 ? 'text-data-pos' : r.convPct >= 20 ? 'text-ink-muted' : 'text-data-warn'">
             {{ r.convPct }}% converteram
           </span>
         </div>
@@ -72,7 +72,7 @@ const rows = computed(() =>
           </div>
           <div class="w-24 sm:w-28 text-right flex-shrink-0">
             <span class="text-sm font-semibold text-ink tabular-nums">{{ formatValue(r.value, format) }}</span>
-            <p v-if="r.hint" class="text-[10px] text-ink-subtle truncate">{{ r.hint }}</p>
+            <p v-if="r.hint" class="text-micro text-ink-subtle truncate">{{ r.hint }}</p>
           </div>
         </div>
       </li>

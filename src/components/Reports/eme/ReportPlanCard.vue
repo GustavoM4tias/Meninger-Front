@@ -15,9 +15,9 @@ const concluidas = computed(() => fronts.value.filter((f) => f.status === 'done'
 const bloqueadas = computed(() => fronts.value.filter((f) => f.status === 'blocked').length)
 
 const ICONE = {
-  done: { cls: 'fas fa-circle-check text-emerald-500', title: 'Concluída' },
+  done: { cls: 'fas fa-circle-check text-data-pos', title: 'Concluída' },
   doing: { cls: 'fas fa-circle-notch fa-spin text-accent', title: 'Em andamento' },
-  blocked: { cls: 'fas fa-circle-exclamation text-amber-500', title: 'Travada' },
+  blocked: { cls: 'fas fa-circle-exclamation text-data-warn', title: 'Travada' },
   todo: { cls: 'far fa-circle text-ink-subtle', title: 'Na fila' },
 }
 const icone = (f) => ICONE[f.status] || ICONE.todo
@@ -31,28 +31,28 @@ const icone = (f) => ICONE[f.status] || ICONE.todo
       :aria-expanded="aberto"
       @click="aberto = !aberto"
     >
-      <i class="fas fa-list-check text-[11px] text-accent" />
-      <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Plano</span>
-      <span class="text-[11px] text-ink-subtle tabular-nums">{{ concluidas }}/{{ fronts.length }}</span>
+      <i class="fas fa-list-check text-micro text-accent" />
+      <span class="text-micro font-semibold uppercase tracking-wider text-ink-muted">Plano</span>
+      <span class="text-micro text-ink-subtle tabular-nums">{{ concluidas }}/{{ fronts.length }}</span>
       <span
         v-if="bloqueadas"
-        class="text-[10px] text-amber-600 dark:text-amber-400"
+        class="text-micro text-data-warn"
       >{{ bloqueadas }} travada{{ bloqueadas > 1 ? 's' : '' }}</span>
       <i
-        class="ml-auto fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+        class="ml-auto fas fa-chevron-down text-micro text-ink-subtle transition-transform duration-200"
         :class="{ 'rotate-180': aberto }"
       />
     </button>
 
     <ul v-show="aberto" class="px-3 pb-2.5 space-y-1.5 border-t border-line pt-2">
       <li v-for="f in fronts" :key="f.id" class="flex items-start gap-2 text-xs">
-        <i :class="icone(f).cls" class="mt-0.5 w-3.5 text-center flex-shrink-0 text-[11px]" :title="icone(f).title" />
+        <i :class="icone(f).cls" class="mt-0.5 w-3.5 text-center flex-shrink-0 text-micro" :title="icone(f).title" />
         <div class="min-w-0">
           <p class="leading-snug" :class="f.status === 'done' ? 'text-ink-subtle line-through' : 'text-ink'">
             {{ f.title }}
           </p>
-          <p v-if="f.note" class="text-[11px] text-ink-subtle leading-snug">{{ f.note }}</p>
-          <p v-else-if="f.needs && f.status !== 'done'" class="text-[11px] text-ink-subtle leading-snug">
+          <p v-if="f.note" class="text-micro text-ink-subtle leading-snug">{{ f.note }}</p>
+          <p v-else-if="f.needs && f.status !== 'done'" class="text-micro text-ink-subtle leading-snug">
             Precisa: {{ f.needs }}
           </p>
         </div>

@@ -114,15 +114,15 @@ const refreshedLabel = computed(() => {
           {{ resumo.length }} ativo{{ resumo.length > 1 ? 's' : '' }}
         </Badge>
         <i
-          class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
+          class="fas fa-chevron-down text-micro text-ink-subtle transition-transform duration-200"
           :class="{ 'rotate-180': aberto }"
         />
       </button>
 
-      <span v-if="loading" class="text-[11px] text-ink-subtle flex items-center gap-1.5">
+      <span v-if="loading" class="text-micro text-ink-subtle flex items-center gap-1.5">
         <i class="fas fa-circle-notch fa-spin text-accent" />atualizando
       </span>
-      <span v-else-if="refreshedLabel" class="text-[11px] text-ink-subtle hidden sm:inline">{{ refreshedLabel }}</span>
+      <span v-else-if="refreshedLabel" class="text-micro text-ink-subtle hidden sm:inline">{{ refreshedLabel }}</span>
 
       <div class="ml-auto flex items-center gap-1.5">
         <!-- Atalho para aplicar sem precisar reabrir a barra -->
@@ -143,7 +143,7 @@ const refreshedLabel = computed(() => {
     <div v-if="resumo.length && !aberto" class="px-3 sm:px-4 py-2 flex flex-wrap gap-1.5 border-t border-line">
       <span
         v-for="r in resumo" :key="r.key"
-        class="inline-flex items-center gap-1.5 rounded-full bg-surface-sunken px-2.5 py-1 text-[11px] text-ink-muted max-w-full"
+        class="inline-flex items-center gap-1.5 rounded-full bg-surface-sunken px-2.5 py-1 text-micro text-ink-muted max-w-full"
       >
         <span class="text-ink-subtle flex-shrink-0">{{ r.label }}:</span>
         <span class="text-ink truncate">{{ r.value }}</span>
@@ -154,7 +154,7 @@ const refreshedLabel = computed(() => {
     <div v-show="aberto" class="p-3 sm:p-4 border-t border-line animate-fade-in">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div v-for="f in filters" :key="f.key" :class="f.type === 'date-range' ? 'sm:col-span-2' : ''">
-          <label class="block text-[11px] font-medium text-ink-muted mb-1.5">{{ f.label }}</label>
+          <label class="block text-micro font-medium text-ink-muted mb-1.5">{{ f.label }}</label>
 
           <!-- select: "Todos" limpa o filtro -->
           <div v-if="f.type === 'select'" class="relative">
@@ -167,7 +167,7 @@ const refreshedLabel = computed(() => {
               <option value="">{{ f.placeholder || 'Todos' }}</option>
               <option v-for="opt in optionsFor(f)" :key="opt" :value="opt">{{ opt }}</option>
             </select>
-            <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-ink-subtle pointer-events-none" />
+            <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-micro text-ink-subtle pointer-events-none" />
           </div>
 
           <!-- período: de / até (nasce preenchido com o período do relatório) -->
@@ -209,10 +209,10 @@ const refreshedLabel = computed(() => {
         >
           Filtrar
         </Button>
-        <span v-if="pendente" class="text-[11px] text-amber-600 dark:text-amber-400">
+        <span v-if="pendente" class="text-micro text-data-warn">
           Alterações ainda não aplicadas.
         </span>
-        <span v-else-if="refreshedLabel" class="text-[11px] text-ink-subtle">{{ refreshedLabel }}</span>
+        <span v-else-if="refreshedLabel" class="text-micro text-ink-subtle">{{ refreshedLabel }}</span>
       </div>
     </div>
   </section>

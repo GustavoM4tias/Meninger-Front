@@ -23,7 +23,7 @@ const legenda = (s) => inlineMd(s?.caption)
     <p v-if="title" class="px-4 pt-3.5 text-sm font-medium text-ink">{{ title }}</p>
     <div class="grid grid-cols-2 divide-x divide-line">
       <div v-for="(s, i) in sides.slice(0, 2)" :key="i" class="px-4 py-4 sm:px-6 text-center">
-        <p class="text-[11px] uppercase tracking-wider text-ink-subtle truncate">{{ s.label }}</p>
+        <p class="text-micro uppercase tracking-wider text-ink-subtle truncate">{{ s.label }}</p>
         <p class="mt-1.5 font-display text-2xl sm:text-3xl text-ink tabular-nums">{{ formatValue(s.value, s.format) }}</p>
         <p v-if="s.caption" class="mt-1 text-xs text-ink-muted" v-html="legenda(s)" />
       </div>

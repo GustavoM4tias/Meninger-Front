@@ -130,11 +130,11 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('pt-BR') : '-')
     </div>
 
     <template v-else>
-      <p v-if="error" class="mb-3 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 text-sm px-3 py-2">{{ error }}</p>
+      <p v-if="error" class="mb-3 rounded-lg bg-data-neg/10 text-data-neg text-sm px-3 py-2">{{ error }}</p>
 
       <!-- PASSO 1: o que será exposto -->
       <div v-if="step === 1" class="space-y-4">
-        <div class="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+        <div class="rounded-xl border border-data-warn/40 bg-data-warn/10 px-4 py-3 text-sm text-data-warn">
           <p class="font-semibold"><i class="fas fa-triangle-exclamation mr-1.5" />Atenção: conteúdo na internet</p>
           <p class="mt-1 text-xs">Qualquer pessoa com o link acessa este relatório SEM login. Revise o que será exposto.</p>
         </div>
@@ -155,16 +155,16 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('pt-BR') : '-')
             exportar em Excel. As consultas rodam com as SUAS alçadas de acesso.
           </p>
           <p class="mt-1.5 text-xs text-ink-muted">
-            <i class="fas fa-user-shield mr-1 text-emerald-500" />
+            <i class="fas fa-user-shield mr-1 text-data-pos" />
             Na lista pública sai apenas ID no CV, nome, situação e o link do registro no CV
             (que exige login). CPF, e-mail, telefone e valores ficam de fora.
           </p>
         </div>
 
         <!-- Scan de PII -->
-        <div v-if="hasPii" class="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm">
-          <p class="font-semibold text-rose-600 dark:text-rose-400"><i class="fas fa-user-shield mr-1.5" />Dado pessoal detectado</p>
-          <ul class="mt-1.5 space-y-1 text-xs text-rose-600/90 dark:text-rose-400/90">
+        <div v-if="hasPii" class="rounded-xl border border-data-neg/40 bg-data-neg/10 px-4 py-3 text-sm">
+          <p class="font-semibold text-data-neg"><i class="fas fa-user-shield mr-1.5" />Dado pessoal detectado</p>
+          <ul class="mt-1.5 space-y-1 text-xs text-data-neg ">
             <li v-for="(f, i) in check.piiFindings" :key="i">
               {{ f.kind }}: {{ f.count }} ocorrência(s) - ex.: {{ f.samples.join(', ') }}
             </li>
@@ -175,7 +175,7 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('pt-BR') : '-')
             Entendo o risco e quero publicar mesmo assim.
           </label>
         </div>
-        <div v-else class="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
+        <div v-else class="flex items-center gap-2 text-xs text-data-pos">
           <i class="fas fa-circle-check" /> Nenhum dado pessoal identificável detectado.
         </div>
       </div>
@@ -183,7 +183,7 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('pt-BR') : '-')
       <!-- PASSO 2: vencimento + confirmação -->
       <div v-else-if="step === 2" class="space-y-4">
         <div>
-          <p class="text-sm font-medium text-ink mb-2">Vencimento do link <span class="text-rose-500">*</span></p>
+          <p class="text-sm font-medium text-ink mb-2">Vencimento do link <span class="text-data-neg">*</span></p>
           <div class="flex flex-wrap gap-1.5">
             <button
               v-for="d in expiryOptions" :key="d"
@@ -223,11 +223,11 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('pt-BR') : '-')
         </div>
         <div v-if="log" class="rounded-xl border border-line bg-surface-raised px-4 py-3">
           <p class="text-xs font-medium text-ink mb-1.5"><i class="fas fa-chart-simple mr-1.5 text-ink-subtle" />{{ log.views }} visualização(ões)</p>
-          <p v-for="l in (log.logs || []).slice(0, 5)" :key="l.id" class="text-[11px] text-ink-subtle">
+          <p v-for="l in (log.logs || []).slice(0, 5)" :key="l.id" class="text-micro text-ink-subtle">
             {{ fmtDateTime(l.created_at || l.createdAt) }} · {{ l.ip }}
           </p>
         </div>
-        <button class="w-full rounded-xl border border-rose-500/40 text-rose-600 dark:text-rose-400 px-3 py-2 text-xs hover:bg-rose-500/10 transition" @click="revoke">
+        <button class="w-full rounded-xl border border-data-neg/40 text-data-neg px-3 py-2 text-xs hover:bg-data-neg/10 transition" @click="revoke">
           <i class="fas fa-ban mr-1.5" />Revogar link público agora
         </button>
       </div>

@@ -16,7 +16,7 @@ const emit = defineEmits(['answer'])
       <i class="fas fa-circle-question text-accent mt-0.5 flex-shrink-0" />
       <span class="min-w-0">{{ ask.question }}</span>
     </p>
-    <p v-if="ask.context" class="mt-1 pl-6 text-[11px] text-ink-muted">{{ ask.context }}</p>
+    <p v-if="ask.context" class="mt-1 pl-6 text-micro text-ink-muted">{{ ask.context }}</p>
 
     <div v-if="ask.options?.length" class="mt-2 pl-6 flex flex-wrap gap-1.5">
       <button
@@ -27,6 +27,6 @@ const emit = defineEmits(['answer'])
         @click="emit('answer', opt)"
       >{{ opt }}</button>
     </div>
-    <p v-else class="mt-1 pl-6 text-[11px] text-ink-subtle">Responda abaixo para a Eme continuar.</p>
+    <p v-else class="mt-1 pl-6 text-micro text-ink-subtle">Responda abaixo para a Eme continuar.</p>
   </div>
 </template>

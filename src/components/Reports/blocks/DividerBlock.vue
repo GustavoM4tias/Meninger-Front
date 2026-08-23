@@ -1,3 +1,3 @@
 <template>
-  <hr class="border-line my-2" />
+  <hr class="border-t border-line my-2" />
 </template>

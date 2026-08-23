@@ -82,7 +82,7 @@ async function confirm() {
     </div>
 
     <div v-else class="space-y-4">
-      <p v-if="ownerInactive" class="flex items-start gap-2 rounded-xl bg-amber-500/10 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-400">
+      <p v-if="ownerInactive" class="flex items-start gap-2 rounded-xl bg-data-warn/10 px-4 py-2.5 text-xs text-data-warn">
         <i class="fas fa-user-slash mt-0.5" />
         <span>
           <strong>{{ previousOwner }}</strong> está inativo no sistema. O relatório continua
@@ -102,7 +102,7 @@ async function confirm() {
           >
             <i :class="selected === u.id ? 'fas fa-circle-dot text-accent' : 'far fa-circle text-ink-subtle'" />
             <span class="text-ink">{{ u.username }}</span>
-            <span v-if="u.position" class="ml-auto text-[11px] text-ink-subtle">{{ u.position }}</span>
+            <span v-if="u.position" class="ml-auto text-micro text-ink-subtle">{{ u.position }}</span>
           </button>
           <p v-if="!filtered.length" class="px-3 py-4 text-xs text-ink-subtle text-center">Nenhum usuário ativo encontrado.</p>
         </div>
@@ -117,7 +117,7 @@ async function confirm() {
         O novo responsável passa a poder editar, publicar e compartilhar. Quem já tinha acesso continua com ele.
       </p>
 
-      <p v-if="error" class="rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 text-sm px-3 py-2">{{ error }}</p>
+      <p v-if="error" class="rounded-lg bg-data-neg/10 text-data-neg text-sm px-3 py-2">{{ error }}</p>
     </div>
 
     <template #footer>

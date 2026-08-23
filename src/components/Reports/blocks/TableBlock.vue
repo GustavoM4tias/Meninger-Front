@@ -70,7 +70,7 @@ const numericDefault = computed(() =>
           <tr class="border-b-2 border-accent/30 bg-surface-sunken">
             <th
               v-for="(c, ci) in columns" :key="c.key"
-              class="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-accent whitespace-nowrap"
+              class="px-4 py-2.5 text-micro font-semibold uppercase tracking-wider text-accent whitespace-nowrap"
               :class="alignClass({ align: numericDefault[ci] })"
             >{{ c.label }}</th>
           </tr>
@@ -109,7 +109,7 @@ const numericDefault = computed(() =>
         class="w-full sm:w-auto min-h-10 px-3 rounded-lg text-xs font-medium text-accent hover:bg-surface-sunken/60 transition-colors inline-flex items-center justify-center gap-1.5"
         @click="expandido = !expandido"
       >
-        <i class="fas text-[10px]" :class="expandido ? 'fa-chevron-up' : 'fa-chevron-down'" />
+        <i class="fas text-micro" :class="expandido ? 'fa-chevron-up' : 'fa-chevron-down'" />
         {{ expandido ? `Mostrar apenas ${LINHAS_VISIVEIS}` : `Mostrar todas as ${rows.length} linhas` }}
       </button>
     </div>
@@ -117,7 +117,7 @@ const numericDefault = computed(() =>
     <div v-if="captionHtml || footnote" class="px-4 py-2.5 text-xs text-ink-subtle border-t border-line/70 space-y-1">
       <p v-if="captionHtml" v-html="captionHtml" />
       <p v-if="footnote" class="flex items-center gap-1.5 text-ink-subtle">
-        <i class="fas fa-circle-info text-[10px]" />{{ footnote }}
+        <i class="fas fa-circle-info text-micro" />{{ footnote }}
       </p>
     </div>
   </figure>

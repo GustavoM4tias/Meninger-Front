@@ -22,10 +22,12 @@ const pct = computed(() => {
   return Math.min(100, Math.round((props.value / props.goal) * 1000) / 10)
 })
 const toneClass = computed(() => {
-  if (pct.value >= 100) return 'bg-emerald-500'
-  if (pct.value >= 70) return 'bg-accent'
-  if (pct.value >= 40) return 'bg-amber-500'
-  return 'bg-rose-500'
+  // A barra é ÁREA: tom `-area`. Com o tom de marca, uma barra larga de meta
+  // fica com o mesmo peso de um texto de alerta.
+  if (pct.value >= 100) return 'bg-data-pos-area'
+  if (pct.value >= 70) return 'bg-series-1-soft'
+  if (pct.value >= 40) return 'bg-data-warn-area'
+  return 'bg-data-neg-area'
 })
 </script>
 
@@ -44,7 +46,7 @@ const toneClass = computed(() => {
     </div>
     <div class="mt-1.5 flex items-center justify-between text-xs">
       <span class="text-ink-subtle" v-html="hintHtml" />
-      <span class="font-semibold tabular-nums" :class="pct >= 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-ink-muted'">{{ pct }}%</span>
+      <span class="font-semibold tabular-nums" :class="pct >= 100 ? 'text-data-pos' : 'text-ink-muted'">{{ pct }}%</span>
     </div>
   </div>
 </template>

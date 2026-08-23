@@ -4,7 +4,7 @@ Gerado por `_design/mapscreens.mjs` em 2026-08-20. Para atualizar os números de
 mexer nas telas, rode de novo e o checklist se refaz.
 
 - **66** telas pontuadas (+ 6 especiais fora do score)
-- **Score médio: 84/100**
+- **Score médio: 85/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
 ## Como marcar
@@ -17,14 +17,9 @@ carga com `Skeleton`, alvo de toque >= 40px e PageHelp escrito.
 
 ---
 
-## Onda 1 - Reconstrução  `6 telas`
+## Onda 1 - Reconstrução  `4 telas`
 
 Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é uma tarefa própria.
-
-### Detalhe · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
-
-- [ ] **Visualizar Relatório** `/relatorios/:id/view` · ` 50`
-      <sub>views/Office/Relatorios/View.vue · 434L · sem container, sem header, sem help, 2 texto micro</sub>
 
 ### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
 
@@ -35,14 +30,12 @@ Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é 
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
-- [ ] **Builder de Relatório** `/relatorios/:id` · ` 49`
-      <sub>views/Office/Relatorios/Builder.vue · 282L · sem container, sem header, sem help, 2 cor fixa</sub>
 - [ ] **InPersonRecording** `/inperson/recording` · ` 50`
       <sub>views/Office/Microsoft/Transcripts/InPerson/Recording.vue · 374L · sem container, sem header, sem help, 2 texto micro</sub>
 - [ ] **Planner** `/planner` · ` 52`
       <sub>views/Office/Microsoft/Planner/Index.vue · 883L (+1 comp.) · sem container, sem header, 42 cor fixa, 10 texto micro</sub>
 
-## Onda 2 - Alinhamento  `7 telas`
+## Onda 2 - Alinhamento  `9 telas`
 
 Score 55 a 74. Estrutura existe, falta token, help ou plano mobile.
 
@@ -50,6 +43,8 @@ Score 55 a 74. Estrutura existe, falta token, help ou plano mobile.
 
 - [ ] **Detalhes Suporte** `/support/:id` · ` 65`
       <sub>views/Office/Support/SupportDetails.vue · 381L · sem header, sem help</sub>
+- [ ] **Visualizar Relatório** `/relatorios/:id/view` · ` 70`
+      <sub>views/Office/Relatorios/View.vue · 464L · sem container, sem header</sub>
 - [ ] **Ficha Comercial Detalhe** `/conditions/:id` · ` 70`
       <sub>views/Office/Comercial/Conditions/Detail.vue · 8573L (+10 comp.) · sem container, sem header</sub>
 
@@ -62,6 +57,8 @@ Score 55 a 74. Estrutura existe, falta token, help ou plano mobile.
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
+- [ ] **Builder de Relatório** `/relatorios/:id` · ` 70`
+      <sub>views/Office/Relatorios/Builder.vue · 328L · sem container, sem header</sub>
 - [ ] **Link de Cartão** `/link-cartao` · ` 70`
       <sub>views/Office/Financeiro/LinkCartao/Index.vue · 340L · sem container, sem header, 1 cor fixa</sub>
 - [ ] **SharePoint** `/sharepoint` · ` 70`
@@ -191,7 +188,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Documentação** `/docs` · ` 98`
       <sub>views/Office/Docs/Docs.vue · 1770L · 13 texto micro</sub>
 - [ ] **Relatórios** `/relatorios` · `100`
-      <sub>views/Office/Relatorios/Index.vue · 310L · ok</sub>
+      <sub>views/Office/Relatorios/Index.vue · 331L · ok</sub>
 - [ ] **Central Meta** `/meta` · `100`
       <sub>views/Office/Meta/Central/Index.vue · 569L (+1 comp.) · 2 texto micro</sub>
 - [ ] **Plano de Eventos** `/plano-eventos` · `100`

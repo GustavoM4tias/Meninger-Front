@@ -92,7 +92,7 @@ async function save() {
           >
             <i :class="selUsers.has(u.id) ? 'fas fa-square-check text-accent' : 'far fa-square text-ink-subtle'" />
             <span class="text-ink">{{ u.username }}</span>
-            <span v-if="u.position" class="ml-auto text-[11px] text-ink-subtle">{{ u.position }}</span>
+            <span v-if="u.position" class="ml-auto text-micro text-ink-subtle">{{ u.position }}</span>
           </button>
           <p v-if="!filteredUsers.length" class="px-3 py-4 text-xs text-ink-subtle text-center">Nenhum usuário encontrado.</p>
         </div>

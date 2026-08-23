@@ -127,7 +127,7 @@ const needle = computed(() => {
         />
         <div class="absolute top-0 bottom-0 w-1 rounded-full bg-[rgb(var(--rp-accent))]" :style="{ left: `calc(${pct * 100}% - 2px)` }" />
       </div>
-      <div class="mt-1 flex justify-between text-[10px] text-ink-subtle tabular-nums">
+      <div class="mt-1 flex justify-between text-micro text-ink-subtle tabular-nums">
         <span>{{ formatValue(min, format) }}</span>
         <span>{{ formatValue(max, format) }}</span>
       </div>

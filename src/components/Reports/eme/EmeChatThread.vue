@@ -51,7 +51,7 @@ watch(
         <i
           :class="t.status === 'running'
             ? 'fas fa-circle-notch fa-spin text-accent'
-            : t.status === 'ok' ? 'fas fa-check text-emerald-500' : 'fas fa-triangle-exclamation text-amber-500'"
+            : t.status === 'ok' ? 'fas fa-check text-data-pos' : 'fas fa-triangle-exclamation text-data-warn'"
           class="w-4 text-center flex-shrink-0"
         />
         <span class="font-medium text-ink truncate">{{ t.label }}</span>

@@ -7,6 +7,9 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from '@/components/UI/Button.vue'
 import Badge from '@/components/UI/Badge.vue'
+import PageHelp from '@/components/UI/PageHelp.vue'
+import Skeleton from '@/components/UI/Skeleton.vue'
+import EmptyState from '@/components/UI/EmptyState.vue'
 import ReportRenderer from '@/components/Reports/ReportRenderer.vue'
 import ReportFilterBar from '@/components/Reports/ReportFilterBar.vue'
 import DrillModal from '@/components/Reports/DrillModal.vue'
@@ -260,12 +263,27 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
               Ao vivo
             </Badge>
           </div>
-          <p v-if="data?.publishedAt" class="text-[11px] text-ink-subtle truncate">
+          <p v-if="data?.publishedAt" class="text-micro text-ink-subtle truncate">
             Publicado em {{ fmtDate(data.publishedAt) }}
           </p>
         </div>
 
         <div class="flex items-center gap-2 flex-shrink-0">
+          <PageHelp
+            storage-key="relatorio-view"
+            label=""
+            title="Como ler este relatório"
+            intro="Este é o relatório publicado. O que você vê aqui é o que quem recebeu o link também vê — respeitando a alçada de cada um."
+            :steps="[
+              { title: 'Confira a data', text: 'O selo Ao vivo diz que os números são recalculados a cada abertura. Sem ele, o relatório é um retrato congelado da data de publicação.' },
+              { title: 'Use os filtros', text: 'Se o relatório tiver filtros no topo, eles recortam os números na hora, e a consulta roda com a SUA alçada.' },
+              { title: 'Entre no número', text: 'Em relatório interativo, clicar num item do gráfico ou da tabela abre a lista dos registros por trás dele.' },
+              { title: 'Exporte', text: 'HTML guarda a página inteira, PNG vira imagem, PDF sai em A4 sem cortar bloco no meio e Excel deixa escolher quais dados levar.' },
+            ]"
+            :tips="[
+              'Dois leitores podem ver números diferentes no mesmo relatório: cada consulta roda com a alçada de quem abre.',
+              'O link público é congelado e não respeita alçada — por isso ele fica separado do compartilhamento interno.',
+            ]" />
           <!-- Exportar -->
           <div ref="menuEl" class="relative">
             <Button
@@ -293,7 +311,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
                 <i :class="`fas ${opt.icon}`" class="text-ink-subtle w-4 text-center" />
                 <span class="min-w-0">
                   <span class="block text-sm text-ink leading-tight">{{ opt.label }}</span>
-                  <span class="block text-[11px] text-ink-subtle leading-tight">{{ opt.hint }}</span>
+                  <span class="block text-micro text-ink-subtle leading-tight">{{ opt.hint }}</span>
                 </span>
               </button>
             </div>
@@ -317,13 +335,25 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
       </div>
     </div>
 
-    <div v-if="loading" class="py-24 text-center text-ink-subtle"><i class="fas fa-circle-notch fa-spin text-xl" /></div>
-    <div v-else-if="error && !data" class="py-24 text-center">
-      <i class="fas fa-lock text-2xl text-ink-subtle mb-3" />
-      <p class="text-sm text-ink-muted">{{ error }}</p>
+    <!-- Carregando: a forma do documento (título, números, gráfico), para a
+         página não saltar quando o relatório chega. -->
+    <div v-if="loading" class="px-4 sm:px-8 py-6 space-y-4">
+      <Skeleton variant="title" class="max-w-md" />
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Skeleton v-for="i in 4" :key="i" variant="stat" />
+      </div>
+      <Skeleton variant="chart" />
+      <Skeleton variant="table" />
     </div>
+
+    <EmptyState v-else-if="error && !data" class="py-16"
+      icon="fas fa-lock" title="Relatório indisponível" :description="error">
+      <template #actions>
+        <Button icon="fas fa-arrow-left" @click="router.push('/relatorios')">Voltar para a lista</Button>
+      </template>
+    </EmptyState>
     <template v-else>
-      <p v-if="error" class="mx-4 sm:mx-8 mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-600 dark:text-rose-400">
+      <p v-if="error" class="mx-4 sm:mx-8 mt-4 rounded-lg border border-data-neg/30 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
         {{ error }}
       </p>
       <div class="px-4 sm:px-8 py-6 bg-surface">
@@ -362,7 +392,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
                 <span
                   class="inline-flex items-center gap-1.5 rounded-full bg-accent-soft text-accent px-3 py-1.5 text-xs font-medium"
                 >
-                  <i class="fas fa-filter text-[10px]" />
+                  <i class="fas fa-filter text-micro" />
                   Focado em: {{ focoStack[focoStack.length - 1].label }}
                 </span>
                 <button
@@ -370,21 +400,21 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
                   class="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-ink-muted hover:text-ink hover:bg-surface-sunken transition min-h-[32px]"
                   @click="voltarFoco"
                 >
-                  <i class="fas fa-arrow-rotate-left text-[10px]" />Voltar
+                  <i class="fas fa-arrow-rotate-left text-micro" />Voltar
                 </button>
               </div>
               <!-- Consulta que falhou: o leitor precisa saber que aquele
                    pedaço está com o número da última publicação, não em branco -->
               <div
                 v-if="live.datasetErrors.value.length"
-                class="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+                class="mt-2 rounded-lg border border-data-warn/40 bg-data-warn/10 px-3 py-2 text-xs text-data-warn"
               >
                 <i class="fas fa-triangle-exclamation mr-1.5" />
                 <span v-for="(d, i) in live.datasetErrors.value" :key="d.id">
                   <template v-if="i">; </template>{{ d.label }}: {{ d.error }}
                 </span>
               </div>
-              <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">
+              <p v-if="live.error.value" class="mt-2 text-xs text-data-neg">
                 {{ live.error.value }}
               </p>
             </template>

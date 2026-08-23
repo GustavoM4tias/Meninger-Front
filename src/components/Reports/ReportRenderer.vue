@@ -105,10 +105,10 @@ defineExpose({ scrollToBlock })
       >
         <img src="/Mlogotext.png" alt="Menin" class="h-7 w-auto dark:invert-0 invert" />
       </a>
-      <span class="text-[10px] uppercase tracking-[0.18em] text-ink-subtle">Menin Office</span>
+      <span class="text-micro uppercase tracking-[0.18em] text-ink-subtle">Menin Office</span>
       <span
         v-if="meta?.dataMode === 'live'"
-        class="rp-live-badge ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-soft text-accent text-[10px] font-semibold"
+        class="rp-live-badge ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-soft text-accent text-micro font-semibold"
       >
         <span aria-hidden="true" class="w-1.5 h-1.5 rounded-full bg-accent"></span>ao vivo
       </span>
@@ -142,7 +142,7 @@ defineExpose({ scrollToBlock })
       >
         <button
           type="button"
-          class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider transition-opacity"
+          class="flex items-center gap-1.5 text-micro uppercase tracking-wider transition-opacity"
           :class="isSelected(block.id) ? 'text-accent opacity-100' : 'text-ink-subtle opacity-0 group-hover:opacity-100'"
           @click.stop="emit('toggle', block.id)"
         >
@@ -155,22 +155,22 @@ defineExpose({ scrollToBlock })
             type="button" title="Mover para cima" :disabled="i === 0"
             class="w-6 h-5 rounded text-ink-subtle hover:text-ink hover:bg-surface-sunken disabled:opacity-30 transition"
             @click.stop="emit('move', block.id, 'up')"
-          ><i class="fas fa-chevron-up text-[9px]" /></button>
+          ><i class="fas fa-chevron-up text-micro" /></button>
           <button
             type="button" title="Mover para baixo" :disabled="i === (spec.blocks || []).length - 1"
             class="w-6 h-5 rounded text-ink-subtle hover:text-ink hover:bg-surface-sunken disabled:opacity-30 transition"
             @click.stop="emit('move', block.id, 'down')"
-          ><i class="fas fa-chevron-down text-[9px]" /></button>
+          ><i class="fas fa-chevron-down text-micro" /></button>
           <button
             type="button" title="Adicionar bloco depois deste"
             class="w-6 h-5 rounded text-ink-subtle hover:text-accent hover:bg-surface-sunken transition"
             @click.stop="emit('add-after', block.id)"
-          ><i class="fas fa-plus text-[9px]" /></button>
+          ><i class="fas fa-plus text-micro" /></button>
           <button
             type="button" title="Remover bloco"
-            class="w-6 h-5 rounded text-ink-subtle hover:text-rose-500 hover:bg-surface-sunken transition"
+            class="w-6 h-5 rounded text-ink-subtle hover:text-data-neg hover:bg-surface-sunken transition"
             @click.stop="emit('remove', block.id)"
-          ><i class="far fa-trash-can text-[9px]" /></button>
+          ><i class="far fa-trash-can text-micro" /></button>
         </div>
       </div>
 
@@ -187,7 +187,7 @@ defineExpose({ scrollToBlock })
         </div>
         <p
           v-if="liveErrors[block.id]"
-          class="mt-1.5 text-[11px] italic text-ink-subtle flex items-center gap-1.5"
+          class="mt-1.5 text-micro italic text-ink-subtle flex items-center gap-1.5"
         >
           <i class="fas fa-circle-info" />{{ liveErrors[block.id] }}
         </p>

@@ -44,10 +44,10 @@ function abrir() {
     @keydown.enter.prevent="abrir"
     @keydown.space.prevent="abrir"
   >
-    <span v-if="clickable" aria-hidden="true" class="absolute right-3 top-3 text-[11px] text-ink-subtle">
+    <span v-if="clickable" aria-hidden="true" class="absolute right-3 top-3 text-micro text-ink-subtle">
       <i class="fas fa-up-right-from-square" />
     </span>
-    <p class="text-[11px] uppercase tracking-[0.18em] text-ink-subtle">{{ label }}</p>
+    <p class="text-micro uppercase tracking-[0.18em] text-ink-subtle">{{ label }}</p>
     <div class="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
       <span class="font-display text-4xl sm:text-5xl text-ink tabular-nums leading-none">{{ formatValue(value, format) }}</span>
       <span v-if="delta" :class="tone(deltaTone).text" class="text-sm font-semibold tabular-nums">{{ delta }}</span>
