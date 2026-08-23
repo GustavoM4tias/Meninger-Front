@@ -121,7 +121,7 @@ function onFilter(s) { statusFilter.value = s; store.fetchList(s || undefined); 
         </button>
       </div>
 
-      <p v-if="actionError" class="mb-3 rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+      <p v-if="actionError" class="mb-3 rounded-lg border border-data-neg/30 bg-data-neg/5 px-3 py-2 text-sm text-data-neg">
         <i class="fas fa-circle-exclamation"></i> {{ actionError }}
       </p>
 
@@ -175,7 +175,7 @@ function onFilter(s) { statusFilter.value = s; store.fetchList(s || undefined); 
         </div>
       </div>
 
-      <p v-if="store.error && !actionError" class="mt-4 text-sm text-red-500">{{ store.error }}</p>
+      <p v-if="store.error && !actionError" class="mt-4 text-sm text-data-neg">{{ store.error }}</p>
     </PageContainer>
 
     <ComunicadoEditModal v-model:open="editOpen" :comunicado="editing" @saved="onSaved" />

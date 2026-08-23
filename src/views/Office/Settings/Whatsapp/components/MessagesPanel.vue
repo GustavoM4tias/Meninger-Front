@@ -33,12 +33,12 @@ watch(() => filters.value.direction, () => { offset.value = 0; load(); });
 
 const STATUS_CLS = {
   queued:    'text-ink-muted bg-surface-sunken border-line',
-  sent:      'text-sky-600 dark:text-sky-400 bg-sky-500/10 border-sky-500/20',
-  delivered: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-  read:      'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-  failed:    'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20',
-  dry_run:   'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20',
-  received:  'text-violet-600 dark:text-violet-400 bg-violet-500/10 border-violet-500/20',
+  sent:      'text-accent bg-accent/10 border-accent/20',
+  delivered: 'text-data-pos bg-data-pos/10 border-data-pos/20',
+  read:      'text-data-pos bg-data-pos/10 border-data-pos/20',
+  failed:    'text-data-neg bg-data-neg/10 border-data-neg/20',
+  dry_run:   'text-data-warn bg-data-warn/10 border-data-warn/20',
+  received:  'text-accent bg-accent/10 border-accent/20',
 };
 
 const formatDt = (d) => {
@@ -90,7 +90,7 @@ const formatDt = (d) => {
 
           <div class="min-w-0">
             <p class="text-ink font-medium truncate">{{ m.template_name || (m.type + ' • ' + (m.body || '—')) }}</p>
-            <p v-if="m.error_message" class="text-xs text-red-600 dark:text-red-400 truncate">
+            <p v-if="m.error_message" class="text-xs text-data-neg truncate">
               {{ m.error_code }} — {{ m.error_message }}
             </p>
             <p v-else-if="m.body && m.template_name" class="text-xs text-ink-muted line-clamp-1">{{ m.body }}</p>

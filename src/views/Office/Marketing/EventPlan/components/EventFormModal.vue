@@ -71,11 +71,11 @@ function save() {
                 </div>
             </div>
 
-            <p v-if="dateOutOfMonth" class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-sm text-amber-700 dark:text-amber-400">
+            <p v-if="dateOutOfMonth" class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-2.5 text-sm text-data-warn">
                 <i class="fas fa-triangle-exclamation mr-1"></i>
                 Esta data está fora do mês do plano. Confira antes de salvar.
             </p>
-            <p v-else-if="inPriorityWindow" class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-sm text-amber-700 dark:text-amber-400">
+            <p v-else-if="inPriorityWindow" class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-2.5 text-sm text-data-warn">
                 <i class="fas fa-clock mr-1"></i>
                 Este evento acontece nos primeiros dias do mês. A aprovação corre depois do envio e pode se estender por
                 esses dias, então ele vai para o topo da fila de quem decide. Vale enviar o plano o quanto antes.

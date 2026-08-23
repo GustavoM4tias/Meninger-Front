@@ -35,14 +35,14 @@
                         <button type="button" role="switch" :aria-checked="store.isMarketing(d)" @click.prevent="toggle(d)"
                             class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
                             :class="store.isMarketing(d) ? 'bg-accent' : 'bg-surface-sunken border border-line'">
-                            <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                            <span class="inline-block h-4 w-4 transform rounded-full bg-surface-raised shadow transition-transform"
                                 :class="store.isMarketing(d) ? 'translate-x-4' : 'translate-x-0.5'"></span>
                         </button>
                     </span>
                 </label>
             </div>
 
-            <p v-if="store.error" class="mt-3 text-sm text-red-600 dark:text-red-400">
+            <p v-if="store.error" class="mt-3 text-sm text-data-neg">
                 <i class="fas fa-circle-exclamation mr-1"></i>{{ store.error }}
             </p>
         </div>

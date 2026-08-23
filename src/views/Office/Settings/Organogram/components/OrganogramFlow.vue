@@ -211,24 +211,24 @@ function handleFit() { fitView({ padding: 0.2, duration: 400 }); }
 // Helpers visuais
 function ringColorForLevel(level) {
   const colors = [
-    'ring-blue-500/60',     // root
-    'ring-indigo-500/50',   // level 1
-    'ring-purple-500/45',   // level 2
+    'ring-accent/60',     // root
+    'ring-accent/50',   // level 1
+    'ring-accent/45',   // level 2
     'ring-pink-500/40',     // level 3
-    'ring-amber-500/40',    // level 4
-    'ring-emerald-500/40',  // level 5+
+    'ring-data-warn/40',    // level 4
+    'ring-data-pos/40',  // level 5+
   ];
   return colors[Math.min(level, colors.length - 1)];
 }
 
 function avatarBgForLevel(level) {
   const colors = [
-    'bg-blue-500/10',
-    'bg-indigo-500/10',
-    'bg-purple-500/10',
+    'bg-accent/10',
+    'bg-accent/10',
+    'bg-accent/10',
     'bg-pink-500/10',
-    'bg-amber-500/10',
-    'bg-emerald-500/10',
+    'bg-data-warn/10',
+    'bg-data-pos/10',
   ];
   return colors[Math.min(level, colors.length - 1)];
 }

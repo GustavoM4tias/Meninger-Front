@@ -91,7 +91,10 @@ for (const f of arquivos) {
         const temClasse = CLASSE_COM_BORDA.test(tag) || TAG_COM_BORDA_PROPRIA.test(tag);
         for (const pre of Object.keys(LARGURA)) {
             const soCor = APENAS_COR[pre].test(tag);
-            const temLargura = LARGURA[pre].test(tag) || (pre === 'border' && temClasse);
+            const temLargura = LARGURA[pre].test(tag)
+                || (pre === 'border' && temClasse)
+                /* checkbox/radio recebem borda E anel de foco do plugin flowbite */
+                || (pre === 'ring' && TAG_COM_BORDA_PROPRIA.test(tag));
             if (soCor && !temLargura) {
                 const linha = src.slice(0, i + m.index).split('\n').length;
                 /* Tag que começa com maiúscula é componente: a largura pode vir

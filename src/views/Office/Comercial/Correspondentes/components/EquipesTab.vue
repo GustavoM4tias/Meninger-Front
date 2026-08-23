@@ -252,9 +252,9 @@ onMounted(() => { if (!store.empresas.length) store.fetchOverview(); });
                 </button>
 
                 <div v-if="e.origem === 'pendente'" class="px-4 pb-3 -mt-1">
-                    <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-ink">
+                    <div class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 text-xs text-ink">
                         <p class="mb-2">
-                            <i class="fas fa-triangle-exclamation mr-1 text-amber-500"></i>
+                            <i class="fas fa-triangle-exclamation mr-1 text-data-warn"></i>
                             O CV não devolve o código no cadastro.
                             <template v-if="store.codigoSugerido">
                                 Como ele numera em sequência, o próximo é o

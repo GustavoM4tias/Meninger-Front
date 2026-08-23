@@ -18,9 +18,9 @@ const pct = computed(() => Math.round((cov.value?.coverage || 0) * 100));
 const missing = computed(() => cov.value?.missing || []);
 
 const barCls = computed(() => {
-  if (pct.value >= 90) return 'bg-emerald-500';
-  if (pct.value >= 60) return 'bg-amber-500';
-  return 'bg-red-500';
+  if (pct.value >= 90) return 'bg-data-pos';
+  if (pct.value >= 60) return 'bg-data-warn';
+  return 'bg-data-neg';
 });
 </script>
 
@@ -51,8 +51,8 @@ const barCls = computed(() => {
 
       <div v-if="cov.withoutPhone" class="mt-3">
         <button type="button" @click="expanded = !expanded"
-          class="w-full flex items-center justify-between gap-2 rounded-lg border border-amber-500/20
-                 bg-amber-500/10 px-3 py-2.5 text-left min-h-[40px]">
+          class="w-full flex items-center justify-between gap-2 rounded-lg border border-data-warn/20
+                 bg-data-warn/10 px-3 py-2.5 text-left min-h-[40px]">
           <span class="text-xs text-ink">
             <strong>{{ cov.withoutPhone }}</strong>
             {{ cov.withoutPhone === 1 ? 'pessoa não recebe' : 'pessoas não recebem' }} nada por WhatsApp
@@ -72,7 +72,7 @@ const barCls = computed(() => {
         </ul>
       </div>
 
-      <p v-else class="mt-3 text-xs text-emerald-600 dark:text-emerald-400">
+      <p v-else class="mt-3 text-xs text-data-pos">
         <i class="fas fa-check mr-1"></i> Todo mundo com telefone cadastrado.
       </p>
     </template>

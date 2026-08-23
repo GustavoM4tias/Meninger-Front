@@ -154,7 +154,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
                 </span>
                 <Switch v-model="store.testMode" :disabled="!!store.preview" size="sm" />
                 <span class="text-xs font-medium font-mono"
-                  :class="store.testMode ? 'text-amber-500' : 'text-ink-subtle'">
+                  :class="store.testMode ? 'text-data-warn' : 'text-ink-subtle'">
                   test-robot
                 </span>
               </div>
@@ -186,7 +186,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
                 @dragleave="dragging = false"
                 @drop.prevent="onDrop"
                 @click="fileInput.click()">
-                <div class="h-12 w-12 mx-auto rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 grid place-items-center mb-3 border border-emerald-500/20">
+                <div class="h-12 w-12 mx-auto rounded-2xl bg-data-pos/10 text-data-pos grid place-items-center mb-3 border border-data-pos/20">
                   <i class="fas fa-file-excel text-lg"></i>
                 </div>
                 <p class="font-medium text-ink">Arraste o arquivo aqui ou clique para selecionar</p>
@@ -202,11 +202,11 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
 
               <!-- Pronto -->
               <div v-if="store.preview && !store.loading" class="space-y-4">
-                <div class="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                  <i class="fas fa-circle-check text-emerald-500 text-lg"></i>
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-data-pos/10 border border-data-pos/20">
+                  <i class="fas fa-circle-check text-data-pos text-lg"></i>
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300 truncate">{{ selectedFileName }}</p>
-                    <p class="text-xs text-emerald-600 dark:text-emerald-400">
+                    <p class="text-sm font-medium text-data-pos truncate">{{ selectedFileName }}</p>
+                    <p class="text-xs text-data-pos">
                       {{ store.preview.files.length }} arquivo(s) gerado(s) — pronto para envio
                     </p>
                   </div>
@@ -242,19 +242,19 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
               </div>
 
               <div v-if="store.error"
-                class="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
+                class="mt-4 rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-sm text-data-neg flex items-start gap-2">
                 <i class="fas fa-circle-exclamation mt-0.5"></i>
                 <p>{{ store.error }}</p>
               </div>
 
               <div v-if="successResult"
-                class="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 flex items-start gap-2">
-                <i class="fas fa-circle-check text-emerald-500 mt-0.5"></i>
+                class="mt-4 rounded-lg border border-data-pos/20 bg-data-pos/10 px-3 py-2.5 flex items-start gap-2">
+                <i class="fas fa-circle-check text-data-pos mt-0.5"></i>
                 <div>
-                  <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300">{{ successResult.message }}</p>
+                  <p class="text-sm font-medium text-data-pos">{{ successResult.message }}</p>
                   <div class="flex flex-wrap gap-1 mt-1">
                     <span v-for="f in successResult.files" :key="f.path"
-                      class="text-xs font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded">
+                      class="text-xs font-mono text-data-pos bg-data-pos/10 px-2 py-0.5 rounded">
                       {{ f.path }}
                     </span>
                   </div>
@@ -352,7 +352,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
               </div>
               <div class="flex items-start gap-2">
                 <i class="text-xs mt-1"
-                  :class="store.testMode ? 'fas fa-flask text-amber-500' : 'fas fa-folder text-yellow-500'"></i>
+                  :class="store.testMode ? 'fas fa-flask text-data-warn' : 'fas fa-folder text-data-warn'"></i>
                 <div class="min-w-0">
                   <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Pasta ativa</p>
                   <p class="font-mono text-ink truncate">{{ folderName }}/</p>
@@ -377,7 +377,7 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
             <div class="mt-4 pt-4 border-t border-line space-y-1.5">
               <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">Pastas do bucket</p>
               <div class="flex items-center gap-2 text-xs">
-                <i class="fas fa-flask text-amber-500 w-4 text-center text-[10px]"></i>
+                <i class="fas fa-flask text-data-warn w-4 text-center text-[10px]"></i>
                 <span class="font-mono text-ink">test-robot/</span>
                 <span class="text-ink-subtle">testes</span>
               </div>

@@ -113,7 +113,7 @@ function copyPassword() {
                 <div v-for="check in strength.passwordCheckList" :key="check.key"
                   class="flex items-center gap-1.5 text-xs transition-colors"
                   :class="strength.checks.value[check.key]
-                    ? 'text-emerald-600 dark:text-emerald-400' : 'text-ink-subtle'">
+                    ? 'text-data-pos' : 'text-ink-subtle'">
                   <i class="text-[10px] w-3 shrink-0"
                     :class="strength.checks.value[check.key] ? 'fas fa-check-circle' : 'far fa-circle'"></i>
                   {{ check.label }}
@@ -137,11 +137,11 @@ function copyPassword() {
           </div>
           <transition name="fade">
             <p v-if="form.confirm && !strength.checks.value.match"
-              class="mt-1 text-xs text-red-500 flex items-center gap-1">
+              class="mt-1 text-xs text-data-neg flex items-center gap-1">
               <i class="fas fa-circle-exclamation"></i>As senhas não coincidem.
             </p>
             <p v-else-if="form.confirm && strength.checks.value.match"
-              class="mt-1 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              class="mt-1 text-xs text-data-pos flex items-center gap-1">
               <i class="fas fa-check-circle"></i>Senhas coincidem.
             </p>
           </transition>
@@ -159,9 +159,9 @@ function copyPassword() {
     <!-- Banner de sucesso -->
     <transition name="fade">
       <div v-if="successBanner.visible"
-        class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 surface-gradient">
+        class="rounded-xl border border-data-pos/30 bg-data-pos/10 p-4 surface-gradient">
         <div class="flex items-start gap-3">
-          <div class="h-9 w-9 grid place-items-center rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+          <div class="h-9 w-9 grid place-items-center rounded-lg bg-data-pos/20 text-data-pos shrink-0">
             <i class="fas fa-circle-check"></i>
           </div>
           <div class="flex-1 min-w-0">

@@ -31,26 +31,26 @@
               <!-- Dicas -->
               <div>
                 <div class="flex items-center gap-2 mb-3">
-                  <i class="fas fa-lightbulb text-amber-500 text-sm"></i>
+                  <i class="fas fa-lightbulb text-data-warn text-sm"></i>
                   <h4 class="text-xs uppercase tracking-wider font-mono text-ink-muted">
                     Dicas Importantes
                   </h4>
                 </div>
                 <ul class="space-y-2 text-sm text-ink-muted">
                   <li class="flex items-start gap-2">
-                    <i class="fas fa-check text-emerald-500 mt-1 text-[10px]"></i>
+                    <i class="fas fa-check text-data-pos mt-1 text-[10px]"></i>
                     <span>Seja específico sobre o problema</span>
                   </li>
                   <li class="flex items-start gap-2">
-                    <i class="fas fa-check text-emerald-500 mt-1 text-[10px]"></i>
+                    <i class="fas fa-check text-data-pos mt-1 text-[10px]"></i>
                     <span>Descreva os passos para reproduzir</span>
                   </li>
                   <li class="flex items-start gap-2">
-                    <i class="fas fa-check text-emerald-500 mt-1 text-[10px]"></i>
+                    <i class="fas fa-check text-data-pos mt-1 text-[10px]"></i>
                     <span>Inclua capturas de tela se possível</span>
                   </li>
                   <li class="flex items-start gap-2">
-                    <i class="fas fa-check text-emerald-500 mt-1 text-[10px]"></i>
+                    <i class="fas fa-check text-data-pos mt-1 text-[10px]"></i>
                     <span>Mencione o navegador utilizado</span>
                   </li>
                 </ul>
@@ -71,11 +71,11 @@
                   </div>
                   <div class="flex justify-between text-sm">
                     <span class="text-ink-muted">Finalizados este mês</span>
-                    <span class="font-mono tabular-nums font-medium text-red-500">{{ counts.closed || 0 }}</span>
+                    <span class="font-mono tabular-nums font-medium text-data-neg">{{ counts.closed || 0 }}</span>
                   </div>
                   <div class="flex justify-between text-sm">
                     <span class="text-ink-muted">Resolvidos este mês</span>
-                    <span class="font-mono tabular-nums font-medium text-emerald-500">{{ stats.resolved || 0 }}</span>
+                    <span class="font-mono tabular-nums font-medium text-data-pos">{{ stats.resolved || 0 }}</span>
                   </div>
                 </div>
               </div>
@@ -148,7 +148,7 @@
               <!-- Detailed Description -->
               <div>
                 <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">
-                  Descrição Detalhada <span class="text-red-500">*</span>
+                  Descrição Detalhada <span class="text-data-neg">*</span>
                 </label>
                 <textarea v-model="form.description"
                   placeholder="Descreva o problema detalhadamente:&#10;- O que você estava fazendo?&#10;- O que esperava que acontecesse?&#10;- O que realmente aconteceu?&#10;- Consegue reproduzir o problema?"
@@ -255,8 +255,8 @@
       title="Reporte enviado!"
       @close="showSuccessModal = false">
       <div class="text-center space-y-4">
-        <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
-          <i class="fas fa-check text-emerald-500 text-2xl"></i>
+        <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-2xl bg-data-pos/10 border border-data-pos/30">
+          <i class="fas fa-check text-data-pos text-2xl"></i>
         </div>
         <p class="text-sm text-ink-muted">
           Seu problema foi reportado e nossa equipe técnica foi notificada.

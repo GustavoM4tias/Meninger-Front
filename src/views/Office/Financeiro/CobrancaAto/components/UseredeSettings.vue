@@ -7,23 +7,23 @@
   <div class="space-y-5">
 
     <Surface v-if="store.settingsError" variant="raised" padding="sm"
-      class="border-rose-500/30 bg-rose-500/10">
-      <p class="text-sm text-rose-700 dark:text-rose-300">{{ store.settingsError }}</p>
+      class="border-data-neg/30 bg-data-neg/10">
+      <p class="text-sm text-data-neg">{{ store.settingsError }}</p>
     </Surface>
 
     <!-- ── Sessão precisa de gente ───────────────────────────────────────── -->
     <Surface v-if="store.settings?.session_precisa_humano" variant="raised" padding="sm"
-      class="border-amber-500/30 bg-amber-500/10">
+      class="border-data-warn/30 bg-data-warn/10">
       <div class="flex items-start gap-2.5">
-        <i class="fas fa-triangle-exclamation mt-0.5 text-amber-600 dark:text-amber-400"></i>
+        <i class="fas fa-triangle-exclamation mt-0.5 text-data-warn"></i>
         <div class="min-w-0 space-y-1">
-          <p class="text-sm font-semibold text-amber-800 dark:text-amber-200">
+          <p class="text-sm font-semibold text-data-warn">
             O portal pediu verificação e a sessão parou
           </p>
-          <p class="text-xs text-amber-800/90 dark:text-amber-200/90">
+          <p class="text-xs text-data-warn ">
             {{ store.settings.session_ultimo_erro }}
           </p>
-          <p class="text-xs text-amber-800/90 dark:text-amber-200/90">
+          <p class="text-xs text-data-warn ">
             Acesse <span class="font-mono">meu.userede.com.br</span>, conclua o acesso e clique em
             Testar conexão. As emissões pendentes saem sozinhas depois disso.
           </p>
@@ -35,7 +35,7 @@
     <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
       <div class="flex items-center gap-3">
         <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0
-                    bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                    bg-accent/10 text-accent border border-accent/20">
           <i class="fas fa-key"></i>
         </div>
         <div class="min-w-0">
@@ -99,18 +99,18 @@
 
       <Surface v-if="store.testResult" variant="raised" padding="sm"
         :class="store.testResult.ok
-          ? 'border-emerald-500/30 bg-emerald-500/10'
-          : 'border-rose-500/30 bg-rose-500/10'">
+          ? 'border-data-pos/30 bg-data-pos/10'
+          : 'border-data-neg/30 bg-data-neg/10'">
         <div class="flex items-start gap-2.5">
           <i class="mt-0.5"
             :class="store.testResult.ok
-              ? 'fas fa-circle-check text-emerald-600 dark:text-emerald-400'
-              : 'fas fa-circle-xmark text-rose-600 dark:text-rose-400'"></i>
+              ? 'fas fa-circle-check text-data-pos'
+              : 'fas fa-circle-xmark text-data-neg'"></i>
           <div class="min-w-0 space-y-1 text-xs">
             <p class="font-semibold"
               :class="store.testResult.ok
-                ? 'text-emerald-800 dark:text-emerald-200'
-                : 'text-rose-800 dark:text-rose-200'">
+                ? 'text-data-pos'
+                : 'text-data-neg'">
               {{ store.testResult.mensagem }}
             </p>
             <p v-if="store.testResult.estabelecimento" class="text-ink-muted">
@@ -128,7 +128,7 @@
     <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
       <div class="flex items-center gap-3">
         <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0
-                    bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                    bg-accent/10 text-accent border border-accent/20">
           <i class="fas fa-sliders"></i>
         </div>
         <div class="min-w-0">
@@ -158,13 +158,13 @@
             class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium
                    bg-surface-sunken border border-line">
             {{ id }}
-            <button type="button" class="text-ink-subtle hover:text-rose-500" @click="removeSerie(id)">
+            <button type="button" class="text-ink-subtle hover:text-data-neg" @click="removeSerie(id)">
               <i class="fas fa-xmark"></i>
             </button>
           </span>
           <input v-model.number="novaSerie" type="number" placeholder="ID"
             class="w-24 px-2 py-1 text-xs rounded-lg bg-surface-sunken border border-line
-                   text-ink focus:outline-none focus:ring-1 focus:ring-sky-500"
+                   text-ink focus:outline-none focus:ring-1 focus:ring-accent"
             @keyup.enter="addSerie" />
           <Button variant="ghost" size="sm" icon="fas fa-plus" @click="addSerie">Adicionar</Button>
         </div>
@@ -181,7 +181,7 @@
         <div class="flex items-center gap-3 min-w-0">
           <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0"
             :class="form.active
-              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+              ? 'bg-data-pos/10 text-data-pos border border-data-pos/20'
               : 'bg-surface-sunken text-ink-subtle border border-line'">
             <i class="fas fa-robot"></i>
           </div>
@@ -196,8 +196,8 @@
         </div>
         <button type="button" @click="form.active = !form.active"
           class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0"
-          :class="form.active ? 'bg-emerald-500' : 'bg-surface-sunken border border-line'">
-          <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+          :class="form.active ? 'bg-data-pos' : 'bg-surface-sunken border border-line'">
+          <span class="inline-block h-4 w-4 transform rounded-full bg-surface-raised shadow transition-transform"
             :class="form.active ? 'translate-x-6' : 'translate-x-1'"></span>
         </button>
       </div>
@@ -210,7 +210,7 @@
         @click="handleSave">
         Salvar configurações
       </Button>
-      <span v-if="store.settingsSaved" class="text-sm text-emerald-600 dark:text-emerald-400">
+      <span v-if="store.settingsSaved" class="text-sm text-data-pos">
         <i class="fas fa-check mr-1"></i>Salvo.
       </span>
     </div>

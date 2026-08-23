@@ -40,10 +40,10 @@ onMounted(() => store.fetchConfig());
 
 const statusBadge = computed(() => {
   if (!store.config) return { label: '—', cls: 'text-ink-muted bg-surface-sunken border-line' };
-  if (!store.config.has_access_token) return { label: 'Sem token', cls: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20' };
-  if (store.config.dry_run) return { label: 'Modo simulação', cls: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20' };
-  if (store.config.active && store.config.last_health_ok) return { label: 'Conectado', cls: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20' };
-  if (store.config.active) return { label: 'Ativo (sem health)', cls: 'text-sky-600 dark:text-sky-400 bg-sky-500/10 border-sky-500/20' };
+  if (!store.config.has_access_token) return { label: 'Sem token', cls: 'text-data-warn bg-data-warn/10 border-data-warn/20' };
+  if (store.config.dry_run) return { label: 'Modo simulação', cls: 'text-data-warn bg-data-warn/10 border-data-warn/20' };
+  if (store.config.active && store.config.last_health_ok) return { label: 'Conectado', cls: 'text-data-pos bg-data-pos/10 border-data-pos/20' };
+  if (store.config.active) return { label: 'Ativo (sem health)', cls: 'text-accent bg-accent/10 border-accent/20' };
   return { label: 'Inativo', cls: 'text-ink-muted bg-surface-sunken border-line' };
 });
 </script>

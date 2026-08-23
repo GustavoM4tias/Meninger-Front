@@ -195,7 +195,7 @@ onMounted(() => { if (!microsoftStore.connected) microsoftStore.fetchStatus?.();
             </p>
           </div>
           <button type="button" @click="clearEnterprise"
-            class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+            class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-data-neg hover:bg-data-neg/10 transition-colors shrink-0"
             title="Remover">
             <i class="fas fa-xmark text-xs"></i>
           </button>
@@ -205,7 +205,7 @@ onMounted(() => { if (!microsoftStore.connected) microsoftStore.fetchStatus?.();
 
     <!-- DATA + ATALHOS -->
     <div class="space-y-1.5">
-      <label class="block text-xs font-medium text-ink-muted">Data &amp; Hora <span class="text-red-500">*</span></label>
+      <label class="block text-xs font-medium text-ink-muted">Data &amp; Hora <span class="text-data-neg">*</span></label>
 
       <div class="flex flex-wrap gap-1.5">
         <button v-for="qd in quickDates" :key="qd.label" type="button" @click="form.eventDate = qd.getValue()"
@@ -306,7 +306,7 @@ onMounted(() => { if (!microsoftStore.connected) microsoftStore.fetchStatus?.();
           </Button>
         </div>
 
-        <p v-if="imgError" class="text-xs text-red-500 flex items-center gap-1">
+        <p v-if="imgError" class="text-xs text-data-neg flex items-center gap-1">
           <i class="fas fa-circle-exclamation"></i>{{ imgError }}
         </p>
 
@@ -319,7 +319,7 @@ onMounted(() => { if (!microsoftStore.connected) microsoftStore.fetchStatus?.();
             class="relative group rounded-lg overflow-hidden aspect-video bg-surface-sunken border border-line">
             <img :src="img" class="w-full h-full object-cover" />
             <button @click="removeImg(i)"
-              class="absolute top-1 right-1 h-6 w-6 rounded-full bg-slate-950/70 text-white grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity">
+              class="absolute top-1 right-1 h-6 w-6 rounded-full bg-surface text-white grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity">
               <i class="fas fa-xmark text-[10px]"></i>
             </button>
           </div>
@@ -346,7 +346,7 @@ onMounted(() => { if (!microsoftStore.connected) microsoftStore.fetchStatus?.();
 
       <div v-if="form.notification" class="px-4 pb-4 pt-3 border-t border-line space-y-2">
         <NotifyToPicker v-model="form.notify_to" :users="users" />
-        <p v-if="errors.notify_to" class="text-xs text-red-500 flex items-center gap-1">
+        <p v-if="errors.notify_to" class="text-xs text-data-neg flex items-center gap-1">
           <i class="fas fa-circle-exclamation"></i>{{ errors.notify_to }}
         </p>
       </div>

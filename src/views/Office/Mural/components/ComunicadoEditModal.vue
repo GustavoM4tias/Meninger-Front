@@ -155,7 +155,7 @@ async function save(publishAfter = false) {
         <AudienceEditor v-model="assignments" />
       </div>
 
-      <p v-if="localError" class="text-sm text-red-500"><i class="fas fa-circle-exclamation"></i> {{ localError }}</p>
+      <p v-if="localError" class="text-sm text-data-neg"><i class="fas fa-circle-exclamation"></i> {{ localError }}</p>
     </div>
 
     <template #footer>

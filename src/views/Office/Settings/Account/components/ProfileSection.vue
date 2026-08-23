@@ -132,7 +132,7 @@ async function updateUser() {
           <div v-tippy="authStore.user?.face_enabled
               ? 'Reconhecimento facial ativo' : 'Reconhecimento facial inativo'"
             class="absolute -bottom-1 -right-1 h-5 w-5 grid place-items-center rounded-full ring-2 ring-surface-raised"
-            :class="authStore.user?.face_enabled ? 'bg-emerald-500' : 'bg-ink-subtle'">
+            :class="authStore.user?.face_enabled ? 'bg-data-pos' : 'bg-ink-subtle'">
             <i class="fas fa-users-viewfinder text-white text-[8px]"></i>
           </div>
         </div>
@@ -218,7 +218,7 @@ async function updateUser() {
             <div class="flex items-center gap-3 min-w-0">
               <div class="h-9 w-9 rounded-lg grid place-items-center shrink-0"
                 :class="editableUser.face_enabled
-                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                  ? 'bg-data-pos/15 text-data-pos'
                   : 'bg-surface text-ink-subtle border border-line'">
                 <i class="fas fa-users-viewfinder text-sm"></i>
               </div>

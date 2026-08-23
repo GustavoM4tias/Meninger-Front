@@ -54,7 +54,11 @@ const routes = [];
 }
 
 /* ── 3. métricas por arquivo ────────────────────────────────────────────────── */
-const HARD = /bg-white|bg-gray-|text-gray-|bg-slate-|text-slate-|border-gray-|border-slate-|dark:bg-gray-/g;
+/* Cor fixa de verdade: nao so cinza. A versao antiga so contava gray/slate,
+   entao tela cheia de vermelho e ambar cravados marcava zero de divida. */
+const HARD = new RegExp('bg-white|(?:bg|text|border|ring|from|to|via|divide)-'
+  + '(?:gray|slate|zinc|neutral|stone|red|rose|emerald|green|amber|yellow|orange'
+  + '|blue|indigo|sky|cyan|violet|purple|fuchsia|pink|teal|lime)-[0-9]+', 'g');
 const TINY = /text-\[(?:[1-9]|10)px\]/g;
 /* Tag <i> inteira: icone nao e texto, entao nao entra no piso de 11px.
    Ver DESIGN-LANGUAGE.md. Contar icone aqui punia tela por marcador de lista. */

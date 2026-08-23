@@ -11,7 +11,7 @@
         <!-- File name header -->
         <div class="px-3 py-2 mb-0.5 border-b border-line">
           <div class="flex items-center gap-2 min-w-0">
-            <i :class="item?.isFolder ? 'fas fa-folder text-data-warn' : fileIconClass(item?.ext)" class="text-sm shrink-0"></i>
+            <i :class="item?.isFolder ? 'fas fa-folder text-series-2' : fileIconClass(item?.ext)" class="text-sm shrink-0"></i>
             <span class="text-xs font-semibold text-ink-muted truncate">{{ item?.name }}</span>
           </div>
         </div>
@@ -20,7 +20,7 @@
           <CtxItem icon="fas fa-folder-open text-accent" label="Abrir" @click="act('open')" />
           <CtxItem icon="fas fa-arrow-up-right-from-square text-ink-subtle" label="Abrir em nova guia" @click="act('open-new-tab')" />
           <CtxDivider />
-          <CtxItem :icon="isFavorited ? 'fas fa-star text-data-warn' : 'far fa-star text-data-warn'" :label="isFavorited ? 'Remover favorito' : 'Favoritar'" @click="act('favorite')" />
+          <CtxItem :icon="isFavorited ? 'fas fa-star text-series-2' : 'far fa-star text-series-2'" :label="isFavorited ? 'Remover favorito' : 'Favoritar'" @click="act('favorite')" />
           <CtxDivider />
           <CtxItem icon="fas fa-pen text-ink-muted" label="Renomear" @click="act('rename')" />
           <CtxItem icon="fas fa-trash text-data-neg" label="Excluir" @click="act('delete')" :danger="true" />
@@ -35,7 +35,7 @@
           <CtxItem icon="fas fa-link text-ink-muted" label="Copiar link" @click="act('copy-link')" />
           <CtxDivider />
           <CtxItem icon="fas fa-download text-accent" label="Baixar" @click="act('download')" />
-          <CtxItem :icon="isFavorited ? 'fas fa-star text-data-warn' : 'far fa-star text-data-warn'" :label="isFavorited ? 'Remover favorito' : 'Favoritar'" @click="act('favorite')" />
+          <CtxItem :icon="isFavorited ? 'fas fa-star text-series-2' : 'far fa-star text-series-2'" :label="isFavorited ? 'Remover favorito' : 'Favoritar'" @click="act('favorite')" />
           <CtxDivider />
           <CtxItem icon="fas fa-pen text-ink-muted" label="Renomear" @click="act('rename')" />
           <CtxItem icon="fas fa-trash text-data-neg" label="Excluir" @click="act('delete')" :danger="true" />
@@ -119,20 +119,23 @@ onUnmounted(() => {
 });
 
 // ── Icon map ─────────────────────────────────────────────────────────────────
+// Cor de tipo de arquivo e IDENTIDADE (qual formato), nao estado. Por isso a
+// escala categorica, e nao `data-pos`/`data-warn`/`data-neg`, que sao
+// RESERVADAS para bom/atencao/ruim. Um .pdf nao e "negativo".
 const EXT_ICONS = {
-  xlsx: 'fas fa-file-excel text-data-pos', xls: 'fas fa-file-excel text-data-pos',
-  docx: 'fas fa-file-word text-accent', doc: 'fas fa-file-word text-accent',
-  pptx: 'fas fa-file-powerpoint text-data-warn', ppt: 'fas fa-file-powerpoint text-data-warn',
-  pdf: 'fas fa-file-pdf text-data-neg',
-  png: 'fas fa-file-image text-accent', jpg: 'fas fa-file-image text-accent',
-  jpeg: 'fas fa-file-image text-accent', gif: 'fas fa-file-image text-accent',
-  svg: 'fas fa-file-image text-accent', webp: 'fas fa-file-image text-accent',
-  mp4: 'fas fa-file-video text-pink-500', mov: 'fas fa-file-video text-pink-500',
-  avi: 'fas fa-file-video text-pink-500',
-  mp3: 'fas fa-file-audio text-data-warn', wav: 'fas fa-file-audio text-data-warn',
-  txt: 'fas fa-file-lines text-ink-muted', csv: 'fas fa-file-csv text-teal-600',
-  json: 'fas fa-file-code text-ink-muted', js: 'fas fa-file-code text-data-warn',
-  zip: 'fas fa-file-zipper text-data-warn', rar: 'fas fa-file-zipper text-data-warn',
+  xlsx: 'fas fa-file-excel text-series-8', xls: 'fas fa-file-excel text-series-8',
+  docx: 'fas fa-file-word text-series-1', doc: 'fas fa-file-word text-series-1',
+  pptx: 'fas fa-file-powerpoint text-series-6', ppt: 'fas fa-file-powerpoint text-series-6',
+  pdf: 'fas fa-file-pdf text-series-6',
+  png: 'fas fa-file-image text-series-7', jpg: 'fas fa-file-image text-series-7',
+  jpeg: 'fas fa-file-image text-series-7', gif: 'fas fa-file-image text-series-7',
+  svg: 'fas fa-file-image text-series-7', webp: 'fas fa-file-image text-series-7',
+  mp4: 'fas fa-file-video text-series-5', mov: 'fas fa-file-video text-series-5',
+  avi: 'fas fa-file-video text-series-5',
+  mp3: 'fas fa-file-audio text-series-4', wav: 'fas fa-file-audio text-series-4',
+  txt: 'fas fa-file-lines text-ink-muted', csv: 'fas fa-file-csv text-series-3',
+  json: 'fas fa-file-code text-ink-muted', js: 'fas fa-file-code text-series-2',
+  zip: 'fas fa-file-zipper text-series-2', rar: 'fas fa-file-zipper text-series-2',
 };
 function fileIconClass(ext) { return EXT_ICONS[ext?.toLowerCase()] || 'fas fa-file text-ink-subtle'; }
 </script>

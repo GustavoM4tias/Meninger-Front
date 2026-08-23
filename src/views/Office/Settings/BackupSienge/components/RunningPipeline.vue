@@ -31,11 +31,11 @@ const PIPELINE_STAGES = [
 
 // Sub-fases do pg_restore (corresponde a `log.phase_progress` no backend).
 const RESTORE_PHASES = [
-    { key: 'data', label: 'Dados', icon: 'fas fa-table', barColor: 'bg-sky-500' },
-    { key: 'index', label: 'Índices', icon: 'fas fa-key', barColor: 'bg-violet-500' },
-    { key: 'constraint', label: 'Constraints', icon: 'fas fa-shield-halved', barColor: 'bg-amber-500' },
-    { key: 'fk', label: 'FKs', icon: 'fas fa-link', barColor: 'bg-rose-500' },
-    { key: 'trigger', label: 'Triggers', icon: 'fas fa-bolt', barColor: 'bg-emerald-500' },
+    { key: 'data', label: 'Dados', icon: 'fas fa-table', barColor: 'bg-accent' },
+    { key: 'index', label: 'Índices', icon: 'fas fa-key', barColor: 'bg-accent' },
+    { key: 'constraint', label: 'Constraints', icon: 'fas fa-shield-halved', barColor: 'bg-data-warn' },
+    { key: 'fk', label: 'FKs', icon: 'fas fa-link', barColor: 'bg-data-neg' },
+    { key: 'trigger', label: 'Triggers', icon: 'fas fa-bolt', barColor: 'bg-data-pos' },
 ]
 
 const showTimeline = ref(true)
@@ -77,20 +77,20 @@ function stageStateLabel(key) {
 
 function stageRowClass(key) {
     return {
-        done: 'text-emerald-700 dark:text-emerald-400',
+        done: 'text-data-pos',
         current: 'text-accent font-medium',
         pending: 'text-ink-subtle',
-        failed: 'text-red-700 dark:text-red-400 font-medium',
+        failed: 'text-data-neg font-medium',
     }[stageState(key)]
 }
 
 function stageDotClass(key) {
     const base = 'w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0'
     return {
-        done: `${base} bg-emerald-500/10 text-emerald-600 dark:text-emerald-400`,
+        done: `${base} bg-data-pos/10 text-data-pos`,
         current: `${base} bg-accent-soft text-accent ring-2 ring-accent-ring/40`,
         pending: `${base} bg-surface-sunken text-ink-subtle`,
-        failed: `${base} bg-red-500/10 text-red-600 dark:text-red-400`,
+        failed: `${base} bg-data-neg/10 text-data-neg`,
     }[stageState(key)]
 }
 

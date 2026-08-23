@@ -192,8 +192,8 @@ async function copyWebhook() {
       <div v-if="message"
         :class="['text-xs px-3 py-2 rounded-md border',
           message.type === 'success'
-            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-            : 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20']">
+            ? 'text-data-pos bg-data-pos/10 border-data-pos/20'
+            : 'text-data-neg bg-data-neg/10 border-data-neg/20']">
         {{ message.text }}
       </div>
 
@@ -213,8 +213,8 @@ async function copyWebhook() {
       <div v-if="store.testResult"
         :class="['rounded-lg border px-3 py-2.5 text-sm',
           store.testResult.ok
-            ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300'
-            : 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300']">
+            ? 'border-data-pos/20 bg-data-pos/5 text-data-pos'
+            : 'border-data-neg/20 bg-data-neg/10 text-data-neg']">
         <div class="flex items-start gap-2">
           <i :class="store.testResult.ok ? 'fas fa-circle-check' : 'fas fa-circle-exclamation'" class="mt-0.5"></i>
           <div>
@@ -243,10 +243,10 @@ async function copyWebhook() {
       <!-- Status -->
       <div class="rounded-lg border px-3 py-2.5 text-sm"
         :class="store.campaignsStatus?.connected
-          ? 'border-emerald-500/20 bg-emerald-500/5'
-          : 'border-amber-500/20 bg-amber-500/5'">
+          ? 'border-data-pos/20 bg-data-pos/5'
+          : 'border-data-warn/20 bg-data-warn/5'">
         <div v-if="store.campaignsStatus?.connected" class="space-y-0.5">
-          <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-medium">
+          <div class="flex items-center gap-2 text-data-pos font-medium">
             <i class="fas fa-circle-check"></i>
             Conectado como {{ store.campaignsStatus.name || 'admin' }}
           </div>
@@ -255,7 +255,7 @@ async function copyWebhook() {
             <span>{{ campExpiry }}</span>
           </div>
         </div>
-        <div v-else class="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+        <div v-else class="flex items-center gap-2 text-data-warn">
           <i class="fas fa-triangle-exclamation"></i>
           Não conectado — o sync usa o token do System User (vê só as contas atribuídas a ele).
         </div>
@@ -265,8 +265,8 @@ async function copyWebhook() {
       <div v-if="store.campaignsMsg"
         :class="['text-xs px-3 py-2 rounded-md border',
           store.campaignsMsg.type === 'success'
-            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-            : 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20']">
+            ? 'text-data-pos bg-data-pos/10 border-data-pos/20'
+            : 'text-data-neg bg-data-neg/10 border-data-neg/20']">
         {{ store.campaignsMsg.text }}
       </div>
 
@@ -340,7 +340,7 @@ async function copyWebhook() {
           @click="showSecrets.verify_token = !showSecrets.verify_token" />
       </div>
       <button v-if="mktCfg.has_meta_verify_token" type="button" @click="clearSecret('verify_token')"
-        class="mt-1 text-micro text-red-500 hover:underline">
+        class="mt-1 text-micro text-data-neg hover:underline">
         Remover salvo
       </button>
     </Surface>
@@ -372,7 +372,7 @@ async function copyWebhook() {
           @click="showSecrets.access_token = !showSecrets.access_token" />
       </div>
       <button v-if="mktCfg.has_meta_access_token" type="button" @click="clearSecret('access_token')"
-        class="mt-1 text-micro text-red-500 hover:underline">
+        class="mt-1 text-micro text-data-neg hover:underline">
         Remover salvo
       </button>
 
@@ -401,8 +401,8 @@ async function copyWebhook() {
       <div v-if="test" class="mt-3">
         <!-- Sucesso completo -->
         <div v-if="test.ok && test.identity && !test.accounts_error"
-          class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm">
-          <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-medium">
+          class="rounded-lg border border-data-pos/30 bg-data-pos/10 px-3 py-2.5 text-sm">
+          <div class="flex items-center gap-2 text-data-pos font-medium">
             <i class="fas fa-circle-check"></i>
             Token válido — conta: <strong>{{ test.identity.name }}</strong> (id {{ test.identity.id }})
           </div>
@@ -411,11 +411,11 @@ async function copyWebhook() {
             <ul class="mt-1 space-y-0.5">
               <li v-for="p in test.pages" :key="p.id" class="ml-3">
                 • <strong>{{ p.name }}</strong> <span class="font-mono text-micro text-ink-subtle">#{{ p.id }}</span>
-                <span v-if="!p.has_page_token" class="text-amber-600 dark:text-amber-300 text-micro ml-1">(sem page token)</span>
+                <span v-if="!p.has_page_token" class="text-data-warn text-micro ml-1">(sem page token)</span>
               </li>
             </ul>
           </div>
-          <div v-else class="mt-2 text-xs text-amber-600 dark:text-amber-300">
+          <div v-else class="mt-2 text-xs text-data-warn">
             <i class="fas fa-triangle-exclamation mr-1"></i>Token válido, mas nenhuma Página acessível —
             vincule uma Página ao System User no business.facebook.com.
           </div>
@@ -423,8 +423,8 @@ async function copyWebhook() {
 
         <!-- Sucesso parcial (identidade ok, sem permissão de Pages) -->
         <div v-else-if="test.ok && test.accounts_error"
-          class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm">
-          <div class="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-medium">
+          class="rounded-lg border border-data-warn/30 bg-data-warn/10 px-3 py-2.5 text-sm">
+          <div class="flex items-center gap-2 text-data-warn font-medium">
             <i class="fas fa-triangle-exclamation"></i>
             Token válido (conta {{ test.identity?.name }}), mas <strong>sem permissão de Páginas</strong>
           </div>
@@ -433,8 +433,8 @@ async function copyWebhook() {
         </div>
 
         <!-- Falha -->
-        <div v-else class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm">
-          <div class="flex items-center gap-2 text-red-700 dark:text-red-300 font-medium">
+        <div v-else class="rounded-lg border border-data-neg/30 bg-data-neg/10 px-3 py-2.5 text-sm">
+          <div class="flex items-center gap-2 text-data-neg font-medium">
             <i class="fas fa-circle-xmark"></i>{{ test.error || 'Falha no teste' }}
           </div>
           <div v-if="test.hint" class="mt-1 text-xs text-ink-muted">{{ test.hint }}</div>
@@ -443,7 +443,7 @@ async function copyWebhook() {
 
       <div v-else-if="mktCfg.meta_last_health_at" class="mt-2 text-xs text-ink-subtle">
         Último teste: {{ new Date(mktCfg.meta_last_health_at).toLocaleString('pt-BR') }}
-        <span :class="mktCfg.meta_last_health_ok ? 'text-emerald-600' : 'text-red-600'">
+        <span :class="mktCfg.meta_last_health_ok ? 'text-data-pos' : 'text-data-neg'">
           · {{ mktCfg.meta_last_health_ok ? 'OK' : 'FALHOU' }}
         </span>
         <span v-if="mktCfg.meta_last_health_error" class="ml-1 italic">({{ mktCfg.meta_last_health_error }})</span>

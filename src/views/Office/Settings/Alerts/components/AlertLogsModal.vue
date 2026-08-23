@@ -11,9 +11,9 @@ const store = useAlertStore();
 onMounted(() => store.fetchLogs(props.rule.id));
 
 const STATUS_CLS = {
-  success:              'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-  partial:              'text-amber-600  dark:text-amber-400  bg-amber-500/10  border-amber-500/20',
-  failed:               'text-red-600    dark:text-red-400    bg-red-500/10    border-red-500/20',
+  success:              'text-data-pos bg-data-pos/10 border-data-pos/20',
+  partial:              'text-data-warn  bg-data-warn/10  border-data-warn/20',
+  failed:               'text-data-neg    bg-data-neg/10    border-data-neg/20',
   suppressed_cooldown:  'text-ink-muted bg-surface-sunken border-line',
   suppressed_disabled:  'text-ink-muted bg-surface-sunken border-line',
 };
@@ -39,7 +39,7 @@ const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR') : '—';
           <span class="text-xs text-ink-muted">{{ fmt(log.fired_at) }}</span>
         </div>
         <p v-if="log.tool_result_summary" class="text-xs text-ink mt-1.5 line-clamp-2">{{ log.tool_result_summary }}</p>
-        <p v-if="log.error_message" class="text-xs text-red-600 dark:text-red-400 mt-1">{{ log.error_message }}</p>
+        <p v-if="log.error_message" class="text-xs text-data-neg mt-1">{{ log.error_message }}</p>
       </div>
     </div>
   </Modal>

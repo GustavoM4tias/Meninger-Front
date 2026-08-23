@@ -25,13 +25,13 @@
             ]" />
           <div v-if="store.settings" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border"
             :class="store.settings.active
-              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              ? 'border-data-pos/30 bg-data-pos/10 text-data-pos'
               : 'border-line bg-surface-sunken text-ink-muted'">
             <span class="relative flex h-2.5 w-2.5">
               <span v-if="store.settings.active"
-                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-data-pos opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2.5 w-2.5"
-                :class="store.settings.active ? 'bg-emerald-500' : 'bg-ink-subtle'"></span>
+                :class="store.settings.active ? 'bg-data-pos' : 'bg-ink-subtle'"></span>
             </span>
             <span class="text-xs font-medium">
               {{ store.settings.active ? 'Automação ativa' : 'Automação pausada' }}
@@ -66,7 +66,7 @@
         <ReservaCancelFilters @filter-changed="applyFilters" />
 
         <div v-if="store.historyError"
-          class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          class="rounded-lg border border-data-neg/30 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
           {{ store.historyError }}
         </div>
 
@@ -261,7 +261,7 @@
             :disabled="store.settingsLoading"
             @update:model-value="handleToggleActive" />
           <div v-if="store.settingsError"
-            class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+            class="rounded-lg border border-data-neg/30 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
             {{ store.settingsError }}
           </div>
         </Surface>
@@ -269,7 +269,7 @@
         <!-- Card: Freio de rajada -->
         <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
           <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center">
+            <div class="h-9 w-9 rounded-xl bg-data-warn/10 text-data-warn border border-data-warn/20 grid place-items-center">
               <i class="fas fa-shield-halved"></i>
             </div>
             <div>
@@ -311,8 +311,8 @@
               hint="Atrasa cada caso para ele enxergar a rajada inteira." />
           </div>
 
-          <Surface variant="raised" padding="sm" class="border-amber-500/30 bg-amber-500/10">
-            <div class="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300">
+          <Surface variant="raised" padding="sm" class="border-data-warn/30 bg-data-warn/10">
+            <div class="flex items-start gap-2 text-xs text-data-warn">
               <i class="fas fa-circle-info mt-0.5"></i>
               <span>
                 A espera é o que garante que <strong>nenhum</strong> cancelamento passe: sem ela, os primeiros
@@ -331,7 +331,7 @@
         <!-- Card: Webhook -->
         <Surface variant="raised" padding="md" class="space-y-3 surface-gradient">
           <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 grid place-items-center">
+            <div class="h-9 w-9 rounded-xl bg-accent/10 text-accent border border-accent/20 grid place-items-center">
               <i class="fas fa-link"></i>
             </div>
             <div>
@@ -349,8 +349,8 @@
             </Button>
           </div>
 
-          <Surface variant="raised" padding="sm" class="border-amber-500/30 bg-amber-500/10">
-            <div class="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300">
+          <Surface variant="raised" padding="sm" class="border-data-warn/30 bg-data-warn/10">
+            <div class="flex items-start gap-2 text-xs text-data-warn">
               <i class="fas fa-circle-info mt-0.5"></i>
               <span>
                 No CV, crie o webhook para a funcionalidade <strong>Reserva</strong> com gatilho no
@@ -364,7 +364,7 @@
         <!-- Card: Etapas do workflow CV -->
         <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
           <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center">
+            <div class="h-9 w-9 rounded-xl bg-data-warn/10 text-data-warn border border-data-warn/20 grid place-items-center">
               <i class="fas fa-diagram-project"></i>
             </div>
             <div>
@@ -392,7 +392,7 @@
         <!-- Card: Processamento manual -->
         <Surface variant="raised" padding="md" class="space-y-3 surface-gradient">
           <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 grid place-items-center">
+            <div class="h-9 w-9 rounded-xl bg-data-pos/10 text-data-pos border border-data-pos/20 grid place-items-center">
               <i class="fas fa-hand-pointer"></i>
             </div>
             <div>
@@ -414,8 +414,8 @@
           <div v-if="manualResult"
             class="rounded-lg border px-3 py-2 text-sm"
             :class="manualResult.ok
-              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-              : 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300'">
+              ? 'border-data-pos/30 bg-data-pos/10 text-data-pos'
+              : 'border-data-neg/30 bg-data-neg/10 text-data-neg'">
             {{ manualResult.text }}
           </div>
         </Surface>
@@ -423,7 +423,7 @@
         <!-- Card: Requisitos -->
         <Surface variant="raised" padding="md" class="space-y-2 surface-gradient">
           <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 grid place-items-center">
+            <div class="h-9 w-9 rounded-xl bg-accent/10 text-accent border border-accent/20 grid place-items-center">
               <i class="fas fa-shield-halved"></i>
             </div>
             <div>
@@ -479,7 +479,7 @@
             </div>
           </div>
           <div v-if="detail.item.motivo" class="mt-3 pt-3 border-t border-line/60 text-sm"
-            :class="detail.item.status === 'error' ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'">
+            :class="detail.item.status === 'error' ? 'text-data-neg' : 'text-data-warn'">
             <i class="fas fa-circle-info mr-1.5"></i>{{ detail.item.motivo }}
           </div>
         </div>
@@ -524,8 +524,8 @@
               <div class="h-8 w-8 rounded-lg grid place-items-center border shrink-0"
                 :class="acao.done
                   ? (acao.warn
-                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20')
+                    ? 'bg-data-warn/10 text-data-warn border-data-warn/20'
+                    : 'bg-data-pos/10 text-data-pos border-data-pos/20')
                   : 'bg-surface text-ink-subtle border-line'">
                 <i :class="acao.icon" class="text-xs"></i>
               </div>
@@ -533,7 +533,7 @@
                 <div class="text-xs text-ink-subtle">{{ acao.label }}</div>
                 <div class="text-sm font-medium truncate"
                   :class="acao.done
-                    ? (acao.warn ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300')
+                    ? (acao.warn ? 'text-data-warn' : 'text-data-pos')
                     : 'text-ink-muted'">
                   {{ acao.text }}
                 </div>
@@ -587,7 +587,7 @@
               <div class="flex justify-between gap-3"><span class="text-ink-muted">Situação</span><span class="text-ink">{{ detail.item.contrato_situacao || '-' }}</span></div>
               <div class="flex justify-between gap-3"><span class="text-ink-muted">Valor</span><span class="text-ink font-medium">{{ formatCurrency(detail.item.contrato_valor) }}</span></div>
               <div class="flex justify-between gap-3"><span class="text-ink-muted">Resultado</span>
-                <span :class="detail.item.sienge_contrato_excluido ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-ink'">
+                <span :class="detail.item.sienge_contrato_excluido ? 'text-data-pos font-medium' : 'text-ink'">
                   {{ detail.item.sienge_contrato_excluido ? 'Excluído' : 'Mantido' }}
                 </span>
               </div>
@@ -610,8 +610,8 @@
           <ul class="space-y-1.5">
             <li v-for="(c, i) in detail.item.checks" :key="i"
               class="flex items-start gap-2.5 text-sm rounded-lg px-3 py-2 border"
-              :class="c.ok ? 'border-line bg-surface-sunken' : 'border-red-500/30 bg-red-500/10'">
-              <i :class="c.ok ? 'fas fa-circle-check text-emerald-500' : 'fas fa-circle-xmark text-red-500'" class="mt-0.5"></i>
+              :class="c.ok ? 'border-line bg-surface-sunken' : 'border-data-neg/30 bg-data-neg/10'">
+              <i :class="c.ok ? 'fas fa-circle-check text-data-pos' : 'fas fa-circle-xmark text-data-neg'" class="mt-0.5"></i>
               <span class="text-ink"><strong>{{ c.check }}</strong><span class="text-ink-muted"> - {{ c.detalhe }}</span></span>
             </li>
           </ul>
@@ -622,8 +622,8 @@
           <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle mb-2">Avisos</h3>
           <ul class="space-y-1.5">
             <li v-for="(w, i) in detail.item.warnings" :key="i"
-              class="flex items-start gap-2.5 text-sm rounded-lg px-3 py-2 border border-amber-500/30 bg-amber-500/10">
-              <i class="fas fa-triangle-exclamation text-amber-500 mt-0.5"></i>
+              class="flex items-start gap-2.5 text-sm rounded-lg px-3 py-2 border border-data-warn/30 bg-data-warn/10">
+              <i class="fas fa-triangle-exclamation text-data-warn mt-0.5"></i>
               <span class="text-ink-muted"><strong class="text-ink">{{ w.etapa }}</strong> - {{ w.erro }}</span>
             </li>
           </ul>
@@ -660,14 +660,14 @@
         <div>
           <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-subtle mb-2">Linha do tempo</h3>
           <div v-if="store.timelineLoading" class="py-6 grid place-items-center"><Spinner /></div>
-          <div v-else-if="store.timelineError" class="text-sm text-red-600 dark:text-red-400">{{ store.timelineError }}</div>
+          <div v-else-if="store.timelineError" class="text-sm text-data-neg">{{ store.timelineError }}</div>
           <ol v-else class="relative border-l border-line ml-2 space-y-3">
             <li v-for="evt in store.timelineEvents" :key="evt.id" class="ml-4">
               <span class="absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full border border-surface"
                 :class="{
-                  'bg-emerald-500': evt.severity === 'success',
-                  'bg-amber-500': evt.severity === 'warning',
-                  'bg-red-500': evt.severity === 'error',
+                  'bg-data-pos': evt.severity === 'success',
+                  'bg-data-warn': evt.severity === 'warning',
+                  'bg-data-neg': evt.severity === 'error',
                   'bg-ink-subtle': !['success','warning','error'].includes(evt.severity),
                 }"></span>
               <div class="flex flex-wrap items-center gap-1.5 text-xs text-ink-subtle">
@@ -686,7 +686,7 @@
       <template #footer>
         <div class="flex items-center justify-between gap-2 w-full">
           <span v-if="retryFeedback" class="text-xs"
-            :class="retryFeedback.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+            :class="retryFeedback.ok ? 'text-data-pos' : 'text-data-neg'">
             {{ retryFeedback.text }}
           </span>
           <div class="flex items-center gap-2 ml-auto">
@@ -788,20 +788,20 @@ function resumoCaso(item) {
 
 function heroClass(status) {
   return {
-    success: 'border-emerald-500/30 bg-emerald-500/10',
-    blocked: 'border-amber-500/30 bg-amber-500/10',
-    held: 'border-amber-500/30 bg-amber-500/10',
-    error: 'border-red-500/30 bg-red-500/10',
-    processing: 'border-sky-500/30 bg-sky-500/10',
+    success: 'border-data-pos/30 bg-data-pos/10',
+    blocked: 'border-data-warn/30 bg-data-warn/10',
+    held: 'border-data-warn/30 bg-data-warn/10',
+    error: 'border-data-neg/30 bg-data-neg/10',
+    processing: 'border-accent/30 bg-accent/10',
   }[status] || 'border-line bg-surface-sunken';
 }
 function heroIconClass(status) {
   return {
-    success: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    blocked: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
-    held: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
-    error: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30',
-    processing: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30',
+    success: 'bg-data-pos/15 text-data-pos border-data-pos/30',
+    blocked: 'bg-data-warn/15 text-data-warn border-data-warn/30',
+    held: 'bg-data-warn/15 text-data-warn border-data-warn/30',
+    error: 'bg-data-neg/15 text-data-neg border-data-neg/30',
+    processing: 'bg-accent/15 text-accent border-accent/30',
   }[status] || 'bg-surface text-ink-muted border-line';
 }
 

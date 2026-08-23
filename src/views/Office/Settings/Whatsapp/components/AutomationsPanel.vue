@@ -126,15 +126,15 @@ onMounted(load)
 
 <template>
   <div>
-    <Surface variant="raised" padding="sm" class="mb-3" :class="conn.ok ? 'border-emerald-500/40' : ''">
+    <Surface variant="raised" padding="sm" class="mb-3" :class="conn.ok ? 'border-data-pos/40' : ''">
       <div class="flex items-center gap-3 flex-wrap">
-        <i class="fab fa-whatsapp text-emerald-500 text-lg"></i>
+        <i class="fab fa-whatsapp text-data-pos text-lg"></i>
         <div class="min-w-0">
           <p class="text-sm font-semibold text-ink">Conexão do webhook</p>
           <p class="text-xs text-ink-muted">Recebe o alerta mas o "SIM" não volta? Clique aqui - conecta sua conta ao webhook (subscribed_apps) usando o token já salvo.</p>
         </div>
         <div class="ml-auto flex items-center gap-3">
-          <span v-if="conn.msg" class="text-xs" :class="conn.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">{{ conn.msg }}</span>
+          <span v-if="conn.msg" class="text-xs" :class="conn.ok ? 'text-data-pos' : 'text-data-neg'">{{ conn.msg }}</span>
           <Button variant="primary" size="sm" icon="fas fa-plug" :loading="conn.busy" @click="connectWebhook">Conectar ao webhook</Button>
         </div>
       </div>
@@ -191,7 +191,7 @@ onMounted(load)
 
     <transition name="toast">
       <div v-if="toast.text" class="fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-lg shadow-elevated text-sm font-medium border"
-        :class="toast.type === 'err' ? 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/30' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'">
+        :class="toast.type === 'err' ? 'bg-data-neg/10 text-data-neg border-data-neg/30' : 'bg-data-pos/10 text-data-pos border-data-pos/30'">
         {{ toast.text }}
       </div>
     </transition>

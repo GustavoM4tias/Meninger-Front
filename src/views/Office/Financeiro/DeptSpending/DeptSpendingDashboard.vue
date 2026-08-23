@@ -22,7 +22,7 @@
 
             <!-- Aviso de rascunho (admin) -->
             <div v-if="can('configure')"
-                class="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-400">
+                class="mb-4 flex items-start gap-2 rounded-xl border border-data-warn/30 bg-data-warn/5 px-4 py-2.5 text-xs text-data-warn">
                 <i class="fas fa-pen-ruler mt-0.5"></i>
                 <span>
                     <strong>Modo backoffice.</strong> Você vê rascunhos e liberados. A diretoria só enxerga os
@@ -77,8 +77,8 @@
                 </div>
             </section>
 
-            <Surface v-if="store.error" variant="raised" padding="sm" class="mb-4 border-red-500/30 bg-red-500/10">
-                <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+            <Surface v-if="store.error" variant="raised" padding="sm" class="mb-4 border-data-neg/30 bg-data-neg/10">
+                <div class="text-sm text-data-neg flex items-center gap-2">
                     <i class="fas fa-circle-exclamation"></i>{{ store.error }}
                 </div>
             </Surface>
@@ -103,7 +103,7 @@
             <Surface variant="raised" padding="none" class="overflow-hidden">
                 <div class="px-5 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40 flex items-center justify-between flex-wrap gap-2">
                     <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-                        <i class="fas fa-timeline text-emerald-500"></i>
+                        <i class="fas fa-timeline text-data-pos"></i>
                         Acumulado até {{ monthLabel }} · a comercializar pela frente
                     </h3>
                     <span class="text-xs text-ink-muted">
@@ -142,7 +142,7 @@
                                 <!-- EMPREENDIMENTO -->
                                 <td class="px-5 py-3">
                                     <div class="flex items-start gap-3">
-                                        <div class="h-10 w-10 mt-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 grid place-items-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                                        <div class="h-10 w-10 mt-0.5 rounded-lg bg-data-pos/10 border border-data-pos/20 grid place-items-center text-data-pos shrink-0">
                                             <i class="fas fa-building"></i>
                                         </div>
                                         <div class="min-w-0">
@@ -176,7 +176,7 @@
                                 <td class="px-5 py-3 text-right whitespace-nowrap">
                                     <div class="text-sm font-bold text-ink font-mono tabular-nums">{{ fmtBRL(item.header?.spentAccumulated) }}</div>
                                     <div v-if="Number(item.header?.lojaExcedenteAno || 0) > 0"
-                                        class="text-micro text-orange-600 dark:text-orange-400"
+                                        class="text-micro text-data-warn"
                                         v-tippy="'Excedente da loja acima do teto conta como gasto de MKT'">
                                         inclui {{ fmtBRL(item.header.lojaExcedenteAno) }} da loja
                                     </div>
@@ -330,10 +330,10 @@
                         </Surface>
                     </div>
                     <div class="flex items-center gap-4 text-xs flex-wrap text-ink-muted mt-2">
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Disponíveis <strong class="font-mono">{{ Number(detailItem.header?.availableUnits || 0) }}</strong></span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-sky-500"></span>Reservadas <strong class="font-mono">{{ Number(detailItem.header?.reservedUnits || 0) }}</strong></span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-data-pos"></span>Disponíveis <strong class="font-mono">{{ Number(detailItem.header?.availableUnits || 0) }}</strong></span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-accent"></span>Reservadas <strong class="font-mono">{{ Number(detailItem.header?.reservedUnits || 0) }}</strong></span>
                         <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-ink-subtle/60"></span>Bloqueadas <strong class="font-mono">{{ Number(detailItem.header?.blockedUnits || 0) }}</strong></span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500"></span>Vendidas (CV) <strong class="font-mono">{{ Number(detailItem.header?.soldUnitsStock ?? detailItem.header?.soldUnits ?? 0) }}</strong></span>
+                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-data-neg"></span>Vendidas (CV) <strong class="font-mono">{{ Number(detailItem.header?.soldUnitsStock ?? detailItem.header?.soldUnits ?? 0) }}</strong></span>
                     </div>
                 </div>
 
@@ -524,10 +524,10 @@ const cards = computed(() => {
     const pctInvested = budget > 0 ? spent / budget : 0;
     const recPerUnit = futureUnits > 0 ? saldo / futureUnits : 0;
     return [
-        { key: 'budget', label: 'Orçamento do exercício', value: fmtBRL(budget), sub: 'projeção do ano × %', icon: 'fas fa-wallet', accent: 'text-sky-500 bg-sky-500/10' },
-        { key: 'spent', label: `Acumulado até ${monthLabel.value}`, value: fmtBRL(spent), sub: `${fmtPct(pctInvested)} do orçamento`, icon: 'fas fa-clock-rotate-left', accent: 'text-amber-500 bg-amber-500/10' },
-        { key: 'saldo', label: 'Saldo a investir', value: fmtBRL(saldo), sub: 'orçamento − acumulado', icon: 'fas fa-piggy-bank', accent: 'text-emerald-500 bg-emerald-500/10', valueClass: saldo < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' },
-        { key: 'future', label: 'A comercializar', value: `${futureUnits} un`, sub: 'unidades pela frente', icon: 'fas fa-key', accent: 'text-violet-500 bg-violet-500/10' },
+        { key: 'budget', label: 'Orçamento do exercício', value: fmtBRL(budget), sub: 'projeção do ano × %', icon: 'fas fa-wallet', accent: 'text-accent bg-accent/10' },
+        { key: 'spent', label: `Acumulado até ${monthLabel.value}`, value: fmtBRL(spent), sub: `${fmtPct(pctInvested)} do orçamento`, icon: 'fas fa-clock-rotate-left', accent: 'text-data-warn bg-data-warn/10' },
+        { key: 'saldo', label: 'Saldo a investir', value: fmtBRL(saldo), sub: 'orçamento − acumulado', icon: 'fas fa-piggy-bank', accent: 'text-data-pos bg-data-pos/10', valueClass: saldo < 0 ? 'text-data-neg' : 'text-data-pos' },
+        { key: 'future', label: 'A comercializar', value: `${futureUnits} un`, sub: 'unidades pela frente', icon: 'fas fa-key', accent: 'text-accent bg-accent/10' },
         { key: 'rec', label: 'Recomendado / unid', value: fmtBRL(recPerUnit), sub: 'saldo ÷ a comercializar', icon: 'fas fa-bullseye', accent: 'text-teal-500 bg-teal-500/10' },
     ];
 });
@@ -535,19 +535,19 @@ const cards = computed(() => {
 /* ---------- helpers de cor/estado ---------- */
 function moneyClass(v) {
     const n = Number(v || 0);
-    return n < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400';
+    return n < 0 ? 'text-data-neg' : 'text-data-pos';
 }
 function pctBarClass(p) {
     const v = Number(p || 0);
-    if (v > 1) return 'bg-red-500';
-    if (v >= 0.75) return 'bg-amber-500';
-    return 'bg-emerald-500';
+    if (v > 1) return 'bg-data-neg';
+    if (v >= 0.75) return 'bg-data-warn';
+    return 'bg-data-pos';
 }
 function realUnitClass(item) {
     const planned = Number(item.header?.plannedCostPerUnit || 0);
     const real = Number(item.header?.currentRealCostPerUnit || 0);
     if (!planned || !real) return 'text-ink-muted';
-    return real > planned ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400';
+    return real > planned ? 'text-data-neg' : 'text-data-pos';
 }
 function futureSourceInfo(item) {
     const s = item.header?.futureUnitsSource;

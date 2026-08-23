@@ -119,7 +119,7 @@ watch(form, () => { hasDraft.value = !!localStorage.getItem(PERSIST_KEY); }, { d
           <p class="text-xs text-ink-muted mt-0.5 flex items-center gap-2">
             <kbd class="px-1.5 py-0.5 rounded border border-line bg-surface text-micro font-mono">⌘ Enter</kbd>
             para salvar
-            <span v-if="hasDraft" class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+            <span v-if="hasDraft" class="inline-flex items-center gap-1 text-data-warn">
               · <i class="fas fa-circle text-[6px]"></i> rascunho salvo
             </span>
           </p>
@@ -130,7 +130,7 @@ watch(form, () => { hasDraft.value = !!localStorage.getItem(PERSIST_KEY); }, { d
     <EventFormFields ref="fieldsRef" :form="form" :errors="errors" :users="authStore.activeUsers" />
 
     <p v-if="errors.submit"
-      class="mt-4 text-xs text-red-500 text-center flex items-center justify-center gap-1">
+      class="mt-4 text-xs text-data-neg text-center flex items-center justify-center gap-1">
       <i class="fas fa-circle-exclamation"></i>{{ errors.submit }}
     </p>
 

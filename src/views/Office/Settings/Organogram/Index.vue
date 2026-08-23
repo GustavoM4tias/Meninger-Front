@@ -472,7 +472,7 @@ onMounted(async () => {
           <li><i class="fas fa-check text-accent mr-1.5"></i>Sai a árvore inteira, sem depender do zoom ou do tamanho da tela.</li>
           <li><i class="fas fa-check text-accent mr-1.5"></i>Fundo claro e resolução 3x - dá para ampliar sem borrar.</li>
           <li><i class="fas fa-check text-accent mr-1.5"></i>Rodapé com quem gerou, data/hora e o sistema.</li>
-          <li v-if="search"><i class="fas fa-filter text-amber-500 mr-1.5"></i>A busca atual está filtrando o organograma e vai junto no arquivo.</li>
+          <li v-if="search"><i class="fas fa-filter text-data-warn mr-1.5"></i>A busca atual está filtrando o organograma e vai junto no arquivo.</li>
         </ul>
       </div>
     </Modal>
@@ -572,7 +572,7 @@ onMounted(async () => {
           <a v-if="selectedPerson?.phone" :href="whatsappUrl(selectedPerson.phone)" target="_blank"
             rel="noopener noreferrer"
             class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg
-                   bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors shadow-soft">
+                   bg-data-pos text-white text-xs font-medium hover:bg-data-pos transition-colors shadow-soft">
             <i class="fab fa-whatsapp text-sm"></i> WhatsApp
           </a>
         </div>

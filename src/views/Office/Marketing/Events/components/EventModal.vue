@@ -90,7 +90,7 @@ const creatorAvatar = computed(() => {
               @click="confirmDelete = true" />
           </template>
           <div v-else
-            class="flex items-center gap-1 px-2 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-300 text-xs">
+            class="flex items-center gap-1 px-2 h-8 rounded-lg bg-data-neg/10 border border-data-neg/20 text-data-neg text-xs">
             <span>Excluir?</span>
             <button @click="excluir" :disabled="isDeleting" class="font-semibold hover:underline">
               {{ isDeleting ? '...' : 'Sim' }}
@@ -124,7 +124,7 @@ const creatorAvatar = computed(() => {
           <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
             <button v-for="(_, i) in event.images" :key="i" @click="imageIndex = i"
               :class="['h-1.5 rounded-full transition-all duration-300',
-                       imageIndex === i ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/70']"></button>
+                       imageIndex === i ? 'w-6 bg-surface-raised' : 'w-1.5 bg-surface-raised/40 hover:bg-surface-raised/70']"></button>
           </div>
         </template>
       </div>

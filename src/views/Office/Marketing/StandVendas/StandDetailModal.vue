@@ -59,7 +59,7 @@
                         </Button>
                     </div>
                 </div>
-                <div v-if="errorMsg" class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2 mt-2">
+                <div v-if="errorMsg" class="text-sm text-data-neg flex items-center gap-2 mt-2">
                     <i class="fas fa-circle-exclamation"></i>{{ errorMsg }}
                 </div>
             </Surface>

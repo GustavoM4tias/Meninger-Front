@@ -330,7 +330,7 @@ onBeforeUnmount(stopPolling)
             </PageHeader>
 
             <div v-if="store.hasError"
-                class="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                class="mb-4 rounded-xl border border-data-neg/30 bg-data-neg/10 px-4 py-3 text-sm text-data-neg">
                 <i class="fas fa-triangle-exclamation mr-2"></i>{{ store.error }}
             </div>
 
@@ -341,9 +341,9 @@ onBeforeUnmount(stopPolling)
                 <RunningPipeline v-if="isRunning" :log="store.runningBackup" />
 
                 <Surface v-else-if="periodIncludesToday && store.latestSuccess" padding="none"
-                    class="border-emerald-500/30 bg-emerald-500/[0.06]">
+                    class="border-data-pos/30 bg-data-pos/[0.06]">
                     <div class="p-4 flex items-center gap-3 sm:gap-4">
-                        <div class="text-emerald-600 dark:text-emerald-400 text-xl sm:text-2xl shrink-0">
+                        <div class="text-data-pos text-xl sm:text-2xl shrink-0">
                             <i class="fas fa-circle-check"></i>
                         </div>
                         <div class="min-w-0">
@@ -456,7 +456,7 @@ onBeforeUnmount(stopPolling)
                                             </td>
                                             <td class="px-4 py-3 align-top text-xs max-w-xs">
                                                 <span v-if="row.error_message || row.import_error_message"
-                                                    class="text-red-600 dark:text-red-400 break-words line-clamp-3"
+                                                    class="text-data-neg break-words line-clamp-3"
                                                     :title="row.error_message || row.import_error_message">
                                                     {{ row.error_message || row.import_error_message }}
                                                 </span>
@@ -506,7 +506,7 @@ onBeforeUnmount(stopPolling)
                                     </dl>
 
                                     <p v-if="row.error_message || row.import_error_message"
-                                        class="text-micro text-red-600 dark:text-red-400 break-words line-clamp-3">
+                                        class="text-micro text-data-neg break-words line-clamp-3">
                                         {{ row.error_message || row.import_error_message }}
                                     </p>
                                 </li>

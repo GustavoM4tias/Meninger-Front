@@ -66,7 +66,7 @@
         <!-- Favorite star -->
         <div v-if="sp.isFavorited(item.id)"
           class="absolute top-1.5 left-1.5 w-4 h-4 flex items-center justify-center">
-          <i class="fas fa-star text-data-warn text-[10px]"></i>
+          <i class="fas fa-star text-series-2 text-[10px]"></i>
         </div>
 
         <!-- Icon -->
@@ -137,7 +137,7 @@
         <span class="flex-1 text-sm text-ink truncate">{{ item.name }}</span>
 
         <!-- Favorite -->
-        <i v-if="sp.isFavorited(item.id)" class="fas fa-star text-data-warn text-xs shrink-0"></i>
+        <i v-if="sp.isFavorited(item.id)" class="fas fa-star text-series-2 text-xs shrink-0"></i>
 
         <!-- Meta -->
         <span class="text-xs text-ink-subtle w-20 text-right shrink-0 hidden sm:block">
@@ -245,19 +245,19 @@ function openCtx(e, item) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const EXT_ICONS = {
-  xlsx: 'fas fa-file-excel text-data-pos', xls: 'fas fa-file-excel text-data-pos',
-  docx: 'fas fa-file-word text-accent', doc: 'fas fa-file-word text-accent',
-  pptx: 'fas fa-file-powerpoint text-data-warn', ppt: 'fas fa-file-powerpoint text-data-warn',
-  pdf: 'fas fa-file-pdf text-data-neg',
-  png: 'fas fa-file-image text-accent', jpg: 'fas fa-file-image text-accent',
-  jpeg: 'fas fa-file-image text-accent', gif: 'fas fa-file-image text-accent',
-  svg: 'fas fa-file-image text-accent', webp: 'fas fa-file-image text-accent',
-  mp4: 'fas fa-file-video text-pink-500', mov: 'fas fa-file-video text-pink-500',
-  avi: 'fas fa-file-video text-pink-500',
-  mp3: 'fas fa-file-audio text-data-warn', wav: 'fas fa-file-audio text-data-warn',
-  txt: 'fas fa-file-lines text-ink-muted', csv: 'fas fa-file-csv text-teal-600',
-  json: 'fas fa-file-code text-ink-muted', js: 'fas fa-file-code text-data-warn',
-  zip: 'fas fa-file-zipper text-data-warn', rar: 'fas fa-file-zipper text-data-warn',
+  xlsx: 'fas fa-file-excel text-series-8', xls: 'fas fa-file-excel text-series-8',
+  docx: 'fas fa-file-word text-series-1', doc: 'fas fa-file-word text-series-1',
+  pptx: 'fas fa-file-powerpoint text-series-6', ppt: 'fas fa-file-powerpoint text-series-6',
+  pdf: 'fas fa-file-pdf text-series-6',
+  png: 'fas fa-file-image text-series-7', jpg: 'fas fa-file-image text-series-7',
+  jpeg: 'fas fa-file-image text-series-7', gif: 'fas fa-file-image text-series-7',
+  svg: 'fas fa-file-image text-series-7', webp: 'fas fa-file-image text-series-7',
+  mp4: 'fas fa-file-video text-series-5', mov: 'fas fa-file-video text-series-5',
+  avi: 'fas fa-file-video text-series-5',
+  mp3: 'fas fa-file-audio text-series-4', wav: 'fas fa-file-audio text-series-4',
+  txt: 'fas fa-file-lines text-ink-muted', csv: 'fas fa-file-csv text-series-3',
+  json: 'fas fa-file-code text-ink-muted', js: 'fas fa-file-code text-series-2',
+  zip: 'fas fa-file-zipper text-series-2', rar: 'fas fa-file-zipper text-series-2',
 };
 function fileIconClass(ext) { return EXT_ICONS[ext?.toLowerCase()] || 'fas fa-file text-ink-subtle'; }
 

@@ -61,7 +61,7 @@ defineExpose({ recarregar: carregar });
     <DashboardFilters @ready="carregar" @filter-changed="onFiltroMudou" />
 
     <div v-if="erro"
-      class="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300 flex items-center justify-between gap-3">
+      class="rounded-xl border border-data-neg/20 bg-data-neg/10 p-4 text-sm text-data-neg flex items-center justify-between gap-3">
       <span class="flex items-center gap-2"><i class="fas fa-circle-exclamation"></i>{{ erro }}</span>
       <Button variant="outline" size="sm" icon="fas fa-rotate-right" @click="carregar">Tentar novamente</Button>
     </div>
@@ -76,7 +76,7 @@ defineExpose({ recarregar: carregar });
     </div>
 
     <div v-else-if="semDetalhe"
-      class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-300">
+      class="rounded-xl border border-data-warn/20 bg-data-warn/10 p-4 text-sm text-data-warn">
       <i class="fas fa-triangle-exclamation mr-2"></i>
       Nenhuma venda do período casou com uma reserva do CV, então não há corretor,
       imobiliária nem lead para analisar.

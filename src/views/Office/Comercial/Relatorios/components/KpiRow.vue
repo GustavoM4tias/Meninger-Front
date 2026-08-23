@@ -7,8 +7,8 @@ defineProps({
 
 const TONES = {
   accent:  'bg-accent-soft text-accent border-accent/20',
-  success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  success: 'bg-data-pos/10 text-data-pos border-data-pos/20',
+  warning: 'bg-data-warn/10 text-data-warn border-data-warn/20',
   neutral: 'bg-surface-sunken text-ink-muted border-line',
 };
 </script>

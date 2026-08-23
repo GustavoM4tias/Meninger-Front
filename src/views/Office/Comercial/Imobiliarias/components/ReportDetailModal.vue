@@ -121,8 +121,8 @@ function goToBuilding(e) {
                         <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle"></i>
                     </a>
                     <a v-if="telefone" :href="whatsappUrl(telefone)" target="_blank" rel="noopener"
-                        class="flex items-center gap-3 rounded-lg border border-line px-3 py-2.5 text-sm hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors group">
-                        <i class="fab fa-whatsapp text-ink-subtle w-4 text-center text-base group-hover:text-emerald-500"></i>
+                        class="flex items-center gap-3 rounded-lg border border-line px-3 py-2.5 text-sm hover:border-data-pos hover:bg-data-pos/10  transition-colors group">
+                        <i class="fab fa-whatsapp text-ink-subtle w-4 text-center text-base group-hover:text-data-pos"></i>
                         <span class="text-ink flex-1">{{ telefone }}</span>
                         <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle"></i>
                     </a>

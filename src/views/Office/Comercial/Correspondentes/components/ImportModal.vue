@@ -189,8 +189,8 @@ const STATUS_INFO = {
         @close="emit('close')">
 
         <!-- Sem empresa vinculada: não dá para cadastrar ninguém -->
-        <div v-if="semEmpresa" class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-ink">
-            <p class="font-medium mb-1"><i class="fas fa-triangle-exclamation mr-1.5 text-amber-500"></i>Nenhuma empresa pronta</p>
+        <div v-if="semEmpresa" class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-4 text-sm text-ink">
+            <p class="font-medium mb-1"><i class="fas fa-triangle-exclamation mr-1.5 text-data-warn"></i>Nenhuma empresa pronta</p>
             <p class="text-ink-muted">
                 Para cadastrar pessoas é preciso uma empresa correspondente com o código do CV vinculado.
                 Cadastre a empresa em "Nova empresa" e confirme o código na aba Equipes.
@@ -291,7 +291,7 @@ const STATUS_INFO = {
                             <Input v-model="p.data_nasc" size="sm" type="date" label="Nascimento" />
                         </div>
 
-                        <button type="button" class="mt-1 h-10 w-10 shrink-0 rounded-lg text-ink-subtle hover:text-rose-500"
+                        <button type="button" class="mt-1 h-10 w-10 shrink-0 rounded-lg text-ink-subtle hover:text-data-neg"
                             v-tippy="'Tirar da lista'" @click="remover(i)">
                             <i class="fas fa-trash-can"></i>
                         </button>
@@ -305,7 +305,7 @@ const STATUS_INFO = {
                 </div>
             </div>
 
-            <p v-if="pessoas.length && !podeEnviar && selecionadas.length" class="text-xs text-rose-500 mt-2">
+            <p v-if="pessoas.length && !podeEnviar && selecionadas.length" class="text-xs text-data-neg mt-2">
                 Complete nome, e-mail e um CPF válido em todas as pessoas marcadas para continuar.
             </p>
         </template>
@@ -327,7 +327,7 @@ const STATUS_INFO = {
                             {{ formatarCpf(r.documento) }}
                             <template v-if="r.cv_idusuario"> · CV #{{ r.cv_idusuario }}</template>
                         </p>
-                        <p v-if="r.error" class="text-xs text-amber-600 dark:text-amber-400 truncate">{{ r.error }}</p>
+                        <p v-if="r.error" class="text-xs text-data-warn truncate">{{ r.error }}</p>
                     </div>
                 </div>
             </div>

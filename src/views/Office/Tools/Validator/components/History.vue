@@ -42,8 +42,8 @@ onMounted(() => aiStore.fetchValidatorHistory());
         <div>
           <h2 class="text-base font-semibold text-ink">Histórico de validações</h2>
           <p class="text-xs text-ink-muted mt-0.5">
-            <span class="text-emerald-600 dark:text-emerald-400">{{ aprovados }}</span> aprovado(s) ·
-            <span class="text-red-600 dark:text-red-400">{{ reprovados }}</span> reprovado(s) ·
+            <span class="text-data-pos">{{ aprovados }}</span> aprovado(s) ·
+            <span class="text-data-neg">{{ reprovados }}</span> reprovado(s) ·
             <span class="font-mono">{{ total }}</span> total
           </p>
         </div>

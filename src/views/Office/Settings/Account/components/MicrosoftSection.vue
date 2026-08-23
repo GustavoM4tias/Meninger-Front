@@ -56,7 +56,7 @@ onMounted(() => microsoftStore.fetchStatus());
           {{ microsoftStore.loading ? 'Desvinculando...' : 'Desvincular conta Microsoft' }}
         </Button>
       </div>
-      <p v-else class="mt-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+      <p v-else class="mt-3 text-xs text-data-warn flex items-center gap-1">
         <i class="fas fa-triangle-exclamation"></i>
         Esta é sua única forma de login — não é possível desvincular sem configurar uma senha.
       </p>

@@ -95,7 +95,7 @@ onMounted(loadStatus);
         <Input v-model="form.confirmPassword" :type="showPassword ? 'text' : 'password'"
           placeholder="Repita a senha" required autocomplete="new-password" />
         <p v-if="form.confirmPassword && form.password !== form.confirmPassword"
-          class="mt-1 text-xs text-red-500 flex items-center gap-1">
+          class="mt-1 text-xs text-data-neg flex items-center gap-1">
           <i class="fas fa-circle-exclamation"></i>As senhas não coincidem.
         </p>
       </div>

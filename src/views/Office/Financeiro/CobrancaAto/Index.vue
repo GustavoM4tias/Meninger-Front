@@ -647,7 +647,7 @@
         <div class="pt-2 border-t border-line">
           <div class="flex items-center gap-3 mb-4">
             <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0
-                        bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                        bg-accent/10 text-accent border border-accent/20">
               <i class="fas fa-credit-card"></i>
             </div>
             <div class="min-w-0">

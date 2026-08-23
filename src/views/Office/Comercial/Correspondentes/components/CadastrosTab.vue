@@ -131,7 +131,7 @@ onMounted(() => {
                             <i class="fas fa-copy text-xs"></i>
                         </button>
                         <button type="button" v-tippy="'Cancelar link'" @click="cancelarLink(c)"
-                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-muted hover:text-rose-500 hover:border-rose-500/60">
+                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-muted hover:text-data-neg hover:border-data-neg/60">
                             <i class="fas fa-ban text-xs"></i>
                         </button>
                     </div>
@@ -185,7 +185,7 @@ onMounted(() => {
                             {{ fmtCpf(r.documento) }}
                             <template v-if="r.cv_idusuario"> · CV #{{ r.cv_idusuario }}</template>
                         </p>
-                        <p v-if="r.error" class="text-xs text-amber-600 dark:text-amber-400 truncate" v-tippy="r.error">{{ r.error }}</p>
+                        <p v-if="r.error" class="text-xs text-data-warn truncate" v-tippy="r.error">{{ r.error }}</p>
                     </div>
 
                     <div class="shrink-0 flex items-center gap-1">

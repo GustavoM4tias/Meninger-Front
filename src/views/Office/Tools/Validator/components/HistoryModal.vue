@@ -14,9 +14,9 @@ const messageVariant = (nivel) => ({
 }[nivel] || 'neutral');
 
 const messageBorderClass = (nivel) => ({
-  correto: 'border-emerald-500/30 bg-emerald-500/10',
-  alerta: 'border-amber-500/30 bg-amber-500/10',
-  incorreto: 'border-red-500/30 bg-red-500/10',
+  correto: 'border-data-pos/30 bg-data-pos/10',
+  alerta: 'border-data-warn/30 bg-data-warn/10',
+  incorreto: 'border-data-neg/30 bg-data-neg/10',
 }[nivel] || 'border-line bg-surface-sunken');
 
 const iconByNivel = (nivel) => ({

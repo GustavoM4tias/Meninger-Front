@@ -122,7 +122,7 @@ const etapas = computed(() => {
 });
 
 const ESTADO_CLASSE = {
-    feito: 'bg-emerald-500 text-white',
+    feito: 'bg-data-pos text-white',
     atual: 'bg-accent text-white',
     pendente: 'bg-surface-sunken text-ink-subtle',
 };
@@ -328,7 +328,7 @@ onMounted(async () => {
                         </div>
                         <div>
                             <p class="text-xs text-ink-subtle">Aprovado</p>
-                            <p class="font-semibold text-emerald-600 dark:text-emerald-400">
+                            <p class="font-semibold text-data-pos">
                                 {{ money(plan.totals?.approved) }}
                             </p>
                         </div>
@@ -354,17 +354,17 @@ onMounted(async () => {
                         <span
                             v-if="i < etapas.length - 1"
                             class="mb-5 h-0.5 w-4 shrink-0 rounded sm:w-8"
-                            :class="etapas[i + 1].estado === 'pendente' ? 'bg-line' : 'bg-emerald-500'"
+                            :class="etapas[i + 1].estado === 'pendente' ? 'bg-line' : 'bg-data-pos'"
                         ></span>
                     </template>
                 </div>
 
-                <p v-if="plan.owner_unresolved" class="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-sm text-amber-700 dark:text-amber-400">
+                <p v-if="plan.owner_unresolved" class="mt-3 rounded-lg border border-data-warn/30 bg-data-warn/10 p-2.5 text-sm text-data-warn">
                     <i class="fas fa-triangle-exclamation mr-1"></i>
                     A Ficha Comercial deste empreendimento não aponta um gestor com usuário do Office.
                     Enquanto isso, a cobrança mensal não tem para quem ir.
                 </p>
-                <p v-if="plan.status === 'returned'" class="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-2.5 text-sm text-red-700 dark:text-red-400">
+                <p v-if="plan.status === 'returned'" class="mt-3 rounded-lg border border-data-neg/30 bg-data-neg/10 p-2.5 text-sm text-data-neg">
                     <i class="fas fa-rotate-left mr-1"></i>
                     Devolvido para ajuste. Veja o motivo no histórico, corrija e envie de novo.
                 </p>
@@ -410,7 +410,7 @@ onMounted(async () => {
                     <div class="text-sm">
                         <p class="text-ink-muted">
                             Aprovando assim, o mês fica em
-                            <strong class="text-emerald-600 dark:text-emerald-400">{{ money(store.liveApprovedTotal) }}</strong>
+                            <strong class="text-data-pos">{{ money(store.liveApprovedTotal) }}</strong>
                             de {{ money(store.proposedTotal) }}
                         </p>
                         <p class="text-xs text-ink-subtle">

@@ -89,7 +89,7 @@ const dados = computed(() => {
                     <i class="fas fa-envelope"></i>{{ e.email }}
                 </a>
                 <a v-if="e.telefone" :href="whatsappUrl(e.telefone)" target="_blank" rel="noopener"
-                    class="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm text-ink-muted hover:text-emerald-500 hover:border-emerald-500/60">
+                    class="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm text-ink-muted hover:text-data-pos hover:border-data-pos/60">
                     <i class="fab fa-whatsapp"></i>{{ e.telefone }}
                 </a>
             </div>
@@ -113,9 +113,9 @@ const dados = computed(() => {
             </div>
 
             <!-- Falta código -->
-            <div v-else-if="e.origem === 'pendente'" class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 mb-4 text-xs text-ink">
+            <div v-else-if="e.origem === 'pendente'" class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 mb-4 text-xs text-ink">
                 <p class="mb-2">
-                    <i class="fas fa-triangle-exclamation mr-1 text-amber-500"></i>
+                    <i class="fas fa-triangle-exclamation mr-1 text-data-warn"></i>
                     Falta informar o código desta empresa no CV. Sem ele não dá para cadastrar pessoas.
                 </p>
                 <Button variant="secondary" size="sm" icon="fas fa-link" @click="emit('vincular', e)">Informar código</Button>
@@ -154,7 +154,7 @@ const dados = computed(() => {
                         </a>
                         <a v-if="u.telefone || u.celular" :href="whatsappUrl(u.telefone || u.celular)" target="_blank" rel="noopener"
                             v-tippy="'Abrir no WhatsApp'"
-                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-muted hover:text-emerald-500 hover:border-emerald-500/60">
+                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-muted hover:text-data-pos hover:border-data-pos/60">
                             <i class="fab fa-whatsapp text-xs"></i>
                         </a>
                         <a :href="cvUsuariosUrl(u.nome)" target="_blank" rel="noopener" v-tippy="`Abrir no CV (#${u.idusuario})`"

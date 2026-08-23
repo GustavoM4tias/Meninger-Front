@@ -52,10 +52,10 @@ const groups = computed(() => {
 const broken = computed(() => store.missingTemplates.filter(t => t.critical));
 
 const STATUS_CLS = {
-  APPROVED: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-  PENDING:  'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-  REJECTED: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
-  AUSENTE:  'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+  APPROVED: 'bg-data-pos/10 text-data-pos border-data-pos/20',
+  PENDING:  'bg-data-warn/10 text-data-warn border-data-warn/20',
+  REJECTED: 'bg-data-neg/10 text-data-neg border-data-neg/20',
+  AUSENTE:  'bg-data-neg/10 text-data-neg border-data-neg/20',
   DISABLED: 'bg-surface-sunken text-ink-muted border-line',
   PAUSED:   'bg-surface-sunken text-ink-muted border-line',
 };
@@ -65,8 +65,8 @@ const statusCls = (s) => STATUS_CLS[s] || 'bg-surface-sunken text-ink-muted bord
 // MARKETING ganha destaque porque é o que custa (~9x a conversa) e o que pesa na
 // qualidade do número - aqui o número é COMPARTILHADO com boleto e alerta.
 const CATEGORY_CLS = {
-  MARKETING:      'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
-  UTILITY:        'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+  MARKETING:      'bg-accent/10 text-accent border-accent/20',
+  UTILITY:        'bg-accent/10 text-accent border-accent/20',
   AUTHENTICATION: 'bg-surface-sunken text-ink-muted border-line',
 };
 const categoryCls = (c) => CATEGORY_CLS[c] || 'bg-surface-sunken text-ink-subtle border-line';
@@ -109,8 +109,8 @@ const onDelete = async (t) => {
     <template v-else>
       <!-- Fluxo quebrado: template obrigatório sem aprovação -->
       <div v-if="broken.length"
-        class="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 space-y-1">
-        <p class="text-xs font-semibold text-red-600 dark:text-red-400">
+        class="rounded-xl border border-data-neg/20 bg-data-neg/10 px-4 py-3 space-y-1">
+        <p class="text-xs font-semibold text-data-neg">
           <i class="fas fa-triangle-exclamation mr-1"></i>
           {{ broken.length }} fluxo(s) sem template aprovado
         </p>
@@ -169,13 +169,13 @@ const onDelete = async (t) => {
 
               <div v-if="expanded === keyOf(t)" class="px-4 pb-4 -mt-1 space-y-3 text-xs">
                 <div v-if="t.variablesMismatch"
-                  class="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-ink">
+                  class="rounded-lg border border-data-warn/20 bg-data-warn/10 px-3 py-2 text-ink">
                   A Meta espera {{ t.variablesCount }} variável(is) e o código manda {{ t.variables.length }}.
                   O envio falha com VARIABLES_MISMATCH.
                 </div>
 
                 <div v-if="t.categoryReclassified"
-                  class="rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-ink">
+                  class="rounded-lg border border-accent/20 bg-accent/10 px-3 py-2 text-ink">
                   Enviado como <strong>{{ t.categoryIntended }}</strong> e reclassificado pela Meta para
                   <strong>{{ t.category }}</strong> na aprovação. Quem decide é a copy, não o pedido.
                   Marketing custa mais por conversa e pesa mais na qualidade do número.
@@ -217,7 +217,7 @@ const onDelete = async (t) => {
                     recriado no boot se sumir
                   </span>
                   <span v-if="t.critical"
-                    class="px-2 py-0.5 rounded-md border border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400">
+                    class="px-2 py-0.5 rounded-md border border-data-neg/20 bg-data-neg/10 text-data-neg">
                     crítico
                   </span>
                 </div>
@@ -252,7 +252,7 @@ const onDelete = async (t) => {
             <span :class="['text-micro px-2 py-0.5 rounded-md border', statusCls(t.status)]">{{ t.status }}</span>
             <button type="button" @click="onDelete(t)"
               class="h-8 w-8 grid place-items-center rounded-md text-ink-subtle
-                     hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                     hover:bg-data-neg/10 hover:text-data-neg transition-colors"
               title="Excluir template">
               <i class="fas fa-trash text-[11px]"></i>
             </button>

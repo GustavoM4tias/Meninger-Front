@@ -265,7 +265,7 @@ onMounted(load);
             >
                 <div class="space-y-3">
                     <p v-if="!settings.stages.length"
-                        class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+                        class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 text-sm text-data-warn">
                         <i class="fas fa-triangle-exclamation mr-1"></i>
                         Nenhuma etapa criada. Do jeito que está, o plano enviado pelo gestor é aprovado na hora e os
                         eventos vão direto para a agenda, sem passar por ninguém.
@@ -299,7 +299,7 @@ onMounted(load);
                                 overlay
                                 @change="(names) => setStageProfiles(stage, names)"
                             />
-                            <p v-if="!(stage.profile_ids || []).length" class="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+                            <p v-if="!(stage.profile_ids || []).length" class="mt-1.5 text-xs text-data-warn">
                                 <i class="fas fa-triangle-exclamation mr-1"></i>
                                 Sem perfil, ninguém consegue decidir e o plano trava aqui.
                             </p>

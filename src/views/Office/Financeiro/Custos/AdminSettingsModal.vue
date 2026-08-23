@@ -39,7 +39,7 @@
           <input type="checkbox"
             :checked="!d.hidden"
             @change="toggleDepartment(d, $event.target.checked)"
-            class="w-4 h-4 text-emerald-600 border-line rounded focus:ring-emerald-500" />
+            class="w-4 h-4 text-data-pos border-line rounded focus:ring-data-pos" />
           <span class="text-sm flex-1" :class="d.hidden ? 'text-ink-subtle line-through' : 'text-ink'">
             {{ d.name }}
           </span>

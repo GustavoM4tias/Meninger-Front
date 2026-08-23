@@ -347,12 +347,12 @@ onMounted(async () => {
                             <span class="text-ink-muted">
                                 Proposto <strong class="text-ink">{{ money(grupo.plano.totals?.proposed) }}</strong>
                             </span>
-                            <span v-if="grupo.plano.totals?.approved" class="text-emerald-600 dark:text-emerald-400">
+                            <span v-if="grupo.plano.totals?.approved" class="text-data-pos">
                                 Aprovado <strong>{{ money(grupo.plano.totals?.approved) }}</strong>
                             </span>
                         </div>
 
-                        <p v-if="grupo.plano.owner_unresolved" class="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                        <p v-if="grupo.plano.owner_unresolved" class="mt-2 text-xs text-data-warn">
                             <i class="fas fa-triangle-exclamation mr-1"></i>
                             Sem gestor responsável na ficha comercial deste empreendimento.
                         </p>

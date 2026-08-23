@@ -134,7 +134,7 @@ watch(form, () => { hasDraft.value = !!localStorage.getItem(persistKey.value); }
   <Modal :open="true" position="right" size="lg" @close="$emit('close')">
     <template #header>
       <div class="flex items-center gap-3 w-full">
-        <div class="h-9 w-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 grid place-items-center shrink-0">
+        <div class="h-9 w-9 rounded-lg bg-data-warn/15 text-data-warn border border-data-warn/30 grid place-items-center shrink-0">
           <i class="fas fa-pen text-sm"></i>
         </div>
         <div class="flex-1 min-w-0">
@@ -142,7 +142,7 @@ watch(form, () => { hasDraft.value = !!localStorage.getItem(persistKey.value); }
           <p class="text-xs text-ink-muted mt-0.5 flex items-center gap-2">
             <kbd class="px-1.5 py-0.5 rounded border border-line bg-surface text-micro font-mono">⌘ Enter</kbd>
             para salvar
-            <span v-if="hasDraft" class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+            <span v-if="hasDraft" class="inline-flex items-center gap-1 text-data-warn">
               · <i class="fas fa-circle text-[6px]"></i> alterações pendentes
             </span>
           </p>
@@ -153,7 +153,7 @@ watch(form, () => { hasDraft.value = !!localStorage.getItem(persistKey.value); }
     <EventFormFields ref="fieldsRef" :form="form" :errors="errors" :users="users" />
 
     <p v-if="errors.submit"
-      class="mt-4 text-xs text-red-500 text-center flex items-center justify-center gap-1">
+      class="mt-4 text-xs text-data-neg text-center flex items-center justify-center gap-1">
       <i class="fas fa-circle-exclamation"></i>{{ errors.submit }}
     </p>
 

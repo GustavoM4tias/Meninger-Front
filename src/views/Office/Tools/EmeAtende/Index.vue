@@ -507,7 +507,7 @@ onMounted(loadConversations)
                       <p class="whitespace-pre-wrap break-words">{{ m.body }}</p>
                       <p class="mt-1 text-micro text-ink-subtle text-right">
                         {{ fmt(m.created_at || m.createdAt) }} ·
-                        <span :class="m.status === 'failed' ? 'text-red-500' : ''">{{ m.status }}</span>
+                        <span :class="m.status === 'failed' ? 'text-data-neg' : ''">{{ m.status }}</span>
                       </p>
                     </div>
                   </div>
@@ -564,7 +564,7 @@ onMounted(loadConversations)
                   @change="(v) => f.site_slug = v || null" />
 
                 <p v-if="siteState.loading" class="text-micro text-ink-subtle">Lendo o site…</p>
-                <p v-else-if="siteState.error" class="text-micro text-red-600 dark:text-red-400">
+                <p v-else-if="siteState.error" class="text-micro text-data-neg">
                   Não consegui ler o site: {{ siteState.error }}
                 </p>
 
@@ -580,7 +580,7 @@ onMounted(loadConversations)
                     :loading="siteState.syncing === f.id" @click="syncFlowSite(f)">Atualizar agora</Button>
                 </div>
 
-                <p v-if="f.site_sync_error" class="text-micro text-amber-600 dark:text-amber-400">
+                <p v-if="f.site_sync_error" class="text-micro text-data-warn">
                   Último sync falhou: {{ f.site_sync_error }}. A Eme segue com o conteúdo anterior.
                 </p>
                 <p v-if="f.site_slug" class="text-micro text-ink-subtle">
@@ -661,7 +661,7 @@ onMounted(loadConversations)
               <code class="font-mono text-xs text-ink">"{{ r.value }}"</code>
               <i class="fas fa-arrow-right text-ink-subtle text-xs"></i>
               <span class="font-semibold text-ink">{{ r.flow?.name || flowName(r.flow_id) }}</span>
-              <button class="ml-auto text-ink-subtle hover:text-red-500 transition" title="Remover" @click="removeRule(r)"><i class="fas fa-trash text-xs"></i></button>
+              <button class="ml-auto text-ink-subtle hover:text-data-neg transition" title="Remover" @click="removeRule(r)"><i class="fas fa-trash text-xs"></i></button>
             </div>
             <p v-if="!rules.length" class="text-xs text-ink-subtle">Nenhuma regra - todo lead cai no fluxo default.</p>
           </div>
@@ -695,11 +695,11 @@ onMounted(loadConversations)
                 <span class="text-ink-muted">{{ r.synced }}/{{ r.total_flows }} fluxo(s)</span>
                 <span v-if="r.duration_ms" class="text-ink-subtle">{{ (r.duration_ms / 1000).toFixed(1) }}s</span>
               </div>
-              <p v-if="r.error" class="mt-1 text-red-600 dark:text-red-400">{{ r.error }}</p>
+              <p v-if="r.error" class="mt-1 text-data-neg">{{ r.error }}</p>
               <p v-for="c in (r.changes || [])" :key="c.flow_id" class="mt-1 text-ink">
                 <strong>{{ c.name }}</strong>: {{ resumoMudanca(c) }}
               </p>
-              <p v-if="(r.missing || []).length" class="mt-1 text-amber-600 dark:text-amber-400">
+              <p v-if="(r.missing || []).length" class="mt-1 text-data-warn">
                 Sem correspondência no site: {{ (r.missing || []).join(', ') }}
               </p>
               <p v-if="r.ok && !(r.changes || []).length && !(r.missing || []).length"
@@ -769,8 +769,8 @@ onMounted(loadConversations)
                     {{ k.replace(/_/g, ' ') }}: <strong class="text-ink">{{ v }}</strong>
                   </span>
                 </div>
-                <p v-if="leadDetail.qualified_summary" class="mb-3 text-sm text-ink rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2">
-                  <i class="fas fa-star text-emerald-500 mr-1.5"></i>{{ leadDetail.qualified_summary }}
+                <p v-if="leadDetail.qualified_summary" class="mb-3 text-sm text-ink rounded-lg border border-data-pos/30 bg-data-pos/5 px-3 py-2">
+                  <i class="fas fa-star text-data-pos mr-1.5"></i>{{ leadDetail.qualified_summary }}
                 </p>
                 <div class="space-y-1.5">
                   <div v-for="ev in leadDetail.events" :key="ev.id" class="flex items-center gap-2 text-xs">
@@ -902,7 +902,7 @@ onMounted(loadConversations)
             <span v-if="sourceTest.total" class="text-micro text-ink-muted">
               {{ sourceTest.total }} empreendimento(s) lido(s), {{ sourceTest.campos.length }} campo(s) disponível(is)
             </span>
-            <span v-if="sourceTest.error" class="text-micro text-red-600 dark:text-red-400">{{ sourceTest.error }}</span>
+            <span v-if="sourceTest.error" class="text-micro text-data-neg">{{ sourceTest.error }}</span>
           </div>
 
           <template v-if="sourceTest.campos.length">
@@ -989,7 +989,7 @@ onMounted(loadConversations)
             class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink
                    font-mono placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent/20"></textarea>
           <p v-if="settings.test_mode && !settings.test_phones?.length"
-            class="mt-2 text-micro text-amber-600 dark:text-amber-400">
+            class="mt-2 text-micro text-data-warn">
             Modo teste ligado sem nenhum número: a Eme não vai atender ninguém.
           </p>
           <div class="mt-4">
@@ -1017,7 +1017,7 @@ onMounted(loadConversations)
         <Surface variant="raised" padding="md" class="mb-5">
           <h2 class="text-base font-semibold text-ink mb-1">API keys (entrada de leads)</h2>
           <p class="text-xs text-ink-muted mb-4">Sistemas externos postam leads em <code class="font-mono">POST /api/eme-atende/public/leads</code> com o header <code class="font-mono">X-Api-Key</code>.</p>
-          <div v-if="createdKey" class="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-3 py-3">
+          <div v-if="createdKey" class="mb-4 rounded-lg border border-data-pos/40 bg-data-pos/5 px-3 py-3">
             <p class="text-xs text-ink-muted mb-1.5">Chave criada ({{ createdKey.name }}) - copie agora, ela não será exibida de novo:</p>
             <div class="flex items-center gap-2">
               <code class="font-mono text-xs text-ink break-all">{{ createdKey.key }}</code>
@@ -1030,7 +1030,7 @@ onMounted(loadConversations)
               <span class="font-semibold text-ink">{{ k.name }}</span>
               <Badge :variant="k.active ? 'success' : 'danger'" size="sm">{{ k.active ? 'ativa' : 'desativada' }}</Badge>
               <span class="ml-auto text-xs text-ink-subtle">último uso: {{ fmt(k.last_used_at) }}</span>
-              <button v-if="k.active" class="text-ink-subtle hover:text-red-500 transition" title="Desativar" @click="dropKey(k)"><i class="fas fa-ban text-xs"></i></button>
+              <button v-if="k.active" class="text-ink-subtle hover:text-data-neg transition" title="Desativar" @click="dropKey(k)"><i class="fas fa-ban text-xs"></i></button>
             </div>
             <p v-if="!apiKeys.length" class="text-xs text-ink-subtle">Nenhuma chave ainda.</p>
           </div>
@@ -1058,11 +1058,11 @@ onMounted(loadConversations)
                  o que a trava pegaria antes de ligar o atendimento. -->
             <div v-if="sandbox.validation && sandbox.validation.level !== 'off'"
               class="mt-3 pt-3 border-t border-line">
-              <p v-if="sandbox.validation.ok" class="text-micro text-emerald-600 dark:text-emerald-400">
+              <p v-if="sandbox.validation.ok" class="text-micro text-data-pos">
                 <i class="fas fa-check mr-1"></i> Nenhum valor sem respaldo no contexto.
               </p>
               <template v-else>
-                <p class="text-micro text-red-600 dark:text-red-400 mb-1">
+                <p class="text-micro text-data-neg mb-1">
                   <i class="fas fa-triangle-exclamation mr-1"></i>
                   Valores sem respaldo no contexto:
                   <span class="font-mono">{{ sandbox.validation.suspicious.join(' · ') }}</span>
@@ -1076,7 +1076,7 @@ onMounted(loadConversations)
 
       <!-- toast -->
       <div v-if="toast.text" class="fixed bottom-6 right-6 z-50 rounded-lg px-4 py-2.5 text-sm shadow-lg"
-        :class="toast.type === 'ok' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'">{{ toast.text }}</div>
+        :class="toast.type === 'ok' ? 'bg-data-pos text-white' : 'bg-data-neg text-white'">{{ toast.text }}</div>
     </PageContainer>
   </div>
 </template>

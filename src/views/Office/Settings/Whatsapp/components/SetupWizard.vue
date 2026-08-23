@@ -128,7 +128,7 @@ const onRestart = () => {
         <li v-for="(label, i) in ['Token', 'Conta', 'Webhook', 'Pronto']" :key="i"
           :class="['px-2 py-0.5 rounded-md border',
             i === step ? 'bg-accent-soft text-accent border-accent/20'
-            : i < step ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+            : i < step ? 'bg-data-pos/10 text-data-pos border-data-pos/20'
             : 'bg-surface-sunken text-ink-subtle border-line']">
           {{ i + 1 }}. {{ label }}
         </li>
@@ -146,7 +146,7 @@ const onRestart = () => {
       <Input v-model="accessToken" label="Access Token" type="password" placeholder="EAAG..." />
       <Input v-model="apiVersion" label="Versão da Graph API" placeholder="v21.0" hint="Use a mais recente disponível na sua app." />
 
-      <div v-if="error" class="text-xs text-red-600 dark:text-red-400">{{ error }}</div>
+      <div v-if="error" class="text-xs text-data-neg">{{ error }}</div>
 
       <Button :loading="discovering" icon="fas fa-magnifying-glass" @click="onDiscover">
         Descobrir contas
@@ -182,7 +182,7 @@ const onRestart = () => {
             {{ w.name || w.id }}{{ w.currency ? ` · ${w.currency}` : '' }}
           </option>
         </select>
-        <p v-if="!wabas.length" class="text-micro text-amber-600 dark:text-amber-400 mt-1">
+        <p v-if="!wabas.length" class="text-micro text-data-warn mt-1">
           Nenhuma WABA visível para esse Business. Verifique permissões do System User.
         </p>
       </div>
@@ -197,12 +197,12 @@ const onRestart = () => {
             {{ p.display_phone_number }}{{ p.verified_name ? ` · ${p.verified_name}` : '' }}{{ p.quality_rating ? ` · ${p.quality_rating}` : '' }}
           </option>
         </select>
-        <p v-if="!phones.length" class="text-micro text-amber-600 dark:text-amber-400 mt-1">
+        <p v-if="!phones.length" class="text-micro text-data-warn mt-1">
           Nenhum número cadastrado nessa WABA.
         </p>
       </div>
 
-      <div v-if="error" class="text-xs text-red-600 dark:text-red-400">{{ error }}</div>
+      <div v-if="error" class="text-xs text-data-neg">{{ error }}</div>
 
       <div class="flex gap-2">
         <Button variant="secondary" icon="fas fa-arrow-left" @click="step = 0">Voltar</Button>
@@ -236,7 +236,7 @@ const onRestart = () => {
           description="Loga em vez de enviar. Recomendado para teste inicial." />
       </div>
 
-      <div v-if="error" class="text-xs text-red-600 dark:text-red-400">{{ error }}</div>
+      <div v-if="error" class="text-xs text-data-neg">{{ error }}</div>
 
       <div class="flex gap-2">
         <Button variant="secondary" icon="fas fa-arrow-left" @click="step = 1">Voltar</Button>
@@ -248,13 +248,13 @@ const onRestart = () => {
     <div v-else-if="step === 3" class="space-y-4">
       <div :class="['rounded-lg border p-4',
         result?.health?.ok
-          ? 'border-emerald-500/20 bg-emerald-500/10'
-          : 'border-amber-500/20 bg-amber-500/10']">
+          ? 'border-data-pos/20 bg-data-pos/10'
+          : 'border-data-warn/20 bg-data-warn/10']">
         <p class="text-sm font-semibold text-ink flex items-center gap-2">
-          <i :class="result?.health?.ok ? 'fas fa-circle-check text-emerald-500' : 'fas fa-triangle-exclamation text-amber-500'"></i>
+          <i :class="result?.health?.ok ? 'fas fa-circle-check text-data-pos' : 'fas fa-triangle-exclamation text-data-warn'"></i>
           {{ result?.health?.ok ? 'Conectado!' : 'Salvo, mas health check falhou' }}
         </p>
-        <p v-if="!result?.health?.ok" class="text-xs text-amber-700 dark:text-amber-400 mt-1">
+        <p v-if="!result?.health?.ok" class="text-xs text-data-warn mt-1">
           {{ result?.health?.error }}
         </p>
       </div>
@@ -267,7 +267,7 @@ const onRestart = () => {
       </div>
 
       <div v-if="finalVerifyToken"
-        class="rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-xs">
+        class="rounded-lg border border-data-warn/20 bg-data-warn/10 p-4 text-xs">
         <p class="font-semibold text-ink mb-1">Verify Token gerado — anote agora!</p>
         <p class="text-ink-muted mb-2">
           Cole essa string no Meta Business → WhatsApp → Configuração → Webhook → "Verify token". É a única vez que ela é exibida em texto puro.

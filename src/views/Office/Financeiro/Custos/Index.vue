@@ -66,7 +66,7 @@
 
           <div>
             <Button variant="primary" icon="fas fa-filter" block
-              class="!bg-emerald-600 hover:!bg-emerald-700"
+              class="!bg-data-pos hover:!bg-data-pos"
               :loading="store.isLoading"
               :disabled="store.isLoading"
               @click="store.fetchExpenses">
@@ -76,8 +76,8 @@
         </div>
 
         <Surface v-if="store.error" variant="raised" padding="sm"
-          class="mt-3 border-red-500/30 bg-red-500/10">
-          <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+          class="mt-3 border-data-neg/30 bg-data-neg/10">
+          <div class="text-sm text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ store.error }}
           </div>
         </Surface>
@@ -85,29 +85,29 @@
 
       <!-- Summary Cards -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        <Surface variant="raised" padding="md" class="border-emerald-500/30 bg-emerald-500/10 surface-gradient">
-          <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-300 mb-2">
+        <Surface variant="raised" padding="md" class="border-data-pos/30 bg-data-pos/10 surface-gradient">
+          <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-data-pos mb-2">
             <i class="fas fa-dollar-sign"></i> Total de Gastos
           </div>
-          <div class="text-2xl font-bold text-emerald-700 dark:text-emerald-200 font-mono tabular-nums">
+          <div class="text-2xl font-bold text-data-pos font-mono tabular-nums">
             {{ filteredTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
           </div>
-          <div class="text-micro text-emerald-700/70 dark:text-emerald-300/70 mt-1">Pago no período</div>
+          <div class="text-micro text-data-pos  mt-1">Pago no período</div>
         </Surface>
 
-        <Surface v-if="filteredCancelledTotal > 0" variant="raised" padding="md" class="border-red-500/30 bg-red-500/10 surface-gradient">
-          <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-red-700 dark:text-red-300 mb-2">
+        <Surface v-if="filteredCancelledTotal > 0" variant="raised" padding="md" class="border-data-neg/30 bg-data-neg/10 surface-gradient">
+          <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-data-neg mb-2">
             <i class="fas fa-ban"></i> Cancelados
           </div>
-          <div class="text-2xl font-bold text-red-700 dark:text-red-300 font-mono tabular-nums">
+          <div class="text-2xl font-bold text-data-neg font-mono tabular-nums">
             {{ filteredCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
           </div>
-          <div class="text-micro text-red-700/70 dark:text-red-300/70 mt-1">Não somam no total</div>
+          <div class="text-micro text-data-neg  mt-1">Não somam no total</div>
         </Surface>
 
         <Surface variant="raised" padding="md" class="surface-gradient">
           <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-ink-muted mb-2">
-            <i class="fas fa-building text-emerald-500"></i> Empreendimentos
+            <i class="fas fa-building text-data-pos"></i> Empreendimentos
           </div>
           <div class="text-2xl font-bold text-ink font-mono tabular-nums">{{ filteredGroups.length }}</div>
           <div class="text-micro text-ink-subtle mt-1">Com lançamentos</div>
@@ -115,7 +115,7 @@
 
         <Surface variant="raised" padding="md" class="surface-gradient">
           <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-ink-muted mb-2">
-            <i class="fas fa-list-ul text-emerald-500"></i> Total de Lançamentos
+            <i class="fas fa-list-ul text-data-pos"></i> Total de Lançamentos
           </div>
           <div class="text-2xl font-bold text-ink font-mono tabular-nums">
             {{ filteredGroups.reduce((sum, g) => sum + g.expenses.length, 0) }}
@@ -129,7 +129,7 @@
         <div class="px-5 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-table text-emerald-500"></i>
+              <i class="fas fa-table text-data-pos"></i>
               Detalhamento por Empreendimento
             </h3>
             <span class="text-xs text-ink-muted">
@@ -167,7 +167,7 @@
                 class="hover:bg-surface-hover/40 transition-colors">
                 <td class="px-5 py-3 whitespace-nowrap">
                   <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 grid place-items-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <div class="h-10 w-10 rounded-lg bg-data-pos/10 border border-data-pos/20 grid place-items-center text-data-pos shrink-0">
                       <i class="fas fa-building"></i>
                     </div>
                     <div class="min-w-0">
@@ -181,13 +181,13 @@
                   </div>
                 </td>
                 <td class="px-5 py-3 whitespace-nowrap text-right">
-                  <div class="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
+                  <div class="text-base font-bold text-data-pos font-mono tabular-nums">
                     {{ Number(group.total || 0).toLocaleString('pt-BR', {
                       style: 'currency', currency: 'BRL'
                     }) }}
                   </div>
                   <div v-if="Number(group.cancelledTotal) > 0"
-                    class="text-micro text-red-500 font-mono tabular-nums mt-0.5">
+                    class="text-micro text-data-neg font-mono tabular-nums mt-0.5">
                     <i class="fas fa-ban mr-0.5"></i>{{ Number(group.cancelledTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }} cancelado
                   </div>
                 </td>
@@ -231,13 +231,13 @@
           <span class="opacity-50">|</span>
           <span><i class="fas fa-list-ul text-[10px] mr-1"></i><span class="font-mono tabular-nums">{{ modalExpenses.length }}</span> de <span class="font-mono tabular-nums">{{ selectedGroup.expenses.length }}</span> lançamento(s)</span>
           <span class="opacity-50">|</span>
-          <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+          <span class="font-semibold text-data-pos">
             <i class="fas fa-dollar-sign text-[10px] mr-1"></i>
             <span class="font-mono tabular-nums">{{ modalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
           </span>
           <template v-if="modalCancelledTotal > 0">
             <span class="opacity-50">|</span>
-            <span class="font-semibold text-red-500">
+            <span class="font-semibold text-data-neg">
               <i class="fas fa-ban text-[10px] mr-1"></i>Cancelado
               <span class="font-mono tabular-nums">{{ modalCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
             </span>
@@ -308,7 +308,7 @@
                 @click="setModalDatePreset(preset.value)"
                 class="px-2.5 py-1 text-micro rounded-lg border transition-colors"
                 :class="modalDatePreset === preset.value
-                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  ? 'bg-data-pos text-white border-data-pos'
                   : 'border-line text-ink-muted hover:bg-surface-hover'">
                 {{ preset.label }}
               </button>
@@ -319,7 +319,7 @@
         <!-- Bulk action bar -->
         <transition name="slide-down">
           <div v-if="selectedExpenseIds.length"
-            class="bg-emerald-600 text-white px-4 sm:px-5 py-3 border-b border-emerald-700">
+            class="bg-data-pos text-white px-4 sm:px-5 py-3 border-b border-data-pos">
             <div class="flex flex-wrap items-center gap-3">
               <span class="text-sm font-semibold">
                 <i class="fas fa-square-check mr-1"></i>
@@ -328,12 +328,12 @@
               <span class="opacity-40">|</span>
 
               <button @click="removeSelectedExpenses"
-                class="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg text-sm transition-colors">
+                class="px-3 py-1.5 bg-data-neg hover:bg-data-neg/85 text-white font-semibold rounded-lg text-sm transition-colors">
                 <i class="fas fa-trash mr-1"></i> Excluir
               </button>
 
               <button @click="selectedExpenseIds = []"
-                class="ml-auto px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm transition-colors">
+                class="ml-auto px-3 py-1.5 bg-surface-raised/20 hover:bg-surface-raised/30 rounded-lg text-sm transition-colors">
                 <i class="fas fa-times mr-1"></i> Desmarcar
               </button>
             </div>
@@ -350,7 +350,7 @@
                     :checked="modalExpenses.length > 0 && selectedExpenseIds.length === modalExpenses.length"
                     :indeterminate="selectedExpenseIds.length > 0 && selectedExpenseIds.length < modalExpenses.length"
                     @change="toggleSelectAllExpenses"
-                    class="w-4 h-4 text-emerald-600 border-line rounded focus:ring-emerald-500 cursor-pointer" />
+                    class="w-4 h-4 text-data-pos border-line rounded focus:ring-data-pos cursor-pointer" />
                 </th>
                 <th @click="handleModalSort('date')"
                   class="px-3 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink whitespace-nowrap">
@@ -379,12 +379,12 @@
             <tbody class="divide-y divide-line/60">
               <tr v-for="exp in modalExpenses" :key="exp.id"
                 class="hover:bg-surface-hover/40 transition-colors group"
-                :class="{ 'bg-emerald-500/10': selectedExpenseIds.includes(exp.id) }">
+                :class="{ 'bg-data-pos/10': selectedExpenseIds.includes(exp.id) }">
 
                 <td class="px-3 py-3">
                   <input type="checkbox" :checked="selectedExpenseIds.includes(exp.id)"
                     @change="toggleExpenseSelection(exp.id)"
-                    class="w-4 h-4 text-emerald-600 border-line rounded focus:ring-emerald-500 cursor-pointer" />
+                    class="w-4 h-4 text-data-pos border-line rounded focus:ring-data-pos cursor-pointer" />
                 </td>
 
                 <td class="px-3 py-3 whitespace-nowrap">
@@ -432,7 +432,7 @@
                   <div class="flex items-center justify-end gap-2">
                     <span class="font-bold font-mono tabular-nums"
                       :class="{
-                        'text-emerald-600 dark:text-emerald-400': exp.status !== 'cancelled',
+                        'text-data-pos': exp.status !== 'cancelled',
                         'text-ink-subtle line-through': exp.status === 'cancelled',
                       }">
                       {{ Number(exp.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
@@ -485,7 +485,7 @@
                     title="Nenhum lançamento encontrado"
                     description="Ajuste os filtros de busca acima.">
                     <button @click="clearModalFilters"
-                      class="text-xs text-emerald-600 hover:underline mt-2">
+                      class="text-xs text-data-pos hover:underline mt-2">
                       Limpar filtros
                     </button>
                   </EmptyState>
@@ -516,11 +516,11 @@
             Mostrando <span class="font-mono tabular-nums">{{ modalExpenses.length }}</span>
             de <span class="font-mono tabular-nums">{{ selectedGroup?.expenses.length }}</span> lançamentos
             · Total ativo:
-            <span class="font-semibold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
+            <span class="font-semibold text-data-pos font-mono tabular-nums">
               {{ modalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
             </span>
             <template v-if="modalCancelledTotal > 0">
-              · <span class="text-red-500">Cancelado:
+              · <span class="text-data-neg">Cancelado:
                 <span class="font-mono tabular-nums">{{ modalCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
               </span>
             </template>
@@ -760,7 +760,7 @@ function handleSort(key) {
 
 function getSortIcon(key) {
   if (sortConfig.value.key !== key) return 'fas fa-sort text-ink-subtle';
-  return sortConfig.value.direction === 'asc' ? 'fas fa-sort-up text-emerald-500' : 'fas fa-sort-down text-emerald-500';
+  return sortConfig.value.direction === 'asc' ? 'fas fa-sort-up text-data-pos' : 'fas fa-sort-down text-data-pos';
 }
 
 // ── Modal de detalhes ─────────────────────────────────────

@@ -83,8 +83,8 @@ async function onFire(rule) {
 
 const channelIcons = (ch = {}) => [
   ch.inapp    && { icon: 'fas fa-bell',           label: 'Sistema',  cls: 'text-accent' },
-  ch.email    && { icon: 'fas fa-envelope',       label: 'E-mail',   cls: 'text-sky-500' },
-  ch.whatsapp && { icon: 'fa-brands fa-whatsapp', label: 'WhatsApp', cls: 'text-emerald-500' },
+  ch.email    && { icon: 'fas fa-envelope',       label: 'E-mail',   cls: 'text-accent' },
+  ch.whatsapp && { icon: 'fa-brands fa-whatsapp', label: 'WhatsApp', cls: 'text-data-pos' },
 ].filter(Boolean);
 </script>
 

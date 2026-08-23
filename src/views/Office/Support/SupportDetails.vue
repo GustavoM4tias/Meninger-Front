@@ -17,28 +17,28 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 // ===== TEMA POR STATUS (semântico) =====
 const statusTheme = {
   pending: {
-    accent: 'text-amber-600 dark:text-amber-400',
-    avatar: 'bg-amber-500 text-white',
+    accent: 'text-data-warn',
+    avatar: 'bg-data-warn text-white',
     badge:  'warning',
-    bar:    'from-amber-500/15 to-amber-500/5 border-amber-500/30',
+    bar:    'from-data-warn/15 to-data-warn/5 border-data-warn/30',
   },
   in_progress: {
-    accent: 'text-yellow-600 dark:text-yellow-400',
-    avatar: 'bg-yellow-500 text-white',
+    accent: 'text-data-warn',
+    avatar: 'bg-data-warn text-white',
     badge:  'warning',
-    bar:    'from-yellow-500/15 to-yellow-500/5 border-yellow-500/30',
+    bar:    'from-data-warn/15 to-data-warn/5 border-data-warn/30',
   },
   resolved: {
-    accent: 'text-emerald-600 dark:text-emerald-400',
-    avatar: 'bg-emerald-500 text-white',
+    accent: 'text-data-pos',
+    avatar: 'bg-data-pos text-white',
     badge:  'success',
-    bar:    'from-emerald-500/15 to-emerald-500/5 border-emerald-500/30',
+    bar:    'from-data-pos/15 to-data-pos/5 border-data-pos/30',
   },
   closed: {
-    accent: 'text-red-600 dark:text-red-400',
-    avatar: 'bg-red-500 text-white',
+    accent: 'text-data-neg',
+    avatar: 'bg-data-neg text-white',
     badge:  'danger',
-    bar:    'from-red-500/15 to-red-500/5 border-red-500/30',
+    bar:    'from-data-neg/15 to-data-neg/5 border-data-neg/30',
   },
 };
 

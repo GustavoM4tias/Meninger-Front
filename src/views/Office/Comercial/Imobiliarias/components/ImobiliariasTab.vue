@@ -238,7 +238,7 @@ onMounted(() => { if (!all.value.length) store.fetchReport(); });
                         <p class="text-xs text-ink-subtle truncate">{{ fmtCnpj(i.cnpj) }}</p>
                     </div>
                     <div class="shrink-0 flex flex-col items-end gap-1.5">
-                        <span class="h-2 w-2 rounded-full" :class="i.ativo === 'S' ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                        <span class="h-2 w-2 rounded-full" :class="i.ativo === 'S' ? 'bg-data-pos' : 'bg-slate-400'"></span>
                         <i class="fas fa-chevron-right text-ink-subtle text-xs"></i>
                     </div>
                 </button>
@@ -285,7 +285,7 @@ onMounted(() => { if (!all.value.length) store.fetchReport(); });
                                 </a>
                                 <p v-else class="text-ink-muted truncate text-xs"><i class="fas fa-envelope mr-1.5 text-ink-subtle"></i>-</p>
                                 <a v-if="i.telefone || i.celular" :href="whatsappUrl(i.telefone || i.celular)" target="_blank" rel="noopener"
-                                    class="block text-ink-muted truncate text-xs mt-0.5 hover:text-emerald-500" v-tippy="'Abrir no WhatsApp'">
+                                    class="block text-ink-muted truncate text-xs mt-0.5 hover:text-data-pos" v-tippy="'Abrir no WhatsApp'">
                                     <i class="fab fa-whatsapp mr-1.5 text-ink-subtle"></i>{{ i.telefone || i.celular }}
                                 </a>
                                 <p v-else class="text-ink-muted truncate text-xs mt-0.5"><i class="fas fa-phone mr-1.5 text-ink-subtle"></i>-</p>

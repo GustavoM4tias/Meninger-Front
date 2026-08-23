@@ -35,9 +35,9 @@ const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR') : '—';
 
 const cards = (s) => [
   { label: 'Alertas ativos', value: s.totals.rulesEnabled, sub: `de ${s.totals.rules} no total`, icon: 'fas fa-tower-broadcast', cls: 'text-accent' },
-  { label: 'Usuários com alertas', value: s.totals.users, sub: 'donos de regras', icon: 'fas fa-users', cls: 'text-sky-500' },
-  { label: 'Disparos hoje', value: s.totals.triggersToday, sub: `${s.totals.triggers7d} nos últimos 7 dias`, icon: 'fas fa-bolt', cls: 'text-amber-500' },
-  { label: 'Disparos no total', value: s.totals.triggersTotal, sub: 'acumulado', icon: 'fas fa-chart-column', cls: 'text-emerald-500' },
+  { label: 'Usuários com alertas', value: s.totals.users, sub: 'donos de regras', icon: 'fas fa-users', cls: 'text-accent' },
+  { label: 'Disparos hoje', value: s.totals.triggersToday, sub: `${s.totals.triggers7d} nos últimos 7 dias`, icon: 'fas fa-bolt', cls: 'text-data-warn' },
+  { label: 'Disparos no total', value: s.totals.triggersTotal, sub: 'acumulado', icon: 'fas fa-chart-column', cls: 'text-data-pos' },
 ];
 </script>
 
@@ -102,7 +102,7 @@ const cards = (s) => [
         </p>
         <div class="flex flex-wrap gap-x-8 gap-y-2 text-sm">
           <span class="text-ink-muted">Pendentes: <strong class="text-ink">{{ stats.shares.pending }}</strong></span>
-          <span class="text-ink-muted">Aceitos: <strong class="text-emerald-600">{{ stats.shares.accepted }}</strong></span>
+          <span class="text-ink-muted">Aceitos: <strong class="text-data-pos">{{ stats.shares.accepted }}</strong></span>
           <span class="text-ink-muted">Recusados: <strong class="text-ink">{{ stats.shares.declined }}</strong></span>
           <span class="text-ink-muted">Expirados: <strong class="text-ink">{{ stats.shares.expired }}</strong></span>
         </div>

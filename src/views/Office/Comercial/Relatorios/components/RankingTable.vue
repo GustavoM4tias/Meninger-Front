@@ -85,7 +85,7 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
                 {{ row.vendas }} venda{{ row.vendas === 1 ? '' : 's' }} · ticket {{ moeda(row.ticket) }}
               </p>
             </div>
-            <span class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums shrink-0">
+            <span class="text-sm font-semibold text-data-pos tabular-nums shrink-0">
               {{ moeda(row.valor) }}
             </span>
           </div>
@@ -135,7 +135,7 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
                 <span v-else class="text-ink-subtle">—</span>
               </td>
               <td class="px-3 py-2 text-right tabular-nums text-ink-muted">{{ moeda(row.ticket) }}</td>
-              <td class="px-3 py-2 text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
+              <td class="px-3 py-2 text-right tabular-nums font-semibold text-data-pos">
                 {{ moeda(row.valor) }}
               </td>
               <td class="px-3 py-2">

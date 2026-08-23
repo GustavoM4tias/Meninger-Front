@@ -88,7 +88,7 @@ function remove(i) {
         :key="`${a.scopeType}-${a.scopeValue}`"
         class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface-sunken px-2 py-1 text-xs text-ink">
         {{ labelFor(a) }}
-        <button type="button" class="text-ink-subtle hover:text-red-500" @click="remove(i)" aria-label="Remover">
+        <button type="button" class="text-ink-subtle hover:text-data-neg" @click="remove(i)" aria-label="Remover">
           <i class="fas fa-xmark"></i>
         </button>
       </span>
@@ -114,6 +114,6 @@ function remove(i) {
       </Button>
     </div>
 
-    <p v-if="meta.error" class="text-xs text-red-500">{{ meta.error }}</p>
+    <p v-if="meta.error" class="text-xs text-data-neg">{{ meta.error }}</p>
   </div>
 </template>

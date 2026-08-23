@@ -472,7 +472,7 @@ endDate.value = toInputDate(getEndOfWeek());
           </div>
         </div>
 
-        <p v-if="exportError" class="mb-3 text-xs text-red-500 flex items-center gap-1.5">
+        <p v-if="exportError" class="mb-3 text-xs text-data-neg flex items-center gap-1.5">
           <i class="fas fa-circle-exclamation"></i>{{ exportError }}
         </p>
 
@@ -626,7 +626,7 @@ endDate.value = toInputDate(getEndOfWeek());
         <Input v-model="emailTo" label="E-mail avulso" placeholder="email@exemplo.com, outro@exemplo.com"
           iconLeft="fas fa-envelope" hint="Para quem está fora do sistema. Separe por vírgula." />
 
-        <p class="text-xs" :class="recipientCount ? 'text-ink-muted' : 'text-amber-600 dark:text-amber-400'">
+        <p class="text-xs" :class="recipientCount ? 'text-ink-muted' : 'text-data-warn'">
           <i class="fas" :class="recipientCount ? 'fa-users' : 'fa-triangle-exclamation'"></i>
           {{ recipientCount
             ? `${recipientCount} destinatário(s). Quem aparece em mais de um critério recebe uma vez só.`
@@ -643,12 +643,12 @@ endDate.value = toInputDate(getEndOfWeek());
         </div>
 
         <div v-if="emailError"
-          class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
+          class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-xs text-data-neg flex items-center gap-2">
           <i class="fas fa-circle-exclamation"></i>{{ emailError }}
         </div>
 
         <div v-if="emailSuccess"
-          class="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+          class="rounded-lg border border-data-pos/20 bg-data-pos/10 px-3 py-2.5 text-xs text-data-pos flex items-center gap-2">
           <i class="fas fa-check-circle"></i>E-mail enviado com sucesso!
         </div>
       </div>

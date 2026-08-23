@@ -196,9 +196,9 @@ onMounted(async () => {
       <!-- ───── Aba Microsoft ───── -->
       <template v-if="activeTab === 'microsoft'">
         <Surface v-if="!isMicrosoftConnected" variant="raised" padding="md"
-          class="border-amber-500/30 bg-amber-500/5">
+          class="border-data-warn/30 bg-data-warn/5">
           <div class="flex items-start gap-3">
-            <div class="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
+            <div class="h-9 w-9 rounded-lg bg-data-warn/10 text-data-warn grid place-items-center shrink-0">
               <i class="fas fa-triangle-exclamation"></i>
             </div>
             <div>
@@ -218,9 +218,9 @@ onMounted(async () => {
 
         <!-- Cadastros aguardando aprovação -->
         <Surface v-if="pendingCount" variant="raised" padding="md"
-          class="mb-4 border-amber-500/30 bg-amber-500/5">
+          class="mb-4 border-data-warn/30 bg-data-warn/5">
           <div class="flex items-center gap-3 flex-wrap">
-            <div class="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
+            <div class="h-9 w-9 rounded-lg bg-data-warn/10 text-data-warn grid place-items-center shrink-0">
               <i class="fas fa-user-clock"></i>
             </div>
             <div class="flex-1 min-w-0">
@@ -279,7 +279,7 @@ onMounted(async () => {
               <img :src="avatarUrl(user)" alt="avatar"
                 class="w-10 h-10 rounded-lg object-cover ring-1 ring-line" />
               <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-surface-raised"
-                :class="isPendingUser(user) ? 'bg-amber-400' : (user.status ? 'bg-emerald-500' : 'bg-red-400')"></span>
+                :class="isPendingUser(user) ? 'bg-data-warn' : (user.status ? 'bg-data-pos' : 'bg-data-neg')"></span>
             </div>
 
             <!-- Info -->
@@ -307,7 +307,7 @@ onMounted(async () => {
             <!-- Status icons -->
             <div class="hidden sm:flex items-center gap-2 shrink-0 text-sm">
               <i class="fas fa-users-viewfinder transition-colors"
-                :class="user.face_enabled ? 'text-emerald-500' : 'text-ink-subtle/50'"
+                :class="user.face_enabled ? 'text-data-pos' : 'text-ink-subtle/50'"
                 v-tippy="user.face_enabled ? 'Reconhecimento facial ativo' : 'Reconhecimento facial inativo'"></i>
 
               <img src="/sienge.png" alt="Sienge" width="14" height="14"

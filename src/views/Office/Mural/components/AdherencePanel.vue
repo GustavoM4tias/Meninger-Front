@@ -51,12 +51,12 @@ async function refreshRecipients() {
           <div class="text-2xl font-semibold text-ink">{{ store.adherence.total }}</div>
           <div class="text-xs text-ink-muted">Destinatários</div>
         </div>
-        <div class="flex-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-          <div class="text-2xl font-semibold text-emerald-600 dark:text-emerald-400">{{ store.adherence.acked }}</div>
+        <div class="flex-1 rounded-lg border border-data-pos/20 bg-data-pos/5 p-3 text-center">
+          <div class="text-2xl font-semibold text-data-pos">{{ store.adherence.acked }}</div>
           <div class="text-xs text-ink-muted">Confirmaram</div>
         </div>
-        <div class="flex-1 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-center">
-          <div class="text-2xl font-semibold text-amber-600 dark:text-amber-400">{{ store.adherence.pending }}</div>
+        <div class="flex-1 rounded-lg border border-data-warn/20 bg-data-warn/5 p-3 text-center">
+          <div class="text-2xl font-semibold text-data-warn">{{ store.adherence.pending }}</div>
           <div class="text-xs text-ink-muted">Pendentes</div>
         </div>
       </div>
@@ -76,7 +76,7 @@ async function refreshRecipients() {
       </div>
     </div>
 
-    <p v-if="store.error" class="mt-3 text-sm text-red-500">{{ store.error }}</p>
+    <p v-if="store.error" class="mt-3 text-sm text-data-neg">{{ store.error }}</p>
 
     <template #footer>
       <Button variant="ghost" size="sm" @click="emit('update:open', false)">Fechar</Button>

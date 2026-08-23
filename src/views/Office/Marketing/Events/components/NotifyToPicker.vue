@@ -138,11 +138,11 @@ function removePosition(p) { modelUpdate({ positions: mv.value.positions.filter(
       <div v-if="mv.positions.length" class="flex flex-wrap gap-1.5">
         <span v-for="position in mv.positions" :key="position"
           class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 text-xs rounded-md
-                 bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                 bg-accent/10 text-accent border border-accent/20">
           <i class="fas fa-id-badge text-[9px]"></i>
           {{ position }}
           <button type="button" @click="removePosition(position)"
-            class="h-4 w-4 grid place-items-center rounded hover:bg-sky-500/20 leading-none">
+            class="h-4 w-4 grid place-items-center rounded hover:bg-accent/20 leading-none">
             <i class="fas fa-xmark text-[9px]"></i>
           </button>
         </span>
@@ -163,11 +163,11 @@ function removePosition(p) { modelUpdate({ positions: mv.value.positions.filter(
       <div v-if="mv.emails.length" class="flex flex-wrap gap-1.5">
         <span v-for="email in mv.emails" :key="email"
           class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 text-xs rounded-md
-                 bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                 bg-accent/10 text-accent border border-accent/20">
           <i class="fas fa-envelope text-[9px]"></i>
           <span class="truncate max-w-64">{{ email }}</span>
           <button type="button" @click="removeEmail(email)"
-            class="h-4 w-4 grid place-items-center rounded hover:bg-purple-500/20 leading-none">
+            class="h-4 w-4 grid place-items-center rounded hover:bg-accent/20 leading-none">
             <i class="fas fa-xmark text-[9px]"></i>
           </button>
         </span>

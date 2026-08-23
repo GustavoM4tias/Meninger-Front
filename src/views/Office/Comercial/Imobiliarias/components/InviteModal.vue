@@ -131,12 +131,12 @@ const fmtDate = (d) => d ? new Date(`${d}T00:00:00`).toLocaleDateString('pt-BR')
                 </div>
             </div>
 
-            <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
+            <p v-if="error" class="text-sm text-data-neg">{{ error }}</p>
         </div>
 
         <div v-else class="space-y-4">
-            <div class="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-4 text-center">
-                <i class="fas fa-circle-check text-emerald-500 text-xl"></i>
+            <div class="rounded-lg border border-data-pos/25 bg-data-pos/10  p-4 text-center">
+                <i class="fas fa-circle-check text-data-pos text-xl"></i>
                 <p class="mt-2 text-sm font-medium text-ink">Link gerado!</p>
                 <p class="text-xs text-ink-muted">
                     <template v-if="createdMulti">

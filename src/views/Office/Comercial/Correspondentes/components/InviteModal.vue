@@ -71,8 +71,8 @@ async function copiar() {
 
 <template>
     <Modal :open="open" size="lg" title="Gerar link de cadastro" @close="emit('close')">
-        <div v-if="semEmpresa" class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-ink">
-            <p class="font-medium mb-1"><i class="fas fa-triangle-exclamation mr-1.5 text-amber-500"></i>Nenhuma empresa pronta</p>
+        <div v-if="semEmpresa" class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-4 text-sm text-ink">
+            <p class="font-medium mb-1"><i class="fas fa-triangle-exclamation mr-1.5 text-data-warn"></i>Nenhuma empresa pronta</p>
             <p class="text-ink-muted">
                 O link é sempre amarrado a uma empresa com código do CV vinculado.
                 Cadastre a empresa e informe o código antes de gerar.

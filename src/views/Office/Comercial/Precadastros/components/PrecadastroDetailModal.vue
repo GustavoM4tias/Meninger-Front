@@ -63,11 +63,11 @@ const fmtMoney = (v) => {
 // Banner gradient by status
 const bannerGradient = computed(() => {
   const s = props.precadastro?.situacao_nome || '';
-  if (/aprovad/i.test(s) && !/restri/i.test(s)) return 'from-emerald-700 via-emerald-600 to-teal-600';
-  if (/reserva/i.test(s))                       return 'from-amber-700 via-orange-600 to-amber-600';
-  if (/reprovad|negad|cancelad|distrat/i.test(s)) return 'from-red-700 via-red-600 to-rose-600';
-  if (/análise|analise|aguardando/i.test(s))    return 'from-purple-700 via-violet-600 to-purple-600';
-  return 'from-blue-700 via-blue-600 to-indigo-600';
+  if (/aprovad/i.test(s) && !/restri/i.test(s)) return 'from-data-pos via-emerald-600 to-teal-600';
+  if (/reserva/i.test(s))                       return 'from-data-warn via-orange-600 to-data-warn';
+  if (/reprovad|negad|cancelad|distrat/i.test(s)) return 'from-data-neg via-red-600 to-data-neg';
+  if (/análise|analise|aguardando/i.test(s))    return 'from-accent via-violet-600 to-accent';
+  return 'from-accent via-blue-600 to-accent';
 });
 
 const statusVariant = computed(() => {
@@ -81,14 +81,14 @@ const statusVariant = computed(() => {
 
 // Cards financeiros
 const financialCards = computed(() => [
-  { label: 'Avaliação', value: fmtMoney(props.precadastro?.valor_avaliacao), accent: 'text-blue-500' },
-  { label: 'Aprovado', value: fmtMoney(props.precadastro?.valor_aprovado), accent: 'text-emerald-500' },
-  { label: 'FGTS', value: fmtMoney(props.precadastro?.valor_fgts), accent: 'text-amber-500' },
-  { label: 'Subsídio', value: fmtMoney(props.precadastro?.valor_subsidio), accent: 'text-purple-500' },
-  { label: 'Total', value: fmtMoney(props.precadastro?.valor_total), accent: 'text-cyan-500' },
-  { label: 'Prestação', value: fmtMoney(props.precadastro?.valor_prestacao), accent: 'text-orange-500' },
-  { label: 'Saldo Devedor', value: fmtMoney(props.precadastro?.saldo_devedor), accent: 'text-red-500' },
-  { label: 'Renda Total', value: fmtMoney(props.precadastro?.renda_total), accent: 'text-indigo-500' },
+  { label: 'Avaliação', value: fmtMoney(props.precadastro?.valor_avaliacao), accent: 'text-accent' },
+  { label: 'Aprovado', value: fmtMoney(props.precadastro?.valor_aprovado), accent: 'text-data-pos' },
+  { label: 'FGTS', value: fmtMoney(props.precadastro?.valor_fgts), accent: 'text-data-warn' },
+  { label: 'Subsídio', value: fmtMoney(props.precadastro?.valor_subsidio), accent: 'text-accent' },
+  { label: 'Total', value: fmtMoney(props.precadastro?.valor_total), accent: 'text-accent' },
+  { label: 'Prestação', value: fmtMoney(props.precadastro?.valor_prestacao), accent: 'text-data-warn' },
+  { label: 'Saldo Devedor', value: fmtMoney(props.precadastro?.saldo_devedor), accent: 'text-data-neg' },
+  { label: 'Renda Total', value: fmtMoney(props.precadastro?.renda_total), accent: 'text-accent' },
 ]);
 </script>
 
@@ -108,7 +108,7 @@ const financialCards = computed(() => [
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap mb-2">
               <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
-                           bg-white/20 backdrop-blur border border-white/20 text-white">
+                           bg-surface-raised/20 backdrop-blur border border-white/20 text-white">
                 <i :class="iconForStage(precadastro?.situacao_nome)" class="text-micro"></i>
                 {{ precadastro?.situacao_nome || 'Sem situação' }}
               </span>
@@ -124,7 +124,7 @@ const financialCards = computed(() => [
 
           <button @click="emit('fechar')" aria-label="Fechar"
             class="h-10 w-10 grid place-items-center rounded-lg
-                   bg-white/15 hover:bg-white/25
+                   bg-surface-raised/15 hover:bg-surface-raised/25
                    text-white transition-colors duration-120 shrink-0">
             <i class="fas fa-xmark"></i>
           </button>
@@ -133,7 +133,7 @@ const financialCards = computed(() => [
         <div v-if="precadastro?.link" class="relative mt-4">
           <a :href="precadastro.link" target="_blank" rel="noopener"
             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                   bg-white/15 hover:bg-white/30 backdrop-blur border border-white/20
+                   bg-surface-raised/15 hover:bg-surface-raised/30 backdrop-blur border border-white/20
                    text-white text-xs font-medium transition-all hover:-translate-y-0.5">
             <i class="fas fa-arrow-up-right-from-square text-micro"></i>
             Abrir no CV CRM
@@ -236,7 +236,7 @@ const financialCards = computed(() => [
               <div class="text-micro font-mono text-ink-subtle">{{ fmt(s.captured_at) }}</div>
               <div class="mt-1 flex items-center gap-2 flex-wrap">
                 <Badge variant="accent" size="sm">{{ s.situacao_nome || '-' }}</Badge>
-                <span class="text-xs text-emerald-500 font-semibold tabular-nums">{{ fmtMoney(s.valor_aprovado) }}</span>
+                <span class="text-xs text-data-pos font-semibold tabular-nums">{{ fmtMoney(s.valor_aprovado) }}</span>
               </div>
             </li>
           </ol>

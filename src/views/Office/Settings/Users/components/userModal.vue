@@ -340,7 +340,7 @@ async function saveUser() {
         <img v-if="isEdit" :src="avatarUrl" :alt="editableUser.username"
           class="w-10 h-10 rounded-lg ring-1 ring-line shrink-0" />
         <div v-else
-          class="w-10 h-10 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 grid place-items-center shrink-0">
+          class="w-10 h-10 rounded-lg bg-data-pos/15 text-data-pos border border-data-pos/20 grid place-items-center shrink-0">
           <i class="fas fa-user-plus text-sm"></i>
         </div>
         <div class="min-w-0 flex-1">
@@ -350,7 +350,7 @@ async function saveUser() {
           <div v-if="isEdit" class="flex items-center gap-3 text-xs text-ink-muted mt-0.5">
             <span v-if="editableUser.position" class="text-accent truncate">{{ editableUser.position }}</span>
             <span class="inline-flex items-center gap-1"
-              :class="editableUser.face_enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-ink-subtle'">
+              :class="editableUser.face_enabled ? 'text-data-pos' : 'text-ink-subtle'">
               <i class="fas fa-users-viewfinder text-[10px]"></i>
               Facial {{ editableUser.face_enabled ? 'ativo' : 'inativo' }}
             </span>
@@ -367,11 +367,11 @@ async function saveUser() {
 
       <!-- Cadastro pendente de aprovação -->
       <div v-if="isPending"
-        class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 flex items-start gap-2.5">
-        <i class="fas fa-user-clock text-amber-600 dark:text-amber-400 mt-0.5 shrink-0"></i>
+        class="rounded-lg border border-data-warn/30 bg-data-warn/10 px-3 py-2.5 flex items-start gap-2.5">
+        <i class="fas fa-user-clock text-data-warn mt-0.5 shrink-0"></i>
         <div class="text-xs leading-relaxed">
-          <p class="font-semibold text-amber-700 dark:text-amber-300">Cadastro aguardando aprovação</p>
-          <p class="text-amber-700/80 dark:text-amber-300/80 mt-0.5">
+          <p class="font-semibold text-data-warn">Cadastro aguardando aprovação</p>
+          <p class="text-data-warn  mt-0.5">
             Este usuário concluiu o cadastro de primeiro acesso<template v-if="signupDepartmentName">
             e escolheu o departamento <strong>{{ signupDepartmentName }}</strong></template>.
             Defina o <strong>cargo</strong> e os demais pontos abaixo e clique em
@@ -499,8 +499,8 @@ async function saveUser() {
             <div class="flex items-center gap-2.5 min-w-0">
               <div class="h-8 w-8 rounded-lg grid place-items-center shrink-0"
                 :class="editableUser.status
-                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-red-500/15 text-red-600 dark:text-red-400'">
+                  ? 'bg-data-pos/15 text-data-pos'
+                  : 'bg-data-neg/15 text-data-neg'">
                 <i class="text-xs" :class="editableUser.status ? 'fas fa-circle-check' : 'fas fa-circle-xmark'"></i>
               </div>
               <div class="min-w-0">
@@ -514,8 +514,8 @@ async function saveUser() {
           </div>
 
           <div v-else
-            class="flex items-center gap-2.5 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
-            <div class="h-8 w-8 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
+            class="flex items-center gap-2.5 p-3 rounded-lg border border-data-warn/20 bg-data-warn/5">
+            <div class="h-8 w-8 rounded-lg bg-data-warn/15 text-data-warn grid place-items-center shrink-0">
               <i class="fas fa-lock text-xs"></i>
             </div>
             <div class="min-w-0">
@@ -529,9 +529,9 @@ async function saveUser() {
 
           <!-- Resetar senha (admin only, edição) -->
           <div v-if="isEdit && isAdmin"
-            class="flex items-center justify-between gap-3 p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+            class="flex items-center justify-between gap-3 p-3 rounded-lg border border-data-neg/20 bg-data-neg/5">
             <div class="flex items-center gap-2.5 min-w-0">
-              <div class="h-8 w-8 rounded-lg bg-red-500/15 text-red-600 dark:text-red-400 grid place-items-center shrink-0">
+              <div class="h-8 w-8 rounded-lg bg-data-neg/15 text-data-neg grid place-items-center shrink-0">
                 <i class="fas fa-key text-xs"></i>
               </div>
               <div class="min-w-0">
@@ -551,7 +551,7 @@ async function saveUser() {
     <template #footer>
       <Button variant="ghost" @click="$emit('close')">Cancelar</Button>
       <Button v-if="(isPending || isIncomplete) && isAdmin" variant="outline" icon="fas fa-user-xmark"
-        class="text-red-500" @click="openRejectConfirm">
+        class="text-data-neg" @click="openRejectConfirm">
         Reprovar
       </Button>
       <Button v-if="isPending && isAdmin" variant="secondary" icon="fas fa-floppy-disk" @click="saveUser">
@@ -569,7 +569,7 @@ async function saveUser() {
     <Modal :open="activateModal.open" size="md" @close="activateModal.open = false">
       <template #header>
         <div class="flex items-center gap-3">
-          <div class="h-9 w-9 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 grid place-items-center shrink-0">
+          <div class="h-9 w-9 rounded-lg bg-data-pos/15 text-data-pos border border-data-pos/20 grid place-items-center shrink-0">
             <i class="fas fa-user-check text-sm"></i>
           </div>
           <div>
@@ -615,7 +615,7 @@ async function saveUser() {
             class="rounded-lg border border-line bg-surface-sunken px-3 py-2 max-h-40 overflow-y-auto space-y-1">
             <p v-for="name in activationRouteNames" :key="name"
               class="text-xs text-ink flex items-center gap-1.5">
-              <i class="fas fa-check text-emerald-500 text-[10px]"></i>{{ name }}
+              <i class="fas fa-check text-data-pos text-[10px]"></i>{{ name }}
             </p>
           </div>
           <p v-else class="text-xs text-ink-muted rounded-lg border border-line bg-surface-sunken px-3 py-2">
@@ -624,7 +624,7 @@ async function saveUser() {
           </p>
         </div>
 
-        <div class="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+        <div class="rounded-lg border border-data-warn/20 bg-data-warn/10 px-3 py-2.5 text-xs text-data-warn flex items-start gap-2">
           <i class="fas fa-envelope shrink-0 mt-0.5"></i>
           <span>Ao confirmar, <strong>{{ editableUser.email }}</strong> receberá um e-mail informando a
           liberação do acesso com uma <strong>senha provisória</strong>.</span>
@@ -643,7 +643,7 @@ async function saveUser() {
     <Modal :open="rejectModal.open" size="sm" @close="rejectModal.open = false">
       <template #header>
         <div class="flex items-center gap-3">
-          <div class="h-9 w-9 rounded-lg bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20 grid place-items-center shrink-0">
+          <div class="h-9 w-9 rounded-lg bg-data-neg/15 text-data-neg border border-data-neg/20 grid place-items-center shrink-0">
             <i class="fas fa-user-xmark text-sm"></i>
           </div>
           <div>
@@ -662,7 +662,7 @@ async function saveUser() {
                    focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring/20 resize-none"></textarea>
         </div>
 
-        <div class="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+        <div class="rounded-lg border border-data-warn/20 bg-data-warn/10 px-3 py-2.5 text-xs text-data-warn flex items-start gap-2">
           <i class="fas fa-envelope shrink-0 mt-0.5"></i>
           <span><strong>{{ editableUser.email }}</strong> será avisado por e-mail que o cadastro não foi
           aprovado{{ rejectModal.reason ? ', com o motivo informado' : '' }}. O cadastro será
@@ -672,7 +672,7 @@ async function saveUser() {
 
       <template #footer>
         <Button variant="ghost" :disabled="rejectModal.loading" @click="rejectModal.open = false">Cancelar</Button>
-        <Button variant="outline" class="text-red-500" icon="fas fa-user-xmark"
+        <Button variant="outline" class="text-data-neg" icon="fas fa-user-xmark"
           :loading="rejectModal.loading" @click="confirmReject">
           {{ rejectModal.loading ? 'Reprovando...' : 'Confirmar reprovação' }}
         </Button>
@@ -683,7 +683,7 @@ async function saveUser() {
     <Modal :open="resetPwdModal.open" size="sm" @close="closeResetPwdModal">
       <template #header>
         <div class="flex items-center gap-3">
-          <div class="h-9 w-9 rounded-lg bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20 grid place-items-center shrink-0">
+          <div class="h-9 w-9 rounded-lg bg-data-neg/15 text-data-neg border border-data-neg/20 grid place-items-center shrink-0">
             <i class="fas fa-key text-sm"></i>
           </div>
           <div>
@@ -700,7 +700,7 @@ async function saveUser() {
           </p>
         </div>
 
-        <div class="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+        <div class="rounded-lg border border-data-warn/20 bg-data-warn/10 px-3 py-2.5 text-xs text-data-warn flex items-start gap-2">
           <i class="fas fa-triangle-exclamation shrink-0 mt-0.5"></i>
           <span>Esta senha <strong>não será exibida novamente</strong>. Copie antes de fechar.</span>
         </div>

@@ -68,9 +68,9 @@ function fmtVigencia(v) {
 }
 
 const RECORTE_CLASSES = {
-  A: 'text-purple-600 dark:text-purple-300 bg-purple-500/10 border-purple-500/20',
-  B: 'text-blue-600 dark:text-blue-300 bg-blue-500/10 border-blue-500/20',
-  C: 'text-green-600 dark:text-green-300 bg-green-500/10 border-green-500/20',
+  A: 'text-accent bg-accent/10 border-accent/20',
+  B: 'text-accent bg-accent/10 border-accent/20',
+  C: 'text-data-pos bg-data-pos/10 border-data-pos/20',
   D: 'text-ink-muted bg-surface-sunken border-line',
 };
 function recorteClass(r) {
@@ -129,7 +129,7 @@ function recorteClass(r) {
 
       <!-- Erro -->
       <div v-if="store.error"
-        class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+        class="mb-4 rounded-xl border border-data-neg/20 bg-data-neg/10 p-4 text-sm text-data-neg flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ store.error }}
       </div>
 
@@ -178,32 +178,32 @@ function recorteClass(r) {
           <!-- Tetos -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <!-- Faixa 2 -->
-            <div class="rounded-xl p-3 bg-green-500/10 border border-green-500/20 text-center">
-              <p class="text-xs font-semibold text-green-700 dark:text-green-300">Faixa 2</p>
-              <p class="text-micro text-green-600/80 dark:text-green-400/80 mt-0.5">Renda até R$4.700</p>
-              <p class="text-base font-bold text-green-700 dark:text-green-200 mt-1.5 tabular-nums">
+            <div class="rounded-xl p-3 bg-data-pos/10 border border-data-pos/20 text-center">
+              <p class="text-xs font-semibold text-data-pos">Faixa 2</p>
+              <p class="text-micro text-data-pos  mt-0.5">Renda até R$4.700</p>
+              <p class="text-base font-bold text-data-pos mt-1.5 tabular-nums">
                 {{ fmtCurrency(m.vr_faixa2) }}
               </p>
               <p v-if="m.vr_anterior && m.vr_anterior !== m.vr_faixa2"
-                class="text-micro text-green-600/70 dark:text-green-400/70 mt-0.5 tabular-nums">
+                class="text-micro text-data-pos  mt-0.5 tabular-nums">
                 anterior: {{ fmtCurrency(m.vr_anterior) }}
               </p>
             </div>
 
             <!-- Faixa 3 -->
-            <div class="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 text-center">
-              <p class="text-xs font-semibold text-blue-700 dark:text-blue-300">Faixa 3</p>
-              <p class="text-micro text-blue-600/80 dark:text-blue-400/80 mt-0.5">Renda R$4.700–8.000</p>
-              <p class="text-base font-bold text-blue-700 dark:text-blue-200 mt-1.5 tabular-nums">
+            <div class="rounded-xl p-3 bg-accent/10 border border-accent/20 text-center">
+              <p class="text-xs font-semibold text-accent">Faixa 3</p>
+              <p class="text-micro text-accent  mt-0.5">Renda R$4.700–8.000</p>
+              <p class="text-base font-bold text-accent mt-1.5 tabular-nums">
                 {{ fmtCurrency(m.vr_faixa3) }}
               </p>
             </div>
 
             <!-- Faixa 4 -->
-            <div class="rounded-xl p-3 bg-purple-500/10 border border-purple-500/20 text-center">
-              <p class="text-xs font-semibold text-purple-700 dark:text-purple-300">Faixa 4</p>
-              <p class="text-micro text-purple-600/80 dark:text-purple-400/80 mt-0.5">Renda até R$12.000</p>
-              <p class="text-base font-bold text-purple-700 dark:text-purple-200 mt-1.5 tabular-nums">
+            <div class="rounded-xl p-3 bg-accent/10 border border-accent/20 text-center">
+              <p class="text-xs font-semibold text-accent">Faixa 4</p>
+              <p class="text-micro text-accent  mt-0.5">Renda até R$12.000</p>
+              <p class="text-base font-bold text-accent mt-1.5 tabular-nums">
                 {{ fmtCurrency(store.info.faixa4) }}
               </p>
             </div>

@@ -74,11 +74,11 @@ const isVendida = computed(() => props.reserva?.vendida === 'S' || /vendid/i.tes
 const isCancelada = computed(() => /cancelad|distrato/i.test(etapaCrm.value) || /cancelad|distrato/i.test(props.reserva?.status_repasse || ''));
 
 const bannerGradient = computed(() => {
-  if (isVendida.value)   return 'from-emerald-700 via-emerald-600 to-teal-600';
-  if (isCancelada.value) return 'from-red-700 via-red-600 to-rose-600';
-  if (props.reserva?.status_repasse) return 'from-sky-700 via-sky-600 to-cyan-600';
-  if (/contrato/i.test(etapaCrm.value)) return 'from-violet-700 via-violet-600 to-purple-600';
-  return 'from-amber-700 via-orange-600 to-amber-600';
+  if (isVendida.value)   return 'from-data-pos via-emerald-600 to-teal-600';
+  if (isCancelada.value) return 'from-data-neg via-red-600 to-data-neg';
+  if (props.reserva?.status_repasse) return 'from-accent via-sky-600 to-accent';
+  if (/contrato/i.test(etapaCrm.value)) return 'from-accent via-violet-600 to-accent';
+  return 'from-data-warn via-orange-600 to-data-warn';
 });
 </script>
 
@@ -98,13 +98,13 @@ const bannerGradient = computed(() => {
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap mb-2">
               <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
-                           bg-white/20 backdrop-blur border border-white/20 text-white">
+                           bg-surface-raised/20 backdrop-blur border border-white/20 text-white">
                 <i :class="iconForStage(etapaCrm)" class="text-micro"></i>
                 {{ etapaCrm || 'Sem situação' }}
               </span>
               <span v-if="isVendida"
                 class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-semibold
-                       bg-white/30 backdrop-blur border border-white/30 text-white">
+                       bg-surface-raised/30 backdrop-blur border border-white/30 text-white">
                 <i class="fas fa-flag-checkered text-micro"></i>Vendida (CRM)
               </span>
               <span class="text-micro text-white/70 font-mono">#{{ reserva?.idreserva }}</span>
@@ -119,7 +119,7 @@ const bannerGradient = computed(() => {
 
           <button @click="emit('fechar')" aria-label="Fechar"
             class="h-10 w-10 grid place-items-center rounded-lg
-                   bg-white/15 hover:bg-white/25
+                   bg-surface-raised/15 hover:bg-surface-raised/25
                    text-white transition-colors duration-120 shrink-0">
             <i class="fas fa-xmark"></i>
           </button>
@@ -128,14 +128,14 @@ const bannerGradient = computed(() => {
         <div v-if="cvLink || cvRepasseLink" class="relative mt-4 flex flex-wrap gap-2">
           <a v-if="cvLink" :href="cvLink" target="_blank" rel="noopener"
             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                   bg-white/15 hover:bg-white/30 backdrop-blur border border-white/20
+                   bg-surface-raised/15 hover:bg-surface-raised/30 backdrop-blur border border-white/20
                    text-white text-xs font-medium transition-all hover:-translate-y-0.5">
             <i class="fas fa-arrow-up-right-from-square text-micro"></i>
             Abrir a reserva no CV
           </a>
           <a v-if="cvRepasseLink" :href="cvRepasseLink" target="_blank" rel="noopener"
             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                   bg-white/15 hover:bg-white/30 backdrop-blur border border-white/20
+                   bg-surface-raised/15 hover:bg-surface-raised/30 backdrop-blur border border-white/20
                    text-white text-xs font-medium transition-all hover:-translate-y-0.5">
             <i class="fas fa-money-bill-transfer text-micro"></i>
             Abrir o repasse no CV

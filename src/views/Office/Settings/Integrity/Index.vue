@@ -99,7 +99,7 @@ const clsMeta = {
       </PageHeader>
 
       <div v-if="error"
-        class="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300">
+        class="mb-4 rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-sm text-data-neg">
         <i class="fas fa-circle-exclamation mr-1"></i>{{ error }}
       </div>
 
@@ -108,7 +108,7 @@ const clsMeta = {
         <button class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-sunken/30 transition-colors"
           @click="routeListOpen = !routeListOpen">
           <i class="fas text-sm w-5 text-center"
-            :class="routeAudit.healthy ? 'fa-route text-emerald-500' : 'fa-triangle-exclamation text-red-500'"></i>
+            :class="routeAudit.healthy ? 'fa-route text-data-pos' : 'fa-triangle-exclamation text-data-neg'"></i>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-ink">Rotas do front (navbar × alçadas)</p>
             <p class="text-xs text-ink-muted truncate">
@@ -129,11 +129,11 @@ const clsMeta = {
         </button>
 
         <div v-if="routeAudit.loose.length || routeAudit.deadLinks.length"
-          class="border-t border-line bg-red-500/5 px-4 py-3 space-y-1">
-          <p v-for="r in routeAudit.loose" :key="r.path" class="text-xs font-mono text-red-600 dark:text-red-400">
+          class="border-t border-line bg-data-neg/5 px-4 py-3 space-y-1">
+          <p v-for="r in routeAudit.loose" :key="r.path" class="text-xs font-mono text-data-neg">
             <i class="fas fa-circle-exclamation mr-1"></i>{{ r.path }} — autenticada sem classificação (navbar/alçada/admin/livre)
           </p>
-          <p v-for="d in routeAudit.deadLinks" :key="d" class="text-xs font-mono text-red-600 dark:text-red-400">
+          <p v-for="d in routeAudit.deadLinks" :key="d" class="text-xs font-mono text-data-neg">
             <i class="fas fa-link-slash mr-1"></i>{{ d }} — item do menu sem rota correspondente
           </p>
         </div>
@@ -170,8 +170,8 @@ const clsMeta = {
           <div class="flex flex-wrap items-center gap-3">
             <div class="h-11 w-11 rounded-xl grid place-items-center border shrink-0"
               :class="report.healthy
-                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                : 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'">
+                ? 'bg-data-pos/10 text-data-pos border-data-pos/20'
+                : 'bg-data-neg/10 text-data-neg border-data-neg/20'">
               <i class="fas text-lg" :class="report.healthy ? 'fa-shield-heart' : 'fa-shield-virus'"></i>
             </div>
             <div class="flex-1 min-w-0">
@@ -197,9 +197,9 @@ const clsMeta = {
               @click="toggle(c.id)">
               <i class="fas text-sm w-5 text-center"
                 :class="[statusMeta[c.status]?.icon,
-                  c.status === 'ok' ? 'text-emerald-500'
-                  : c.status === 'warn' ? 'text-amber-500'
-                  : c.status === 'fail' ? 'text-red-500' : 'text-ink-subtle']"></i>
+                  c.status === 'ok' ? 'text-data-pos'
+                  : c.status === 'warn' ? 'text-data-warn'
+                  : c.status === 'fail' ? 'text-data-neg' : 'text-ink-subtle']"></i>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-ink truncate">{{ c.name }}</p>
                 <p class="text-xs text-ink-muted truncate">{{ c.summary }}</p>

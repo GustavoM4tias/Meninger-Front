@@ -149,7 +149,7 @@ function initials(name) {
       </div>
 
       <div v-if="store.error"
-        class="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
+        class="mt-4 rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2.5 text-sm text-data-neg flex items-start gap-2">
         <i class="fas fa-circle-exclamation shrink-0 mt-0.5"></i>
         <span>{{ store.error }}</span>
       </div>
@@ -199,7 +199,7 @@ function initials(name) {
           <div class="shrink-0 w-5 grid place-items-center">
             <input v-if="!user.imported" type="checkbox"
               :checked="selected.has(user.microsoft_id)" @change="toggleUser(user.microsoft_id)" />
-            <i v-else class="fas fa-check text-emerald-500 text-xs" v-tippy="'Já importado'"></i>
+            <i v-else class="fas fa-check text-data-pos text-xs" v-tippy="'Já importado'"></i>
           </div>
 
           <!-- Avatar -->

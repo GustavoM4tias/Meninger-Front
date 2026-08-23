@@ -37,7 +37,7 @@
                     <span v-for="(item, i) in form.items" :key="`${item}-${i}`"
                         class="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-md bg-surface-sunken border border-line text-xs text-ink">
                         {{ item }}
-                        <button type="button" class="w-5 h-5 rounded flex items-center justify-center text-ink-subtle hover:text-red-500 transition-colors"
+                        <button type="button" class="w-5 h-5 rounded flex items-center justify-center text-ink-subtle hover:text-data-neg transition-colors"
                             :aria-label="`Remover ${item}`" @click="form.items.splice(i, 1)">
                             <i class="fas fa-xmark text-[10px]"></i>
                         </button>
@@ -46,7 +46,7 @@
                 <p v-else class="text-xs text-ink-subtle mt-2">Nenhum item adicionado ainda.</p>
             </div>
 
-            <div v-if="errorMsg" class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+            <div v-if="errorMsg" class="text-sm text-data-neg flex items-center gap-2">
                 <i class="fas fa-circle-exclamation"></i>{{ errorMsg }}
             </div>
         </div>

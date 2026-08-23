@@ -187,13 +187,13 @@
                     <!-- Novas Funcionalidades -->
                     <div v-if="release.features?.length">
                       <h5 class="text-xs font-mono uppercase tracking-wider text-ink-subtle mb-2 flex items-center gap-1.5">
-                        <i class="fas fa-sparkles text-emerald-500 text-[10px]"></i>
+                        <i class="fas fa-sparkles text-data-pos text-[10px]"></i>
                         Novas funcionalidades
                       </h5>
                       <ul class="space-y-2">
                         <li v-for="feature in release.features" :key="feature.id"
                           class="text-sm text-ink-muted flex items-start gap-2">
-                          <i class="fas fa-circle text-emerald-500 mt-1.5 text-[6px] shrink-0"></i>
+                          <i class="fas fa-circle text-data-pos mt-1.5 text-[6px] shrink-0"></i>
                           <span><strong class="text-ink">{{ feature.title }}:</strong> {{ feature.description }}</span>
                         </li>
                       </ul>
@@ -202,13 +202,13 @@
                     <!-- Melhorias -->
                     <div v-if="release.improvements?.length">
                       <h5 class="text-xs font-mono uppercase tracking-wider text-ink-subtle mb-2 flex items-center gap-1.5">
-                        <i class="fas fa-arrow-up text-sky-500 text-[10px]"></i>
+                        <i class="fas fa-arrow-up text-accent text-[10px]"></i>
                         Melhorias
                       </h5>
                       <ul class="space-y-2">
                         <li v-for="improvement in release.improvements" :key="improvement.id"
                           class="text-sm text-ink-muted flex items-start gap-2">
-                          <i class="fas fa-circle text-sky-500 mt-1.5 text-[6px] shrink-0"></i>
+                          <i class="fas fa-circle text-accent mt-1.5 text-[6px] shrink-0"></i>
                           <span><strong class="text-ink">{{ improvement.category }}:</strong> {{ improvement.description }}</span>
                         </li>
                       </ul>
@@ -217,13 +217,13 @@
                     <!-- Correções -->
                     <div v-if="release.fixes?.length">
                       <h5 class="text-xs font-mono uppercase tracking-wider text-ink-subtle mb-2 flex items-center gap-1.5">
-                        <i class="fas fa-bug-slash text-amber-500 text-[10px]"></i>
+                        <i class="fas fa-bug-slash text-data-warn text-[10px]"></i>
                         Correções
                       </h5>
                       <ul class="space-y-2">
                         <li v-for="fix in release.fixes" :key="fix.id"
                           class="text-sm text-ink-muted flex items-start gap-2">
-                          <i class="fas fa-circle text-amber-500 mt-1.5 text-[6px] shrink-0"></i>
+                          <i class="fas fa-circle text-data-warn mt-1.5 text-[6px] shrink-0"></i>
                           <span>{{ fix.description }}</span>
                         </li>
                       </ul>
@@ -231,17 +231,17 @@
 
                     <!-- Breaking Changes -->
                     <div v-if="release.breakingChanges?.length">
-                      <h5 class="text-xs font-mono uppercase tracking-wider text-red-600 dark:text-red-400 mb-2 flex items-center gap-1.5">
-                        <i class="fas fa-triangle-exclamation text-red-500 text-[10px]"></i>
+                      <h5 class="text-xs font-mono uppercase tracking-wider text-data-neg mb-2 flex items-center gap-1.5">
+                        <i class="fas fa-triangle-exclamation text-data-neg text-[10px]"></i>
                         Breaking changes
                       </h5>
                       <ul class="space-y-2">
                         <li v-for="change in release.breakingChanges" :key="change.id"
-                          class="text-sm rounded-lg bg-red-500/10 border border-red-500/20 p-3">
-                          <div class="text-red-700 dark:text-red-300">
+                          class="text-sm rounded-lg bg-data-neg/10 border border-data-neg/20 p-3">
+                          <div class="text-data-neg">
                             <strong>{{ change.component }}:</strong> {{ change.description }}
                           </div>
-                          <div class="text-red-600 dark:text-red-400 text-xs mt-1">
+                          <div class="text-data-neg text-xs mt-1">
                             <strong>Ação:</strong> {{ change.migrationGuide }}
                           </div>
                         </li>
@@ -342,16 +342,16 @@
           <!-- Funcionalidades Detalhadas -->
           <div v-if="selectedRelease.features?.length">
             <h4 class="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
-              <i class="fas fa-sparkles text-emerald-500"></i>
+              <i class="fas fa-sparkles text-data-pos"></i>
               Novas Funcionalidades
             </h4>
             <div class="space-y-3">
               <div v-for="feature in selectedRelease.features" :key="feature.id"
-                class="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-4">
-                <h5 class="font-medium text-emerald-700 dark:text-emerald-300 mb-1.5 text-sm">
+                class="rounded-xl bg-data-pos/10 border border-data-pos/20 p-4">
+                <h5 class="font-medium text-data-pos mb-1.5 text-sm">
                   {{ feature.title }}
                 </h5>
-                <p class="text-emerald-700/80 dark:text-emerald-300/80 text-xs leading-relaxed">
+                <p class="text-data-pos  text-xs leading-relaxed">
                   {{ feature.description }}
                 </p>
               </div>
@@ -361,16 +361,16 @@
           <!-- Problemas Conhecidos -->
           <div v-if="selectedRelease.knownIssues?.length">
             <h4 class="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
-              <i class="fas fa-triangle-exclamation text-amber-500"></i>
+              <i class="fas fa-triangle-exclamation text-data-warn"></i>
               Problemas Conhecidos
             </h4>
             <div class="space-y-3">
               <div v-for="issue in selectedRelease.knownIssues" :key="issue.id"
-                class="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4">
-                <p class="text-amber-700 dark:text-amber-300 text-xs mb-2 leading-relaxed">
+                class="rounded-xl bg-data-warn/10 border border-data-warn/20 p-4">
+                <p class="text-data-warn text-xs mb-2 leading-relaxed">
                   {{ issue.description }}
                 </p>
-                <div v-if="issue.workaround" class="text-amber-700/80 dark:text-amber-300/80 text-xs">
+                <div v-if="issue.workaround" class="text-data-warn  text-xs">
                   <strong>Solução temporária:</strong> {{ issue.workaround }}
                 </div>
               </div>
@@ -392,9 +392,9 @@
               <h5 class="text-xs font-mono uppercase tracking-wider text-ink-subtle">Melhorias</h5>
               <ul class="space-y-2">
                 <li v-for="improvement in selectedRelease.improvements" :key="improvement.id"
-                  class="rounded-lg bg-sky-500/10 border border-sky-500/20 p-3 text-xs">
-                  <strong class="text-sky-700 dark:text-sky-300">{{ improvement.category }}:</strong>
-                  <span class="text-sky-700/80 dark:text-sky-300/80 ml-1">{{ improvement.description }}</span>
+                  class="rounded-lg bg-accent/10 border border-accent/20 p-3 text-xs">
+                  <strong class="text-accent">{{ improvement.category }}:</strong>
+                  <span class="text-accent  ml-1">{{ improvement.description }}</span>
                 </li>
               </ul>
             </div>
@@ -403,7 +403,7 @@
               <h5 class="text-xs font-mono uppercase tracking-wider text-ink-subtle">Correções</h5>
               <ul class="space-y-2">
                 <li v-for="fix in selectedRelease.fixes" :key="fix.id"
-                  class="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-700 dark:text-amber-300">
+                  class="rounded-lg bg-data-warn/10 border border-data-warn/20 p-3 text-xs text-data-warn">
                   {{ fix.description }}
                 </li>
               </ul>
@@ -1739,11 +1739,11 @@ function getReleaseTypeLabel(type) {
 
 function getCategoryClass(category) {
   const classes = {
-    frontend: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
-    backend:  'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
-    api:      'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20',
+    frontend: 'bg-accent/10 text-accent border-accent/20',
+    backend:  'bg-data-pos/10 text-data-pos border-data-pos/20',
+    api:      'bg-accent/10 text-accent border-accent/20',
     mobile:   'bg-pink-500/10 text-pink-700 dark:text-pink-300 border-pink-500/20',
-    security: 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/20',
+    security: 'bg-data-neg/10 text-data-neg border-data-neg/20',
   };
   return classes[category] || 'bg-surface-sunken text-ink-muted border-line';
 }

@@ -45,8 +45,8 @@ const assocList = computed(() => {
 });
 
 const stepIcon = (ok, tried = true) => !tried ? 'fas fa-minus text-ink-subtle'
-    : ok ? 'fas fa-circle-check text-emerald-500'
-        : 'fas fa-circle-xmark text-red-500';
+    : ok ? 'fas fa-circle-check text-data-pos'
+        : 'fas fa-circle-xmark text-data-neg';
 
 // Link direto para a ficha da imobiliária no painel gestor do CV.
 const cvUrl = computed(() => r.value?.result?.idimobiliaria_cv
@@ -122,7 +122,7 @@ async function saveWindow() {
             </div>
 
             <p v-if="r.error"
-                class="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3 text-sm text-red-700 dark:text-red-300">
+                class="rounded-lg border border-data-neg/25 bg-data-neg/10  p-3 text-sm text-data-neg">
                 {{ r.error }}
             </p>
 
@@ -145,7 +145,7 @@ async function saveWindow() {
                         <Input v-model="wStarts" type="date" label="Início" />
                         <Input v-model="wEnds" type="date" label="Encerramento" required />
                     </div>
-                    <p v-if="windowError" class="text-sm text-red-500">{{ windowError }}</p>
+                    <p v-if="windowError" class="text-sm text-data-neg">{{ windowError }}</p>
                     <div class="flex justify-end gap-2">
                         <Button variant="ghost" size="sm" @click="editingWindow = false">Cancelar</Button>
                         <Button variant="primary" size="sm" icon="fas fa-check" :loading="savingWindow" @click="saveWindow">
@@ -170,7 +170,7 @@ async function saveWindow() {
                 <ul v-if="(r.submissions || []).length" class="space-y-1.5">
                     <li v-for="(s, idx) in r.submissions" :key="idx"
                         class="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
-                        <i :class="s.status === 'error' ? 'fas fa-clock text-amber-500' : 'fas fa-circle-check text-emerald-500'"></i>
+                        <i :class="s.status === 'error' ? 'fas fa-clock text-data-warn' : 'fas fa-circle-check text-data-pos'"></i>
                         <div class="min-w-0 flex-1">
                             <p class="text-ink truncate">{{ s.nome || 'Imobiliária' }}</p>
                             <p class="text-xs text-ink-muted">{{ s.gerente || '-' }} · {{ fmtDateTime(s.at) }}</p>

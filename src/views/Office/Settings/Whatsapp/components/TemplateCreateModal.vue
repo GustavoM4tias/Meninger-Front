@@ -258,7 +258,7 @@ const applyPreset = (p) => {
             <span v-if="variables.length"> · <span class="font-mono">{{ variables.length }}</span> var{{ variables.length === 1 ? '' : 's' }}</span>
           </p>
         </div>
-        <p v-if="ratioWarning" class="text-micro text-amber-600 dark:text-amber-400 mt-1">
+        <p v-if="ratioWarning" class="text-micro text-data-warn mt-1">
           <i class="fas fa-triangle-exclamation mr-1"></i>{{ ratioWarning }}
         </p>
       </div>
@@ -297,7 +297,7 @@ const applyPreset = (p) => {
           <div v-for="(btn, i) in form.buttons" :key="i" class="flex items-center gap-2">
             <Input v-model="btn.text" :placeholder="`Botão ${i + 1} (max 25 chars)`" size="sm" class="flex-1" />
             <button type="button" @click="removeButton(i)"
-              class="h-9 w-9 grid place-items-center rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-500/10 transition-colors">
+              class="h-9 w-9 grid place-items-center rounded-md text-ink-subtle hover:text-data-neg hover:bg-data-neg/10 transition-colors">
               <i class="fas fa-trash text-[11px]"></i>
             </button>
           </div>
@@ -320,20 +320,20 @@ const applyPreset = (p) => {
       <!-- Preview -->
       <div class="rounded-xl border border-line bg-surface-sunken/40 p-3">
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Preview</p>
-        <div class="rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3 text-sm text-ink whitespace-pre-wrap">
+        <div class="rounded-lg bg-data-pos/5 border border-data-pos/20 p-3 text-sm text-ink whitespace-pre-wrap">
           <p v-if="form.headerText" class="font-bold mb-1">{{ form.headerText }}</p>
           <p>{{ previewBody || 'Digite o corpo para ver a prévia.' }}</p>
           <p v-if="form.footerText" class="text-xs text-ink-muted mt-2 italic">{{ form.footerText }}</p>
-          <div v-if="form.buttons.filter(b => b.text).length" class="mt-2 pt-2 border-t border-emerald-500/20 flex flex-wrap gap-1.5">
+          <div v-if="form.buttons.filter(b => b.text).length" class="mt-2 pt-2 border-t border-data-pos/20 flex flex-wrap gap-1.5">
             <span v-for="(btn, i) in form.buttons.filter(b => b.text)" :key="i"
-              class="px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
+              class="px-3 py-1.5 rounded-md text-xs font-medium bg-data-pos/10 border border-data-pos/30 text-data-pos">
               {{ btn.text }}
             </span>
           </div>
         </div>
       </div>
 
-      <div v-if="error" class="text-xs text-red-600 dark:text-red-400">{{ error }}</div>
+      <div v-if="error" class="text-xs text-data-neg">{{ error }}</div>
     </div>
 
     <template #footer>

@@ -30,9 +30,9 @@ async function handleSubmit() {
 }
 
 const messageBorderClass = (nivel) => ({
-  correto: 'border-emerald-500/30 bg-emerald-500/10',
-  alerta: 'border-amber-500/30 bg-amber-500/10',
-  incorreto: 'border-red-500/30 bg-red-500/10',
+  correto: 'border-data-pos/30 bg-data-pos/10',
+  alerta: 'border-data-warn/30 bg-data-warn/10',
+  incorreto: 'border-data-neg/30 bg-data-neg/10',
 }[nivel] || 'border-line bg-surface-sunken');
 
 const messageVariant = (nivel) => ({
@@ -110,7 +110,7 @@ function clearFile(target) {
                 'Aguarde o resultado (pode levar até 100s)',
                 'Consulte o histórico no botão acima',
               ]" :key="tip" class="flex items-start gap-2">
-                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></span>
+                <span class="h-1.5 w-1.5 rounded-full bg-data-pos mt-1.5 shrink-0"></span>
                 <span>{{ tip }}</span>
               </li>
             </ul>
@@ -125,11 +125,11 @@ function clearFile(target) {
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-ink-muted">Aprovadas</span>
-                <span class="font-mono font-semibold text-emerald-600 dark:text-emerald-400">{{ stats.aprovados }}</span>
+                <span class="font-mono font-semibold text-data-pos">{{ stats.aprovados }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-ink-muted">Reprovadas</span>
-                <span class="font-mono font-semibold text-red-600 dark:text-red-400">{{ stats.reprovados }}</span>
+                <span class="font-mono font-semibold text-data-neg">{{ stats.reprovados }}</span>
               </div>
             </div>
           </Surface>
@@ -150,7 +150,7 @@ function clearFile(target) {
 
                 <div>
                   <label class="block text-xs font-medium text-ink-muted mb-1.5">
-                    Contrato Caixa <span class="text-red-500">*</span>
+                    Contrato Caixa <span class="text-data-neg">*</span>
                   </label>
                   <label for="dropzone-contrato"
                     class="relative flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-xl cursor-pointer transition-colors"
@@ -172,14 +172,14 @@ function clearFile(target) {
                       @change="(e) => onFileChange('contrato', e)" />
                   </label>
                   <button v-if="contratoCaixa" type="button" @click="clearFile('contrato')"
-                    class="mt-2 text-xs text-red-500 hover:underline">
+                    class="mt-2 text-xs text-data-neg hover:underline">
                     <i class="fas fa-xmark text-[10px]"></i> Remover
                   </button>
                 </div>
 
                 <div>
                   <label class="block text-xs font-medium text-ink-muted mb-1.5">
-                    Confissão de Dívida <span class="text-red-500">*</span>
+                    Confissão de Dívida <span class="text-data-neg">*</span>
                   </label>
                   <label for="dropzone-confissao"
                     class="relative flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-xl cursor-pointer transition-colors"
@@ -201,7 +201,7 @@ function clearFile(target) {
                       @change="(e) => onFileChange('confissao', e)" />
                   </label>
                   <button v-if="confissaoDivida" type="button" @click="clearFile('confissao')"
-                    class="mt-2 text-xs text-red-500 hover:underline">
+                    class="mt-2 text-xs text-data-neg hover:underline">
                     <i class="fas fa-xmark text-[10px]"></i> Remover
                   </button>
                 </div>
@@ -227,15 +227,15 @@ function clearFile(target) {
               <!-- Status -->
               <div class="text-center">
                 <span v-if="resultado.status === 'APROVADO'"
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-sm font-bold">
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-data-pos/15 text-data-pos border border-data-pos/30 text-sm font-bold">
                   <i class="fas fa-check"></i> DOCUMENTOS APROVADOS
                 </span>
                 <span v-else-if="resultado.status === 'REPROVADO'"
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30 text-sm font-bold">
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-data-neg/15 text-data-neg border border-data-neg/30 text-sm font-bold">
                   <i class="fas fa-xmark"></i> DOCUMENTOS REPROVADOS
                 </span>
                 <span v-else
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-sm font-bold">
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-data-warn/15 text-data-warn border border-data-warn/30 text-sm font-bold">
                   <i class="fas fa-triangle-exclamation"></i> ERRO NA VALIDAÇÃO
                 </span>
               </div>
@@ -269,23 +269,23 @@ function clearFile(target) {
                     Resumo
                   </p>
                   <div class="grid grid-cols-3 gap-3 text-center">
-                    <div class="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3">
-                      <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    <div class="rounded-lg bg-data-pos/10 border border-data-pos/20 p-3">
+                      <p class="text-2xl font-bold text-data-pos tabular-nums">
                         {{ countByLevel('correto') }}
                       </p>
-                      <p class="text-xs text-emerald-700 dark:text-emerald-300">Corretos</p>
+                      <p class="text-xs text-data-pos">Corretos</p>
                     </div>
-                    <div class="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3">
-                      <p class="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                    <div class="rounded-lg bg-data-warn/10 border border-data-warn/20 p-3">
+                      <p class="text-2xl font-bold text-data-warn tabular-nums">
                         {{ countByLevel('alerta') }}
                       </p>
-                      <p class="text-xs text-amber-700 dark:text-amber-300">Alertas</p>
+                      <p class="text-xs text-data-warn">Alertas</p>
                     </div>
-                    <div class="rounded-lg bg-red-500/10 border border-red-500/20 p-3">
-                      <p class="text-2xl font-bold text-red-600 dark:text-red-400 tabular-nums">
+                    <div class="rounded-lg bg-data-neg/10 border border-data-neg/20 p-3">
+                      <p class="text-2xl font-bold text-data-neg tabular-nums">
                         {{ countByLevel('incorreto') }}
                       </p>
-                      <p class="text-xs text-red-700 dark:text-red-300">Incorretos</p>
+                      <p class="text-xs text-data-neg">Incorretos</p>
                     </div>
                   </div>
                 </div>
@@ -293,8 +293,8 @@ function clearFile(target) {
 
               <!-- Erro de parsing -->
               <div v-else-if="resultado.status === 'ERRO'"
-                class="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-                <p class="text-sm font-semibold text-red-700 dark:text-red-300 mb-2 flex items-center gap-2">
+                class="rounded-lg border border-data-neg/20 bg-data-neg/10 p-4">
+                <p class="text-sm font-semibold text-data-neg mb-2 flex items-center gap-2">
                   <i class="fas fa-triangle-exclamation"></i>Erro na validação
                 </p>
                 <pre class="text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 text-ink-muted bg-surface rounded p-3 border border-line">{{ resultado.resultado }}</pre>

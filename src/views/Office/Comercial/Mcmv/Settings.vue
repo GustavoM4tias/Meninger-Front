@@ -143,7 +143,7 @@ function fmtVigencia(v) {
         <!-- Upload -->
         <Surface variant="raised" padding="lg" class="space-y-4">
           <div class="flex items-center gap-2">
-            <i class="fas fa-file-excel text-emerald-500"></i>
+            <i class="fas fa-file-excel text-data-pos"></i>
             <h2 class="text-xs font-bold text-ink uppercase tracking-wider font-mono">Importar nova planilha</h2>
           </div>
           <p class="text-xs text-ink-muted leading-relaxed">
@@ -157,12 +157,12 @@ function fmtVigencia(v) {
             class="flex flex-col items-center justify-center gap-2 w-full border-2 border-dashed rounded-xl py-8 cursor-pointer transition-colors"
             :class="dragover
               ? 'border-accent bg-accent-soft/40'
-              : selectedFile ? 'border-emerald-500 bg-emerald-500/10' : 'border-line hover:border-accent hover:bg-surface-sunken'"
+              : selectedFile ? 'border-data-pos bg-data-pos/10' : 'border-line hover:border-accent hover:bg-surface-sunken'"
             @dragover.prevent="dragover = true"
             @dragleave="dragover = false"
             @drop.prevent="onDrop">
             <i class="fas fa-cloud-upload-alt text-3xl"
-              :class="selectedFile ? 'text-emerald-500' : 'text-ink-subtle'"></i>
+              :class="selectedFile ? 'text-data-pos' : 'text-ink-subtle'"></i>
             <span v-if="!selectedFile" class="text-sm text-ink-muted">
               Arraste ou <span class="text-accent font-medium">clique para selecionar</span>
             </span>
@@ -176,21 +176,21 @@ function fmtVigencia(v) {
           <!-- Arquivo selecionado -->
           <div v-if="selectedFile"
             class="flex items-center gap-3 bg-surface-sunken border border-line rounded-xl px-4 py-3">
-            <i class="fas fa-file-excel text-emerald-500"></i>
+            <i class="fas fa-file-excel text-data-pos"></i>
             <span class="text-sm text-ink flex-1 truncate font-mono">{{ selectedFile.name }}</span>
             <button @click="clearFile"
-              class="text-ink-subtle hover:text-red-500 transition-colors p-1">
+              class="text-ink-subtle hover:text-data-neg transition-colors p-1">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
 
           <!-- Erro / Sucesso -->
           <div v-if="importError"
-            class="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+            class="flex items-center gap-2 text-sm text-data-neg bg-data-neg/10 border border-data-neg/20 rounded-lg p-3">
             <i class="fas fa-circle-exclamation"></i>{{ importError }}
           </div>
           <div v-if="importSuccess"
-            class="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
+            class="flex items-center gap-2 text-sm text-data-pos bg-data-pos/10 border border-data-pos/20 rounded-lg p-3">
             <i class="fas fa-circle-check"></i>{{ importSuccess }}
           </div>
 
@@ -210,15 +210,15 @@ function fmtVigencia(v) {
           </div>
           <p class="text-xs text-ink-muted">Definidos em portaria federal, não variam por município.</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="rounded-xl p-4 bg-blue-500/10 border border-blue-500/20 text-center">
-              <p class="text-micro font-semibold text-blue-700 dark:text-blue-300">Faixa 3</p>
-              <p class="text-micro text-blue-600/80 dark:text-blue-400/80 mt-0.5">R$4.700 a R$8.000</p>
-              <p class="text-lg font-bold text-blue-700 dark:text-blue-200 mt-1.5 tabular-nums">R$ 400.000</p>
+            <div class="rounded-xl p-4 bg-accent/10 border border-accent/20 text-center">
+              <p class="text-micro font-semibold text-accent">Faixa 3</p>
+              <p class="text-micro text-accent  mt-0.5">R$4.700 a R$8.000</p>
+              <p class="text-lg font-bold text-accent mt-1.5 tabular-nums">R$ 400.000</p>
             </div>
-            <div class="rounded-xl p-4 bg-purple-500/10 border border-purple-500/20 text-center">
-              <p class="text-micro font-semibold text-purple-700 dark:text-purple-300">Faixa 4</p>
-              <p class="text-micro text-purple-600/80 dark:text-purple-400/80 mt-0.5">até R$12.000</p>
-              <p class="text-lg font-bold text-purple-700 dark:text-purple-200 mt-1.5 tabular-nums">R$ 600.000</p>
+            <div class="rounded-xl p-4 bg-accent/10 border border-accent/20 text-center">
+              <p class="text-micro font-semibold text-accent">Faixa 4</p>
+              <p class="text-micro text-accent  mt-0.5">até R$12.000</p>
+              <p class="text-lg font-bold text-accent mt-1.5 tabular-nums">R$ 600.000</p>
             </div>
           </div>
         </Surface>

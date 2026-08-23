@@ -425,15 +425,15 @@ onMounted(() => {
           </span>
           <span class="opacity-40">|</span>
           <button @click="openBulkCompany"
-            class="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-sm font-medium transition-colors">
+            class="px-3 py-1.5 bg-surface-raised/15 hover:bg-surface-raised/25 rounded-lg text-sm font-medium transition-colors">
             <i class="fas fa-building mr-1"></i> Vincular empresa
           </button>
           <button @click="bulkActivate"
-            class="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-sm font-medium transition-colors">
+            class="px-3 py-1.5 bg-surface-raised/15 hover:bg-surface-raised/25 rounded-lg text-sm font-medium transition-colors">
             <i class="fas fa-rotate-left mr-1"></i> Reativar
           </button>
           <button @click="bulkDeactivate"
-            class="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-sm font-medium transition-colors">
+            class="px-3 py-1.5 bg-surface-raised/15 hover:bg-surface-raised/25 rounded-lg text-sm font-medium transition-colors">
             <i class="fas fa-ban mr-1"></i> Inativar
           </button>
           <button @click="clearSelection"
@@ -446,7 +446,7 @@ onMounted(() => {
       <!-- Tabela -->
       <Surface variant="raised" padding="none" class="overflow-hidden mb-4">
         <div v-if="error" class="p-8 text-center">
-          <i class="fas fa-circle-exclamation text-red-500 text-2xl mb-2"></i>
+          <i class="fas fa-circle-exclamation text-data-neg text-2xl mb-2"></i>
           <p class="text-sm text-ink-muted">{{ error }}</p>
         </div>
 
@@ -539,7 +539,7 @@ onMounted(() => {
                       v-tippy="'Vincular empresa'" @click="openCompany(row)" />
                     <Button size="sm" variant="ghost"
                       :icon="row.active ? 'fas fa-ban' : 'fas fa-rotate-left'"
-                      :class="row.active ? 'text-red-500' : 'text-emerald-600'"
+                      :class="row.active ? 'text-data-neg' : 'text-data-pos'"
                       v-tippy="row.active ? 'Inativar' : 'Reativar'"
                       @click="toggleActive(row)" />
                   </div>
@@ -667,7 +667,7 @@ onMounted(() => {
     <Modal :open="confirmVisible" size="md" @close="closeConfirm">
       <template #header>
         <div class="flex items-center gap-3">
-          <div class="h-9 w-9 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 grid place-items-center shrink-0">
+          <div class="h-9 w-9 rounded-lg bg-data-warn/15 text-data-warn border border-data-warn/20 grid place-items-center shrink-0">
             <i class="fas fa-triangle-exclamation text-sm"></i>
           </div>
           <div>
@@ -698,7 +698,7 @@ onMounted(() => {
       <template v-else>
         <div class="space-y-3">
           <p class="text-sm text-ink">Digite exatamente a frase abaixo para confirmar:</p>
-          <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-mono font-semibold text-amber-700 dark:text-amber-300 text-center tracking-wide">
+          <div class="rounded-lg border border-data-warn/30 bg-data-warn/10 px-4 py-3 text-sm font-mono font-semibold text-data-warn text-center tracking-wide">
             {{ confirmRequiredPhrase }}
           </div>
           <Input v-model.trim="confirmPhraseInput" placeholder="Digite aqui…" hint="Tudo em maiúsculo." />

@@ -65,13 +65,13 @@
           </div>
         </div>
 
-        <div v-if="filterHint" class="px-3 sm:px-4 pb-3 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+        <div v-if="filterHint" class="px-3 sm:px-4 pb-3 text-xs text-data-warn flex items-center gap-1.5">
           <i class="fas fa-circle-info"></i>{{ filterHint }}
         </div>
       </section>
 
-      <Surface v-if="store.error" variant="raised" padding="sm" class="mb-4 border-red-500/30 bg-red-500/10">
-        <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+      <Surface v-if="store.error" variant="raised" padding="sm" class="mb-4 border-data-neg/30 bg-data-neg/10">
+        <div class="text-sm text-data-neg flex items-center gap-2">
           <i class="fas fa-circle-exclamation"></i>{{ store.error }}
         </div>
       </Surface>
@@ -83,17 +83,17 @@
           <div class="text-xl font-bold text-ink font-mono tabular-nums">{{ num(store.summary.total) }}</div>
           <div class="text-micro text-ink-subtle mt-0.5">no recorte atual</div>
         </Surface>
-        <Surface variant="raised" padding="md" class="border-emerald-500/30 bg-emerald-500/10 surface-gradient">
-          <div class="text-micro uppercase tracking-wider text-emerald-700 dark:text-emerald-300 font-mono mb-1 flex items-center gap-1">
+        <Surface variant="raised" padding="md" class="border-data-pos/30 bg-data-pos/10 surface-gradient">
+          <div class="text-micro uppercase tracking-wider text-data-pos font-mono mb-1 flex items-center gap-1">
             <i class="fas fa-circle-check text-[10px]"></i> Com nº CEF
           </div>
-          <div class="text-xl font-bold text-emerald-700 dark:text-emerald-200 font-mono tabular-nums">{{ num(store.summary.withCef) }}</div>
+          <div class="text-xl font-bold text-data-pos font-mono tabular-nums">{{ num(store.summary.withCef) }}</div>
         </Surface>
-        <Surface variant="raised" padding="md" class="border-amber-500/30 bg-amber-500/10 surface-gradient">
-          <div class="text-micro uppercase tracking-wider text-amber-700 dark:text-amber-300 font-mono mb-1 flex items-center gap-1">
+        <Surface variant="raised" padding="md" class="border-data-warn/30 bg-data-warn/10 surface-gradient">
+          <div class="text-micro uppercase tracking-wider text-data-warn font-mono mb-1 flex items-center gap-1">
             <i class="fas fa-circle-minus text-[10px]"></i> Sem nº CEF
           </div>
-          <div class="text-xl font-bold text-amber-700 dark:text-amber-200 font-mono tabular-nums">{{ num(store.summary.withoutCef) }}</div>
+          <div class="text-xl font-bold text-data-warn font-mono tabular-nums">{{ num(store.summary.withoutCef) }}</div>
         </Surface>
       </div>
 

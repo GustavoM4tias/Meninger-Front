@@ -267,8 +267,8 @@ const showFinished = computed(() =>
       enter-from-class="opacity-0 translate-y-2"
       enter-to-class="opacity-100 translate-y-0">
       <div v-if="eventStore.errorMessage"
-        class="fixed bottom-5 left-5 z-50 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20
-               text-red-700 dark:text-red-300 text-sm shadow-elevated backdrop-blur flex items-center gap-2">
+        class="fixed bottom-5 left-5 z-50 px-4 py-3 rounded-xl bg-data-neg/10 border border-data-neg/20
+               text-data-neg text-sm shadow-elevated backdrop-blur flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>
         {{ eventStore.errorMessage }}
       </div>

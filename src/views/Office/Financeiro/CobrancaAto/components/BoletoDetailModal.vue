@@ -278,7 +278,7 @@ function statusLabel(s) {
 }
 /* Cor do banner pelo desfecho do boleto. Gradiente montado a partir dos TOKENS
    de estado - o desenho é o mesmo do detalhe de Pré-Cadastros e Reservas, mas a
-   cor vem do sistema em vez de um `from-emerald-700` escrito à mão. */
+   cor vem do sistema em vez de um `from-data-pos` escrito à mão. */
 const bannerCor = computed(() => {
   const st = live.value?.status;
   const pg = live.value?.payment_status;
@@ -604,13 +604,13 @@ async function copyLink() {
             <div class="flex items-center gap-2 flex-wrap mb-2">
               <span v-if="live?.status"
                 class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
-                       bg-white/20 border border-white/20 text-white">
+                       bg-surface-raised/20 border border-white/20 text-white">
                 <i :class="live.status === 'success' ? 'fas fa-check' : live.status === 'error' ? 'fas fa-xmark' : 'fas fa-spinner fa-spin'"></i>
                 {{ statusLabel(live.status) }}
               </span>
               <span v-if="live?.payment_status"
                 class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium
-                       bg-white/20 border border-white/20 text-white">
+                       bg-surface-raised/20 border border-white/20 text-white">
                 <i :class="paymentIcon(live.payment_status)"></i>
                 {{ paymentLabel(live.payment_status) }}
               </span>
@@ -637,7 +637,7 @@ async function copyLink() {
             <div v-if="cvLink" class="mt-4">
               <a :href="cvLink" target="_blank" rel="noopener"
                 class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                       bg-white/15 hover:bg-white/30 border border-white/20
+                       bg-surface-raised/15 hover:bg-surface-raised/30 border border-white/20
                        text-white text-xs font-medium transition-all hover:-translate-y-0.5">
                 <i class="fas fa-arrow-up-right-from-square text-micro"></i>
                 Abrir a reserva no CV
@@ -647,7 +647,7 @@ async function copyLink() {
 
           <button @click="close" aria-label="Fechar"
             class="h-10 w-10 grid place-items-center rounded-lg shrink-0
-                   bg-white/15 hover:bg-white/25 text-white
+                   bg-surface-raised/15 hover:bg-surface-raised/25 text-white
                    transition-colors duration-120">
             <i class="fas fa-xmark"></i>
           </button>

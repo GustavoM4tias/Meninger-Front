@@ -233,7 +233,7 @@ const dateLabel = computed(() => {
                                 <p class="text-sm font-semibold text-ink">{{ money(item.proposed_value) }}</p>
                                 <p
                                     v-if="item.approved_value != null && Number(item.approved_value) !== Number(item.proposed_value)"
-                                    class="text-xs text-amber-600 dark:text-amber-400"
+                                    class="text-xs text-data-warn"
                                 >
                                     aprovado {{ money(item.approved_value) }}
                                 </p>
@@ -283,7 +283,7 @@ const dateLabel = computed(() => {
             <div class="text-right">
                 <span class="font-semibold text-ink">{{ money(event.proposed_total) }}</span>
                 <span v-if="Number(event.approved_total) && Number(event.approved_total) !== Number(event.proposed_total)"
-                    class="ml-2 text-emerald-600 dark:text-emerald-400">
+                    class="ml-2 text-data-pos">
                     aprovado {{ money(event.approved_total) }}
                 </span>
             </div>

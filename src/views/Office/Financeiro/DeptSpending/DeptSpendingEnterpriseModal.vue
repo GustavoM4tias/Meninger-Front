@@ -4,7 +4,7 @@
         @close="$emit('close')">
         <div class="space-y-6">
             <p v-if="companyId == null"
-                class="text-sm text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-lg">
+                class="text-sm text-data-warn bg-data-warn/10 border border-data-warn/20 px-3 py-2 rounded-lg">
                 <i class="fas fa-triangle-exclamation mr-1"></i>
                 Esta linha não tem empresa Sienge vinculada (sem <code>idCompany</code>), então não dá para salvar a
                 configuração de departamentos da empresa.
@@ -12,11 +12,11 @@
 
             <!-- Liberação (rascunho → liberado) -->
             <div class="rounded-xl border p-4"
-                :class="[enterpriseKey == null ? 'opacity-50 pointer-events-none' : '', isReleased ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/5']">
+                :class="[enterpriseKey == null ? 'opacity-50 pointer-events-none' : '', isReleased ? 'border-data-pos/30 bg-data-pos/5' : 'border-data-warn/30 bg-data-warn/5']">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <h4 class="text-sm font-semibold text-ink flex items-center gap-2 mb-1">
-                            <i class="fas" :class="isReleased ? 'fa-circle-check text-emerald-500' : 'fa-pen-ruler text-amber-500'"></i>
+                            <i class="fas" :class="isReleased ? 'fa-circle-check text-data-pos' : 'fa-pen-ruler text-data-warn'"></i>
                             {{ isReleased ? 'Liberado para a diretoria' : 'Rascunho (só admin vê)' }}
                         </h4>
                         <p class="text-xs text-ink-muted">
@@ -27,8 +27,8 @@
                     </div>
                     <button type="button" role="switch" :aria-checked="isReleased" @click.prevent="isReleased = !isReleased"
                         class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
-                        :class="isReleased ? 'bg-emerald-500' : 'bg-surface-sunken border border-line'">
-                        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform"
+                        :class="isReleased ? 'bg-data-pos' : 'bg-surface-sunken border border-line'">
+                        <span class="inline-block h-5 w-5 transform rounded-full bg-surface-raised shadow transition-transform"
                             :class="isReleased ? 'translate-x-5' : 'translate-x-0.5'"></span>
                     </button>
                 </div>
@@ -118,7 +118,7 @@
                     description="Nenhum departamento encontrado nas despesas." />
             </div>
 
-            <p v-if="err" class="text-sm text-red-600 dark:text-red-400">
+            <p v-if="err" class="text-sm text-data-neg">
                 <i class="fas fa-circle-exclamation mr-1"></i>{{ err }}
             </p>
         </div>

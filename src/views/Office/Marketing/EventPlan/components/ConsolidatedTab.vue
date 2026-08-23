@@ -80,7 +80,7 @@ onMounted(load);
                 </Surface>
                 <Surface variant="flat">
                     <p class="text-xs text-ink-subtle">Aprovado</p>
-                    <p class="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{{ money(totals.approved) }}</p>
+                    <p class="text-lg font-semibold text-data-pos">{{ money(totals.approved) }}</p>
                 </Surface>
                 <Surface variant="flat">
                     <p class="text-xs text-ink-subtle">Eventos</p>

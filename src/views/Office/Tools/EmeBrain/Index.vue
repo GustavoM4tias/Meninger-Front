@@ -356,9 +356,9 @@ onMounted(load)
 
       <!-- Status -->
       <Surface :variant="active ? 'raised' : 'flat'" padding="sm" class="mb-4"
-        :class="active ? 'border-emerald-500/30' : 'border-amber-500/30'">
+        :class="active ? 'border-data-pos/30' : 'border-data-warn/30'">
         <div class="flex items-center gap-3 text-sm">
-          <i :class="active ? 'fas fa-circle text-emerald-500' : 'fas fa-circle text-amber-500'" class="text-[8px]"></i>
+          <i :class="active ? 'fas fa-circle text-data-pos' : 'fas fa-circle text-data-warn'" class="text-[8px]"></i>
           <span v-if="active" class="text-ink">No ar: <strong>{{ active.label }}</strong>
             <span class="text-ink-subtle font-mono text-xs ml-1">por {{ active.published_by || '—' }}</span>
           </span>
@@ -396,7 +396,7 @@ onMounted(load)
             <div class="flex items-center gap-3">
               <Badge :variant="catVariant(b.category)" size="sm">{{ b.category }}</Badge>
               <span class="text-sm font-medium text-ink truncate">{{ b.title }}</span>
-              <i v-if="b.isDynamic" class="fas fa-bolt text-amber-500 text-xs" title="Dinâmico"></i>
+              <i v-if="b.isDynamic" class="fas fa-bolt text-data-warn text-xs" title="Dinâmico"></i>
               <i v-else-if="b.locked" class="fas fa-lock text-ink-subtle text-xs" title="Núcleo"></i>
               <div class="ml-auto flex items-center gap-2">
                 <Switch :model-value="b.enabled" :disabled="b.isDynamic" size="sm" @change="(v) => toggleBlock(b, v)" />
@@ -498,15 +498,15 @@ onMounted(load)
       <section v-show="tab === 'insights'">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Total</p><p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ fb.stats.total }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Positivos</p><p class="text-2xl font-semibold text-emerald-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-thumbs-up text-base"></i>{{ fb.stats.up }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Negativos</p><p class="text-2xl font-semibold text-red-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-thumbs-down text-base"></i>{{ fb.stats.down }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Taxa positiva</p><p class="text-2xl font-semibold mt-1 tabular-nums" :class="positiveRate >= 70 ? 'text-emerald-500' : positiveRate >= 40 ? 'text-amber-500' : 'text-red-500'">{{ positiveRate }}%</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Positivos</p><p class="text-2xl font-semibold text-data-pos mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-thumbs-up text-base"></i>{{ fb.stats.up }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Negativos</p><p class="text-2xl font-semibold text-data-neg mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-thumbs-down text-base"></i>{{ fb.stats.down }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Taxa positiva</p><p class="text-2xl font-semibold mt-1 tabular-nums" :class="positiveRate >= 70 ? 'text-data-pos' : positiveRate >= 40 ? 'text-data-warn' : 'text-data-neg'">{{ positiveRate }}%</p></Surface>
         </div>
 
         <Surface v-if="fb.stats.total" variant="raised" padding="sm" class="mb-4">
           <div class="h-2 rounded-full bg-surface-sunken overflow-hidden flex">
-            <div class="h-full bg-emerald-500 transition-all duration-700" :style="{ width: positiveRate + '%' }"></div>
-            <div class="h-full bg-red-500 transition-all duration-700" :style="{ width: (100 - positiveRate) + '%' }"></div>
+            <div class="h-full bg-data-pos transition-all duration-700" :style="{ width: positiveRate + '%' }"></div>
+            <div class="h-full bg-data-neg transition-all duration-700" :style="{ width: (100 - positiveRate) + '%' }"></div>
           </div>
         </Surface>
 
@@ -522,7 +522,7 @@ onMounted(load)
           <article v-for="item in fb.items" :key="item.id" @click="openDetail(item)"
             class="group flex items-start gap-3 p-3 sm:p-4 rounded-xl bg-surface-raised border border-line surface-gradient hover:border-accent/30 hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
             <div class="h-9 w-9 rounded-lg grid place-items-center shrink-0 border"
-              :class="item.rating === 'up' ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20' : 'bg-red-500/15 text-red-600 border-red-500/20'">
+              :class="item.rating === 'up' ? 'bg-data-pos/15 text-data-pos border-data-pos/20' : 'bg-data-neg/15 text-data-neg border-data-neg/20'">
               <i :class="item.rating === 'up' ? 'fas fa-thumbs-up' : 'fas fa-thumbs-down'" class="text-sm"></i>
             </div>
             <div class="flex-1 min-w-0">
@@ -555,9 +555,9 @@ onMounted(load)
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Total</p><p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ inc.stats.total }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Corrigidas</p><p class="text-2xl font-semibold text-sky-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-wand-magic-sparkles text-base"></i>{{ inc.stats.corrected }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Bloqueadas</p><p class="text-2xl font-semibold text-amber-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-shield-halved text-base"></i>{{ inc.stats.blocked }}</p></Surface>
-          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Com aviso</p><p class="text-2xl font-semibold text-red-500 mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-circle-exclamation text-base"></i>{{ inc.stats.warned }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Corrigidas</p><p class="text-2xl font-semibold text-accent mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-wand-magic-sparkles text-base"></i>{{ inc.stats.corrected }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Bloqueadas</p><p class="text-2xl font-semibold text-data-warn mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-shield-halved text-base"></i>{{ inc.stats.blocked }}</p></Surface>
+          <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Com aviso</p><p class="text-2xl font-semibold text-data-neg mt-1 tabular-nums flex items-center gap-1.5"><i class="fas fa-circle-exclamation text-base"></i>{{ inc.stats.warned }}</p></Surface>
         </div>
 
         <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
@@ -578,9 +578,9 @@ onMounted(load)
             :class="item.reviewed ? 'opacity-60' : ''">
             <div class="h-9 w-9 rounded-lg grid place-items-center shrink-0 border"
               :class="{
-                corrected: 'bg-sky-500/15 text-sky-600 border-sky-500/20',
-                blocked: 'bg-amber-500/15 text-amber-600 border-amber-500/20',
-                warned: 'bg-red-500/15 text-red-600 border-red-500/20',
+                corrected: 'bg-accent/15 text-accent border-accent/20',
+                blocked: 'bg-data-warn/15 text-data-warn border-data-warn/20',
+                warned: 'bg-data-neg/15 text-data-neg border-data-neg/20',
               }[item.outcome]">
               <i :class="outcomeIcon(item.outcome)" class="text-sm"></i>
             </div>
@@ -618,7 +618,7 @@ onMounted(load)
         </Surface>
         <p class="text-xs text-ink-muted mb-3">Cada publicação congela o rascunho. O rollback reativa uma versão na hora (o rascunho não é alterado).</p>
         <div class="space-y-2">
-          <Surface v-for="v in versions" :key="v.id" variant="raised" padding="sm" :class="v.is_active ? 'border-emerald-500/40' : ''">
+          <Surface v-for="v in versions" :key="v.id" variant="raised" padding="sm" :class="v.is_active ? 'border-data-pos/40' : ''">
             <div class="flex items-center justify-between gap-3">
               <div class="min-w-0">
                 <p class="text-sm font-medium text-ink truncate">{{ v.label }}</p>
@@ -663,7 +663,7 @@ onMounted(load)
       <template #header>
         <div v-if="detail.item" class="flex items-center gap-3">
           <div class="h-9 w-9 rounded-lg grid place-items-center shrink-0 border"
-            :class="detail.item.rating === 'up' ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20' : 'bg-red-500/15 text-red-600 border-red-500/20'">
+            :class="detail.item.rating === 'up' ? 'bg-data-pos/15 text-data-pos border-data-pos/20' : 'bg-data-neg/15 text-data-neg border-data-neg/20'">
             <i :class="detail.item.rating === 'up' ? 'fas fa-thumbs-up' : 'fas fa-thumbs-down'" class="text-sm"></i>
           </div>
           <div class="min-w-0">
@@ -700,7 +700,7 @@ onMounted(load)
                 <span class="text-micro text-ink-subtle ml-auto font-mono">{{ formatLatency(tc.ms) }}</span>
               </div>
               <pre v-if="tc.args && Object.keys(tc.args).length" class="text-micro font-mono text-ink-muted bg-surface rounded p-2 overflow-x-auto">{{ JSON.stringify(tc.args, null, 2) }}</pre>
-              <div v-if="tc.error" class="text-xs text-red-600">{{ tc.error }}</div>
+              <div v-if="tc.error" class="text-xs text-data-neg">{{ tc.error }}</div>
             </div>
           </div>
         </section>
@@ -717,9 +717,9 @@ onMounted(load)
         <div v-if="incDetail.item" class="flex items-center gap-3">
           <div class="h-9 w-9 rounded-lg grid place-items-center shrink-0 border"
             :class="{
-              corrected: 'bg-sky-500/15 text-sky-600 border-sky-500/20',
-              blocked: 'bg-amber-500/15 text-amber-600 border-amber-500/20',
-              warned: 'bg-red-500/15 text-red-600 border-red-500/20',
+              corrected: 'bg-accent/15 text-accent border-accent/20',
+              blocked: 'bg-data-warn/15 text-data-warn border-data-warn/20',
+              warned: 'bg-data-neg/15 text-data-neg border-data-neg/20',
             }[incDetail.item.outcome]">
             <i :class="outcomeIcon(incDetail.item.outcome)" class="text-sm"></i>
           </div>
@@ -750,11 +750,11 @@ onMounted(load)
         </section>
         <section v-if="incDetail.item.original_text">
           <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Texto original (com problema)</p>
-          <div class="rounded-lg border border-red-500/25 bg-red-500/5 p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">{{ incDetail.item.original_text }}</div>
+          <div class="rounded-lg border border-data-neg/25 bg-data-neg/5 p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">{{ incDetail.item.original_text }}</div>
         </section>
         <section v-if="incDetail.item.final_text">
           <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">Texto entregue ao usuário</p>
-          <div class="rounded-lg border border-emerald-500/25 bg-emerald-500/5 p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">{{ incDetail.item.final_text }}</div>
+          <div class="rounded-lg border border-data-pos/25 bg-data-pos/5 p-3 text-sm text-ink leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">{{ incDetail.item.final_text }}</div>
         </section>
         <section v-if="incDetail.item.context" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Modelo</p><p class="text-xs text-ink font-mono truncate mt-0.5">{{ incDetail.item.context.model || '—' }}</p></div>
@@ -783,7 +783,7 @@ onMounted(load)
     <!-- Toast -->
     <transition name="toast">
       <div v-if="toast.text" class="fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-lg shadow-elevated text-sm font-medium border"
-        :class="toast.type === 'err' ? 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/30' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'">
+        :class="toast.type === 'err' ? 'bg-data-neg/10 text-data-neg border-data-neg/30' : 'bg-data-pos/10 text-data-pos border-data-pos/30'">
         {{ toast.text }}
       </div>
     </transition>

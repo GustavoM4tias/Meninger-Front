@@ -221,8 +221,8 @@ const onTestSend = async () => {
       <div v-if="message"
         :class="['text-xs px-3 py-2 rounded-md border',
           message.type === 'success'
-            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-            : 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20']">
+            ? 'text-data-pos bg-data-pos/10 border-data-pos/20'
+            : 'text-data-neg bg-data-neg/10 border-data-neg/20']">
         {{ message.text }}
       </div>
 
@@ -275,7 +275,7 @@ const onTestSend = async () => {
           Enviar teste
         </Button>
         <p v-if="testResult"
-          :class="['text-xs', testResult.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400']">
+          :class="['text-xs', testResult.ok ? 'text-data-pos' : 'text-data-neg']">
           {{ testResult.text }}
         </p>
       </section>

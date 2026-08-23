@@ -32,9 +32,9 @@ const costCards = computed(() => {
   if (!c) return [];
   return [
     { label: 'Custo estimado', value: brl(c.estimatedBRL), accent: 'text-ink', hint: 'no período' },
-    { label: 'Cobradas', value: int(c.billableCount), accent: 'text-amber-600 dark:text-amber-400', hint: 'geraram custo' },
-    { label: 'Gratuitas', value: int(c.freeCount), accent: 'text-emerald-600 dark:text-emerald-400', hint: 'serviço / janela 24h' },
-    { label: 'Economia da janela', value: brl(c.freeWindowSavedBRL), accent: 'text-emerald-600 dark:text-emerald-400', hint: 'não viraram template pago' },
+    { label: 'Cobradas', value: int(c.billableCount), accent: 'text-data-warn', hint: 'geraram custo' },
+    { label: 'Gratuitas', value: int(c.freeCount), accent: 'text-data-pos', hint: 'serviço / janela 24h' },
+    { label: 'Economia da janela', value: brl(c.freeWindowSavedBRL), accent: 'text-data-pos', hint: 'não viraram template pago' },
   ];
 });
 
@@ -106,8 +106,8 @@ const usdToBrl = computed(() => store.stats?.rates?.usdToBrl);
               <tr v-for="row in categories" :key="row.cat" class="border-b border-line/60 last:border-0">
                 <td class="px-4 py-2 font-medium text-ink capitalize">{{ row.cat }}</td>
                 <td class="px-4 py-2 text-right text-ink-muted">{{ int(row.count) }}</td>
-                <td class="px-4 py-2 text-right text-amber-600 dark:text-amber-400">{{ int(row.billable) }}</td>
-                <td class="px-4 py-2 text-right text-emerald-600 dark:text-emerald-400">{{ int(row.free) }}</td>
+                <td class="px-4 py-2 text-right text-data-warn">{{ int(row.billable) }}</td>
+                <td class="px-4 py-2 text-right text-data-pos">{{ int(row.free) }}</td>
                 <td class="px-4 py-2 text-right font-medium text-ink">{{ brl(row.estBRL) }}</td>
               </tr>
             </tbody>

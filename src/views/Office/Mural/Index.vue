@@ -73,7 +73,7 @@ async function confirm(c) {
           v-for="c in store.items"
           :key="c.id"
           class="rounded-xl border bg-surface-raised shadow-soft surface-gradient overflow-hidden"
-          :class="c.kind === 'URGENTE' ? 'border-red-500/30' : c.pinned ? 'border-accent/30' : 'border-line'">
+          :class="c.kind === 'URGENTE' ? 'border-data-neg/30' : c.pinned ? 'border-accent/30' : 'border-line'">
           <div class="p-4">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-2 flex-wrap">
@@ -112,7 +112,7 @@ async function confirm(c) {
                 @click="confirm(c)">
                 Li e estou ciente
               </Button>
-              <span v-else class="text-xs text-emerald-600 dark:text-emerald-400">
+              <span v-else class="text-xs text-data-pos">
                 <i class="fas fa-circle-check"></i> Confirmado em {{ formatDateTime(c.ackedAt) }}
               </span>
             </div>
@@ -120,7 +120,7 @@ async function confirm(c) {
         </article>
       </div>
 
-      <p v-if="store.error" class="mt-4 text-sm text-red-500">{{ store.error }}</p>
+      <p v-if="store.error" class="mt-4 text-sm text-data-neg">{{ store.error }}</p>
     </PageContainer>
   </div>
 </template>

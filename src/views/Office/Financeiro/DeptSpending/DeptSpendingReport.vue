@@ -85,7 +85,7 @@
                         </div>
                         <p class="text-2xl font-semibold tabular-nums tracking-tight mt-1" :class="b.valueClass || 'text-ink'">{{ fmtBRL(b.value) }}</p>
                         <p class="text-micro text-ink-muted mt-1">{{ fmtPct(b.pct) }} consumido · {{ b.tetoLabel }} {{ fmtBRL(b.teto) }}</p>
-                        <p v-if="b.note" class="text-micro text-orange-600 dark:text-orange-400 mt-0.5 truncate" :title="b.note">
+                        <p v-if="b.note" class="text-micro text-data-warn mt-0.5 truncate" :title="b.note">
                             <i class="fas fa-arrow-right-arrow-left mr-0.5"></i>{{ b.note }}
                         </p>
                         <p v-if="b.note2" class="text-micro text-ink-subtle mt-0.5 truncate" :title="b.note2">{{ b.note2 }}</p>
@@ -96,7 +96,7 @@
                 <Surface variant="raised" padding="none" class="overflow-hidden mb-5">
                     <div class="px-4 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40 flex items-center justify-between flex-wrap gap-2">
                         <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-                            <i class="fas fa-bullhorn text-emerald-500"></i> Marketing - realizado × projetado por mês
+                            <i class="fas fa-bullhorn text-data-pos"></i> Marketing - realizado × projetado por mês
                         </h3>
                         <span class="text-xs text-ink-subtle">projetado = saldo do exercício ÷ meses restantes (não segue a curva de vendas)</span>
                     </div>
@@ -108,7 +108,7 @@
                                 <p class="text-lg font-bold tabular-nums text-ink">{{ fmtBRL(mkt.realizadoAno) }}</p>
                                 <p class="text-micro text-ink-muted">
                                     {{ fmtPct(distribution.pctRealizado) }} do plano anual de MKT
-                                    <span v-if="Number(mkt.lojaExcedenteAno || 0) > 0" class="text-orange-600 dark:text-orange-400">
+                                    <span v-if="Number(mkt.lojaExcedenteAno || 0) > 0" class="text-data-warn">
                                         · inclui {{ fmtBRL(mkt.lojaExcedenteAno) }} da loja
                                     </span>
                                 </p>
@@ -132,7 +132,7 @@
                     <Surface variant="raised" padding="none" class="overflow-hidden">
                         <div class="px-4 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40">
                             <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-                                <i class="fas fa-scale-balanced text-sky-500"></i> Governança orçamentária
+                                <i class="fas fa-scale-balanced text-accent"></i> Governança orçamentária
                             </h3>
                             <p class="text-xs text-ink-subtle mt-0.5">Consumo da viabilidade aprovada · ritmo linear esperado do ano: {{ fmtPct(ritmo) }} ({{ monthLabelShort }})</p>
                         </div>
@@ -147,7 +147,7 @@
                                         <div class="h-full transition-all" :class="barClass(b.status)"
                                             :style="{ width: segMainPct(b) + '%' }"></div>
                                         <!-- excedente da loja dentro do MKT (separado, laranja) -->
-                                        <div v-if="segExcedPct(b) > 0" class="h-full bg-orange-500 transition-all"
+                                        <div v-if="segExcedPct(b) > 0" class="h-full bg-data-warn transition-all"
                                             :style="{ width: segExcedPct(b) + '%' }"
                                             v-tippy="`Excedente da loja: ${fmtBRL(b.lojaExcedenteAno)}`"></div>
                                     </div>
@@ -160,18 +160,18 @@
                                         {{ fmtPct(b.pctConsumido) }} consumido
                                         <template v-if="Number(b.lojaExcedenteAno || 0) > 0">
                                             · <span class="text-ink-muted">{{ fmtBRL(b.realizadoProprioAno) }} próprio</span>
-                                            + <span class="text-orange-600 dark:text-orange-400">{{ fmtBRL(b.lojaExcedenteAno) }} da loja</span>
+                                            + <span class="text-data-warn">{{ fmtBRL(b.lojaExcedenteAno) }} da loja</span>
                                         </template>
                                         <template v-else-if="Number(b.excedenteVida || 0) > 0">
-                                            · <span class="text-orange-600 dark:text-orange-400">pagou {{ fmtBRL(b.pagoTotalVida) }}, excedente {{ fmtBRL(b.excedenteVida) }} → MKT</span>
+                                            · <span class="text-data-warn">pagou {{ fmtBRL(b.pagoTotalVida) }}, excedente {{ fmtBRL(b.excedenteVida) }} → MKT</span>
                                         </template>
                                     </span>
-                                    <span :class="b.saldo < 0 ? 'text-red-600 dark:text-red-400 font-semibold' : ''">saldo {{ fmtBRL(b.saldo) }}</span>
+                                    <span :class="b.saldo < 0 ? 'text-data-neg font-semibold' : ''">saldo {{ fmtBRL(b.saldo) }}</span>
                                 </div>
                                 <!-- projetado p/ frente (só MKT): saldo ÷ meses restantes -->
                                 <div v-if="b.key === 'marketing'" class="mt-0.5 text-micro text-ink-subtle">
                                     a investir pela frente: <strong class="font-mono tabular-nums"
-                                        :class="Number(b.projetadoMes) < 0 ? 'text-red-600 dark:text-red-400' : 'text-ink-muted'">
+                                        :class="Number(b.projetadoMes) < 0 ? 'text-data-neg' : 'text-ink-muted'">
                                         {{ fmtBRL(b.projetadoMes) }} / mês
                                     </strong> (saldo ÷ meses restantes)
                                 </div>
@@ -182,7 +182,7 @@
                     <Surface variant="raised" padding="none" class="overflow-hidden">
                         <div class="px-4 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40">
                             <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-                                <i class="fas fa-money-bill-transfer text-violet-500"></i> Fluxo de caixa
+                                <i class="fas fa-money-bill-transfer text-accent"></i> Fluxo de caixa
                             </h3>
                             <p class="text-xs text-ink-subtle mt-0.5">Investimento mensal · Marketing + Loja</p>
                         </div>
@@ -197,7 +197,7 @@
                     <Surface variant="raised" padding="none" class="overflow-hidden">
                         <div class="px-4 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40">
                             <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-                                <i class="fas fa-chart-pie text-amber-500"></i> Distribuição MKT
+                                <i class="fas fa-chart-pie text-data-warn"></i> Distribuição MKT
                             </h3>
                             <p class="text-xs text-ink-subtle mt-0.5">Do plano anual, quanto já saiu</p>
                         </div>
@@ -210,7 +210,7 @@
                         <div class="px-4 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40 flex items-center justify-between flex-wrap gap-2">
                             <div>
                                 <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-                                    <i class="fas fa-lightbulb text-amber-500"></i> Leitura para decisão
+                                    <i class="fas fa-lightbulb text-data-warn"></i> Leitura para decisão
                                 </h3>
                                 <p class="text-xs text-ink-subtle mt-0.5">
                                     O que estes números significam
@@ -347,7 +347,7 @@ const governanceRows = computed(() => {
 });
 
 function moneyClass(v) {
-    return Number(v || 0) < 0 ? 'text-red-600 dark:text-red-400' : 'text-ink';
+    return Number(v || 0) < 0 ? 'text-data-neg' : 'text-ink';
 }
 
 /* Barra da governança: parcela própria × excedente da loja (só no bucket MKT). */
@@ -366,16 +366,16 @@ function segMainPct(b) {
 
 function statusVariant(s) { return s === 'acima' ? 'danger' : s === 'atencao' ? 'warning' : 'success'; }
 function statusLabel(s) { return s === 'acima' ? 'Estourado' : s === 'atencao' ? 'Atenção' : 'Dentro'; }
-function barClass(s) { return s === 'acima' ? 'bg-red-500' : s === 'atencao' ? 'bg-amber-500' : 'bg-emerald-500'; }
+function barClass(s) { return s === 'acima' ? 'bg-data-neg' : s === 'atencao' ? 'bg-data-warn' : 'bg-data-pos'; }
 function insightClass(t) {
-    if (t === 'risco') return 'border-red-500/30 bg-red-500/5';
-    if (t === 'atencao') return 'border-amber-500/30 bg-amber-500/5';
-    return 'border-emerald-500/30 bg-emerald-500/5';
+    if (t === 'risco') return 'border-data-neg/30 bg-data-neg/5';
+    if (t === 'atencao') return 'border-data-warn/30 bg-data-warn/5';
+    return 'border-data-pos/30 bg-data-pos/5';
 }
 function insightTitleClass(t) {
-    if (t === 'risco') return 'text-red-600 dark:text-red-400';
-    if (t === 'atencao') return 'text-amber-600 dark:text-amber-400';
-    return 'text-emerald-600 dark:text-emerald-400';
+    if (t === 'risco') return 'text-data-neg';
+    if (t === 'atencao') return 'text-data-warn';
+    return 'text-data-pos';
 }
 function insightIcon(t) { return t === 'risco' ? 'fa-triangle-exclamation' : t === 'atencao' ? 'fa-circle-exclamation' : 'fa-circle-check'; }
 
