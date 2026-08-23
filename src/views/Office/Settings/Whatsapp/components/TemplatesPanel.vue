@@ -11,6 +11,9 @@ import { useWhatsappStore } from '@/stores/Whatsapp/whatsappStore';
 import Button from '@/components/UI/Button.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import TemplateCreateModal from './TemplateCreateModal.vue';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 const store = useWhatsappStore();
 const showCreate = ref(false);
@@ -79,10 +82,10 @@ const onDelete = async (t) => {
     // 409 = template em uso por fluxo crítico; oferece a confirmação extra.
     const msg = String(e?.message || '');
     if (msg.includes('TEMPLATE_IN_USE') && confirm(`${t.name} está em uso por um fluxo crítico. Excluir mesmo assim?`)) {
-      await store.deleteTemplate(t.name, { force: true }).catch(err => alert('Falha ao excluir: ' + (err?.message || '')));
+      await store.deleteTemplate(t.name, { force: true }).catch(err => toast.error('Falha ao excluir: ' + (err?.message || '')));
       return;
     }
-    alert('Falha ao excluir: ' + msg);
+    toast.error('Falha ao excluir: ' + msg);
   }
 };
 </script>

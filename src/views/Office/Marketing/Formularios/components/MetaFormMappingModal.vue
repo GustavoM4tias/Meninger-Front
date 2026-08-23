@@ -13,6 +13,9 @@
 import { ref, watch, computed } from 'vue';
 import { useMetaFormsStore } from '@/stores/Marketing/Capture/metaFormsStore';
 import Button from '@/components/UI/Button.vue';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 const props = defineProps({
     open: { type: Boolean, default: false },
@@ -192,7 +195,7 @@ async function exportCsv(filter) {
     try {
         await store.downloadLeadsCsv(props.form.id, { cv: filter });
     } catch (e) {
-        alert('Erro ao exportar: ' + e.message);
+        toast.error('Erro ao exportar: ' + e.message);
     } finally {
         downloadingCsv.value = false;
     }

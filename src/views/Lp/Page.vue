@@ -11,6 +11,9 @@ import { useRoute } from 'vue-router';
 import API_URL from '@/config/apiUrl';
 import LeadFormCard from './components/LeadFormCard.vue';
 import { backgroundStyle, cardWidthClass, cardJustifyClass } from './lpTheme';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 const route = useRoute();
 const slug = computed(() => route.params.slug);
@@ -102,12 +105,12 @@ async function submit() {
   // Validação cliente - backend re-valida.
   for (const f of fields.value) {
     if (f.required && !String(data.value[f.key] || '').trim()) {
-      window.alert(`Por favor preencha: ${f.label}`);
+      toast.warning(`Por favor preencha: ${f.label}`);
       return;
     }
   }
   if (form.value.consent_required && !consentGiven.value) {
-    window.alert('É necessário aceitar o termo de consentimento.');
+    toast.warning('É necessário aceitar o termo de consentimento.');
     return;
   }
 
@@ -133,10 +136,10 @@ async function submit() {
       }
       success.value = true;
     } else {
-      window.alert(d.error || 'Não foi possível enviar. Tente novamente.');
+      toast.error(d.error || 'Não foi possível enviar. Tente novamente.');
     }
   } catch (e) {
-    window.alert('Erro ao enviar. Tente novamente em instantes.');
+    toast.error('Erro ao enviar. Tente novamente em instantes.');
   } finally {
     submitting.value = false;
   }

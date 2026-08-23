@@ -7,6 +7,9 @@ import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import API_URL from '@/config/apiUrl';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 const emit = defineEmits(['close', 'created']);
 const store = usePaymentFlowStore();
@@ -56,7 +59,7 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
 
 function fileSizeError(file) {
     if (file.size > MAX_FILE_SIZE) {
-        alert(`O arquivo "${file.name}" excede o limite de 2 MB e não foi anexado.`);
+        toast.warning(`O arquivo "${file.name}" excede o limite de 2 MB e não foi anexado.`);
         return true;
     }
     return false;

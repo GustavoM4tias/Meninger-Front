@@ -6,6 +6,9 @@
 import { ref } from 'vue';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Button from '@/components/UI/Button.vue';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 defineProps({
     open: { type: Boolean, default: false },
@@ -46,21 +49,21 @@ async function doSync() {
 async function doImportHistorical() {
     if (!confirm(`Importar leads históricos dos últimos ${fullOpts.value.historicalDays} dias da Meta?`)) return;
     const result = await store.importHistorical({ sinceDays: fullOpts.value.historicalDays });
-    if (result) alert(`✅ ${result.inserted} novos · ${result.duplicates} dup · ${result.errors?.length || 0} erro(s).`);
+    if (result) toast.success(`✅ ${result.inserted} novos · ${result.duplicates} dup · ${result.errors?.length || 0} erro(s).`);
 }
 
 async function doReparse() {
     if (!confirm('Re-processar leads com campos null?')) return;
     const result = await store.reparseExistingLeads();
-    if (result) alert(`✅ ${result.updated} atualizados de ${result.scanned} escaneados.`);
+    if (result) toast.success(`✅ ${result.updated} atualizados de ${result.scanned} escaneados.`);
 }
 
 async function doDispatchHistorical() {
     // 1) Preview leve (go/no-go) — não envia nada.
     const pre = await store.dispatchHistorical({ cutoff: CUTOFF, preview: true });
-    if (!pre) { alert('Falha no preview: ' + (store.error || 'erro desconhecido')); return; }
+    if (!pre) { toast.error('Falha no preview: ' + (store.error || 'erro desconhecido')); return; }
     if (pre.shadow_mode) {
-        alert('⚠️ Modo sombra (dry-run) ainda está LIGADO.\n\nDesligue em Configurações › Geral e salve antes de disparar — senão nada é enviado ao CV.');
+        toast.warning('⚠️ Modo sombra (dry-run) ainda está LIGADO.\n\nDesligue em Configurações › Geral e salve antes de disparar — senão nada é enviado ao CV.');
         return;
     }
     const ok = confirm(
@@ -74,20 +77,20 @@ async function doDispatchHistorical() {
     if (!ok) return;
     // 2) Disparo real do lote.
     const result = await store.dispatchHistorical({ cutoff: CUTOFF, preview: false, limit: 500 });
-    if (!result) { alert('Falha no disparo: ' + (store.error || 'erro desconhecido')); return; }
+    if (!result) { toast.error('Falha no disparo: ' + (store.error || 'erro desconhecido')); return; }
     let msg = '✅ Lote enviado ao CV.\n\n' +
         `Despachados: ${result.dispatched} (entregues ${result.delivered}, falhas ${result.failed})\n` +
         `Histórico sem vínculo (ficaram de fora): ${result.historical_no_binding}\n` +
         `Sem contato: ${result.no_contact}\n` +
         `Erros: ${result.errors?.length || 0}`;
     if (result.reached_limit) msg += '\n\n⚠️ Atingiu o lote de 500 — RODE DE NOVO pra continuar até zerar.';
-    alert(msg);
+    toast.error(msg);
 }
 
 async function doMigrateMappings() {
     if (!confirm('Migrar mapping form → campanhas? Roda 1x na transição.')) return;
     const result = await store.migrateMappings();
-    if (result) alert(`✅ ${result.forms_processed} forms → ${result.campaigns_updated} campanhas atualizadas.`);
+    if (result) toast.success(`✅ ${result.forms_processed} forms → ${result.campaigns_updated} campanhas atualizadas.`);
 }
 </script>
 

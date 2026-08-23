@@ -7,6 +7,7 @@ import Switch from '@/components/UI/Switch.vue';
 import Button from '@/components/UI/Button.vue';
 import SetupWizard from './SetupWizard.vue';
 import CoverageCard from './CoverageCard.vue';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 
 const webhookUrl = computed(() => `${API_URL || ''}/whatsapp/webhook`);
 
@@ -113,20 +114,28 @@ const onHealth = async () => {
 };
 
 const registeringPhone = ref(false);
-const onRegisterPhone = async () => {
-  const pin = window.prompt(
-    'Digite um PIN de 6 dígitos (qualquer combinação — anote em local seguro, vai ser usado se precisar re-registrar):'
-  );
-  if (!pin) return;
-  if (!/^\d{6}$/.test(pin)) return flash('error', 'PIN inválido — precisa ter exatamente 6 dígitos.');
+/* Era um `prompt()` do navegador. Alem de nao seguir o tema, ele nao tinha
+   onde dizer que o PIN precisa ser guardado - e ele so faz falta meses
+   depois, na hora de re-registrar o numero. Agora o campo vem dentro da
+   confirmacao, com a consequencia escrita em volta. */
+const pedindoPin = ref(false);
+const pin = ref('');
+const pinValido = computed(() => /^\d{6}$/.test(pin.value));
+
+function onRegisterPhone() { pin.value = ''; pedindoPin.value = true; }
+
+const registrarComPin = async () => {
+  if (!pinValido.value) return;
+  pedindoPin.value = false;
   registeringPhone.value = true;
   try {
-    await store.registerPhone(pin);
-    flash('success', 'Número registrado na Cloud API. Pode testar envio agora.');
+    await store.registerPhone(pin.value);
+    flash('success', 'Numero registrado na Cloud API. Pode testar envio agora.');
   } catch (e) {
     flash('error', e.message || 'Falha ao registrar.');
   } finally {
     registeringPhone.value = false;
+    pin.value = '';
   }
 };
 
@@ -280,6 +289,18 @@ const onTestSend = async () => {
         </p>
       </section>
     </aside>
+
+    <ConfirmDialog v-model:open="pedindoPin" tone="accent"
+      title="Registrar este numero na Cloud API?"
+      consequence="O PIN abaixo fica preso a este numero: sem ele nao da para re-registrar depois, e a Meta nao devolve o PIN perdido."
+      hint="Anote em local seguro antes de confirmar."
+      confirm-label="Registrar numero"
+      :loading="registeringPhone"
+      @confirm="registrarComPin">
+      <Input v-model="pin" label="PIN de 6 digitos" placeholder="000000"
+        inputmode="numeric" maxlength="6"
+        :error="pin && !pinValido ? 'Precisa ter exatamente 6 digitos.' : ''" />
+    </ConfirmDialog>
   </div>
   </template>
 </template>

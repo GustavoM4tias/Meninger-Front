@@ -206,6 +206,15 @@
       </div>
     </template>
 
+    <ConfirmDialog v-model:open="anulando" tone="danger"
+      title="Anular este envelope de assinatura?"
+      consequence="Os links que os assinantes receberam param de funcionar na hora, inclusive os de quem ja assinou."
+      hint="O motivo abaixo vai no aviso que a DocuSign manda para cada assinante."
+      confirm-label="Anular envelope" ask-note
+      note-label="Motivo da anulacao (enviado aos assinantes)"
+      note-placeholder="Cancelado pelo emissor"
+      @confirm="anularConfirmado" />
+
   </div>
 </template>
 
@@ -213,6 +222,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 import API_URL from '@/config/apiUrl';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 
 const props = defineProps({
     detail: { type: Object, required: true },
@@ -354,12 +364,18 @@ async function resend(emails = null) {
     }
 }
 
-async function voidEnvelope() {
-    const reason = window.prompt('Motivo da anulação (enviado aos assinantes):', 'Cancelado pelo emissor');
-    if (reason === null) return;
+/* Era um `prompt()` do navegador, que perguntava o motivo sem nunca dizer o
+   que anular provoca: os links de TODO mundo morrem, inclusive de quem ja
+   assinou. Agora a consequencia vem escrita antes do campo. */
+const anulando = ref(false);
+
+function voidEnvelope() { anulando.value = true; }
+
+async function anularConfirmado(motivo) {
+    anulando.value = false;
     error.value = null;
     try {
-        await store.voidSignature(props.detail.id, reason);
+        await store.voidSignature(props.detail.id, motivo || 'Cancelado pelo emissor');
         await load();
         emit('changed');
     } catch (e) {

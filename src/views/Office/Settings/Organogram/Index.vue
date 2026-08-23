@@ -181,7 +181,7 @@ async function applyReparent() {
     await putOverride(userId, { display_parent_id: parentId, pos_x: null, pos_y: null });
     await loadOverrides();
     buildTree();
-  } catch (e) { alert(e.message); }
+  } catch (e) { toast.error(e.message); }
   finally { savingEdit.value = false; }
 }
 
@@ -204,7 +204,7 @@ async function reorder(direction) {
     await Promise.all(siblings.map((u, i) => putOverride(u.id, { display_order: i })));
     await loadOverrides();
     buildTree();
-  } catch (e) { alert(e.message); }
+  } catch (e) { toast.error(e.message); }
   finally { savingEdit.value = false; }
 }
 
@@ -215,7 +215,7 @@ async function resetPositionOnly() {
     await putOverride(selectedPerson.value.id, { pos_x: null, pos_y: null });
     await loadOverrides();
     buildTree();
-  } catch (e) { alert(e.message); }
+  } catch (e) { toast.error(e.message); }
   finally { savingEdit.value = false; }
 }
 
@@ -231,7 +231,7 @@ async function resetPerson() {
     reparentTarget.value = '';
     await loadOverrides();
     buildTree();
-  } catch (e) { alert(e.message); }
+  } catch (e) { toast.error(e.message); }
   finally { savingEdit.value = false; }
 }
 

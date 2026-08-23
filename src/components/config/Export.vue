@@ -264,6 +264,9 @@ import dayjs from 'dayjs'
 import { useAuthStore } from '@/stores/Settings/Auth/authStore'
 import ExportDisclaimerModal from './ExportDisclaimerModal.vue'
 import { registrarExport, slugReport } from '@/utils/Config/exportLog'
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 /**
  * UniversalExportModal.vue
@@ -948,7 +951,7 @@ function sanitizeFilename(name) {
 function exportCSV(kind = 'csv') {
     const selected = selectedPaths.value
     if (!selected.length) {
-        alert('Selecione ao menos um campo.')
+        toast.warning('Selecione ao menos um campo.')
         return
     }
     const { rows: dataRows, paths } = buildExportedRows(rows.value, selected)
@@ -1029,7 +1032,7 @@ const autorExport = computed(() => ({
 function pedirExport(kind) {
     if (exporting.value) return
     if (!selectedPaths.value.length) {
-        alert('Selecione ao menos um campo.')
+        toast.warning('Selecione ao menos um campo.')
         return
     }
     disclaimer.value = { open: true, kind }
@@ -1062,7 +1065,7 @@ function logExport(format) {
 async function exportXLSX() {
     const selected = selectedPaths.value
     if (!selected.length) {
-        alert('Selecione ao menos um campo.')
+        toast.warning('Selecione ao menos um campo.')
         return
     }
     exporting.value = true
@@ -1207,7 +1210,7 @@ async function exportXLSX() {
 async function exportPDF() {
     const selected = selectedPaths.value
     if (!selected.length) {
-        alert('Selecione ao menos um campo.')
+        toast.warning('Selecione ao menos um campo.')
         return
     }
     exporting.value = true

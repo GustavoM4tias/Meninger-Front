@@ -175,6 +175,9 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 const props = defineProps({
   report:  { type: Object, required: true },
@@ -350,7 +353,7 @@ function printReport() {
 </html>`;
 
   const win = window.open('', '_blank');
-  if (!win) { alert('Permita pop-ups para exportar o PDF.'); return; }
+  if (!win) { toast.warning('Permita pop-ups para exportar o PDF.'); return; }
   win.document.write(html);
   win.document.close();
 }

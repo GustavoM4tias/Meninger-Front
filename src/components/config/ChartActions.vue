@@ -144,7 +144,7 @@ async function download(type = 'png') {
         URL.revokeObjectURL(url)
     } catch (e) {
         console.error(e)
-        alert('Falha ao gerar download.')
+        toast.error('Falha ao gerar download.')
     }
 }
 
@@ -177,7 +177,7 @@ async function downloadPdf() {
         doc.save(`${props.filename}.pdf`)
     } catch (e) {
         console.error(e)
-        alert('Falha ao gerar PDF.')
+        toast.error('Falha ao gerar PDF.')
     }
 }
 
