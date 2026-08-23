@@ -41,8 +41,8 @@ const displayName = computed(() => {
 });
 
 const CHANNEL_META = {
-    meta_lead_ads: { label: 'Meta Lead Ads', icon: 'fab fa-meta', cls: 'text-violet-500' },
-    site_form:     { label: 'Formulário do site', icon: 'fas fa-globe', cls: 'text-sky-500' },
+    meta_lead_ads: { label: 'Meta Lead Ads', icon: 'fab fa-meta', cls: 'text-accent' },
+    site_form:     { label: 'Formulário do site', icon: 'fas fa-globe', cls: 'text-accent' },
 };
 const channelMeta = computed(() => CHANNEL_META[lead.value?.channel] || { label: lead.value?.channel || '—', icon: 'fas fa-question', cls: 'text-ink-subtle' });
 
@@ -153,7 +153,7 @@ async function doReconcileCv() {
           <div class="min-w-0">
             <div class="flex items-center gap-2 text-micro text-ink-subtle font-mono mb-0.5 flex-wrap">
               <span :class="channelMeta.cls"><i :class="channelMeta.icon"></i> {{ channelMeta.label }}</span>
-              <span v-if="lead.is_reentry" class="text-violet-600 dark:text-violet-400">
+              <span v-if="lead.is_reentry" class="text-accent">
                 <i class="fas fa-arrows-rotate"></i> re-entrada
               </span>
               <span v-if="lead.meta_is_organic === true || lead.meta_is_organic === 'true'"
@@ -171,7 +171,7 @@ async function doReconcileCv() {
           </div>
           <div class="flex flex-col items-end gap-1.5 shrink-0">
             <LeadStatusBadge :status="lead.status" />
-            <span v-if="lead.cv_idlead" class="text-micro font-mono text-emerald-600 dark:text-emerald-400">
+            <span v-if="lead.cv_idlead" class="text-micro font-mono text-data-pos">
               <i class="fas fa-link mr-1"></i>CV #{{ lead.cv_idlead }}
             </span>
           </div>
@@ -186,12 +186,12 @@ async function doReconcileCv() {
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 
           <!-- Meta -->
-          <div class="rounded-lg border border-violet-500/20 bg-violet-500/5 p-3">
+          <div class="rounded-lg border border-accent/20 bg-accent/5 p-3">
             <div class="flex items-center justify-between gap-2 mb-1">
-              <span class="text-xs font-medium text-violet-700 dark:text-violet-300">
+              <span class="text-xs font-medium text-accent">
                 <i class="fab fa-meta mr-1"></i>Entrada na Meta
               </span>
-              <i class="fas fa-1 text-[10px] text-violet-500"></i>
+              <i class="fas fa-1 text-[10px] text-accent"></i>
             </div>
             <div class="text-sm font-mono tabular-nums" :class="timeline3.meta ? 'text-ink' : 'text-ink-subtle'">
               {{ fmt(timeline3.meta) }}
@@ -202,12 +202,12 @@ async function doReconcileCv() {
           </div>
 
           <!-- Office -->
-          <div class="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3 relative">
+          <div class="rounded-lg border border-accent/20 bg-accent/5 p-3 relative">
             <div class="flex items-center justify-between gap-2 mb-1">
-              <span class="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+              <span class="text-xs font-medium text-accent">
                 <i class="fas fa-database mr-1"></i>Entrada no Office
               </span>
-              <i class="fas fa-2 text-[10px] text-indigo-500"></i>
+              <i class="fas fa-2 text-[10px] text-accent"></i>
             </div>
             <div class="text-sm font-mono tabular-nums" :class="timeline3.office ? 'text-ink' : 'text-ink-subtle'">
               {{ fmt(timeline3.office) }}
@@ -223,14 +223,14 @@ async function doReconcileCv() {
 
           <!-- CV -->
           <div class="rounded-lg p-3"
-            :class="timeline3.cv ? 'border border-emerald-500/20 bg-emerald-500/5' : 'border border-line bg-surface-sunken/40'">
+            :class="timeline3.cv ? 'border border-data-pos/20 bg-data-pos/5' : 'border border-line bg-surface-sunken/40'">
             <div class="flex items-center justify-between gap-2 mb-1">
               <span class="text-xs font-medium"
-                :class="timeline3.cv ? 'text-emerald-700 dark:text-emerald-300' : 'text-ink-muted'">
+                :class="timeline3.cv ? 'text-data-pos' : 'text-ink-muted'">
                 <i class="fas fa-check-double mr-1"></i>Entrega ao CV
               </span>
               <i class="fas fa-3 text-[10px]"
-                :class="timeline3.cv ? 'text-emerald-500' : 'text-ink-subtle'"></i>
+                :class="timeline3.cv ? 'text-data-pos' : 'text-ink-subtle'"></i>
             </div>
             <div class="text-sm font-mono tabular-nums" :class="timeline3.cv ? 'text-ink' : 'text-ink-subtle'">
               {{ fmt(timeline3.cv) }}
@@ -394,7 +394,7 @@ async function doReconcileCv() {
 
       <!-- 6. Erro atual -->
       <div v-if="lead.last_error"
-        class="rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-sm text-red-700 dark:text-red-300">
+        class="rounded-xl border border-data-neg/30 bg-data-neg/10 px-3.5 py-2.5 text-sm text-data-neg">
         <div class="flex items-center gap-2 font-medium mb-0.5">
           <i class="fas fa-circle-exclamation"></i>Último erro
           <span v-if="lead.error_code" class="text-micro font-mono opacity-70">{{ lead.error_code }}</span>
@@ -403,9 +403,9 @@ async function doReconcileCv() {
       </div>
 
       <!-- 7. Roteamento (held) -->
-      <section v-if="lead.status === 'held'" class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+      <section v-if="lead.status === 'held'" class="rounded-xl border border-data-warn/30 bg-data-warn/5 p-4">
         <h3 class="text-sm font-semibold text-ink mb-3">
-          <i class="fas fa-route mr-1.5 text-amber-500"></i>Resolver vínculo e rotear
+          <i class="fas fa-route mr-1.5 text-data-warn"></i>Resolver vínculo e rotear
         </h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <Input v-model="routeForm.midia_slug" label="Mídia (slug)" placeholder="ex: meta-mond-marilia" size="sm" />

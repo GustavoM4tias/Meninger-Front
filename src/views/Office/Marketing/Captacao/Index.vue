@@ -221,7 +221,7 @@ onMounted(async () => {
       <!-- Toolbar da aba (o header vive no hub Central Meta) -->
       <div class="flex items-center justify-end gap-2 flex-wrap mb-3">
           <span v-if="store.health?.dry_run"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-300"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-data-warn/30 bg-data-warn/10 px-2.5 py-1 text-xs font-medium text-data-warn"
             title="Os leads não estão sendo enviados ao CV — modo sombra ligado">
             <i class="fas fa-eye-slash"></i> Modo sombra
           </span>
@@ -290,7 +290,7 @@ onMounted(async () => {
 
       <!-- Erro -->
       <div v-if="store.error"
-        class="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+        class="mb-3 rounded-xl border border-data-neg/30 bg-data-neg/10 px-3 py-2.5 text-sm text-data-neg flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ store.error }}
       </div>
 

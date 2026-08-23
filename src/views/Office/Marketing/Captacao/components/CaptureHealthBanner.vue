@@ -98,9 +98,9 @@ function onClick(s) {
 }
 
 const TONE = {
-    danger:  'border-red-500/30 bg-red-500/5 text-red-700 dark:text-red-300',
-    warning: 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300',
-    info:    'border-sky-500/30 bg-sky-500/5 text-sky-700 dark:text-sky-300',
+    danger:  'border-data-neg/30 bg-data-neg/5 text-data-neg',
+    warning: 'border-data-warn/30 bg-data-warn/5 text-data-warn',
+    info:    'border-accent/30 bg-accent/5 text-accent',
 };
 </script>
 

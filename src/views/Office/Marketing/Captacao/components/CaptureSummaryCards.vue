@@ -40,7 +40,7 @@ const kpis = computed(() => {
             value: intFmt.format(total),
             sub: 'captados',
             icon: 'fas fa-arrow-trend-up',
-            accent: 'text-indigo-500 bg-indigo-500/10',
+            accent: 'text-accent bg-accent/10',
             filter: null,
         },
         {
@@ -49,7 +49,7 @@ const kpis = computed(() => {
             value: intFmt.format(pc.delivered || 0),
             sub: h.delivery_rate != null ? `${h.delivery_rate}% taxa` : 'sem base',
             icon: 'fas fa-circle-check',
-            accent: 'text-emerald-500 bg-emerald-500/10',
+            accent: 'text-data-pos bg-data-pos/10',
             filter: 'delivered',
         },
         {
@@ -58,7 +58,7 @@ const kpis = computed(() => {
             value: intFmt.format(pc.held || 0),
             sub: 'requer roteamento',
             icon: 'fas fa-hourglass-half',
-            accent: 'text-amber-500 bg-amber-500/10',
+            accent: 'text-data-warn bg-data-warn/10',
             filter: 'held',
             highlight: (pc.held || 0) > 0,
         },
@@ -68,7 +68,7 @@ const kpis = computed(() => {
             value: intFmt.format(inDispatch),
             sub: `${pc.routed || 0} routed · ${pc.dispatching || 0} sending`,
             icon: 'fas fa-paper-plane',
-            accent: 'text-sky-500 bg-sky-500/10',
+            accent: 'text-accent bg-accent/10',
             filter: 'routed,dispatching',
         },
         {
@@ -77,7 +77,7 @@ const kpis = computed(() => {
             value: intFmt.format(withError),
             sub: `${pc.failed || 0} falha · ${pc.rejected || 0} recusa`,
             icon: 'fas fa-circle-exclamation',
-            accent: 'text-red-500 bg-red-500/10',
+            accent: 'text-data-neg bg-data-neg/10',
             filter: 'failed,rejected',
             highlight: withError > 0,
         },
@@ -87,7 +87,7 @@ const kpis = computed(() => {
             value: intFmt.format(h.dead_letter || 0),
             sub: 'sem retry (geral)',
             icon: 'fas fa-skull',
-            accent: 'text-rose-500 bg-rose-500/10',
+            accent: 'text-data-neg bg-data-neg/10',
             filter: 'failed',
             global: true,        // fora do recorte de período
             highlight: (h.dead_letter || 0) > 0,
@@ -98,7 +98,7 @@ const kpis = computed(() => {
             value: fmtSeconds(h.avg_dispatch_seconds),
             sub: `máx ${fmtSeconds(h.max_dispatch_seconds)}`,
             icon: 'fas fa-stopwatch',
-            accent: 'text-cyan-500 bg-cyan-500/10',
+            accent: 'text-accent bg-accent/10',
             filter: null,
         },
         {
@@ -107,7 +107,7 @@ const kpis = computed(() => {
             value: intFmt.format(pc.spam || 0),
             sub: 'no período',
             icon: 'fas fa-trash',
-            accent: 'text-slate-500 bg-slate-500/10',
+            accent: 'text-ink-muted bg-slate-500/10',
             filter: 'spam',
         },
     ];

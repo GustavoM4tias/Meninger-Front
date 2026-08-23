@@ -578,7 +578,7 @@ const overviewKpis = computed(() => [
     value: statusInsights.value.ahead,
     sub: `${pctOf(statusInsights.value.ahead)}% do total`,
     icon: 'fas fa-fire',
-    accent: 'text-emerald-500 bg-emerald-500/10',
+    accent: 'text-data-pos bg-data-pos/10',
   },
   {
     key: 'risk',
@@ -586,7 +586,7 @@ const overviewKpis = computed(() => [
     value: statusInsights.value.behind + statusInsights.value.at_risk,
     sub: `${pctOf(statusInsights.value.behind + statusInsights.value.at_risk)}% precisam atenção`,
     icon: 'fas fa-triangle-exclamation',
-    accent: 'text-amber-500 bg-amber-500/10',
+    accent: 'text-data-warn bg-data-warn/10',
   },
 ]);
 
@@ -600,12 +600,12 @@ const pctOf = (n) => {
 
 // ── Status detail (formula explanation) ───
 const STATUS_RULES = [
-  { key: 'ahead',         icon: 'fas fa-fire',                   color: 'text-emerald-500',        rule: 'ratio ≥ 1.1',     desc: 'Realizando 10%+ acima do esperado para o tempo decorrido' },
-  { key: 'on_track',      icon: 'fas fa-circle-check',           color: 'text-blue-500',           rule: '0.8 ≤ ratio < 1.1', desc: 'Performance dentro da margem esperada' },
-  { key: 'behind',        icon: 'fas fa-triangle-exclamation',   color: 'text-yellow-500',         rule: '0.4 ≤ ratio < 0.8', desc: 'Atrás do esperado, requer atenção' },
-  { key: 'at_risk',       icon: 'fas fa-skull',                  color: 'text-red-500',            rule: 'ratio < 0.4',     desc: 'Performance crítica, ação urgente necessária' },
-  { key: 'no_sales',      icon: 'fas fa-ban',                    color: 'text-slate-500 dark:text-slate-400',          rule: 'sem vendas',      desc: 'Possui meta cadastrada mas nenhuma venda no período' },
-  { key: 'no_projection', icon: 'fas fa-minus',                  color: 'text-slate-400 dark:text-slate-500',          rule: 'sem meta',        desc: 'Não possui projeção/meta cadastrada para o período' },
+  { key: 'ahead',         icon: 'fas fa-fire',                   color: 'text-data-pos',        rule: 'ratio ≥ 1.1',     desc: 'Realizando 10%+ acima do esperado para o tempo decorrido' },
+  { key: 'on_track',      icon: 'fas fa-circle-check',           color: 'text-accent',           rule: '0.8 ≤ ratio < 1.1', desc: 'Performance dentro da margem esperada' },
+  { key: 'behind',        icon: 'fas fa-triangle-exclamation',   color: 'text-data-warn',         rule: '0.4 ≤ ratio < 0.8', desc: 'Atrás do esperado, requer atenção' },
+  { key: 'at_risk',       icon: 'fas fa-skull',                  color: 'text-data-neg',            rule: 'ratio < 0.4',     desc: 'Performance crítica, ação urgente necessária' },
+  { key: 'no_sales',      icon: 'fas fa-ban',                    color: 'text-ink-muted',          rule: 'sem vendas',      desc: 'Possui meta cadastrada mas nenhuma venda no período' },
+  { key: 'no_projection', icon: 'fas fa-minus',                  color: 'text-ink-subtle',          rule: 'sem meta',        desc: 'Não possui projeção/meta cadastrada para o período' },
 ];
 
 const closeModal = () => emit('close');
@@ -832,10 +832,10 @@ const openDetail = (row) => {
             <p v-if="comparisonData.length" class="text-micro text-ink-subtle mt-3 font-mono leading-relaxed">
               <i class="fas fa-circle-info text-[10px] mr-1"></i>
               Cada empreend. é avaliado pelo modo configurado (VGV ou Unidades).
-              <span class="text-emerald-500 font-semibold">Verde</span>: acima da meta ·
-              <span class="text-blue-500 font-semibold">Azul</span>: na meta ·
-              <span class="text-yellow-500 font-semibold">Amarelo</span>: alerta ·
-              <span class="text-red-500 font-semibold">Vermelho</span>: em risco.
+              <span class="text-data-pos font-semibold">Verde</span>: acima da meta ·
+              <span class="text-accent font-semibold">Azul</span>: na meta ·
+              <span class="text-data-warn font-semibold">Amarelo</span>: alerta ·
+              <span class="text-data-neg font-semibold">Vermelho</span>: em risco.
               Hover mostra os valores absolutos.
             </p>
           </Surface>
@@ -855,7 +855,7 @@ const openDetail = (row) => {
             <Surface variant="raised" padding="md">
               <div class="flex items-center justify-between gap-2 mb-3">
                 <div class="flex items-center gap-2 min-w-0">
-                  <i class="fas fa-fire text-emerald-500 text-sm"></i>
+                  <i class="fas fa-fire text-data-pos text-sm"></i>
                   <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Acima ou na meta</h3>
                 </div>
                 <Badge variant="success" size="sm">
@@ -871,10 +871,10 @@ const openDetail = (row) => {
               <ul v-else class="space-y-2 max-h-[28rem] overflow-y-auto pr-1">
                 <li v-for="(r, idx) in topPerformers" :key="r._key"
                   class="flex items-center gap-3 p-2.5 rounded-lg border border-line bg-surface-sunken
-                         hover:bg-surface-hover hover:border-emerald-500/30 transition-colors cursor-pointer"
+                         hover:bg-surface-hover hover:border-data-pos/30 transition-colors cursor-pointer"
                   @click="openDetail(r)">
                   <span class="h-7 w-7 rounded-md grid place-items-center text-sm font-bold shrink-0
-                               bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                               bg-data-pos/10 text-data-pos border border-data-pos/20">
                     {{ idx + 1 }}
                   </span>
                   <div class="min-w-0 flex-1">
@@ -887,7 +887,7 @@ const openDetail = (row) => {
                     </p>
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-base font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    <span class="text-base font-bold text-data-pos tabular-nums">
                       {{ r._ach.toFixed(1) }}%
                     </span>
                     <i class="fas fa-arrow-right text-xs text-ink-subtle"></i>
@@ -900,7 +900,7 @@ const openDetail = (row) => {
             <Surface variant="raised" padding="md">
               <div class="flex items-center justify-between gap-2 mb-3">
                 <div class="flex items-center gap-2 min-w-0">
-                  <i class="fas fa-skull text-red-500 text-sm"></i>
+                  <i class="fas fa-skull text-data-neg text-sm"></i>
                   <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Em alerta ou risco</h3>
                 </div>
                 <Badge variant="danger" size="sm">
@@ -909,17 +909,17 @@ const openDetail = (row) => {
               </div>
 
               <div v-if="!worstPerformers.length" class="py-6 text-center text-sm text-ink-subtle">
-                <i class="fas fa-circle-check mr-1 text-emerald-500"></i>
+                <i class="fas fa-circle-check mr-1 text-data-pos"></i>
                 Nenhum empreendimento em alerta — todos próximos ou acima da meta.
               </div>
 
               <ul v-else class="space-y-2 max-h-[28rem] overflow-y-auto pr-1">
                 <li v-for="(r, idx) in worstPerformers" :key="r._key"
                   class="flex items-center gap-3 p-2.5 rounded-lg border border-line bg-surface-sunken
-                         hover:bg-surface-hover hover:border-red-500/30 transition-colors cursor-pointer"
+                         hover:bg-surface-hover hover:border-data-neg/30 transition-colors cursor-pointer"
                   @click="openDetail(r)">
                   <span class="h-7 w-7 rounded-md grid place-items-center text-sm font-bold shrink-0
-                               bg-red-500/10 text-red-500 border border-red-500/20">
+                               bg-data-neg/10 text-data-neg border border-data-neg/20">
                     {{ idx + 1 }}
                   </span>
                   <div class="min-w-0 flex-1">
@@ -932,7 +932,7 @@ const openDetail = (row) => {
                     </p>
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-base font-bold text-red-500 tabular-nums">
+                    <span class="text-base font-bold text-data-neg tabular-nums">
                       {{ r._ach.toFixed(1) }}%
                     </span>
                     <i class="fas fa-arrow-right text-xs text-ink-subtle"></i>
@@ -963,7 +963,7 @@ const openDetail = (row) => {
             <!-- Realizado -->
             <Surface variant="raised" padding="md" class="space-y-3">
               <div class="flex items-center gap-2">
-                <span class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 grid place-items-center">
+                <span class="h-8 w-8 rounded-lg bg-data-pos/10 text-data-pos grid place-items-center">
                   <i class="fas fa-money-bill-wave text-sm"></i>
                 </span>
                 <h3 class="text-sm font-semibold text-ink">Valor realizado</h3>
@@ -974,11 +974,11 @@ const openDetail = (row) => {
                 <div class="ml-3">+ Pipeline workflow (CRM)</div>
               </div>
               <ul class="text-xs text-ink-muted space-y-1.5">
-                <li class="flex items-start gap-2"><i class="fas fa-circle-check text-emerald-500 mt-0.5 text-[10px]"></i>
+                <li class="flex items-start gap-2"><i class="fas fa-circle-check text-data-pos mt-0.5 text-[10px]"></i>
                   <span>Vendas vêm dos contratos do Sienge com data da instituição financeira no período.</span></li>
-                <li class="flex items-start gap-2"><i class="fas fa-circle-check text-emerald-500 mt-0.5 text-[10px]"></i>
+                <li class="flex items-start gap-2"><i class="fas fa-circle-check text-data-pos mt-0.5 text-[10px]"></i>
                   <span>Workflow é o pipeline de reservas/repasses em fluxos selecionados nos filtros.</span></li>
-                <li class="flex items-start gap-2"><i class="fas fa-circle-check text-amber-500 mt-0.5 text-[10px]"></i>
+                <li class="flex items-start gap-2"><i class="fas fa-circle-check text-data-warn mt-0.5 text-[10px]"></i>
                   <span>Vendas distratadas depois continuam contando — recebem apenas o selo âmbar.</span></li>
               </ul>
             </Surface>
@@ -986,7 +986,7 @@ const openDetail = (row) => {
             <!-- Projetado -->
             <Surface variant="raised" padding="md" class="space-y-3">
               <div class="flex items-center gap-2">
-                <span class="h-8 w-8 rounded-lg bg-sky-500/10 text-sky-500 grid place-items-center">
+                <span class="h-8 w-8 rounded-lg bg-accent/10 text-accent grid place-items-center">
                   <i class="fas fa-bullseye text-sm"></i>
                 </span>
                 <h3 class="text-sm font-semibold text-ink">Valor projetado</h3>
@@ -998,9 +998,9 @@ const openDetail = (row) => {
                 <div class="ml-3">por empreendimento × mês</div>
               </div>
               <ul class="text-xs text-ink-muted space-y-1.5">
-                <li class="flex items-start gap-2"><i class="fas fa-circle-info text-sky-500 mt-0.5 text-[10px]"></i>
+                <li class="flex items-start gap-2"><i class="fas fa-circle-info text-accent mt-0.5 text-[10px]"></i>
                   <span>Cada projeção define meta de unidades e/ou VGV por mês.</span></li>
-                <li class="flex items-start gap-2"><i class="fas fa-circle-info text-sky-500 mt-0.5 text-[10px]"></i>
+                <li class="flex items-start gap-2"><i class="fas fa-circle-info text-accent mt-0.5 text-[10px]"></i>
                   <span>Ao filtrar por período, soma as metas dos meses dentro do intervalo.</span></li>
               </ul>
             </Surface>
@@ -1008,20 +1008,20 @@ const openDetail = (row) => {
             <!-- % Atingida -->
             <Surface variant="raised" padding="md" class="space-y-3">
               <div class="flex items-center gap-2">
-                <span class="h-8 w-8 rounded-lg bg-purple-500/10 text-purple-500 grid place-items-center">
+                <span class="h-8 w-8 rounded-lg bg-accent/10 text-accent grid place-items-center">
                   <i class="fas fa-percent text-sm"></i>
                 </span>
                 <h3 class="text-sm font-semibold text-ink">% Atingida</h3>
               </div>
               <div class="rounded-lg border border-line bg-surface-sunken p-3 font-mono text-xs text-ink leading-relaxed space-y-1.5">
-                <div><span class="text-purple-500">Modo VGV</span> (padrão):</div>
+                <div><span class="text-accent">Modo VGV</span> (padrão):</div>
                 <div class="ml-3">% = VGV realizado ÷ VGV projetado</div>
                 <div class="border-t border-line my-2"></div>
-                <div><span class="text-violet-500">Modo Unidades</span>:</div>
+                <div><span class="text-accent">Modo Unidades</span>:</div>
                 <div class="ml-3">% = vendas realizadas ÷ unid. projetadas</div>
               </div>
               <p class="text-xs text-ink-muted">
-                <i class="fas fa-circle-info text-purple-500 text-[10px] mr-1"></i>
+                <i class="fas fa-circle-info text-accent text-[10px] mr-1"></i>
                 Configurável globalmente ou por empreendimento via "Configurações de meta".
               </p>
             </Surface>
@@ -1029,7 +1029,7 @@ const openDetail = (row) => {
             <!-- Tempo decorrido / Ratio -->
             <Surface variant="raised" padding="md" class="space-y-3">
               <div class="flex items-center gap-2">
-                <span class="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-500 grid place-items-center">
+                <span class="h-8 w-8 rounded-lg bg-data-warn/10 text-data-warn grid place-items-center">
                   <i class="far fa-clock text-sm"></i>
                 </span>
                 <h3 class="text-sm font-semibold text-ink">Tempo decorrido & ratio</h3>
@@ -1041,7 +1041,7 @@ const openDetail = (row) => {
                 <div class="ml-3 text-ink-subtle">(quanto > 1, mais à frente da meta)</div>
               </div>
               <p class="text-xs text-ink-muted">
-                <i class="fas fa-circle-info text-amber-500 text-[10px] mr-1"></i>
+                <i class="fas fa-circle-info text-data-warn text-[10px] mr-1"></i>
                 Hoje é dia 15? Tempo decorrido = ~50%. Se atingiu 60%, ratio = 1.2 (acima da meta).
               </p>
             </Surface>
@@ -1076,17 +1076,17 @@ const openDetail = (row) => {
           <!-- Distratos -->
           <Surface variant="raised" padding="md" class="space-y-3">
             <div class="flex items-center gap-2">
-              <i class="fas fa-file-circle-xmark text-amber-500 text-sm"></i>
+              <i class="fas fa-file-circle-xmark text-data-warn text-sm"></i>
               <h3 class="text-sm font-semibold text-ink">Distratos</h3>
             </div>
             <p class="text-xs text-ink-muted leading-relaxed">
               Venda com data da instituição financeira <strong class="text-ink">continua contando</strong> mesmo
               que o contrato tenha sido cancelado (distrato) depois — na época foi venda. O marcador
-              <span class="font-mono text-amber-500 font-semibold">âmbar</span> na coluna de vendas e de valor
+              <span class="font-mono text-data-warn font-semibold">âmbar</span> na coluna de vendas e de valor
               indica quantas vendas da linha foram distratadas, apenas para informação.
             </p>
             <p class="text-xs text-ink-muted leading-relaxed">
-              <i class="fas fa-circle-info text-amber-500 text-[10px] mr-1"></i>
+              <i class="fas fa-circle-info text-data-warn text-[10px] mr-1"></i>
               Um relatório dedicado de distratos, com as datas e valores corretos, virá em breve.
             </p>
           </Surface>

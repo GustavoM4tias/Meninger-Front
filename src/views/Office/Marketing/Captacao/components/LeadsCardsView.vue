@@ -14,10 +14,10 @@ const props = defineProps({
 const emit = defineEmits(['open-detail']);
 
 const COLUMNS = [
-    { key: 'held',        title: 'Aguardando vínculo', statuses: ['held'],                   accent: 'border-amber-500/40 bg-amber-500/5',  icon: 'fas fa-hourglass-half' },
-    { key: 'dispatch',    title: 'Em despacho',        statuses: ['routed', 'dispatching'],  accent: 'border-sky-500/40 bg-sky-500/5',      icon: 'fas fa-paper-plane' },
-    { key: 'delivered',   title: 'Entregues ao CV',    statuses: ['delivered'],              accent: 'border-emerald-500/40 bg-emerald-500/5', icon: 'fas fa-circle-check' },
-    { key: 'error',       title: 'Com erro',           statuses: ['failed', 'rejected'],     accent: 'border-red-500/40 bg-red-500/5',      icon: 'fas fa-circle-exclamation' },
+    { key: 'held',        title: 'Aguardando vínculo', statuses: ['held'],                   accent: 'border-data-warn/40 bg-data-warn/5',  icon: 'fas fa-hourglass-half' },
+    { key: 'dispatch',    title: 'Em despacho',        statuses: ['routed', 'dispatching'],  accent: 'border-accent/40 bg-accent/5',      icon: 'fas fa-paper-plane' },
+    { key: 'delivered',   title: 'Entregues ao CV',    statuses: ['delivered'],              accent: 'border-data-pos/40 bg-data-pos/5', icon: 'fas fa-circle-check' },
+    { key: 'error',       title: 'Com erro',           statuses: ['failed', 'rejected'],     accent: 'border-data-neg/40 bg-data-neg/5',      icon: 'fas fa-circle-exclamation' },
     { key: 'other',       title: 'Outros',             statuses: ['received', 'validated', 'spam', 'historical'], accent: 'border-line bg-surface-sunken/40', icon: 'fas fa-ellipsis' },
 ];
 
@@ -74,7 +74,7 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
                 <i v-if="lead.meta_is_organic === true || lead.meta_is_organic === 'true'"
                   class="fas fa-seedling text-teal-500 text-[10px]"
                   title="Lead orgânico — sem campanha rastreada"></i>
-                <i v-if="lead.last_error" class="fas fa-triangle-exclamation text-red-500 text-[10px]"
+                <i v-if="lead.last_error" class="fas fa-triangle-exclamation text-data-neg text-[10px]"
                   :title="lead.last_error"></i>
               </span>
             </div>

@@ -210,19 +210,19 @@ function ratioOf(row) {
 function achievementTextClass(row) {
   const r = ratioOf(row);
   if (r === null) return 'text-ink-subtle';
-  if (r >= 1.1) return 'text-emerald-600 dark:text-emerald-400';
-  if (r >= 0.8) return 'text-blue-600 dark:text-blue-400';
-  if (r >= 0.4) return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-red-600 dark:text-red-400';
+  if (r >= 1.1) return 'text-data-pos';
+  if (r >= 0.8) return 'text-accent';
+  if (r >= 0.4) return 'text-data-warn';
+  return 'text-data-neg';
 }
 
 function achievementBarClass(row) {
   const r = ratioOf(row);
   if (r === null) return 'bg-surface-sunken';
-  if (r >= 1.1) return 'bg-emerald-500';
-  if (r >= 0.8) return 'bg-blue-500';
-  if (r >= 0.4) return 'bg-yellow-500';
-  return 'bg-red-500';
+  if (r >= 1.1) return 'bg-data-pos';
+  if (r >= 0.8) return 'bg-accent';
+  if (r >= 0.4) return 'bg-data-warn';
+  return 'bg-data-neg';
 }
 
 function dotColor(status) {
@@ -352,7 +352,7 @@ const sortOptions = computed(() => [
     <div v-else class="md:hidden divide-y divide-line">
       <article v-for="row in sortedData" :key="row._key"
         class="flex items-start gap-3 p-3 cursor-pointer hover:bg-surface-sunken/40 transition-colors"
-        :class="row.onlyProjectionRow ? 'bg-emerald-500/5' : ''"
+        :class="row.onlyProjectionRow ? 'bg-data-pos/5' : ''"
         @click="emit('open-detail', row)">
 
         <input type="checkbox" :checked="selectedKeys.has(row._key)"
@@ -374,10 +374,10 @@ const sortOptions = computed(() => [
           <div class="flex items-center gap-3 mt-1.5 flex-wrap text-micro">
             <span class="text-ink-muted font-mono">
               <span class="text-ink font-semibold">{{ realizedCount(row) }}</span> venda(s)
-              <span v-if="!row.onlyProjectionRow && row.proj_count" class="text-emerald-500 font-semibold">
+              <span v-if="!row.onlyProjectionRow && row.proj_count" class="text-data-pos font-semibold">
                 +{{ row.proj_count }}
               </span>
-              <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0" class="text-amber-500 font-semibold"
+              <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0" class="text-data-warn font-semibold"
                 v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
                 <i class="fas fa-file-circle-xmark text-[10px]"></i>{{ distratoCount(row) }}
               </span>
@@ -385,11 +385,11 @@ const sortOptions = computed(() => [
           </div>
 
           <div class="flex items-baseline gap-2 mt-1">
-            <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <span class="text-sm font-bold text-data-pos tabular-nums">
               {{ formatCurrency(baseValue(row)) }}
             </span>
             <span v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
-              class="text-micro text-emerald-500 font-mono tabular-nums">
+              class="text-micro text-data-pos font-mono tabular-nums">
               +{{ formatCurrency(appendedValue(row)) }}
             </span>
           </div>
@@ -443,7 +443,7 @@ const sortOptions = computed(() => [
           <tr v-for="row in sortedData" :key="row._key"
             class="transition-colors"
             :class="row.onlyProjectionRow
-              ? 'bg-emerald-500/5 hover:bg-emerald-500/10'
+              ? 'bg-data-pos/5 hover:bg-data-pos/10'
               : 'hover:bg-surface-sunken/40'">
 
             <td class="px-4 py-3">
@@ -476,12 +476,12 @@ const sortOptions = computed(() => [
               <div class="text-sm font-semibold text-ink tabular-nums relative inline-block">
                 {{ realizedCount(row) }}
                 <span v-if="!row.onlyProjectionRow && row.proj_count"
-                  class="absolute -top-3 -right-2 text-micro font-bold text-emerald-500 font-mono"
+                  class="absolute -top-3 -right-2 text-micro font-bold text-data-pos font-mono"
                   v-tippy="'Projeção'">
                   +{{ row.proj_count }}
                 </span>
                 <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0"
-                  class="absolute -bottom-3 -right-2 text-micro font-bold text-amber-500 font-mono"
+                  class="absolute -bottom-3 -right-2 text-micro font-bold text-data-warn font-mono"
                   v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
                   <i class="fas fa-file-circle-xmark text-[9px]"></i>{{ distratoCount(row) }}
                 </span>
@@ -490,15 +490,15 @@ const sortOptions = computed(() => [
 
             <!-- Realizado -->
             <td class="px-4 py-3 text-right">
-              <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+              <div class="text-sm font-semibold text-data-pos tabular-nums">
                 {{ formatCurrency(baseValue(row)) }}
               </div>
               <div v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
-                class="text-micro text-emerald-500 font-mono tabular-nums">
+                class="text-micro text-data-pos font-mono tabular-nums">
                 +{{ formatCurrency(appendedValue(row)) }}
               </div>
               <div v-if="!row.onlyProjectionRow && distratoValue(row) > 0"
-                class="text-micro text-amber-500 font-mono tabular-nums"
+                class="text-micro text-data-warn font-mono tabular-nums"
                 v-tippy="'Valor de vendas distratadas — incluído no total'">
                 <i class="fas fa-file-circle-xmark text-[9px]"></i> {{ formatCurrency(distratoValue(row)) }}
               </div>
@@ -507,7 +507,7 @@ const sortOptions = computed(() => [
             <!-- Meta Unidades -->
             <td class="px-4 py-3 text-right">
               <span v-if="row.projectedUnits"
-                class="text-sm font-semibold text-violet-600 dark:text-violet-400 tabular-nums">
+                class="text-sm font-semibold text-accent tabular-nums">
                 {{ row.projectedUnits }}
               </span>
               <span v-else class="text-sm text-ink-subtle">—</span>
@@ -516,7 +516,7 @@ const sortOptions = computed(() => [
             <!-- Meta Projetada -->
             <td class="px-4 py-3 text-right">
               <span v-if="row.projectedVgv"
-                class="text-sm font-semibold text-sky-600 dark:text-sky-400 tabular-nums">
+                class="text-sm font-semibold text-accent tabular-nums">
                 {{ formatCurrency(row.projectedVgv) }}
               </span>
               <span v-else class="text-sm text-ink-subtle">—</span>

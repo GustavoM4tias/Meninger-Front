@@ -20,8 +20,8 @@ const props = defineProps({
 const emit = defineEmits(['open-detail', 'open-campaign', 'filter-status', 'filter-channel', 'filter-midia']);
 
 const CHANNEL_META = {
-    meta_lead_ads: { label: 'Meta', icon: 'fab fa-meta', cls: 'text-violet-500' },
-    site_form:     { label: 'Site', icon: 'fas fa-globe',  cls: 'text-sky-500' },
+    meta_lead_ads: { label: 'Meta', icon: 'fab fa-meta', cls: 'text-accent' },
+    site_form:     { label: 'Site', icon: 'fas fa-globe',  cls: 'text-accent' },
 };
 const channelMeta = (c) => CHANNEL_META[c] || { label: c || '—', icon: 'fas fa-question', cls: 'text-ink-subtle' };
 
@@ -113,10 +113,10 @@ const CV_ORIGEM_LABEL = {
                   @click.stop="emit('open-campaign', lead.meta_campaign_id)"
                   class="block text-xs text-ink truncate max-w-full text-left hover:text-accent hover:underline"
                   :title="`Abrir campanha ${lead.meta_campaign_name}`">
-                  <i class="fas fa-bullhorn text-[10px] text-orange-500 mr-1"></i>{{ lead.meta_campaign_name }}
+                  <i class="fas fa-bullhorn text-[10px] text-data-warn mr-1"></i>{{ lead.meta_campaign_name }}
                 </button>
                 <div v-else class="text-xs text-ink truncate" :title="lead.meta_campaign_name">
-                  <i class="fas fa-bullhorn text-[10px] text-orange-500 mr-1"></i>{{ lead.meta_campaign_name }}
+                  <i class="fas fa-bullhorn text-[10px] text-data-warn mr-1"></i>{{ lead.meta_campaign_name }}
                 </div>
                 <div v-if="lead.meta_form_name" class="text-micro text-ink-muted truncate" :title="lead.meta_form_name">
                   <i class="fas fa-square-poll-vertical text-[9px] text-ink-subtle mr-1"></i>{{ lead.meta_form_name }}
@@ -142,7 +142,7 @@ const CV_ORIGEM_LABEL = {
               <!-- 3) Form interno -->
               <template v-else-if="lead.lead_form_name">
                 <div class="text-xs text-ink truncate">
-                  <i class="fas fa-globe text-[10px] text-sky-500 mr-1"></i>{{ lead.lead_form_name }}
+                  <i class="fas fa-globe text-[10px] text-accent mr-1"></i>{{ lead.lead_form_name }}
                 </div>
                 <div v-if="lead.lead_form_slug" class="text-micro text-ink-subtle font-mono truncate">
                   /{{ lead.lead_form_slug }}
@@ -159,7 +159,7 @@ const CV_ORIGEM_LABEL = {
                 :title="`Filtrar pela mídia ${lead.midia_slug}`">
                 {{ lead.midia_slug }}
               </button>
-              <div v-else class="text-xs text-amber-600 dark:text-amber-400 italic">sem mídia</div>
+              <div v-else class="text-xs text-data-warn italic">sem mídia</div>
               <div v-if="lead.cv_origem" class="text-micro text-ink-muted">
                 {{ CV_ORIGEM_LABEL[lead.cv_origem] || lead.cv_origem }}
               </div>
@@ -180,9 +180,9 @@ const CV_ORIGEM_LABEL = {
 
             <!-- Indicador de erro / atenção -->
             <td class="px-3 py-2.5 align-top text-right pr-4">
-              <i v-if="lead.last_error" class="fas fa-triangle-exclamation text-red-500"
+              <i v-if="lead.last_error" class="fas fa-triangle-exclamation text-data-neg"
                 :title="lead.last_error"></i>
-              <i v-else-if="lead.status === 'held'" class="fas fa-hourglass-half text-amber-500"
+              <i v-else-if="lead.status === 'held'" class="fas fa-hourglass-half text-data-warn"
                 title="Aguardando vínculo"></i>
               <i v-else class="fas fa-chevron-right text-[10px] text-ink-subtle opacity-0 group-hover:opacity-100 transition"></i>
             </td>

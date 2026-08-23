@@ -96,7 +96,7 @@ function clearOverride(entId) {
           {{ globalModeLabel }}
         </div>
 
-        <p v-if="goalStore.error" class="text-xs text-red-600 dark:text-red-400">
+        <p v-if="goalStore.error" class="text-xs text-data-neg">
           <i class="fas fa-circle-exclamation text-[10px] mr-1"></i>{{ goalStore.error }}
         </p>
 
@@ -162,7 +162,7 @@ function clearOverride(entId) {
 
                 <!-- Limpar override -->
                 <button v-if="hasOverride(ent.id)" @click="clearOverride(ent.id)"
-                  class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-data-neg hover:bg-data-neg/10 transition-colors"
                   v-tippy="'Remover exceção (volta ao padrão)'">
                   <i class="fas fa-rotate-left text-[10px]"></i>
                 </button>

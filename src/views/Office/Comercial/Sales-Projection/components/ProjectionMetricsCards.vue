@@ -66,14 +66,14 @@ const achievementAccent = computed(() => {
   if (pct == null) return 'text-ink-muted bg-surface-sunken';
   if (elapsed === 0) {
     return pct >= 100
-      ? 'text-emerald-500 bg-emerald-500/10'
-      : 'text-yellow-500 bg-yellow-500/10';
+      ? 'text-data-pos bg-data-pos/10'
+      : 'text-data-warn bg-data-warn/10';
   }
   const ratio = pct / elapsed;
-  if (ratio >= 1.1) return 'text-emerald-500 bg-emerald-500/10';
-  if (ratio >= 0.8) return 'text-blue-500 bg-blue-500/10';
-  if (ratio >= 0.4) return 'text-yellow-500 bg-yellow-500/10';
-  return 'text-red-500 bg-red-500/10';
+  if (ratio >= 1.1) return 'text-data-pos bg-data-pos/10';
+  if (ratio >= 0.8) return 'text-accent bg-accent/10';
+  if (ratio >= 0.4) return 'text-data-warn bg-data-warn/10';
+  return 'text-data-neg bg-data-neg/10';
 });
 
 const achievementIcon = computed(() => {
@@ -105,8 +105,8 @@ const realizedCards = computed(() => [
     sub: isNet.value ? 'VGV (descontos ignorados)' : 'VGV + DC (descontos somam)',
     icon: isNet.value ? 'fas fa-money-bill-wave' : 'fas fa-sack-dollar',
     accent: isNet.value
-      ? 'text-emerald-500 bg-emerald-500/10'
-      : 'text-amber-500 bg-amber-500/10',
+      ? 'text-data-pos bg-data-pos/10'
+      : 'text-data-warn bg-data-warn/10',
   },
   {
     key: 'projectedUnits',
@@ -114,7 +114,7 @@ const realizedCards = computed(() => [
     value: formatNumber(props.metrics.projectedUnits ?? 0),
     sub: 'unidades projetadas no período',
     icon: 'fas fa-key',
-    accent: 'text-violet-500 bg-violet-500/10',
+    accent: 'text-accent bg-accent/10',
   },
   {
     key: 'projectedVgv',
@@ -122,7 +122,7 @@ const realizedCards = computed(() => [
     value: formatCurrency(props.metrics.projectedVgv),
     sub: 'VGV total projetado no período',
     icon: 'fas fa-bullseye',
-    accent: 'text-sky-500 bg-sky-500/10',
+    accent: 'text-accent bg-accent/10',
   },
 ]);
 
@@ -134,8 +134,8 @@ const ticketsCards = computed(() => [
     sub: isNet.value ? 'VGV médio por venda' : 'VGV + DC médio por venda',
     icon: isNet.value ? 'fas fa-receipt' : 'fas fa-file-invoice-dollar',
     accent: isNet.value
-      ? 'text-purple-500 bg-purple-500/10'
-      : 'text-cyan-500 bg-cyan-500/10',
+      ? 'text-accent bg-accent/10'
+      : 'text-accent bg-accent/10',
   },
   {
     key: 'avgProjectedTicket',

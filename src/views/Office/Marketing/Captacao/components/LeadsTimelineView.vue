@@ -104,7 +104,7 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
               <i v-if="lead.meta_is_organic === true || lead.meta_is_organic === 'true'"
                 class="fas fa-seedling text-teal-500 text-[11px]"
                 title="Lead orgânico — sem campanha rastreada"></i>
-              <i v-if="lead.last_error" class="fas fa-triangle-exclamation text-red-500"
+              <i v-if="lead.last_error" class="fas fa-triangle-exclamation text-data-neg"
                 :title="lead.last_error"></i>
             </button>
           </li>
