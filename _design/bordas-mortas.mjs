@@ -53,6 +53,10 @@ const APENAS_COR = Object.fromEntries(
    da classe. Sem esta lista, todo cartão do sistema virava falso positivo. */
 const CLASSE_COM_BORDA = /(?:surface-card|panel-focus|panel-head|panel)/;
 
+/* O `<hr>` recebe `border-top-width: 1px` do preflight do Tailwind, entao
+   `border-line` sozinho nele JA desenha. Ainda assim vale escrever o lado. */
+const TAG_COM_BORDA_PROPRIA = /^<hr[\s/>]/;
+
 const TAG = /<[a-zA-Z][^>]*?>/gs;
 
 const alvo = process.argv[2];
@@ -81,7 +85,7 @@ for (const f of arquivos) {
         const tag = m[0];
         /* `.surface-card` e `.panel` já trazem `border border-line`, então um
            `hover:border-accent/40` em cima delas é válido: a largura vem dali. */
-        const temClasse = CLASSE_COM_BORDA.test(tag);
+        const temClasse = CLASSE_COM_BORDA.test(tag) || TAG_COM_BORDA_PROPRIA.test(tag);
         for (const pre of Object.keys(LARGURA)) {
             const soCor = APENAS_COR[pre].test(tag);
             const temLargura = LARGURA[pre].test(tag) || (pre === 'border' && temClasse);

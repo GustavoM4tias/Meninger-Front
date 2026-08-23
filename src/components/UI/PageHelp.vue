@@ -71,7 +71,9 @@ const normalizedSteps = computed(() =>
            active:scale-[0.98] transition-all duration-150 ease-out-expo shrink-0"
     :aria-label="label">
     <i class="far fa-circle-question text-base text-accent"></i>
-    <span class="hidden sm:inline">{{ label }}</span>
+    <!-- `label=""` deixa o botao so com o icone (barra de acoes apertada);
+         sem o v-if, o span vazio ainda comia o `gap-2`. -->
+    <span v-if="label" class="hidden sm:inline">{{ label }}</span>
     <!-- Pulso de 1ª visita.
          Fica EM LINHA, dentro do botão, e não grudado no canto de fora. Como
          `absolute -top-1 -right-1`, o ponto e o `ping` (que cresce 2x) saíam da
