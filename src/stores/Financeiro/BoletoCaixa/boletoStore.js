@@ -148,7 +148,9 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             ? { page: 1, limit: carregadas }
             : undefined;
         try {
-            const data = await requestWithAuth(`/boleto-caixa/history?${buildHistoryParams(paginacao)}`);
+            // Leitura unificada (boleto + cartão). As AÇÕES continuam em /boleto-caixa,
+            // porque o que se faz com cada forma é diferente.
+            const data = await requestWithAuth(`/cobranca-ato/history?${buildHistoryParams(paginacao)}`);
             history.value = data.rows || [];
             historyTotal.value = data.total || 0;
         } catch (err) {
@@ -175,7 +177,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         const proxima = historyPage.value + 1;
         try {
             const params = buildHistoryParams({ page: proxima });
-            const data = await requestWithAuth(`/boleto-caixa/history?${params}`);
+            const data = await requestWithAuth(`/cobranca-ato/history?${params}`);
             const vistos = new Set(history.value.map(r => r.id));
             const novas = (data.rows || []).filter(r => !vistos.has(r.id));
             history.value = [...history.value, ...novas];
@@ -210,7 +212,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             if (Array.isArray(f.cvSituacao) && f.cvSituacao.length) params.set('cvSituacao', f.cvSituacao.join(','));
             if (Array.isArray(f.cvRepasse) && f.cvRepasse.length) params.set('cvRepasse', f.cvRepasse.join(','));
 
-            stats.value = await requestWithAuth(`/boleto-caixa/history-stats?${params}`);
+            stats.value = await requestWithAuth(`/cobranca-ato/history-stats?${params}`);
         } catch (err) {
             console.warn('[boletoStore] fetchStats:', err.message);
         } finally {
@@ -224,7 +226,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
     async function fetchFacets() {
         facetsLoading.value = true;
         try {
-            facets.value = await requestWithAuth('/boleto-caixa/history-facets');
+            facets.value = await requestWithAuth('/cobranca-ato/history-facets');
         } catch (err) {
             console.warn('[boletoStore] facets:', err.message);
         } finally {
