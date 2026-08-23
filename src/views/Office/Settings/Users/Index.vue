@@ -8,6 +8,7 @@ import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import { useToast } from 'vue-toastification';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
@@ -170,6 +171,19 @@ onMounted(async () => {
           <Favorite :router="'/settings/users'" :section="'Usuários'" />
         </template>
         <template #actions>
+          <PageHelp
+            storage-key="usuarios"
+            title="Como administrar usuários"
+            intro="Quem tem acesso ao Office e como cada um entra. O que a pessoa VÊ não se decide aqui, e sim nas Alçadas — aqui é o cadastro."
+            :steps="[
+              { title: 'Encontre a pessoa', text: 'Busque por nome, e-mail, cidade ou cargo.' },
+              { title: 'Crie ou edite', text: 'Departamento e cargo são o que outras telas usam para classificar e para montar alçada padrão.' },
+              { title: 'Cuide do primeiro acesso', text: 'Conta Microsoft nova nasce pendente: alguém precisa aprovar e ativar para ela entrar.' },
+            ]"
+            :tips="[
+              'Tipo de usuário é o provedor de autenticação, não o domínio do e-mail: gente de fora pode ter e-mail da casa.',
+              'Desativar preserva o histórico da pessoa; excluir é o que deixa registro órfão.',
+            ]" />
           <SegmentedControl v-if="isAdmin"
             v-model="activeTab" :options="tabs" size="sm" />
           <Button v-if="activeTab === 'office'"

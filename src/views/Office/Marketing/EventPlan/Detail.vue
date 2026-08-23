@@ -11,6 +11,7 @@ import { useEventPlanStore, PLAN_STATUS_LABEL } from '@/stores/Marketing/EventPl
 import api from '@/utils/EventPlan/api.js';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -269,6 +270,19 @@ onMounted(async () => {
                 eyebrow="Plano de Eventos"
             >
                 <template #actions>
+                  <PageHelp
+                    storage-key="plano-eventos-detalhe"
+                    title="Como tocar o plano do mês"
+                    intro="O plano de um empreendimento num mês. Ele passa por autorizações em ordem, e cada decisão fica registrada com quem decidiu."
+                    :steps="[
+                      { title: 'Lance os itens', text: 'Cada item entra numa categoria e com valor. É a soma deles que vai à autorização.' },
+                      { title: 'Decida linha a linha', text: 'Quem autoriza pode aprovar, recusar ou cortar o valor de um item sem derrubar o plano inteiro.' },
+                      { title: 'Feche o mês', text: 'Fechar congela o plano: ele vira histórico e não aceita mais mudança.' },
+                    ]"
+                    :tips="[
+                      'Item recusado continua visível com o motivo — o histórico é o que evita a mesma discussão no mês seguinte.',
+                      'Fechar o mês é definitivo pela tela; reabrir depende de quem administra o Plano de Eventos.',
+                    ]" />
                     <Button variant="ghost" icon="fas fa-arrow-left" @click="router.push('/marketing/plano-eventos')">
                         Voltar
                     </Button>

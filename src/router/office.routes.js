@@ -354,21 +354,20 @@ export default [
                         meta: { requiresAuth: true, searchable: true, content: 'Consulta do nº do contrato na instituição financeira (CEF) por empreendimento ou busca geral' },
                     },
                     {
-                        path: 'boleto-caixa',
-                        name: 'Boleto Caixa',
-                        component: () => import('@/views/Office/Financeiro/BoletoCaixa/Index.vue'),
+                        // Cobrança do Ato: as duas formas de cobrar a entrada
+                        // (boleto Caixa e link de cartão Userede) numa tela só.
+                        // "Cobrança" é apenas agrupamento na nav, sem tela própria.
+                        path: 'cobranca/ato',
+                        name: 'Ato',
+                        component: () => import('@/views/Office/Financeiro/CobrancaAto/Index.vue'),
                         // Sem requiresAdmin: a tela é delegável por alçada e a
                         // aba Configurações se esconde sozinha para não-admin.
-                        meta: { requiresAuth: true, searchable: true, content: 'Histórico de emissão de boletos via Caixa Econômica Federal: filtros, reprocessamento, reenvio ao cliente e conferência de pagamento' },
+                        meta: { requiresAuth: true, searchable: true, content: 'Cobrança do ato: emissão de boleto Caixa e link de pagamento no cartão, com histórico, reprocessamento, reenvio ao cliente e conferência de pagamento' },
                     },
-                    {
-                        path: 'link-cartao',
-                        name: 'Link de Cartão',
-                        component: () => import('@/views/Office/Financeiro/LinkCartao/Index.vue'),
-                        // Sem requiresAdmin: a tela entra pela alçada e as ações
-                        // internas seguem as capacidades declaradas no backend.
-                        meta: { requiresAuth: true, searchable: true, content: 'Link de pagamento no cartão de crédito via portal Userede: credenciais, teto por link, limite de parcelas e prazo de vencimento' },
-                    },
+                    // Rotas antigas: os links das notificações apontam para elas.
+                    // As alçadas já migram sozinhas pelo ensurePermissionRouteRenames.
+                    { path: 'boleto-caixa', redirect: { name: 'Ato' } },
+                    { path: 'link-cartao', redirect: { name: 'Ato' } },
                     {
                         path: 'paymentflow',
                         name: 'Fluxo de Pagamento',

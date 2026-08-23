@@ -3,6 +3,7 @@ import { onMounted } from 'vue';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
@@ -28,6 +29,21 @@ onMounted(async () => {
         <template #title>
           <span>Minha conta</span>
           <Favorite :router="'/settings/Account'" :section="'Minha Conta'" />
+        </template>
+        <template #actions>
+          <PageHelp
+            storage-key="minha-conta"
+            title="Como cuidar da sua conta"
+            intro="Seus dados e as formas de entrar no Office. Tudo aqui é seu: nada nesta tela muda o acesso de outra pessoa."
+            :steps="[
+              { title: 'Confira seus dados', text: 'Nome e contato aparecem para os colegas em comentários, chamados e atribuições.' },
+              { title: 'Escolha como entrar', text: 'Senha, conta Microsoft e reconhecimento facial convivem: você usa o que preferir.' },
+              { title: 'Conecte o Sienge', text: 'Sem essa credencial, as telas que consultam o Sienge no seu nome não funcionam para você.' },
+            ]"
+            :tips="[
+              'Trocar a senha não desconecta a conta Microsoft, e vice-versa.',
+              'Número de WhatsApp confirmado é o que permite receber aviso por lá.',
+            ]" />
         </template>
       </PageHeader>
 

@@ -195,14 +195,20 @@ export const navRegistry = [
                 icon: 'fas fa-file-invoice-dollar',
                 pages: [
                     { route: '/financeiro/consulta-cef', name: 'Consulta de nº CEF', icon: 'fas fa-hashtag' },
-                    // Delegável desde 2026-08-19: histórico, filtros e
-                    // reprocessamento vão por alçada; a aba Configurações
-                    // continua só para admin (dentro da própria tela).
-                    { route: '/financeiro/boleto-caixa', name: 'Boleto Caixa', icon: 'fas fa-barcode' },
-                    // Configuração da emissão de link de pagamento no cartão
-                    // (portal Userede). Hoje só configuração, que é admin pela
-                    // capacidade `configure` em lib/screenCapabilities.js.
-                    { route: '/financeiro/link-cartao', name: 'Link de Cartão', icon: 'fas fa-credit-card' },
+                ],
+            },
+            {
+                // Cobrança é só agrupamento de navegação - não tem tela própria.
+                // O Ato reúne as duas formas de cobrar a entrada (boleto Caixa e
+                // link de cartão Userede) numa tela só; as rotas antigas
+                // /financeiro/boleto-caixa e /financeiro/link-cartao redirecionam
+                // para cá, e as alçadas migram sozinhas pelo
+                // lib/ensurePermissionRouteRenames.js do backend.
+                key: 'cobranca',
+                name: 'Cobrança',
+                icon: 'fas fa-hand-holding-dollar',
+                pages: [
+                    { route: '/financeiro/cobranca/ato', name: 'Ato', icon: 'fas fa-file-invoice-dollar' },
                 ],
             },
             {

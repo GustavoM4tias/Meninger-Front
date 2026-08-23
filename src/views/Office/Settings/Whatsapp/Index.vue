@@ -3,6 +3,7 @@ import { onMounted, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useWhatsappStore } from '@/stores/Whatsapp/whatsappStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
@@ -55,6 +56,19 @@ const statusBadge = computed(() => {
       subtitle="Configuração da conta, templates e log de envios."
       eyebrow="Integrações">
       <template #actions>
+        <PageHelp
+          storage-key="whatsapp"
+          title="Como funciona o WhatsApp"
+          intro="Esta tela liga o Office a uma conta WhatsApp Business. É por ela que saem cobranças, alertas e o Eme Atende — todos pelo mesmo número."
+          :steps="[
+            { title: 'Configure a conta', text: 'Credenciais e número. Enquanto não estiver conectado, nenhum envio por WhatsApp acontece.' },
+            { title: 'Aprove os templates', text: 'A Meta exige template aprovado para mensagem iniciada pela empresa. Template pendente não envia, e isso não é erro do Office.' },
+            { title: 'Acompanhe o log', text: 'O histórico mostra o que saiu e o que falhou, com o motivo devolvido pela Meta.' },
+          ]"
+          :tips="[
+            'Template reprovado pela Meta costuma ser texto promocional demais: o motivo aparece no log.',
+            'O mesmo número atende o Office e o Eme Atende; o roteamento é por remetente.',
+          ]" />
         <span :class="['inline-flex items-center gap-2 px-3 h-8 rounded-lg border text-xs font-medium', statusBadge.cls]">
           <span class="h-1.5 w-1.5 rounded-full bg-current opacity-75"></span>
           {{ statusBadge.label }}

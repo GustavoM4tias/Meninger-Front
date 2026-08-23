@@ -10,6 +10,7 @@ import { ref, onMounted } from 'vue';
 import { useMuralAdminStore } from '@/stores/Mural/muralAdminStore';
 import { useCan } from '@/composables/useCan';
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -91,6 +92,20 @@ function onFilter(s) { statusFilter.value = s; store.fetchList(s || undefined); 
         subtitle="Mural de avisos - criar, publicar e acompanhar a ciência."
         icon="fas fa-bullhorn">
         <template #actions>
+          <PageHelp
+            storage-key="mural-admin"
+            title="Como publicar um comunicado"
+            intro="Aqui se escreve, publica e acompanha a leitura dos avisos. Publicar dispara notificação para o público escolhido, então vale conferir o alcance antes."
+            :steps="[
+              { title: 'Escreva', text: 'Título e corpo. Um comunicado que cabe em três linhas é lido; um que parece documento, não.' },
+              { title: 'Escolha o público', text: 'É ele que decide quem vê o aviso no Mural. Público errado é a causa mais comum de gente reclamando que não foi avisada.' },
+              { title: 'Publique', text: 'Sair do rascunho notifica todo mundo do público. Antes disso, ninguém vê.' },
+              { title: 'Acompanhe a ciência', text: 'A aderência mostra quem já leu. Serve para cobrar quem falta sem mandar aviso novo para todos.' },
+            ]"
+            :tips="[
+              'Rascunho pode ser revisto à vontade: a notificação só sai na publicação.',
+              'Comunicado com pedido de ciência fica na tela da pessoa até ela confirmar.',
+            ]" />
           <Button v-if="can('manage')" variant="primary" size="sm" icon="fas fa-plus" @click="openCreate">Novo comunicado</Button>
         </template>
       </PageHeader>

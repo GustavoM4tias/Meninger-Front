@@ -6,6 +6,19 @@
         icon="fas fa-headset">
         <template #title>Tickets de Suporte</template>
         <template #actions>
+          <PageHelp
+            storage-key="suporte-lista"
+            title="Como acompanhar os chamados"
+            intro="A fila de chamados do sistema. Quem abriu vê os seus; quem administra vê todos."
+            :steps="[
+              { title: 'Leia a fila', text: 'Status e prioridade dizem o que está em andamento e o que espera resposta.' },
+              { title: 'Abra o chamado', text: 'Toda a conversa e o histórico ficam dentro dele.' },
+              { title: 'Abra um novo', text: 'Se o assunto for outro, prefira chamado novo a continuar um fechado: cada um vira uma linha rastreável.' },
+            ]"
+            :tips="[
+              'Chamado fechado continua consultável e pode ser reaberto.',
+              'Prioridade é da fila inteira, não uma marcação pessoal.',
+            ]" />
           <RouterLink :to="{ name: 'Reportar' }">
             <Button variant="primary" icon="fas fa-plus">Novo Chamado</Button>
           </RouterLink>
@@ -94,6 +107,7 @@ import { RouterLink } from 'vue-router';
 import { useSupportStore } from '@/stores/Support/supportStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';

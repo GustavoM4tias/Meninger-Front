@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import API_URL from '@/config/apiUrl';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Input from '@/components/UI/Input.vue';
@@ -376,6 +377,18 @@ onMounted(async () => {
           <Favorite :router="'/settings/organograma'" :section="'Organograma'" />
         </template>
         <template #actions>
+          <PageHelp
+            storage-key="organograma"
+            title="Como usar o organograma"
+            intro="A estrutura da equipe, montada a partir de quem responde a quem. Ela não é decorativa: é dela que saem as cadeias de aprovação e a visão de time em outras telas."
+            :steps="[
+              { title: 'Navegue', text: 'Busque uma pessoa para saltar direto até ela na árvore, em vez de abrir nível por nível.' },
+              { title: 'Edite a hierarquia', text: 'No modo edição você muda a quem cada pessoa responde. A mudança vale para todo mundo, na hora.' },
+            ]"
+            :tips="[
+              'Pessoa sem gestor definido fica solta na raiz — é o sinal de cadastro incompleto, não de cargo alto.',
+              'Trocar o gestor de alguém muda também quem enxerga o time dela em outras telas.',
+            ]" />
           <Badge v-if="totalVisible > 0" variant="neutral" size="sm">
             <i class="fas fa-users text-[9px]"></i>
             {{ totalVisible }} pessoa(s)

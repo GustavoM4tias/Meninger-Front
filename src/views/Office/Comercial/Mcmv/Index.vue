@@ -6,6 +6,7 @@ import { useMcmvStore } from '@/stores/Comercial/Mcmv/mcmvStore';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
@@ -99,6 +100,20 @@ function recorteClass(r) {
               <span class="hidden sm:inline">Configurações</span>
             </Button>
           </RouterLink>
+        </template>
+        <template #actions>
+          <PageHelp
+            storage-key="mcmv"
+            title="Como consultar o MCMV"
+            intro="Esta tela responde uma pergunta: qual o teto de venda de um município, por faixa de renda. Os valores saem da tabela oficial importada em Configurações."
+            :steps="[
+              { title: 'Busque o município', text: 'Digite a cidade. A resposta traz o teto por faixa, da 1 à 4.' },
+              { title: 'Leia a faixa certa', text: 'A faixa é definida pela renda do cliente, não pelo valor do imóvel. O teto é o máximo financiável naquela faixa.' },
+            ]"
+            :tips="[
+              'Município que não aparece está fora da tabela vigente: a resposta é ausência de dado, não zero.',
+              'Quando a CEF publica tabela nova, alguém precisa importá-la em Configurações — até lá vale a antiga.',
+            ]" />
         </template>
       </PageHeader>
 

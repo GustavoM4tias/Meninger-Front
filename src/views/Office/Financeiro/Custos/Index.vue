@@ -9,6 +9,21 @@
           Custos por Empreendimento
           <Favorite :router="'/financeiro/custos'" :section="'Custos'" />
         </template>
+        <template #actions>
+          <PageHelp
+            storage-key="custos"
+            title="Como ler os custos"
+            intro="O que foi pago no período, lido ao vivo do backup do Sienge. Os números seguem o espelho mais recente, não o instante atual do Sienge."
+            :steps="[
+              { title: 'Recorte o período', text: 'Tudo aqui é por data de pagamento. O total muda com o recorte, não com o filtro de exibição.' },
+              { title: 'Leia o que não soma', text: 'Alguns lançamentos aparecem marcados como fora do total: eles existem, mas não entram na conta do período de propósito.' },
+              { title: 'Abra o lançamento', text: 'O detalhe mostra a origem no Sienge e a personalização feita aqui, quando houver.' },
+            ]"
+            :tips="[
+              'O que você enxerga depende da visibilidade de departamento configurada nas Alçadas.',
+              'Diferença contra o Sienge quase sempre é defasagem do backup — confira a data do espelho antes de tratar como erro.',
+            ]" />
+        </template>
       </PageHeader>
 
       <!-- Filtros Card -->
@@ -599,6 +614,7 @@ import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStor
 import { useToast } from 'vue-toastification';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';

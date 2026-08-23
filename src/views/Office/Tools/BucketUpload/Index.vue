@@ -3,6 +3,7 @@ import { ref, onMounted, watch, computed } from 'vue';
 import { useBucketUploadStore } from '@/stores/Tools/BucketUpload/bucketUploadStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
@@ -114,6 +115,21 @@ const folderPath = computed(() => `bucket-menin/${folderName.value}/`);
         <template #title>
           <span>Looqbox</span>
           <Favorite :router="'/tools/bucket-upload'" :section="'Looqbox'" />
+        </template>
+        <template #actions>
+          <PageHelp
+            storage-key="looqbox"
+            title="Como enviar para o Looqbox"
+            intro="Esta tela converte uma planilha e joga o resultado no bucket que o Looqbox lê. O que subir aqui aparece nos painéis do Looqbox depois do processamento dele."
+            :steps="[
+              { title: 'Escolha a pasta de destino', text: 'É ela que decide qual painel do Looqbox vai receber os dados.' },
+              { title: 'Envie o .xlsx', text: 'O arquivo precisa ter as abas Engenharia e Area Construída Total. Faltando aba, a conversão para.' },
+              { title: 'Confira o resultado', text: 'A tela mostra quantas linhas saíram de cada arquivo gerado. Número muito diferente do esperado é sinal de planilha fora do formato.' },
+            ]"
+            :tips="[
+              'Enviar de novo na mesma pasta substitui o conteúdo anterior.',
+              'Máximo de 20 MB: planilha maior costuma ter aba de rascunho esquecida dentro.',
+            ]" />
         </template>
       </PageHeader>
 

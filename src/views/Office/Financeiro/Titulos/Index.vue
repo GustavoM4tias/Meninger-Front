@@ -9,6 +9,21 @@
           Gerenciamento de Títulos e Custos
           <Favorite :router="'/financeiro/titulos'" :section="'Títulos'" />
         </template>
+        <template #actions>
+          <PageHelp
+            storage-key="titulos"
+            title="Como buscar títulos"
+            intro="Consulta de títulos do Sienge por data de vencimento. As parcelas e os custos vêm do backup, então refletem o último espelho do Sienge, não o instante atual."
+            :steps="[
+              { title: 'Recorte o período', text: 'A busca é por data de vencimento. Sem período, a consulta traria a base inteira.' },
+              { title: 'Filtre por empreendimento e departamento', text: 'É o que separa o custo de uma obra do custo de outra.' },
+              { title: 'Leia a parcela', text: 'Cada linha é uma parcela, não um contrato: o mesmo contrato aparece tantas vezes quantas forem as parcelas no período.' },
+            ]"
+            :tips="[
+              'Valor divergente do Sienge quase sempre é defasagem do backup, não erro de conta.',
+              'Título sem departamento aparece assim mesmo: a tela não adivinha classificação.',
+            ]" />
+        </template>
       </PageHeader>
 
       <!-- Filtros Card -->
@@ -236,6 +251,7 @@ import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';

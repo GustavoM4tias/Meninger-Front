@@ -1,40 +1,10 @@
 <template>
-  <PageContainer size="lg">
-    <PageHeader
-      title="Link de Cartão"
-      subtitle="Emissão de link de pagamento no cartão pelo portal Userede"
-      icon="fas fa-credit-card">
-      <template #actions>
-        <!-- Estado da automação junto do título: é o que decide se a tela
-             está fazendo alguma coisa agora. -->
-        <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-sunken border border-line">
-          <span class="relative flex h-2.5 w-2.5">
-            <span v-if="form.active"
-              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-data-pos opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2.5 w-2.5"
-              :class="form.active ? 'bg-data-pos' : 'bg-ink-subtle'"></span>
-          </span>
-          <span class="text-xs font-medium">
-            {{ form.active ? 'Automação ativa' : 'Automação pausada' }}
-          </span>
-        </div>
-        <PageHelp
-          storage-key="link-cartao"
-          title="Como usar o Link de Cartão"
-          intro="Quando uma reserva entra na situação combinada no CV com parcela da série de crédito, o sistema cria sozinho um link de pagamento no portal Userede e envia ao cliente. Esta tela guarda as credenciais e as regras dessa automação."
-          :steps="[
-            { title: 'Cadastre o acesso', text: 'Informe o e-mail e a senha usados no meu.userede.com.br. Eles são gravados criptografados e nunca voltam para a tela.' },
-            { title: 'Teste a conexão', text: 'O botão Testar conexão abre o portal de verdade e confirma o acesso ao Link de Pagamento. Se o portal pedir verificação, a tela avisa e alguém precisa entrar manualmente uma vez.' },
-            { title: 'Ajuste as regras', text: 'Defina o teto por link, em quantas vezes o cliente pode parcelar e o prazo máximo de vencimento.' },
-            { title: 'Ligue a automação', text: 'Com o acesso testado e a série de crédito configurada, ligue a automação para o webhook do CV começar a gerar links.' },
-          ]"
-          :tips="[
-            'A sessão do portal fica salva: o sistema não faz login a cada emissão, só quando a sessão cai.',
-            'O limite de parcelas é um teto. Quem escolhe em quantas vezes pagar é o cliente, até esse número.',
-            'O portal da Rede não aceita link acima de R$ 30 mil, parcelamento acima de 12x nem vencimento além de 15 dias.',
-          ]" />
-      </template>
-    </PageHeader>
+  <!-- Seção de configuração do link de cartão (portal Userede), montada dentro
+       da aba Configurações do Ato. Era uma tela própria até 23/08/2026, quando
+       o boleto e o cartão viraram a mesma tela: são a mesma cobrança, muda só a
+       forma de pagamento. O estado da automação e a ajuda ficam no cabeçalho do
+       Ato, por isso saíram daqui. -->
+  <div class="space-y-5">
 
     <Surface v-if="store.settingsError" variant="raised" padding="sm"
       class="border-rose-500/30 bg-rose-500/10">
@@ -245,7 +215,7 @@
       </span>
     </div>
 
-  </PageContainer>
+  </div>
 </template>
 
 <script setup>
@@ -255,9 +225,6 @@ import { useUseredeStore } from '@/stores/Financeiro/LinkCartao/useredeStore';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
-import PageHelp from '@/components/UI/PageHelp.vue'
-import PageContainer from '@/components/UI/PageContainer.vue'
-import PageHeader from '@/components/UI/PageHeader.vue';
 
 const store = useUseredeStore();
 

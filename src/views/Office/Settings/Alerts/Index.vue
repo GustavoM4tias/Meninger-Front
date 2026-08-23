@@ -6,6 +6,7 @@ import { useAlertStore } from '@/stores/Alerts/alertStore';
 import { useToast } from 'vue-toastification';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
 import Switch from '@/components/UI/Switch.vue';
@@ -95,6 +96,19 @@ const channelIcons = (ch = {}) => [
       subtitle="Notificações automáticas configuradas via Eme. Aqui você gerencia, edita horários e exclui."
       eyebrow="Notificações">
       <template #actions>
+        <PageHelp
+          storage-key="alertas"
+          title="Como usar os alertas"
+          intro="Alerta é uma pergunta que a Eme repete sozinha no horário que você marcar, e te avisa do resultado. Aqui ficam os seus."
+          :steps="[
+            { title: 'Crie pela Eme', text: 'O alerta nasce da conversa: você pede o acompanhamento e ela monta a consulta.' },
+            { title: 'Ajuste o horário', text: 'A frequência decide quando a consulta roda. Alerta demais no mesmo horário vira ruído e some no meio.' },
+            { title: 'Compartilhe se for do time', text: 'Compartilhar cria uma cópia para quem aceitar; a partir daí cada um edita a sua.' },
+          ]"
+          :tips="[
+            'Excluir um alerta não apaga os avisos que ele já mandou.',
+            'O alerta roda com a SUA alçada: quem recebe a cópia pode ver número diferente do seu.',
+          ]" />
         <Button v-if="isAdmin" variant="ghost" icon="fas fa-chart-line"
           @click="router.push('/settings/alerts/admin')">
           Painel admin

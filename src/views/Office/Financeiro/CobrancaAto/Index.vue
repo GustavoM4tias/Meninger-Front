@@ -3,11 +3,11 @@
     <PageContainer size="full">
 
       <PageHeader
-        subtitle="Emissão automática de boletos no Ecobrança via webhook do CV"
-        icon="fas fa-barcode">
+        subtitle="Cobrança da entrada por boleto Caixa ou link de cartão, acionada pelo webhook do CV"
+        icon="fas fa-file-invoice-dollar">
         <template #title>
-          <span>Boleto Caixa</span>
-          <Favorite :router="'/financeiro/boleto-caixa'" :section="'Boleto Caixa'" />
+          <span>Ato</span>
+          <Favorite :router="'/financeiro/cobranca/ato'" :section="'Ato'" />
         </template>
         <template #actions>
           <!-- Status indicator -->
@@ -26,7 +26,7 @@
             </span>
           </div>
           <PageHelp
-            storage-key="boleto-caixa"
+            storage-key="cobranca-ato"
             title="Como usar o Boleto Caixa"
             intro="Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto do ato no Ecobrança, anexa na reserva e devolve a situação. Esta tela mostra o que já foi emitido e deixa ajustar como a automação se comporta."
             :steps="[
@@ -639,6 +639,27 @@
           </p>
         </Panel>
 
+        <!-- ── Link de cartão (portal Userede) ────────────────────────────
+             A outra forma de cobrar o mesmo ato. Credenciais, tetos e teste de
+             conexão têm salvamento próprio (store diferente), por isso ficam
+             num bloco separado e NÃO dependem do botão salvar abaixo, que é do
+             boleto. -->
+        <div class="pt-2 border-t border-line">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0
+                        bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+              <i class="fas fa-credit-card"></i>
+            </div>
+            <div class="min-w-0">
+              <h2 class="font-semibold text-ink text-sm">Link de cartão (Userede)</h2>
+              <p class="text-xs text-ink-muted">
+                A mesma cobrança do ato, paga no cartão em vez de boleto.
+              </p>
+            </div>
+          </div>
+          <UseredeSettings />
+        </div>
+
         <!-- Botão salvar -->
         <div class="flex flex-wrap items-center justify-end gap-3">
           <p v-if="store.settingsError" class="text-data-neg flex items-center gap-1.5">
@@ -849,6 +870,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
 import { useCan } from '@/composables/useCan';
+import UseredeSettings from './components/UseredeSettings.vue';
 import API_URL from '@/config/apiUrl';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -876,7 +898,7 @@ import BoletoDetailModal from './components/BoletoDetailModal.vue';
 const store = useBoletoStore();
 // Ações desta tela (lib/screenCapabilities.js no back): view/operate seguem a
 // alçada, configure é admin. Ver composables/useCan.js.
-const can = useCan('/financeiro/boleto-caixa');
+const can = useCan('/financeiro/cobranca/ato');
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 // Sempre abre no Histórico. A aba "Configurações" só aparece para quem tem a

@@ -6,6 +6,7 @@ import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStor
 import { useAdminMetaStore } from '@/stores/Settings/Admin/metaStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Modal from '@/components/UI/Modal.vue';
@@ -193,6 +194,18 @@ onMounted(async () => {
           <Favorite :router="'/settings/management'" :section="'Departamentos'" />
         </template>
         <template #actions>
+          <PageHelp
+            storage-key="departamentos-cargos"
+            title="Como usar Departamentos e cargos"
+            intro="Aqui vivem as listas que o resto do sistema usa para classificar gente: departamento e cargo. Cidade não entra aqui — ela vem sozinha dos empreendimentos sincronizados."
+            :steps="[
+              { title: 'Crie ou renomeie', text: 'O nome aparece em todo lugar que classifica usuário, do cadastro à alçada.' },
+              { title: 'Desative em vez de excluir', text: 'Desativado some das listas novas mas preserva quem já está classificado. Excluir deixa gente sem classificação.' },
+            ]"
+            :tips="[
+              'Departamento é o que a visibilidade de Custos usa para decidir quem vê o quê.',
+              'Renomear é seguro: quem já estava classificado acompanha o nome novo.',
+            ]" />
           <Button icon="fas fa-plus" @click="openModal(null)">
             <span class="hidden sm:inline">Novo {{ labelSingular.toLowerCase() }}</span>
           </Button>

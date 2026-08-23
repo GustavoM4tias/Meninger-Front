@@ -5,6 +5,21 @@
         subtitle="Reporte um problema, sugestão ou bug encontrado no sistema"
         icon="fas fa-flag">
         <template #title>Reportar Problema</template>
+        <template #actions>
+          <PageHelp
+            storage-key="reportar-problema"
+            title="Como reportar um problema"
+            intro="Este formulário abre um chamado para quem cuida do sistema. Quanto mais concreto o relato, menos idas e vindas até a solução."
+            :steps="[
+              { title: 'Diga o que aconteceu', text: 'O que você esperava e o que apareceu no lugar. Essa diferença é o problema.' },
+              { title: 'Diga como chegar lá', text: 'Os passos para reproduzir. Problema que ninguém consegue repetir é o que mais demora.' },
+              { title: 'Anexe a tela', text: 'Uma captura resolve mais rápido que três parágrafos de descrição.' },
+            ]"
+            :tips="[
+              'Inclua o horário aproximado: ajuda a achar o registro exato no log.',
+              'Acompanhe a resposta pela lista de chamados — ela chega por notificação também.',
+            ]" />
+        </template>
       </PageHeader>
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -270,6 +285,7 @@ import { useToast } from 'vue-toastification';
 import API_URL from '@/config/apiUrl';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';

@@ -15,6 +15,7 @@ import { useToast } from 'vue-toastification';
 import api from '@/utils/EventPlan/api.js';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import SettingsCard from '@/components/UI/SettingsCard.vue';
 import Surface from '@/components/UI/Surface.vue';
@@ -191,6 +192,19 @@ onMounted(load);
             icon="fas fa-sliders"
         >
             <template #actions>
+              <PageHelp
+                storage-key="plano-eventos-config"
+                title="Como configurar o Plano de Eventos"
+                intro="O que se define aqui vale para o plano de todo mês e de todos os empreendimentos: quantas autorizações existem, quem decide cada uma e quais categorias de item podem ser lançadas."
+                :steps="[
+                  { title: 'Defina as autorizações', text: 'Cada etapa tem um responsável. O plano só avança quando a etapa anterior decidiu.' },
+                  { title: 'Escolha quem decide', text: 'Sem responsável nomeado, a etapa trava e o plano fica parado esperando alguém.' },
+                  { title: 'Monte as categorias', text: 'Elas são as opções que o Marketing terá ao lançar item. Categoria faltando vira item classificado errado.' },
+                ]"
+                :tips="[
+                  'Mudar as etapas afeta os planos em andamento, não só os próximos.',
+                  'O ciclo mensal é o que congela o mês: depois disso o plano vira histórico.',
+                ]" />
                 <Button variant="ghost" icon="fas fa-arrow-left" @click="router.push('/marketing/plano-eventos')">
                     Voltar
                 </Button>

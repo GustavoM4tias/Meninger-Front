@@ -8,6 +8,7 @@ import BuildingModal from '@/views/Office/Comercial/Buildings/components/Buildin
 import Favorite from '@/components/config/Favorite.vue';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Input from '@/components/UI/Input.vue';
@@ -123,6 +124,18 @@ const sectionMeta = (key) => ({
           <Favorite :router="'/comercial/buildings'" :section="currentSection" />
         </template>
         <template #actions>
+          <PageHelp
+            storage-key="empreendimentos"
+            title="Como ler o portfólio"
+            intro="Cada cartão é um empreendimento, agrupado pela etapa comercial em que ele está. É a visão de onde o portfólio está parado e onde está andando."
+            :steps="[
+              { title: 'Leia por etapa', text: 'A etapa é a fase comercial: da prospecção ao encerramento. A cor do cartão acompanha essa fase.' },
+              { title: 'Abra o empreendimento', text: 'Clique no cartão para ver unidades, blocos e a situação de cada uma.' },
+            ]"
+            :tips="[
+              'O que aparece aqui vem do CV: empreendimento cadastrado errado lá aparece errado aqui.',
+              'Empreendimento sem etapa definida cai no grupo neutro, e não some da lista.',
+            ]" />
           <Badge variant="neutral" size="sm">
             <i class="fas fa-grip text-[9px]"></i>
             <span class="font-mono">{{ buildingsFiltered.length }}</span> empreendimento(s)

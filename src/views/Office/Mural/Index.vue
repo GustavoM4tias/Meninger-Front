@@ -6,6 +6,7 @@
 import { ref, onMounted } from 'vue';
 import { useMuralStore } from '@/stores/Mural/muralStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Button from '@/components/UI/Button.vue';
@@ -38,6 +39,18 @@ async function confirm(c) {
         subtitle="Comunicados e avisos internos direcionados a você."
         icon="fas fa-bullhorn">
         <template #actions>
+          <PageHelp
+            storage-key="mural"
+            title="Como usar o Mural"
+            intro="O Mural traz os comunicados internos endereçados a você. O que aparece aqui depende do público que quem publicou escolheu, então dois colegas podem ver murais diferentes."
+            :steps="[
+              { title: 'Leia os avisos', text: 'Os comunicados vêm do mais recente para o mais antigo. Os que você ainda não abriu ficam destacados.' },
+              { title: 'Dê ciência', text: 'Comunicado que pede confirmação só sai da sua lista quando você confirma. Quem publicou acompanha quem já deu ciência.' },
+            ]"
+            :tips="[
+              'O sino no topo avisa de comunicado novo mesmo sem esta tela aberta.',
+              'Não achou um aviso que alguém citou? Ele pode ter sido dirigido a outro público.',
+            ]" />
           <Badge v-if="store.hasPending" variant="warning" size="md">
             <i class="fas fa-clock"></i>
             {{ store.pending }} pendente{{ store.pending > 1 ? 's' : '' }}

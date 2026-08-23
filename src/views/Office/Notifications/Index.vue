@@ -3,6 +3,7 @@ import { onMounted, ref, computed, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useNotificationStore } from '@/stores/Config/notificationStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Button from '@/components/UI/Button.vue';
@@ -72,6 +73,18 @@ const handleRemove = (e, n) => { e.preventDefault(); e.stopPropagation(); store.
       subtitle="Histórico de avisos do sistema."
       eyebrow="Caixa de entrada">
       <template #actions>
+        <PageHelp
+          storage-key="caixa-notificacoes"
+          title="Como usar a caixa de notificações"
+          intro="O histórico do que o sistema te avisou. É consulta: nada aqui dispara ação sozinho."
+          :steps="[
+            { title: 'Procure o aviso', text: 'As mais recentes primeiro. O que você ainda não abriu fica destacado.' },
+            { title: 'Vá para a origem', text: 'Clicar leva à tela que gerou o aviso, já no registro certo.' },
+          ]"
+          :tips="[
+            'Não recebeu algo que esperava? Confira Preferências: o tipo pode estar desligado para você.',
+            'O aviso fica no histórico mesmo depois de lido.',
+          ]" />
         <RouterLink to="/settings/notifications">
           <Button variant="secondary" size="sm" icon="fas fa-sliders">Preferências</Button>
         </RouterLink>

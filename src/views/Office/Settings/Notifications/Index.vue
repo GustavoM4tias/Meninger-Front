@@ -4,6 +4,7 @@ import { useNotificationStore } from '@/stores/Config/notificationStore';
 import { useWhatsappStore } from '@/stores/Whatsapp/whatsappStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Switch from '@/components/UI/Switch.vue';
 import Spinner from '@/components/UI/Spinner.vue';
@@ -50,7 +51,22 @@ const onToggle = (pref, key, value) => {
       icon="fas fa-bell"
       title="Preferências de notificação"
       subtitle="Escolha como quer ser avisado de cada tipo de evento."
-      eyebrow="Notificações" />
+      eyebrow="Notificações" >
+      <template #actions>
+        <PageHelp
+          storage-key="prefs-notificacao"
+          title="Como escolher seus avisos"
+          intro="Estas preferências são suas: elas decidem por onde cada tipo de evento chega até você. Não mudam nada para os outros."
+          :steps="[
+            { title: 'Escolha por tipo', text: 'Cada linha é um tipo de evento. Você liga e desliga canal por canal: no app, e-mail e WhatsApp.' },
+            { title: 'Pese o silêncio', text: 'Desligar tudo de um tipo significa não ser avisado nem quando algo depende de você.' },
+          ]"
+          :tips="[
+            'Alguns avisos críticos ignoram a preferência de propósito, para não passarem em branco.',
+            'WhatsApp só chega se o número estiver confirmado no seu cadastro.',
+          ]" />
+      </template>
+    </PageHeader>
 
     <!-- Aviso WhatsApp -->
     <div v-if="!systemReady"

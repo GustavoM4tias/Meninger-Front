@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { useAIStore } from '@/stores/Config/aiStore.js';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
@@ -76,6 +77,19 @@ function clearFile(target) {
           <Favorite :router="'/validator'" :section="'Validador'" />
         </template>
         <template #actions>
+          <PageHelp
+            storage-key="validador"
+            title="Como usar o Validador"
+            intro="Envie contratos em PDF e o validador confere o que costuma sair errado no preenchimento. Ele aponta divergência, mas quem decide é você."
+            :steps="[
+              { title: 'Envie os PDFs', text: 'Um ou vários, até 1MB cada. Arquivo maior costuma ser digitalização em imagem, que não dá para ler.' },
+              { title: 'Leia o resultado', text: 'Aprovado significa que nada bateu nas regras conferidas. Reprovado aponta qual campo divergiu.' },
+              { title: 'Confira antes de agir', text: 'O validador lê o documento; ele não sabe o que foi combinado fora dele. Divergência apontada é para conferência humana.' },
+            ]"
+            :tips="[
+              'As estatísticas contam envios, não contratos distintos: reenviar o mesmo arquivo conta de novo.',
+              'PDF gerado por scanner sem OCR não é lido — peça o arquivo original.',
+            ]" />
           <History />
         </template>
       </PageHeader>

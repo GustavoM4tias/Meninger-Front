@@ -7,6 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
 
 import PageContainer from '@/components/UI/PageContainer.vue'
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue'
 import Surface from '@/components/UI/Surface.vue'
 import Button from '@/components/UI/Button.vue'
@@ -334,6 +335,19 @@ onMounted(load)
     <PageContainer size="lg">
       <PageHeader title="Cérebro da Eme" subtitle="Configure regras, comportamento, glossário e relatórios — sem código." icon="fas fa-brain">
         <template #actions>
+          <PageHelp
+            storage-key="eme-brain"
+            title="Como mexer no cérebro da Eme"
+            intro="Cada bloco desta tela é uma peça do que a Eme lê antes de responder. Mudar aqui muda o comportamento dela para todo mundo, sem precisar de código."
+            :steps="[
+              { title: 'Ajuste a identidade', text: 'Nome, papel e tom. É o que define como ela se apresenta e o quanto se alonga.' },
+              { title: 'Escreva as regras', text: 'Regra de negócio que ela deve respeitar sempre. Seja específico: instrução vaga vira resposta vaga.' },
+              { title: 'Teste antes de publicar', text: 'O rascunho fica só para você até publicar. Use o sandbox para ver a resposta com a versão nova.' },
+            ]"
+            :tips="[
+              'Publicar cria versão: dá para voltar à anterior se a mudança piorar as respostas.',
+              'Texto demais atrapalha — o prompt tem teto, e o que passar dele é cortado.',
+            ]" />
           <Badge :variant="active ? 'success' : 'warning'" dot>{{ active ? 'No ar' : 'Fallback' }}</Badge>
           <IconButton icon="fas fa-rotate" size="md" label="Atualizar" :class="{ 'animate-spin': loading }" @click="load" />
           <Button variant="primary" size="sm" icon="fas fa-rocket" :loading="busy" @click="doPublish">Publicar</Button>

@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import * as api from '@/utils/EmeAtende/api'
 
 import PageContainer from '@/components/UI/PageContainer.vue'
+import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue'
 import Surface from '@/components/UI/Surface.vue'
 import Button from '@/components/UI/Button.vue'
@@ -458,7 +459,23 @@ onMounted(loadConversations)
 <template>
   <div class="min-h-[calc(100vh-3.5rem)]">
     <PageContainer size="lg">
-      <PageHeader title="Eme Atende" subtitle="A Eme atendendo seus leads no WhatsApp - fluxos, conversas e regras editáveis sem código." icon="fas fa-headset" />
+      <PageHeader title="Eme Atende" subtitle="A Eme atendendo seus leads no WhatsApp - fluxos, conversas e regras editáveis sem código." icon="fas fa-headset" >
+        <template #actions>
+          <PageHelp
+            storage-key="eme-atende"
+            title="Como funciona o Eme Atende"
+            intro="A Eme atendendo leads no WhatsApp. O número é o mesmo do Office; o roteamento é por remetente, então quem é da casa cai no Office e quem é lead cai no atendimento."
+            :steps="[
+              { title: 'Monte o fluxo', text: 'O fluxo é o roteiro do atendimento: o que ela pergunta, em que ordem e quando entrega para um humano.' },
+              { title: 'Acompanhe as conversas', text: 'Dá para ler o que aconteceu e assumir a conversa quando precisar.' },
+              { title: 'Devolva para a Eme', text: 'Reabrir para a Eme faz ela retomar o fluxo de onde parou.' },
+            ]"
+            :tips="[
+              'Com o gate desligado, nenhuma conversa é atendida automaticamente — tudo espera humano.',
+              'Mensagem iniciada pela empresa exige template aprovado na Meta; resposta dentro da janela de 24h não exige.',
+            ]" />
+        </template>
+      </PageHeader>
 
       <div class="mb-5"><SegmentedControl :model-value="tab" :options="tabOpts" @change="(v) => tab = v" /></div>
 
