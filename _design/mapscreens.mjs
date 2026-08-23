@@ -64,6 +64,9 @@ const TINY = /text-\[(?:[1-9]|10)px\]/g;
    Ver DESIGN-LANGUAGE.md. Contar icone aqui punia tela por marcador de lista. */
 const ICONE = /<i[ >][^>]*>|<i>/gs;
 const semIcone = (s) => s.replace(ICONE, '');
+/* Dialogo nativo do navegador. `window.confirm` nao diz consequencia, nao
+   se estiliza e bloqueia a pagina; o sistema tem ConfirmDialog para isso. */
+const NATIVO = /window\.(?:confirm|alert)\(/g;
 const BADSHADOW = /\bshadow-(sm|md|lg|xl|2xl)\b/g;
 
 function count(s, re) { return (s.match(re) || []).length; }
@@ -88,6 +91,7 @@ function metrics(file) {
     hardcoded: count(s, HARD),
     tinyText: count(semIcone(s), TINY),
     badShadow: count(s, BADSHADOW),
+    nativo: count(s, NATIVO),
     handModal: count(s, /fixed inset-0 z-/g),
     table: /<table/.test(s),
     /* Plano mobile de tabela = vira card no estreito OU tem scroll preso ao
@@ -128,7 +132,16 @@ for (const r of routes) {
 
   // componentes irmãos: pasta do arquivo + subpasta components/
   const dir = path.dirname(path.join(SRC, r.file));
-  const kids = walk(dir).filter((p) => !routedAbs.has(p));
+  /* Filhos = arquivos da PROPRIA pasta + tudo sob `components/`. O walk
+     recursivo pegava a arvore inteira: `Home.vue` mora na raiz de
+     views/Office, entao herdava 200 arquivos e 56 mil linhas - e como ela e
+     "Especial" (sem nota), toda essa divida sumia do placar. */
+  const soDaPasta = fs.readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isFile() && /\.vue$/.test(e.name))
+    .map((e) => path.join(dir, e.name));
+  const subComp = path.join(dir, 'components');
+  const daSub = exists(subComp) ? walk(subComp) : [];
+  const kids = [...soDaPasta, ...daSub].filter((p) => !routedAbs.has(p));
   const kidStats = kids.map((p) => {
     const s = read(p);
     return {
@@ -136,6 +149,7 @@ for (const r of routes) {
       lines: s.split('\n').length,
       hardcoded: count(s, HARD),
       tinyText: count(semIcone(s), TINY),
+      nativo: count(s, NATIVO),
       chart: /echarts/.test(s),
       table: /<table/.test(s),
       tableMobile: /<table/.test(s) && (/(md|lg|sm):hidden/.test(s) || /overflow-x-auto/.test(s)),
@@ -161,6 +175,7 @@ for (const r of routes) {
     totalLines: m.lines + kidStats.reduce((a, k) => a + k.lines, 0),
     totalHardcoded: m.hardcoded + kidStats.reduce((a, k) => a + k.hardcoded, 0),
     totalTiny: m.tinyText + kidStats.reduce((a, k) => a + k.tinyText, 0),
+    totalNativo: m.nativo + kidStats.reduce((a, k) => a + k.nativo, 0),
     /* A casca conta na ARVORE, nao so no arquivo da rota. Ha rota que e um
        repasse de 8 linhas para um componente que TEM PageContainer/Header
        (ex.: /account -> components/Form.vue): pontuar so o arquivo da rota
@@ -208,6 +223,7 @@ function score(s) {
   v -= Math.min(15, s.totalTiny * 0.15);
   if (s.totalTables && !s.tableMobile) v -= 10;
   if (s.chartsSemTema) v -= 10;   // grafico com hex cravado, fora do tema
+  v -= Math.min(15, (s.totalNativo || 0) * 3);   // dialogo do navegador
   if (s.handModal) v -= 5;
   return Math.max(0, Math.round(v));
 }
