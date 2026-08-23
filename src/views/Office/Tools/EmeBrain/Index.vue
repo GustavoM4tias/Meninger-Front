@@ -20,7 +20,10 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
 import Modal from '@/components/UI/Modal.vue'
 import { pedirConfirmacao } from '@/composables/useConfirm';
+import { useToast } from 'vue-toastification';
 
+
+const toast = useToast();
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
@@ -32,7 +35,6 @@ const LABEL = 'block text-micro font-mono uppercase tracking-wider text-ink-subt
 const tab = ref('blocks')
 const loading = ref(true)
 const busy = ref(false)
-const toast = reactive({ text: '', type: 'ok' })
 
 const active = ref(null)
 const publishLabel = ref('')
@@ -105,9 +107,11 @@ const fbFilterOptions = computed(() => [
   { value: 'down', label: 'Negativos', icon: 'fas fa-thumbs-down', count: fb.stats.down },
 ])
 
+/* Era um balao proprio no canto, igual ao do app mas com fila propria: a
+   segunda mensagem apagava a primeira antes do tempo. */
 function notify(text, type = 'ok') {
-  toast.text = text; toast.type = type
-  setTimeout(() => { if (toast.text === text) toast.text = '' }, 3200)
+  if (type === 'err') toast.error(text)
+  else toast.success(text)
 }
 const fmt = (d) => d ? dayjs(d).format('DD/MM/YYYY HH:mm') : ''
 const fromNow = (d) => dayjs(d).fromNow()
@@ -796,18 +800,10 @@ onMounted(load)
       </div>
     </Modal>
 
-    <!-- Toast -->
-    <transition name="toast">
-      <div v-if="toast.text" class="fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-lg shadow-elevated text-sm font-medium border"
-        :class="toast.type === 'err' ? 'bg-data-neg/10 text-data-neg border-data-neg/30' : 'bg-data-pos/10 text-data-pos border-data-pos/30'">
-        {{ toast.text }}
-      </div>
-    </transition>
+
   </div>
 </template>
 
 <style scoped>
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.toast-enter-active, .toast-leave-active { transition: all .25s ease; }
-.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(8px); }
 </style>

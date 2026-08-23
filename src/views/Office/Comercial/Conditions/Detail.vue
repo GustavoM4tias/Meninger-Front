@@ -7,19 +7,7 @@
        scroll da página. -->
   <div class="min-h-full md:h-full md:min-h-0 md:flex md:flex-col overflow-hidden bg-surface">
 
-    <!-- Toast -->
-    <transition name="fade">
-      <div
-        v-if="store.toast.show"
-        :class="[
-          'fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium',
-          store.toast.type === 'success' ? 'bg-data-pos text-white' : 'bg-data-neg text-white'
-        ]"
-      >
-        <i :class="store.toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'" class="fas"></i>
-        {{ store.toast.message }}
-      </div>
-    </transition>
+
 
     <!-- ── Diálogos de workflow ──────────────────────────────────────────────
          Todos usam o `Modal` do sistema. A regra da receita executiva: o efeito
@@ -1018,6 +1006,7 @@ onMounted(() => window.addEventListener('beforeunload', beforeUnloadHandler));
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnloadHandler));
 
 // Toast global das fichas (vive no store; qualquer componente pode notificar).
+/* Repasse historico: dezenas de chamadas usam este nome. */
 function showToast(message, type = 'success') {
     store.notify(message, type);
 }

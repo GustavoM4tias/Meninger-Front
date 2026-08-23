@@ -26,7 +26,10 @@ import PageHelp from '@/components/UI/PageHelp.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Button from '@/components/UI/Button.vue';
+import { useToast } from 'vue-toastification';
 
+
+const toast = useToast();
 const AgendaTab   = defineAsyncComponent(() => import('./components/AgendaTab.vue'));
 const ReunioesTab = defineAsyncComponent(() => import('@/views/Office/Microsoft/Transcripts/Index.vue'));
 
@@ -115,15 +118,13 @@ watch(() => ts.error, (msg) => {
 });
 
 // ── Toast (global ao hub; painéis emitem via @toast) ──────────────────────────
-const toast = reactive({ show: false, message: '', type: 'success' });
-let toastTimer = null;
 
+/* Era um balao proprio no canto - mesmo canto, mesma duracao e mesmo par
+   verde/vermelho do toast do app, mas com fila propria: a segunda mensagem
+   apagava a primeira antes do tempo. */
 function showToast(message, type = 'success') {
-  toast.message = message;
-  toast.type = type;
-  toast.show = true;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { toast.show = false; }, 3500);
+  if (type === 'success') toast.success(message);
+  else toast.error(message);
 }
 </script>
 
@@ -213,20 +214,7 @@ function showToast(message, type = 'success') {
     </PageContainer>
 
     <!-- Toast -->
-    <Teleport to="body">
-      <Transition name="toast">
-        <div v-if="toast.show"
-          class="fixed bottom-5 right-5 z-[99999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-overlay border text-sm max-w-sm"
-          :class="toast.type === 'success'
-            ? 'bg-surface-raised border-data-pos/30 text-data-pos'
-            : 'bg-surface-raised border-data-neg/30 text-data-neg'">
-          <i :class="toast.type === 'success'
-            ? 'fas fa-circle-check text-data-pos'
-            : 'fas fa-circle-exclamation text-data-neg'" class="text-base shrink-0"></i>
-          <span>{{ toast.message }}</span>
-        </div>
-      </Transition>
-    </Teleport>
+
   </div>
 </template>
 
@@ -234,8 +222,4 @@ function showToast(message, type = 'success') {
 .slide-enter-active, .slide-leave-active { transition: opacity 0.2s, transform 0.2s; }
 .slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-6px); }
 
-.toast-enter-active { transition: opacity 0.2s, transform 0.2s; }
-.toast-leave-active { transition: opacity 0.15s, transform 0.15s; }
-.toast-enter-from { opacity: 0; transform: translateY(10px) scale(0.97); }
-.toast-leave-to   { opacity: 0; transform: translateY(4px)  scale(0.97); }
 </style>

@@ -13,6 +13,9 @@ import ConfirmDialog from '@/components/UI/ConfirmDialog.vue'
 import DeleteReportModal from '@/components/Reports/eme/DeleteReportModal.vue'
 import TransferOwnerModal from '@/components/Reports/eme/TransferOwnerModal.vue'
 import { useReportsStore } from '@/stores/Reports/reportsStore.js'
+import { useToast } from 'vue-toastification'
+
+const toast = useToast()
 
 const router = useRouter()
 const store = useReportsStore()
@@ -36,7 +39,11 @@ async function novo() {
   }
 }
 
+/* A barra so existe para o caso com DESFAZER: um aviso que oferece acao tem
+   que ficar parado o suficiente para a pessoa decidir, e o toast do app some
+   sozinho. Sem desfazer, vai pelo toast padrao como o resto do sistema. */
 function showFlash(text, undo) {
+  if (!undo) { toast.success(text); return }
   flash.value = { text, undo }
   setTimeout(() => { if (flash.value?.text === text) flash.value = null }, 8000)
 }

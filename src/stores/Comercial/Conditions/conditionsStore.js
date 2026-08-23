@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import { useToast } from 'vue-toastification';
 
 export const useConditionsStore = defineStore('conditions', () => {
     const carregamento = useCarregamentoStore();
@@ -18,13 +19,14 @@ export const useConditionsStore = defineStore('conditions', () => {
     const permissions = ref({ isAdmin: false, canEdit: false, canAuthorize: false });
     const error = ref(null);
 
-    // ─── Toast global das fichas (qualquer componente notifica; Detail exibe) ─
-    const toast = ref({ show: false, type: 'success', message: '' });
-    let toastTimer = null;
+    /* Aviso das fichas. Era um balao proprio: a store guardava o estado e o
+       Detail desenhava - o que amarrava o aviso a UMA tela, entao componente
+       filho notificava e nada aparecia se o Detail nao estivesse montado.
+       Agora vai pelo toast do app, que e global. */
+    const toast = useToast();
     function notify(message, type = 'success') {
-        toast.value = { show: true, type, message };
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => { toast.value = { ...toast.value, show: false }; }, 3500);
+        if (type === 'success') toast.success(message);
+        else toast.error(message);
     }
 
     // ─── Listagem ────────────────────────────────────────────────────────────
@@ -401,7 +403,7 @@ export const useConditionsStore = defineStore('conditions', () => {
 
     return {
         list, detail, priceTables, priceDistribution, correspondents, officeUsers, correspondentCompanies, settings, permissions, error,
-        toast, notify,
+        notify,
         fetchList, fetchDetail,
         createCondition, saveCondition, publishCondition,
         submitForApproval, authorizeCondition, unlockCondition, cancelApproval, closeCondition,

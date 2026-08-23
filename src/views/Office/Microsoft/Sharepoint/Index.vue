@@ -299,18 +299,7 @@
     <FilePreview :item="previewItem" @close="previewItem = null" />
 
     <!-- Toast: fixed bottom-right -->
-    <Teleport to="body">
-      <Transition name="toast">
-        <div v-if="toast.show"
-          class="fixed bottom-5 right-5 z-[99999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-overlay border bg-surface-raised text-sm max-w-sm"
-          :class="toast.type === 'success'
-            ? 'border-data-pos/30 text-data-pos'
-            : 'border-data-neg/30 text-data-neg'">
-          <i :class="toast.type === 'success' ? 'fas fa-circle-check text-data-pos' : 'fas fa-circle-exclamation text-data-neg'" class="text-base shrink-0"></i>
-          <span>{{ toast.message }}</span>
-        </div>
-      </Transition>
-    </Teleport>
+
 
   </div>
 </template>
@@ -333,7 +322,10 @@ import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
+import { useToast } from 'vue-toastification';
 
+
+const toast = useToast();
 const breadcrumbDragOver = ref(null);
 const sp = useSharepointStore();
 
@@ -608,15 +600,13 @@ async function copyShareLink() {
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
-const toast = reactive({ show: false, message: '', type: 'success' });
-let toastTimer = null;
 
+/* Era um balao proprio no canto - mesmo canto, mesma duracao e mesmo par
+   verde/vermelho do toast do app, mas com fila propria: a segunda mensagem
+   apagava a primeira antes do tempo. */
 function showToast(message, type = 'success') {
-  toast.message = message;
-  toast.type = type;
-  toast.show = true;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { toast.show = false; }, 3000);
+  if (type === 'success') toast.success(message);
+  else toast.error(message);
 }
 </script>
 
@@ -627,8 +617,4 @@ function showToast(message, type = 'success') {
 .slide-enter-active, .slide-leave-active { transition: opacity 0.2s, transform 0.2s; }
 .slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-8px); }
 
-.toast-enter-active { transition: opacity 0.2s, transform 0.2s; }
-.toast-leave-active { transition: opacity 0.15s, transform 0.15s; }
-.toast-enter-from { opacity: 0; transform: translateY(12px) scale(0.97); }
-.toast-leave-to { opacity: 0; transform: translateY(6px) scale(0.97); }
 </style>

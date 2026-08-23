@@ -14,13 +14,15 @@ import Select from '@/components/UI/Select.vue'
 import SegmentedControl from '@/components/UI/SegmentedControl.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
 import { pedirConfirmacao } from '@/composables/useConfirm';
+import { useToast } from 'vue-toastification';
 
+
+const toast = useToast();
 const TA = 'w-full rounded-lg border border-line bg-surface-sunken px-3 py-2.5 text-[12.5px] leading-relaxed text-ink focus:outline-none focus:ring-2 focus:ring-accent-ring/30 focus:border-accent/40 transition resize-y'
 const LABEL = 'block text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5'
 
 const tab = ref('conversations')
 const busy = ref(false)
-const toast = reactive({ text: '', type: 'ok' })
 
 const tabOpts = [
   { value: 'conversations', label: 'Conversas', icon: 'fas fa-comments' },
@@ -29,9 +31,11 @@ const tabOpts = [
   { value: 'config', label: 'Config', icon: 'fas fa-gear' },
 ]
 
+/* Era um balao proprio no canto, igual ao do app mas com fila propria: a
+   segunda mensagem apagava a primeira antes do tempo. */
 function notify(text, type = 'ok') {
-  toast.text = text; toast.type = type
-  setTimeout(() => { if (toast.text === text) toast.text = '' }, 3500)
+  if (type === 'err') toast.error(text)
+  else toast.success(text)
 }
 const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'
 const stateVariant = (s) => ({ bot: 'info', closed: 'neutral' }[s] || 'neutral')
@@ -1080,8 +1084,7 @@ onMounted(loadConversations)
       </div>
 
       <!-- toast -->
-      <div v-if="toast.text" class="fixed bottom-6 right-6 z-50 rounded-lg px-4 py-2.5 text-sm shadow-lg"
-        :class="toast.type === 'ok' ? 'bg-data-pos text-white' : 'bg-data-neg text-white'">{{ toast.text }}</div>
+
     </PageContainer>
   </div>
 </template>
