@@ -121,6 +121,10 @@ watch(() => store.highlightId, (id) => {
 </script>
 
 <template>
+  <!-- design:tela-cheia — bancada de duas colunas travada na viewport. A Eme fica
+     fixa à esquerda e SÓ a coluna do relatório rola; PageContainer imporia
+     largura máxima e padding, quebrando a divisão, e PageHeader empurraria a
+     barra do builder para baixo da dobra. -->
   <!-- Altura travada na viewport: só a coluna do relatório rola -->
   <div class="h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden">
     <!-- Barra do builder -->

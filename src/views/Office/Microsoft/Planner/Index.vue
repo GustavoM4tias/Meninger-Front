@@ -1,4 +1,7 @@
 <template>
+  <!-- design:tela-cheia — quadro Kanban de largura total. A barra superior carrega a
+     navegação (grupo → plano) e as colunas rolam na horizontal; com largura
+     máxima o quadro perde coluna visível. -->
   <div class="min-h-[calc(100vh-3.5rem)] flex flex-col">
 
     <!-- Top bar -->

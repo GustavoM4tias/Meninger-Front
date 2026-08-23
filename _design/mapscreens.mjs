@@ -71,6 +71,12 @@ function metrics(file) {
   const lines = s.split('\n').length;
   return {
     lines,
+    /* Excecao DECLARADA, nao adivinhada. Bancada de tela cheia (builder de
+       duas colunas), quadro de largura total e leitor de documento com barra
+       fixa nao levam PageContainer/PageHeader: os primitivos quebrariam o
+       scroll interno ou a barra grudada. Quem faz a tela declara com o
+       marcador `design:tela-cheia`, e o diff mostra a decisao. */
+    telaCheia: /design:tela-cheia/.test(s),
     pageContainer: /<PageContainer/.test(s),
     pageHeader: /<PageHeader/.test(s),
     pageHelp: /<PageHelp/.test(s),
@@ -189,8 +195,10 @@ screens.forEach((s) => { s.archetype = archetype(s); });
 function score(s) {
   if (s.archetype === 'Especial') return null;
   let v = 100;
-  if (!s.pageContainer) v -= 15;
-  if (!s.pageHeader) v -= 15;
+  if (!s.telaCheia) {
+    if (!s.pageContainer) v -= 15;
+    if (!s.pageHeader) v -= 15;
+  }
   if (!s.pageHelp) v -= 20;
   v -= Math.min(25, s.totalHardcoded * 0.4);
   v -= Math.min(15, s.totalTiny * 0.15);

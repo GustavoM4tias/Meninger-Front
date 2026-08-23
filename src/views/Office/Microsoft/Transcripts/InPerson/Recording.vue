@@ -1,4 +1,6 @@
 <template>
+  <!-- design:tela-cheia — modo quiosque. A tela existe para ficar aberta durante a
+     reunião, sem a moldura do resto do sistema competindo com a transcrição. -->
   <!-- ── Tela de gravação ───────────────────────────────────────────────────────── -->
   <div class="min-h-screen flex flex-col relative overflow-hidden bg-surface">
 

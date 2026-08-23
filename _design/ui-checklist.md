@@ -4,7 +4,7 @@ Gerado por `_design/mapscreens.mjs` em 2026-08-20. Para atualizar os números de
 mexer nas telas, rode de novo e o checklist se refaz.
 
 - **65** telas pontuadas (+ 6 especiais fora do score)
-- **Score médio: 97/100**
+- **Score médio: 100/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
 ## Como marcar
@@ -17,48 +17,7 @@ carga com `Skeleton`, alvo de toque >= 40px e PageHelp escrito.
 
 ---
 
-## Onda 1 - Reconstrução  `1 telas`
-
-Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é uma tarefa própria.
-
-### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
-
-- [ ] **InPersonRecording** `/inperson/recording` · ` 50`
-      <sub>views/Office/Microsoft/Transcripts/InPerson/Recording.vue · 372L · sem container, sem header, sem help</sub>
-
-## Onda 2 - Alinhamento  `4 telas`
-
-Score 55 a 74. Estrutura existe, falta token, help ou plano mobile.
-
-### Detalhe · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
-
-- [ ] **Visualizar Relatório** `/relatorios/:id/view` · ` 70`
-      <sub>views/Office/Relatorios/View.vue · 464L · sem container, sem header</sub>
-- [ ] **Ficha Comercial Detalhe** `/conditions/:id` · ` 70`
-      <sub>views/Office/Comercial/Conditions/Detail.vue · 8573L (+10 comp.) · sem container, sem header</sub>
-
-### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
-
-- [ ] **Builder de Relatório** `/relatorios/:id` · ` 70`
-      <sub>views/Office/Relatorios/Builder.vue · 328L · sem container, sem header</sub>
-- [ ] **Planner** `/planner` · ` 70`
-      <sub>views/Office/Microsoft/Planner/Index.vue · 883L (+1 comp.) · sem container, sem header</sub>
-
-## Onda 3 - Acabamento  `2 telas`
-
-Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tabela.
-
-### Operação · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
-
-- [ ] **Projeção Detalhes** `/projections/:id` · ` 85`
-      <sub>views/Office/Comercial/Projections/ProjectionDetail.vue · 1362L (+3 comp.) · sem header, 1 cor fixa, 1 tabela</sub>
-
-### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
-
-- [ ] **Painel de Alertas** `/alerts/admin` · ` 90`
-      <sub>views/Office/Settings/Alerts/Admin/Index.vue · 149L · 1 tabela sem mobile</sub>
-
-## Onda 4 - Manutenção  `58 telas`
+## Onda 4 - Manutenção  `65 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
 
@@ -71,8 +30,12 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 
 ### Detalhe · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
 
+- [ ] **Visualizar Relatório** `/relatorios/:id/view` · `100`
+      <sub>views/Office/Relatorios/View.vue · 468L · sem container, sem header</sub>
 - [ ] **Plano de Eventos Detalhe** `/plano-eventos/:id` · `100`
       <sub>views/Office/Marketing/EventPlan/Detail.vue · 1431L (+6 comp.) · ok</sub>
+- [ ] **Ficha Comercial Detalhe** `/conditions/:id` · `100`
+      <sub>views/Office/Comercial/Conditions/Detail.vue · 8576L (+10 comp.) · sem container, sem header</sub>
 - [ ] **Reportar** `/report` · `100`
       <sub>views/Office/Support/Report.vue · 512L · ok</sub>
 - [ ] **Detalhes Suporte** `/support/:id` · `100`
@@ -104,6 +67,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Comercial/CancelamentoReservas/Index.vue · 1275L (+1 comp.) · 1 tabela</sub>
 - [ ] **Projeção** `/projections` · `100`
       <sub>views/Office/Comercial/Projections/Index.vue · 964L (+3 comp.) · 1 cor fixa, 1 tabela</sub>
+- [ ] **Projeção Detalhes** `/projections/:id` · `100`
+      <sub>views/Office/Comercial/Projections/ProjectionDetail.vue · 1360L (+3 comp.) · 1 cor fixa, 1 tabela</sub>
 - [ ] **Imobiliárias** `/imobiliarias` · `100`
       <sub>views/Office/Comercial/Imobiliarias/Index.vue · 1457L (+7 comp.) · 1 cor fixa, 2 tabela</sub>
 - [ ] **Títulos** `/titulos` · `100`
@@ -147,6 +112,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Settings/Docusign/Index.vue · 313L · ok</sub>
 - [ ] **Alertas** `/alerts` · `100`
       <sub>views/Office/Settings/Alerts/Index.vue · 1109L (+3 comp.) · ok</sub>
+- [ ] **Painel de Alertas** `/alerts/admin` · `100`
+      <sub>views/Office/Settings/Alerts/Admin/Index.vue · 169L · 1 tabela</sub>
 - [ ] **Backup Sienge** `/backup-sienge` · `100`
       <sub>views/Office/Settings/BackupSienge/Index.vue · 1010L (+2 comp.) · 1 tabela</sub>
 
@@ -160,6 +127,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Mural/Index.vue · 508L (+3 comp.) · ok</sub>
 - [ ] **Relatórios** `/relatorios [Office/Relatorios]` · `100`
       <sub>views/Office/Relatorios/Index.vue · 331L · ok</sub>
+- [ ] **Builder de Relatório** `/relatorios/:id` · `100`
+      <sub>views/Office/Relatorios/Builder.vue · 332L · sem container, sem header</sub>
 - [ ] **Central Meta** `/meta` · `100`
       <sub>views/Office/Meta/Central/Index.vue · 569L (+1 comp.) · ok</sub>
 - [ ] **Plano de Eventos** `/plano-eventos` · `100`
@@ -178,6 +147,10 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Tools/PaymentoFlow/Index.vue · 3471L (+5 comp.) · ok</sub>
 - [ ] **Teams** `/teams` · `100`
       <sub>views/Office/Microsoft/Teams/Index.vue · 2347L (+7 comp.) · ok</sub>
+- [ ] **Planner** `/planner` · `100`
+      <sub>views/Office/Microsoft/Planner/Index.vue · 886L (+1 comp.) · sem container, sem header</sub>
+- [ ] **InPersonRecording** `/inperson/recording` · `100`
+      <sub>views/Office/Microsoft/Transcripts/InPerson/Recording.vue · 390L · sem container, sem header</sub>
 - [ ] **Validador** `/validator` · `100`
       <sub>views/Office/Tools/Validator/Index.vue · 484L (+3 comp.) · ok</sub>
 - [ ] **Cérebro da Eme** `/eme-brain` · `100`

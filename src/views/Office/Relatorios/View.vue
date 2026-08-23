@@ -240,6 +240,10 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
 </script>
 
 <template>
+  <!-- design:tela-cheia — leitor de documento. A barra de ações é `sticky` de
+     propósito: em relatório longo, exportar e compartilhar precisam ficar ao
+     alcance enquanto se rola. PageHeader não é fixo, e trocá-lo por ela
+     esconderia as ações no topo. -->
   <div class="min-h-[calc(100vh-3.5rem)]">
     <!-- Barra de ações: mesmo recuo lateral do documento, para o título nascer
          alinhado com o conteúdo. Antes a barra usava px-3/sm:px-5 e o conteúdo

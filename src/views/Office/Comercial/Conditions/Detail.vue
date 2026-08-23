@@ -1,4 +1,7 @@
 <template>
+  <!-- design:tela-cheia — bancada da ficha. A altura é travada no shell (`md:h-full`
+     na cadeia) para que só o corpo role; foi assim que o 2º scroll fantasma
+     foi resolvido. PageContainer devolve o problema. -->
   <!-- Desktop: a ficha preenche exatamente a área útil do shell (h-full na cadeia, sem
        depender de calc bater com a altura real) e rola só por dentro. Mobile segue com o
        scroll da página. -->

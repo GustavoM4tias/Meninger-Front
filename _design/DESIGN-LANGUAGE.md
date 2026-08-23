@@ -287,6 +287,24 @@ coisa: inadimplência subindo é seta para cima com cor de negativo.
 
 ---
 
+## A exceção da tela cheia
+
+Três formatos NÃO levam `PageContainer`/`PageHeader`, e forçá-los piora a tela:
+
+| formato | por quê |
+|---|---|
+| **bancada** de duas colunas travada na viewport | só uma coluna rola; a largura máxima quebra a divisão |
+| **quadro** de largura total (Kanban) | com largura máxima o quadro perde coluna visível |
+| **leitor** de documento com barra fixa | a barra é `sticky` para as ações não sumirem no scroll |
+
+A exceção é **declarada, não adivinhada**. Quem faz a tela escreve o marcador
+`design:tela-cheia` num comentário no topo do template, **com o motivo**, e o
+placar deixa de cobrar os dois primitivos. O marcador aparece no diff, então a
+decisão é revisável — diferente de o script inferir por heurística de classe.
+
+`PageHelp` continua obrigatório: tela cheia não é desculpa para tela sem
+instrução.
+
 ## Tipografia
 
 **Piso de 11px (`text-micro`).** A diretoria lê no celular; abaixo disso não se
