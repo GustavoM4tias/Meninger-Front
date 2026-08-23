@@ -9,6 +9,7 @@
 // é mostrar thumbnail + link.
 
 import { ref, computed, watch } from 'vue';
+import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({
     open: { type: Boolean, default: false },
@@ -43,7 +44,11 @@ const facebookLink = computed(() => {
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 z-[100] bg-black/90 flex flex-col" @click.self="close">
+  <!-- O painel fica PRETO de proposito: e visualizador de criativo, e o preto
+       e o que faz a imagem e o video lerem sem o fundo competir. O que ele
+       ganha do primitivo e o resto - teleport, Escape, trava de rolagem. -->
+  <Modal :open="open" size="screen" :padded="false" hide-close @close="close">
+    <div class="h-full bg-black flex flex-col">
 
     <header class="flex items-start gap-3 px-5 py-3 text-white shrink-0">
       <div class="flex-1 min-w-0">
@@ -120,5 +125,6 @@ const facebookLink = computed(() => {
     <div class="text-center text-white/40 text-xs pb-3 shrink-0">
       <kbd class="px-1.5 py-0.5 rounded bg-surface-raised/10 text-white/80">Esc</kbd> ou clique fora pra fechar
     </div>
-  </div>
+    </div>
+  </Modal>
 </template>

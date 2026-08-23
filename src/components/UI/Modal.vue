@@ -146,6 +146,7 @@ const leaveToClass = computed(() => {
    backdrop respondem), e volta a responder quando ela termina. O Escape
    continua valendo o tempo todo: teclado não depende de posição. */
 const pronto = ref(false);
+const raiz = ref(null);
 
 function close() {
   emit('close');
@@ -160,18 +161,34 @@ function onBackdrop() {
 }
 
 function onKey(e) {
-  if (e.key === 'Escape' && props.open) close();
+  if (e.key !== 'Escape' || !props.open) return;
+  /* Numa pilha de modais, o Escape fecha so o de cima. Sem isto, o listener de
+     cada um dispara e a pilha inteira some de uma tecla. */
+  const abertos = document.querySelectorAll('[data-modal-aberto]');
+  if (abertos.length && abertos[abertos.length - 1] !== raiz.value) return;
+  close();
+}
+
+/* A trava de rolagem do fundo e CONTADA, nao ligada/desligada.
+   Modal dentro de modal virou comum (a gaveta da tarefa abre o visualizador de
+   anexo, o detalhe da campanha abre o do formulario). Com um booleano, fechar
+   o de dentro devolvia a rolagem ao fundo enquanto o de fora ainda estava
+   aberto - a pagina rolava atras do dialogo. O contador so solta quando o
+   ultimo fecha. */
+let travado = false;
+function travarFundo(v) {
+  if (v === travado) return;
+  travado = v;
+  const n = Number(document.body.dataset.modaisAbertos || 0) + (v ? 1 : -1);
+  document.body.dataset.modaisAbertos = String(Math.max(0, n));
+  document.body.style.overflow = n > 0 ? 'hidden' : '';
 }
 
 function applyOpen(v) {
   if (typeof window === 'undefined') return;
-  if (v) {
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.removeEventListener('keydown', onKey);
-    document.body.style.overflow = '';
-  }
+  if (v) document.addEventListener('keydown', onKey);
+  else document.removeEventListener('keydown', onKey);
+  travarFundo(v);
 }
 
 onMounted(() => applyOpen(props.open));
@@ -182,7 +199,7 @@ watch(() => props.open, (v) => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKey);
-  document.body.style.overflow = '';
+  travarFundo(false);
 });
 </script>
 
@@ -198,6 +215,8 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="open"
+        ref="raiz"
+        data-modal-aberto
         :class="[isScreen ? 'fixed' : 'fixed inset-0', 'flex', wrapperClass,
                  pronto ? '' : 'pointer-events-none']"
         :style="{ zIndex: zEfetivo, ...(screenInsetStyle || {}) }"

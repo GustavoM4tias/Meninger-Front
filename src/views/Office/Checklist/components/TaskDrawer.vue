@@ -431,8 +431,11 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
 </script>
 
 <template>
-    <div class="fixed inset-0 z-50 flex justify-end bg-surface backdrop-blur-sm animate-fade-in" @mousedown.self="onBackdrop">
-        <div class="bg-surface-raised border-l border-line w-full max-w-lg h-full overflow-hidden shadow-overlay flex flex-col animate-slide-up">
+    <div>
+    <!-- Gaveta pela direita. O cabecalho proprio tem titulo editavel e os
+         botoes de estado, entao `hide-close`. -->
+    <Modal :open="true" position="right" size="md" :padded="false" hide-close
+        @close="onBackdrop">
 
             <!-- Cabeçalho -->
             <div class="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-line shrink-0">
@@ -702,7 +705,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                     <span class="text-xs ml-auto" :class="dirty ? 'text-data-warn' : 'text-ink-subtle'">{{ dirty ? 'Alterações pendentes' : (notifyOn ? 'Salvar p/ notificar' : 'Tudo salvo') }}</span>
                 </div>
             </div>
-        </div>
+    </Modal>
         <AttachmentViewerModal v-if="viewerAtt" :attachment="viewerAtt" @close="viewerAtt = null" />
         <ImageAnnotator v-if="annotateAtt" :attachment="annotateAtt" :task-id="taskId" @close="annotateAtt = null" />
         <UserInfoModal v-if="infoUser" :user="infoUser" @close="infoUser = null" />

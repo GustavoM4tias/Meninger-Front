@@ -1,7 +1,8 @@
 <template>
-  <Teleport to="body">
-    <div class="fixed inset-0 z-50 flex items-start justify-end bg-black/40 backdrop-blur-sm" @click.self="$emit('close')">
-      <div class="bg-surface-raised h-full w-full max-w-lg shadow-2xl border-l border-line flex flex-col overflow-hidden">
+  <!-- Gaveta pela direita: e o que o primitivo chama de position="right". O
+       cabecalho proprio tem titulo editavel, entao `hide-close`. -->
+  <Modal :open="true" position="right" size="md" :padded="false" hide-close
+    @close="$emit('close')">
 
         <!-- Header -->
         <div class="flex items-start justify-between gap-3 p-5 border-b border-line shrink-0">
@@ -194,9 +195,7 @@
           </div>
         </div>
 
-      </div>
-    </div>
-  </Teleport>
+  </Modal>
 </template>
 
 <script setup>
@@ -204,6 +203,7 @@ import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import { useToast } from 'vue-toastification';
 import { usePlannerStore } from '@/stores/Microsoft/plannerStore';
 import { pedirConfirmacao } from '@/composables/useConfirm';
+import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({
   task:      { type: Object, required: true },

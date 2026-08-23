@@ -1,12 +1,9 @@
 <template>
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="modelValue"
-        class="fixed inset-0 z-[8500] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-        @click.self="close">
-
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden
-                    max-sm:max-w-full max-sm:h-full max-sm:max-h-full max-sm:rounded-none" @click.stop>
+  <!-- Sem slot de header e com `hide-close`, o primitivo nao desenha barra de
+       titulo - entao o cabecalho colorido desta tela continua sangrando de
+       borda a borda, e ainda assim o modal ganha teleport, Escape, trava de
+       rolagem do fundo e tela cheia no celular. -->
+  <Modal :open="modelValue" size="lg" :padded="false" hide-close @close="close">
 
           <!-- ── Colored header ── -->
           <div :class="headerGradient" class="px-6 pt-5 pb-4 shrink-0">
@@ -260,15 +257,13 @@
             </button>
           </div>
 
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  </Modal>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
+import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -571,9 +566,6 @@ async function submit() {
   @apply w-full px-3 py-2 rounded-xl border border-line bg-surface-raised text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent transition-shadow;
 }
 
-.modal-enter-active { transition: opacity 0.15s, transform 0.15s; }
-.modal-leave-active { transition: opacity 0.12s, transform 0.12s; }
-.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.97); }
 
 .expand-enter-active, .expand-leave-active { transition: opacity 0.2s, max-height 0.25s; max-height: 200px; overflow: hidden; }
 .expand-enter-from, .expand-leave-to { opacity: 0; max-height: 0; }

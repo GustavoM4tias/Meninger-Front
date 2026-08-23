@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({ attachment: { type: Object, required: true } });
 defineEmits(['close']);
@@ -27,8 +28,7 @@ const iframeSrc = computed(() => (isPdf.value ? url.value : isOffice.value ? off
 </script>
 
 <template>
-    <div class="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 animate-fade-in" @click.self="$emit('close')">
-        <div class="bg-surface-overlay border border-line rounded-2xl shadow-overlay w-full max-w-5xl max-h-[94vh] flex flex-col animate-scale-in">
+    <Modal :open="true" size="full" :padded="false" hide-close @close="$emit('close')">
             <div class="flex items-center justify-between p-3 border-b border-line">
                 <span class="text-sm font-medium text-ink truncate"><i :class="isImage ? 'fas fa-image' : isLink ? 'fas fa-link' : isPdf ? 'fas fa-file-pdf' : isOffice ? 'fas fa-file-word' : 'fas fa-file'"></i> {{ a.file_name }}</span>
                 <div class="flex items-center gap-4">
@@ -48,6 +48,5 @@ const iframeSrc = computed(() => (isPdf.value ? url.value : isOffice.value ? off
                     <a :href="url" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-accent hover:bg-accent-hover text-white rounded-lg"><i class="fas fa-arrow-up-right-from-square"></i> Abrir em nova aba</a>
                 </div>
             </div>
-        </div>
-    </div>
+    </Modal>
 </template>

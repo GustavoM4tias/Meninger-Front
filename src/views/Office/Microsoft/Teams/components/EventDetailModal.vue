@@ -1,12 +1,9 @@
 <template>
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="event"
-        class="fixed inset-0 z-[8500] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-        @click.self="$emit('close')">
-
-        <div class="bg-surface-raised rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col
-                    max-sm:max-w-full max-sm:h-full max-sm:max-h-full max-sm:rounded-none" @click.stop>
+  <!-- Sem slot de header e com `hide-close`, o primitivo nao desenha barra de
+       titulo, entao a faixa colorida e o cabecalho proprios desta tela ficam
+       como estao - e ela ganha teleport, Escape, trava de rolagem do fundo e
+       tela cheia no celular, que faltavam. -->
+  <Modal :open="!!event" size="lg" :padded="false" hide-close @close="$emit('close')">
 
           <!-- Color bar -->
           <div :class="event.isOnlineMeeting ? 'bg-accent' : 'bg-accent'" class="h-1.5 rounded-t-2xl shrink-0"></div>
@@ -186,15 +183,13 @@
             </div>
           </Transition>
 
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  </Modal>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
+import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({ event: { type: Object, default: null } });
 const emit = defineEmits(['close', 'done', 'error', 'edit']);
@@ -305,8 +300,6 @@ function statusClass(s) {
 </script>
 
 <style scoped>
-.modal-enter-active, .modal-leave-active { transition: opacity 0.15s; }
-.modal-enter-from, .modal-leave-to { opacity: 0; }
 .confirm-enter-active, .confirm-leave-active { transition: opacity 0.15s, transform 0.15s; }
 .confirm-enter-from, .confirm-leave-to { opacity: 0; transform: translateY(8px); }
 .line-clamp-4 { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }

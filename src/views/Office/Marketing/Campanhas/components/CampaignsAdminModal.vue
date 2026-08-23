@@ -6,6 +6,7 @@
 import { ref } from 'vue';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Button from '@/components/UI/Button.vue';
+import Modal from '@/components/UI/Modal.vue';
 import { useToast } from 'vue-toastification';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
@@ -108,10 +109,9 @@ async function doMigrateMappings() {
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="close">
-    <div class="bg-surface text-ink w-full max-w-3xl rounded-xl shadow-xl border border-line max-h-[92vh] flex flex-col">
-
-      <header class="flex items-center gap-3 px-5 pt-5 pb-3 border-b border-line shrink-0">
+  <Modal :open="open" size="xl" :padded="false" @close="close">
+    <template #header>
+      <div class="flex items-center gap-3">
         <div class="shrink-0 w-10 h-10 rounded-lg bg-data-neg/10 text-data-neg flex items-center justify-center">
           <i class="fas fa-screwdriver-wrench text-lg"></i>
         </div>
@@ -120,9 +120,10 @@ async function doMigrateMappings() {
           <p class="text-xs text-ink-subtle">Operações de manutenção. O cron já roda automático a cada 2h em horário comercial.</p>
         </div>
         <button @click="close" class="text-ink-subtle hover:text-ink p-1"><i class="fas fa-times"></i></button>
-      </header>
+      </div>
+    </template>
 
-      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+      <div class="px-5 py-4 space-y-4">
 
         <!-- ── SINCRONIZAR TUDO (hero) ─────────────────────────────────── -->
         <div class="rounded-xl border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-accent/0 p-4">
@@ -269,9 +270,8 @@ async function doMigrateMappings() {
         </div>
       </div>
 
-      <footer class="px-5 py-3 border-t border-line bg-surface-sunken/30 shrink-0 flex justify-end">
+    <template #footer>
         <Button variant="secondary" size="sm" @click="close">Fechar</Button>
-      </footer>
-    </div>
-  </div>
+    </template>
+  </Modal>
 </template>

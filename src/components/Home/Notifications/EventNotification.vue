@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 import { useEventStore } from '@/stores/Marketing/Event/eventStore'
 import EventText from './EventText.vue'
+import Modal from '@/components/UI/Modal.vue';
 
 dayjs.locale('pt-br')
 
@@ -210,13 +211,8 @@ function onKeydown(e) {
             </div>
         </div>
         <!-- MODAL: EVENTOS DO DIA -->
-        <teleport to="body">
-            <div v-if="isDayModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog"
-                aria-modal="true" @click.self="isDayModalOpen = false">
-                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-                <div
-                    class="relative w-full max-w-3xl rounded-2xl bg-surface-raised border border-line shadow-2xl overflow-hidden">
+        <Modal :open="isDayModalOpen" size="xl" :padded="false" hide-close
+            @close="isDayModalOpen = false">
                     <div
                         class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
                         <div>
@@ -263,18 +259,11 @@ function onKeydown(e) {
                             Fechar
                         </button>
                     </div>
-                </div>
-            </div>
-        </teleport>
+        </Modal>
 
         <!-- MODAL: LISTA DO MÊS -->
-        <teleport to="body">
-            <div v-if="isMonthModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4"
-                role="dialog" aria-modal="true" @click.self="isMonthModalOpen = false">
-                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-                <div
-                    class="relative w-full max-w-4xl rounded-2xl bg-surface-raised border border-line shadow-2xl overflow-hidden">
+        <Modal :open="isMonthModalOpen" size="xl" :padded="false" hide-close
+            @close="isMonthModalOpen = false">
                     <div
                         class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
                         <div>
@@ -335,8 +324,6 @@ function onKeydown(e) {
                             Fechar
                         </button>
                     </div>
-                </div>
-            </div>
-        </teleport>
+        </Modal>
     </div>
 </template>

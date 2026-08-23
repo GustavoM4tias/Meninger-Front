@@ -13,6 +13,7 @@
 import { ref, watch, computed } from 'vue';
 import { useMetaFormsStore } from '@/stores/Marketing/Capture/metaFormsStore';
 import Button from '@/components/UI/Button.vue';
+import Modal from '@/components/UI/Modal.vue';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast();
@@ -209,11 +210,9 @@ const sections = [
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="close">
-    <div class="bg-surface text-ink w-full max-w-4xl rounded-xl shadow-xl border border-line max-h-[92vh] flex flex-col">
-
-      <!-- Header -->
-      <header class="flex items-start gap-3 px-5 pt-5 pb-3 border-b border-line shrink-0">
+  <Modal :open="open" size="xl" :padded="false" @close="close">
+    <template #header>
+      <div class="flex items-start gap-3">
         <div class="shrink-0 w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center">
           <i class="fab fa-meta text-lg"></i>
         </div>
@@ -229,10 +228,10 @@ const sections = [
         <span :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge.cls]">
           {{ statusBadge.label }}
         </span>
-        <button @click="close" class="shrink-0 text-ink-subtle hover:text-ink p-1"><i class="fas fa-times"></i></button>
-      </header>
+      </div>
+    </template>
 
-      <!-- KPI bar -->
+    <!-- KPI bar -->
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 px-5 py-3 border-b border-line bg-surface-sunken/30 shrink-0">
         <div class="text-center">
           <div class="text-micro uppercase tracking-wider text-ink-subtle">Total</div>
@@ -271,7 +270,7 @@ const sections = [
       </nav>
 
       <!-- Body -->
-      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+      <div class="px-5 py-4 space-y-5">
 
         <!-- ── Estrutura & Mapeamento ────────────────────────────────────── -->
         <section v-show="activeSection === 'estrutura'" class="space-y-3">
@@ -443,13 +442,11 @@ const sections = [
         </section>
       </div>
 
-      <!-- Footer -->
-      <footer class="px-5 py-3 border-t border-line flex items-center justify-between gap-2 bg-surface-sunken/30 shrink-0">
-        <div class="text-micro text-ink-subtle">
-          Última sync: {{ form?.last_synced_at ? new Date(form.last_synced_at).toLocaleString('pt-BR') : '—' }}
-        </div>
-        <Button variant="secondary" size="sm" @click="close">Fechar</Button>
-      </footer>
-    </div>
-  </div>
+    <template #footer>
+      <div class="flex-1 text-micro text-ink-subtle">
+        Última sync: {{ form?.last_synced_at ? new Date(form.last_synced_at).toLocaleString('pt-BR') : '-' }}
+      </div>
+      <Button variant="secondary" size="sm" @click="close">Fechar</Button>
+    </template>
+  </Modal>
 </template>

@@ -1,10 +1,9 @@
 <template>
-    <div v-if="modelValue" class="fixed inset-0 z-50 overflow-y-auto export-modal" @click="emitClose">
-        <div class="flex items-start justify-center min-h-screen pt-6 px-4 pb-12 text-center sm:p-0">
-            <div class="fixed inset-0 bg-surface transition-opacity"></div>
-
-            <div class="relative inline-block w-full max-w-7xl my-8 overflow-hidden text-left align-middle transition-all transform bg-surface-sunken shadow-xl rounded-2xl"
-                @click.stop>
+    <div>
+    <!-- O fundo aqui era `bg-surface` OPACO cobrindo a tela: nao era scrim,
+         era uma segunda pagina por cima da primeira. O primitivo devolve o
+         scrim do tema, o Escape e a trava de rolagem. -->
+    <Modal :open="modelValue" size="full" :padded="false" hide-close @close="emitClose">
                 <!-- Header -->
                 <div class="px-6 py-4 bg-surface-raised border-b border-line">
                     <div class="flex items-center justify-between gap-4">
@@ -238,8 +237,7 @@
                         </template>
                     </div>
                 </div>
-            </div>
-        </div>
+    </Modal>
 
         <!-- Aviso de responsabilidade — obrigatório antes de qualquer formato -->
         <ExportDisclaimerModal :open="disclaimer.open" :formato="disclaimer.kind"
@@ -263,6 +261,7 @@ import saveAs from 'file-saver'
 import dayjs from 'dayjs'
 import { useAuthStore } from '@/stores/Settings/Auth/authStore'
 import ExportDisclaimerModal from './ExportDisclaimerModal.vue'
+import Modal from '@/components/UI/Modal.vue'
 import { registrarExport, slugReport } from '@/utils/Config/exportLog'
 import { useToast } from 'vue-toastification';
 

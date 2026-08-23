@@ -1,12 +1,5 @@
 <template>
-  <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="show" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="$emit('close')" />
-
-        <!-- Modal -->
-        <div class="relative bg-surface-raised rounded-2xl shadow-2xl border border-line w-full max-w-lg flex flex-col max-h-[90vh]">
+  <Modal :open="show" size="lg" :padded="false" hide-close @close="$emit('close')">
 
           <!-- Header -->
           <div class="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
@@ -119,23 +112,21 @@
                 Cancelar
               </button>
               <button @click="send" :disabled="sending || !recipients.length"
-                class="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-accent to-accent hover:from-accent hover:to-accent text-white text-sm font-semibold transition-all shadow-md shadow-purple-200 dark:shadow-purple-900/30 disabled:opacity-40 disabled:cursor-not-allowed">
+                class="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-accent to-accent hover:from-accent hover:to-accent text-white text-sm font-semibold transition-all shadow-md shadow-accent/20 disabled:opacity-40 disabled:cursor-not-allowed">
                 <i class="fas" :class="sending ? 'fa-circle-notch animate-spin' : 'fa-paper-plane'"></i>
                 {{ sending ? 'Enviando...' : 'Enviar' }}
               </button>
             </div>
           </div>
 
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  </Modal>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import API_URL from '@/config/apiUrl';
+import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({
   show:       { type: Boolean, default: false },
@@ -208,8 +199,4 @@ async function send() {
 </script>
 
 <style scoped>
-.modal-enter-active { transition: opacity 0.2s, transform 0.2s; }
-.modal-leave-active { transition: opacity 0.15s, transform 0.15s; }
-.modal-enter-from  { opacity: 0; transform: scale(0.97); }
-.modal-leave-to    { opacity: 0; transform: scale(0.97); }
 </style>

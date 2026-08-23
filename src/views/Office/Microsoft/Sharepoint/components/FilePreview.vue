@@ -1,11 +1,7 @@
 <template>
-  <Teleport to="body">
-    <Transition name="preview">
-      <div
-        v-if="item"
-        class="fixed inset-0 z-[9000] flex flex-col bg-surface backdrop-blur"
-        @click.self="emit('close')"
-      >
+  <!-- O cabecalho proprio traz baixar e abrir no SharePoint, entao
+       `hide-close`: o X do primitivo duplicaria a barra. -->
+  <Modal :open="!!item" size="full" :padded="false" hide-close @close="emit('close')">
         <!-- Header -->
         <div class="flex items-center justify-between px-5 py-3 bg-surface border-b border-line shrink-0">
           <div class="flex items-center gap-3 min-w-0">
@@ -105,14 +101,13 @@
             <PreviewUnsupported :item="item" @open="openInNativeApp" />
           </template>
         </div>
-      </div>
-    </Transition>
-  </Teleport>
+  </Modal>
 </template>
 
 <script setup>
 import { ref, computed, watch, defineComponent, h, onMounted, onUnmounted } from 'vue';
 import API_URL from '@/config/apiUrl';
+import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({ item: { type: Object, default: null } });
 const emit  = defineEmits(['close']);
@@ -306,7 +301,4 @@ function formatDate(dt) {
 </script>
 
 <style scoped>
-.preview-enter-active { transition: opacity 0.15s; }
-.preview-leave-active { transition: opacity 0.1s; }
-.preview-enter-from, .preview-leave-to { opacity: 0; }
 </style>

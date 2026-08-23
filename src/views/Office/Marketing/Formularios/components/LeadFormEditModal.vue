@@ -16,6 +16,7 @@ import QRCode from 'qrcode';
 import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';
 import API_URL from '@/config/apiUrl';
 import Button from '@/components/UI/Button.vue';
+import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
 import EnterpriseMultiSelect from '@/components/Marketing/EnterpriseMultiSelect.vue';
 import LeadFormCard from '@/views/Lp/components/LeadFormCard.vue';
@@ -448,11 +449,10 @@ const sections = computed(() => {
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="close">
-    <div class="bg-surface text-ink w-full max-w-4xl rounded-xl shadow-xl border border-line max-h-[92vh] flex flex-col">
-
+  <Modal :open="open" size="xl" :padded="false" @close="close">
       <!-- Header -->
-      <header class="flex items-start gap-3 px-5 pt-5 pb-3 border-b border-line shrink-0">
+    <template #header>
+      <div class="flex items-start gap-3">
         <div class="shrink-0 w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center">
           <i class="fas fa-square-poll-vertical text-lg"></i>
         </div>
@@ -475,7 +475,8 @@ const sections = computed(() => {
         <button @click="close" class="shrink-0 text-ink-subtle hover:text-ink p-1">
           <i class="fas fa-times"></i>
         </button>
-      </header>
+      </div>
+    </template>
 
       <!-- KPI bar (só na edição) -->
       <div v-if="isEdit" class="grid grid-cols-2 sm:grid-cols-5 gap-2 px-5 py-3 border-b border-line bg-surface-sunken/30 shrink-0">
@@ -516,7 +517,7 @@ const sections = computed(() => {
       </nav>
 
       <!-- Body -->
-      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+      <div class="px-5 py-4 space-y-5">
 
         <!-- ── Geral ─────────────────────────────────────────────────────── -->
         <section v-show="activeSection === 'geral'" class="space-y-4">
@@ -964,12 +965,11 @@ const sections = computed(() => {
       </div>
 
       <!-- Footer -->
-      <footer class="px-5 py-3 border-t border-line flex items-center justify-end gap-2 bg-surface-sunken/30 shrink-0">
+    <template #footer>
         <Button variant="secondary" size="sm" @click="close" :disabled="store.saving">Cancelar</Button>
         <Button variant="primary" size="sm" icon="fas fa-floppy-disk" :loading="store.saving" @click="save">
           {{ isEdit ? 'Salvar alterações' : 'Criar formulário' }}
         </Button>
-      </footer>
-    </div>
-  </div>
+    </template>
+  </Modal>
 </template>
