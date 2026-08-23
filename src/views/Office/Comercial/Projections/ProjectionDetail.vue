@@ -11,7 +11,8 @@ import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { useProjectionsStore } from '@/stores/Comercial/Projections/projectionsStore';
 
-import PageContainer from '@/components/UI/PageContainer.vue';
+import PageContainer from '@/components/UI/PageContainer.vue'
+import PageHeader from '@/components/UI/PageHeader.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Switch from '@/components/UI/Switch.vue';
@@ -465,10 +466,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 <template>
   <PageContainer size="full">
     <!-- ═══════ Header ═══════ -->
-    <div class="rounded-2xl border border-line bg-surface-raised shadow-soft surface-gradient p-4 md:p-5 mb-4">
-      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 flex-wrap">
+    <PageHeader>
+      <template #title>
             <RouterLink to="/comercial/projections"
               class="h-8 w-8 grid place-items-center rounded-lg text-ink-muted hover:bg-surface-sunken hover:text-ink transition-colors shrink-0"
               v-tippy:bottom="'Voltar à lista'">
@@ -495,19 +494,19 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
               <i :class="locked ? 'fas fa-lock' : 'fas fa-lock-open'" class="text-[9px]"></i>
               {{ locked ? 'Bloqueada' : 'Aberta' }}
             </Badge>
-          </div>
+      </template>
 
-          <!-- Resumo -->
-          <div class="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-sm">
+      <!-- Resumo: o que a projecao soma hoje -->
+      <template #subtitle>
+        <span class="flex flex-wrap items-center gap-x-5 gap-y-1">
             <span class="text-ink-muted"><i class="fas fa-building text-xs text-ink-subtle mr-1.5"></i>{{ int(totals.enterprises) }} empreend.</span>
             <span class="text-ink-muted"><i class="fas fa-cubes text-xs text-ink-subtle mr-1.5"></i>{{ int(totals.units) }} unidades</span>
             <span class="text-ink font-semibold"><i class="fas fa-sack-dollar text-xs text-accent mr-1.5"></i>{{ brl(totals.vgv) }}</span>
             <span class="text-ink-muted"><i class="fas fa-tag text-xs text-ink-subtle mr-1.5"></i>Ticket médio {{ brlCompact(totals.ticket) }}</span>
-          </div>
-        </div>
+        </span>
+      </template>
 
-        <!-- Ações -->
-        <div class="flex flex-wrap items-center gap-2 shrink-0">
+      <template #actions>
           <PageHelp storage-key="projection-editor" title="Como usar o editor de projeção"
             intro="Aqui você define, mês a mês, quantas unidades cada empreendimento deve vender. O VGV é calculado automaticamente (unidades × ticket médio)."
             :steps="[
@@ -536,14 +535,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
               {{ dirty ? 'Salvar' : 'Salvo' }}
             </Button>
           </template>
-        </div>
-      </div>
+      </template>
+    </PageHeader>
 
-      <!-- Ativa toggle (admin) -->
-      <div v-if="can('edit')" class="mt-3 pt-3 border-t border-line-subtle flex items-center gap-3">
-        <Switch :model-value="!!projection?.is_active" size="sm" @update:model-value="toggleActive"
-          label="Projeção ativa" description="Só uma projeção fica ativa (é a usada no Vendas × Projeção)." />
-      </div>
+    <!-- Uma projecao ativa por vez: e a que o Vendas x Projecao usa. -->
+    <div v-if="can('edit')" class="panel px-4 py-3 mb-4 flex items-center gap-3">
+      <Switch :model-value="!!projection?.is_active" size="sm" @update:model-value="toggleActive"
+        label="Projeção ativa" description="Só uma projeção fica ativa (é a usada no Vendas × Projeção)." />
     </div>
 
     <!-- ═══════ Rascunho pendente ═══════ -->
