@@ -48,6 +48,11 @@ const APENAS_COR = Object.fromEntries(
     Object.keys(LARGURA).map((p) => [p, new RegExp(`\\b${p}-(?:${COR})(?:/\\d+)?(?![\\w-])`)]),
 );
 
+/* Classes do projeto que JÁ trazem largura de borda (ver main.css). Um
+   `hover:border-accent/40` em cima de `.surface-card` é válido: a largura vem
+   da classe. Sem esta lista, todo cartão do sistema virava falso positivo. */
+const CLASSE_COM_BORDA = /(?:surface-card|panel-focus|panel-head|panel)/;
+
 const TAG = /<[a-zA-Z][^>]*?>/gs;
 
 const alvo = process.argv[2];
@@ -74,10 +79,14 @@ for (const f of arquivos) {
 
     for (const m of tpl.matchAll(TAG)) {
         const tag = m[0];
+        /* `.surface-card` e `.panel` já trazem `border border-line`, então um
+           `hover:border-accent/40` em cima delas é válido: a largura vem dali. */
+        const temClasse = CLASSE_COM_BORDA.test(tag);
         for (const pre of Object.keys(LARGURA)) {
-            if (APENAS_COR[pre].test(tag) && !LARGURA[pre].test(tag)) {
-                const linha = tpl.slice(0, m.index).split('\n').length
-                    + src.slice(0, i).split('\n').length - 1;
+            const soCor = APENAS_COR[pre].test(tag);
+            const temLargura = LARGURA[pre].test(tag) || (pre === 'border' && temClasse);
+            if (soCor && !temLargura) {
+                const linha = src.slice(0, i + m.index).split('\n').length;
                 /* Tag que começa com maiúscula é componente: a largura pode vir
                    da raiz dele, então isso é "revisar", não "bug". */
                 const ehComponente = /^<[A-Z]/.test(tag);
