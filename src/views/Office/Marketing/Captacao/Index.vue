@@ -13,6 +13,8 @@
 //   8. LeadDetailModal
 
 import { onMounted, ref, computed, watch } from 'vue';
+import { useToast } from 'vue-toastification';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { useRoute, useRouter } from 'vue-router';
 import { useCaptureStore } from '@/stores/Marketing/Capture/captureStore';
@@ -30,6 +32,7 @@ import LeadsTimelineView from './components/LeadsTimelineView.vue';
 import LeadDetailModal from './components/LeadDetailModal.vue';
 
 const store = useCaptureStore();
+const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 
@@ -137,52 +140,67 @@ function refresh() {
     store.fetchHealth();
 }
 
+/* Duas acoes pesadas desta tela: resolver campanha em lote e sincronizar tudo
+   da Meta. Antes as duas passavam por `window.confirm` com o resumo colado num
+   texto de varias linhas, e o resultado saia noutro `alert`. Agora o dialogo
+   mostra o impacto medido (o preview ja roda antes) e o resultado vai no toast. */
+const dialogo = ref(null);      // { tipo, preview }
+const rodando = ref(false);
+
 async function backfillCampaigns() {
-    // Preview primeiro (dryRun) pra mostrar o impacto antes de gravar.
+    // Preview primeiro (dryRun) pra medir o impacto ANTES de gravar.
     const preview = await store.backfillCampaigns({ dryRun: true });
     if (!preview) return;
     if (preview.scanned === 0) {
-        window.alert('Nada a fazer — não há leads com ad_id sem campanha.');
+        toast.info('Nada a fazer: não há leads com ad_id sem campanha.');
         return;
     }
-    const msg = `Resolver campanha de ${preview.updated} lead${preview.updated === 1 ? '' : 's'}?\n\n`
-        + `Analisados: ${preview.scanned}\n`
-        + `Vão ganhar campanha: ${preview.updated}\n`
-        + `Não resolvíveis (ad fora do cache): ${preview.unresolved}\n\n`
-        + (preview.unresolved > 0
-            ? 'Dica: pra resolver os "não resolvíveis", clique em "Sincronizar Meta" — vai puxar todos os Ads e tentar de novo.'
-            : '');
-    if (!window.confirm(msg)) return;
-
-    const result = await store.backfillCampaigns({ dryRun: false });
-    if (!result) {
-        window.alert('Falha no backfill: ' + (store.error || 'erro desconhecido'));
-        return;
-    }
-    window.alert(`✅ ${result.updated} lead${result.updated === 1 ? '' : 's'} com campanha resolvida.`);
+    dialogo.value = { tipo: 'backfill', preview };
 }
 
-async function runFullSync() {
-    const msg = 'Sincronizar tudo da Meta?\n\n'
-        + 'Vai puxar formulários, campanhas, anúncios (TODAS), importar leads históricos dos últimos 30 dias e resolver campanhas pendentes.\n\n'
-        + 'Demora entre 2 e 5 minutos. Continuar?';
-    if (!window.confirm(msg)) return;
-
-    const result = await store.runFullSync({ sinceDays: 90, historicalDays: 30 });
-    if (!result) {
-        window.alert('Falha no sync: ' + (store.error || 'erro desconhecido'));
-        return;
+async function confirmarBackfill() {
+    rodando.value = true;
+    try {
+        const result = await store.backfillCampaigns({ dryRun: false });
+        if (!result) {
+            toast.error('Falha no backfill: ' + (store.error || 'erro desconhecido'));
+            return;
+        }
+        toast.success(`${result.updated} lead${result.updated === 1 ? '' : 's'} com campanha resolvida.`);
+    } finally {
+        rodando.value = false;
+        dialogo.value = null;
     }
-    const s = result.summary || result;
-    const linhas = [
-        `Forms: ${s.forms?.forms_total ?? 0} (${s.forms?.forms_new ?? 0} novos)`,
-        `Campanhas: ${s.campaigns?.campaigns_total ?? 0}`,
-        `Ads: ${s.ads?.ads_total ?? 0} em ${s.ads?.campaigns_processed ?? 0} campanhas`,
-        `Backfill: ${s.backfill?.updated ?? 0} campanhas resolvidas`,
-        `Histórico: ${s.historical?.inserted ?? 0} novos, ${s.historical?.duplicates ?? 0} dup`,
-    ];
-    const erros = s.errors?.length ? `\n\n⚠️ ${s.errors.length} erro(s): ${s.errors.map(e => e.step).join(', ')}` : '';
-    window.alert(`✅ Sync completo em ${s.duration_sec ?? '?'}s.\n\n${linhas.join('\n')}${erros}`);
+}
+
+function runFullSync() {
+    dialogo.value = { tipo: 'sync' };
+}
+
+async function confirmarFullSync() {
+    rodando.value = true;
+    try {
+        const result = await store.runFullSync({ sinceDays: 90, historicalDays: 30 });
+        if (!result) {
+            toast.error('Falha no sync: ' + (store.error || 'erro desconhecido'));
+            return;
+        }
+        const s = result.summary || result;
+        const linhas = [
+            `Forms: ${s.forms?.forms_total ?? 0} (${s.forms?.forms_new ?? 0} novos)`,
+            `Campanhas: ${s.campaigns?.campaigns_total ?? 0}`,
+            `Ads: ${s.ads?.ads_total ?? 0} em ${s.ads?.campaigns_processed ?? 0} campanhas`,
+            `Backfill: ${s.backfill?.updated ?? 0} campanhas resolvidas`,
+            `Histórico: ${s.historical?.inserted ?? 0} novos, ${s.historical?.duplicates ?? 0} dup`,
+        ];
+        toast.success(`Sync completo em ${s.duration_sec ?? '?'}s — ${linhas.join(' · ')}`);
+        if (s.errors?.length) {
+            toast.warning(`${s.errors.length} erro(s): ${s.errors.map(e => e.step).join(', ')}`);
+        }
+    } finally {
+        rodando.value = false;
+        dialogo.value = null;
+    }
 }
 
 // Watch nos filtros que não dependem de Aplicar (datas e sort dispara refetch).
@@ -320,4 +338,22 @@ onMounted(async () => {
       <CampaignDetailModal v-model:open="campModalOpen" :campaign-id="campModalId" />
 
   </div>
+
+  <!-- Backfill: o preview ja mediu, entao o dialogo mostra numero, nao promessa -->
+  <ConfirmDialog :open="dialogo?.tipo === 'backfill'" tone="accent"
+    :title="`Resolver a campanha de ${dialogo?.preview?.updated || 0} lead(s)?`"
+    :consequence="`De ${dialogo?.preview?.scanned || 0} analisados, ${dialogo?.preview?.updated || 0} ganham campanha`
+      + ((dialogo?.preview?.unresolved || 0) ? ` e ${dialogo.preview.unresolved} ficam sem, porque o anúncio está fora do cache.` : '.')"
+    :hint="(dialogo?.preview?.unresolved || 0)
+      ? 'Para alcançar os que sobraram, rode Sincronizar Meta antes: ele puxa todos os anúncios e tenta de novo.'
+      : ''"
+    confirm-label="Resolver campanhas" :loading="rodando"
+    @confirm="confirmarBackfill" @cancel="dialogo = null" />
+
+  <ConfirmDialog :open="dialogo?.tipo === 'sync'" tone="accent"
+    title="Sincronizar tudo da Meta?"
+    consequence="Puxa formulários, campanhas e anúncios, importa os leads dos últimos 30 dias e resolve as campanhas pendentes."
+    hint="Demora entre 2 e 5 minutos e não dá para interromper no meio."
+    confirm-label="Sincronizar" :loading="rodando"
+    @confirm="confirmarFullSync" @cancel="dialogo = null" />
 </template>

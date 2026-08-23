@@ -8,6 +8,8 @@
 // das regras antes de calcular e, ao terminar, restaura os filtros que o
 // usuário tinha no dashboard.
 import { ref, computed, watch } from 'vue';
+import { useToast } from 'vue-toastification';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { useCan } from '@/composables/useCan';
 import dayjs from 'dayjs';
 import API_URL from '@/config/apiUrl';
@@ -28,6 +30,10 @@ const props = defineProps({ open: { type: Boolean, default: false } });
 const emit = defineEmits(['close']);
 
 const contractsStore = useContractsStore();
+const toast = useToast();
+/* Marcar divergencia como revisada tira ela da lista de pendencias de todo
+   mundo; o `confirm` do navegador nao dizia que o consolidado nao muda. */
+const aRevisar = ref(null);
 const hiddenStore = useHiddenEnterprisesStore();
 const commissionRulesStore = useStageCommissionRulesStore();
 const valueRulesStore = useEnterpriseValueRulesStore();
@@ -295,18 +301,24 @@ async function handleCheckNow() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
-    window.alert(`Vigilância executada: ${data.checked} mês(es) conferido(s), ${data.newDivergences} divergência(s) nova(s).`);
+    toast.success(`Vigilância executada: ${data.checked} mês(es) conferido(s), ${data.newDivergences} divergência(s) nova(s).`);
     await loadClosings();
     if (expanded.value) { const p = expanded.value; expanded.value = null; await toggleExpand(p); }
   } catch (e) {
-    window.alert(e.message || 'Erro ao verificar divergências.');
+    toast.error(e.message || 'Erro ao verificar divergências.');
   } finally {
     checkingNow.value = false;
   }
 }
 
 async function handleReview(div) {
-  if (!window.confirm('Marcar esta divergência como revisada? Ela sai da lista de pendências (o consolidado não muda).')) return;
+  aRevisar.value = div;
+}
+
+async function confirmarRevisao() {
+  const div = aRevisar.value;
+  aRevisar.value = null;
+  if (!div) return;
   try {
     const res = await fetch(`${API_URL}/sales-closings/divergences/${div.id}/review`, {
       method: 'POST', headers: authHeaders(),
@@ -318,7 +330,7 @@ async function handleReview(div) {
     }
     await loadClosings();
   } catch (e) {
-    window.alert(e.message || 'Erro ao revisar.');
+    toast.error(e.message || 'Erro ao revisar.');
   }
 }
 
@@ -686,4 +698,11 @@ const closeModal = () => emit('close');
       </Button>
     </template>
   </Modal>
+
+  <ConfirmDialog :open="!!aRevisar" tone="accent"
+    title="Marcar esta divergência como revisada?"
+    consequence="Ela sai da lista de pendências para todo mundo que abre o fechamento."
+    hint="O consolidado do mês NÃO muda: revisar é dizer que alguém olhou, não corrigir o número."
+    confirm-label="Marcar como revisada"
+    @confirm="confirmarRevisao" @cancel="aRevisar = null" />
 </template>

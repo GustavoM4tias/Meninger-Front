@@ -11,6 +11,7 @@
 //   8. Leads recentes — só em edição
 
 import { computed, ref, watch } from 'vue';
+import { useToast } from 'vue-toastification';
 import QRCode from 'qrcode';
 import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';
 import API_URL from '@/config/apiUrl';
@@ -29,6 +30,7 @@ const props = defineProps({
 const emit = defineEmits(['update:open', 'saved']);
 
 const store = useLeadFormsStore();
+const toast = useToast();
 
 const CV_ORIGEM_OPTIONS = [
   { v: 'SI', label: 'WebSite' },
@@ -315,9 +317,9 @@ async function copyQrImage() {
     const r = await fetch(qrDataUrl.value);
     const blob = await r.blob();
     await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-    window.alert('Imagem do QR copiada.');
+    toast.success('Imagem do QR copiada.');
   } catch {
-    window.alert('Seu navegador não suporta copiar imagem direto. Use "Baixar PNG".');
+    toast.info('Seu navegador não copia imagem direto. Use Baixar PNG.');
   }
 }
 function downloadQrImage() {
@@ -396,8 +398,8 @@ ${closeScript}`;
 });
 
 async function copy(text, label) {
-  try { await navigator.clipboard.writeText(text); window.alert(`${label} copiado.`); }
-  catch { window.alert('Não consegui copiar.'); }
+  try { await navigator.clipboard.writeText(text); toast.success(`${label} copiado.`); }
+  catch { toast.error('Não consegui copiar.'); }
 }
 
 // ── KPIs ────────────────────────────────────────────────────────────────────

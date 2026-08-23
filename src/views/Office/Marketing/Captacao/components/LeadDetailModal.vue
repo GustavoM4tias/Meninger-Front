@@ -13,6 +13,8 @@
 //   9. Timeline de eventos
 
 import { computed, ref, watch } from 'vue';
+import { useToast } from 'vue-toastification';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { useCaptureStore } from '@/stores/Marketing/Capture/captureStore';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
@@ -25,6 +27,7 @@ defineProps({ open: { type: Boolean, default: false } });
 const emit = defineEmits(['update:open']);
 
 const store = useCaptureStore();
+const toast = useToast();
 const lead = computed(() => store.detail?.lead || null);
 const events = computed(() => store.detail?.events || []);
 const metaForm = computed(() => store.detail?.meta_form || null);
@@ -99,7 +102,7 @@ function parseTags(s) { return String(s || '').split(',').map(x => x.trim()).fil
 
 async function doRoute() {
     if (!routeForm.value.midia_slug.trim()) {
-        window.alert('Informe a mídia (slug).');
+        toast.error('Informe a mídia (slug).');
         return;
     }
     const ok = await store.routeLead(lead.value.id, {
@@ -108,16 +111,19 @@ async function doRoute() {
         bound_empreendimentos: Array.isArray(routeForm.value.bound_empreendimentos) ? routeForm.value.bound_empreendimentos : [],
         tags: parseTags(routeForm.value.tags),
     });
-    if (ok) window.alert('Lead roteado — em despacho para o CV.');
+    if (ok) toast.success('Lead roteado: em despacho para o CV.');
 }
 
 async function doRedispatch() {
     const ok = await store.redispatchLead(lead.value.id);
-    if (ok) window.alert('Redisparo solicitado.');
+    if (ok) toast.success('Redisparo solicitado.');
 }
 
-async function doMarkSpam() {
-    if (!window.confirm('Marcar este lead como spam?')) return;
+/* Marcar como spam tira o lead do funil e ele para de ser trabalhado. */
+const pedindoSpam = ref(false);
+
+async function confirmarSpam() {
+    pedindoSpam.value = false;
     await store.setSpam(lead.value.id, true);
 }
 async function doUnmarkSpam() { await store.setSpam(lead.value.id, false); }
@@ -126,9 +132,9 @@ async function doReconcileCv() {
     const result = await store.reconcileCv(lead.value.id);
     if (!result) return;
     if (result.matched) {
-        window.alert(`✅ Encontrado no CV!\n\ncv_idlead: ${result.cv_idlead}\nVia: ${result.via} (${result.confidence})`);
+        toast.success(`Encontrado no CV - lead ${result.cv_idlead}, via ${result.via} (${result.confidence}).`);
     } else {
-        window.alert(`Nenhum match encontrado no CV.\nCandidatos: ${result.candidates_count}`);
+        toast.info(`Nenhum correspondente no CV. Candidatos avaliados: ${result.candidates_count}.`);
     }
 }
 </script>
@@ -435,7 +441,7 @@ async function doReconcileCv() {
           Buscar no CV
         </Button>
         <Button v-if="lead.status !== 'spam' && lead.status !== 'delivered'"
-          variant="danger" size="sm" icon="fas fa-ban" :loading="store.actionBusy" @click="doMarkSpam">
+          variant="danger" size="sm" icon="fas fa-ban" :loading="store.actionBusy" @click="pedindoSpam = true">
           Marcar como spam
         </Button>
         <Button v-if="lead.status === 'spam'"
@@ -471,4 +477,11 @@ async function doReconcileCv() {
 
     <div v-else class="py-12 text-center text-ink-subtle">Lead não encontrado.</div>
   </Modal>
+
+  <ConfirmDialog :open="pedindoSpam" tone="danger"
+    title="Marcar este lead como spam?"
+    consequence="Ele sai do funil e deixa de ser trabalhado pela equipe."
+    hint="O registro continua guardado; dá para desfazer tirando a marca de spam depois."
+    confirm-label="Marcar como spam"
+    @confirm="confirmarSpam" @cancel="pedindoSpam = false" />
 </template>
