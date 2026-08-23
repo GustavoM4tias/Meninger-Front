@@ -11,6 +11,8 @@
 // da antiga Config. Captação. O storage NÃO mudou — só a apresentação.
 
 import { ref, watch, computed, onMounted, onBeforeUnmount, onActivated } from 'vue';
+import { useToast } from 'vue-toastification';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { useMetaAppStore } from '@/stores/Meta/metaAppStore';
 import { useMarketingSettingsStore } from '@/stores/Marketing/Settings/marketingSettingsStore';
 import Surface from '@/components/UI/Surface.vue';
@@ -18,6 +20,10 @@ import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 
 const store = useMetaAppStore();
+const toast = useToast();
+/* O App Secret e a chave que autentica o webhook da Meta: sem ele a captacao
+   de leads para de entrar. Merece dialogo com consequencia, nao `confirm`. */
+const pedindoRemover = ref(null);   // qual secret aguarda confirmação
 const mkt = useMarketingSettingsStore();
 
 // ══ 1. Credenciais do App (compartilhadas WhatsApp + Lead Ads) ══════════════
@@ -125,8 +131,15 @@ function generateVerifyToken() {
   showSecrets.value.verify_token = true;
 }
 
+/* Guarda QUAL secret vai sair: o diálogo confirma depois, fora desta função. */
 function clearSecret(key) {
-  if (!window.confirm('Tem certeza que quer remover esse secret salvo? Você terá que cadastrar de novo.')) return;
+  pedindoRemover.value = key;
+}
+
+function removerSecretConfirmado() {
+  const key = pedindoRemover.value;
+  pedindoRemover.value = null;
+  if (!key) return;
   // Sentinel especial que o backend interpreta como "limpar"
   leadAds.value[`meta_${key}`] = '__CLEAR__';
 }
@@ -138,17 +151,17 @@ async function saveLeadAds() {
     meta_access_token: leadAds.value.meta_access_token || '',
   });
   if (ok) {
-    window.alert('Tokens do Lead Ads salvos.');
+    toast.success('Tokens do Lead Ads salvos.');
     await mkt.fetchConfig();
     resetLeadAdsDraft();
   } else {
-    window.alert('Erro ao salvar: ' + (mkt.error || 'erro desconhecido'));
+    toast.error('Erro ao salvar: ' + (mkt.error || 'erro desconhecido'));
   }
 }
 
 async function copyWebhook() {
-  try { await navigator.clipboard.writeText(mkt.webhookUrl); window.alert('URL copiada.'); }
-  catch { window.alert('Não consegui copiar.'); }
+  try { await navigator.clipboard.writeText(mkt.webhookUrl); toast.success('URL copiada.'); }
+  catch { toast.error('Não consegui copiar.'); }
 }
 </script>
 
@@ -450,4 +463,11 @@ async function copyWebhook() {
       </div>
     </Surface>
   </div>
+
+  <ConfirmDialog :open="!!pedindoRemover" tone="danger"
+    title="Remover o App Secret salvo?"
+    consequence="O webhook da Meta para de ser autenticado e a captação de leads deixa de entrar até você cadastrar outro."
+    hint="O valor não fica guardado em lugar nenhum: será preciso pegá-lo de novo no painel da Meta."
+    confirm-label="Remover secret"
+    @confirm="removerSecretConfirmado" @cancel="pedindoRemover = null" />
 </template>

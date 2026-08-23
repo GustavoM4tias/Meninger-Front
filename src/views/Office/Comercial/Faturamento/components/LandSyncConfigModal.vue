@@ -13,6 +13,8 @@
 //   - Trocar de aba ou salvar limpa o formulário correspondente.
 
 import { ref, computed, watch } from 'vue';
+import { useToast } from 'vue-toastification';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { useLandSyncStore } from '@/stores/Comercial/Contracts/landSyncStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
@@ -42,6 +44,27 @@ import MultiSelector from '@/components/UI/MultiSelector.vue';
 
 const props = defineProps({ open: { type: Boolean, default: false } });
 const emit = defineEmits(['close']);
+
+const toast = useToast();
+/* ── Confirmação ────────────────────────────────────────────────────────────
+   Um diálogo só para a tela inteira. Eram oito `window.confirm`: caixa do
+   navegador, sem dizer o que se perde e sem o tema do sistema. Aqui cada
+   chamada descreve a CONSEQUÊNCIA, que é o que a pessoa precisa para decidir. */
+const dialogo = ref(null);      // { title, consequence, hint, confirmLabel, onConfirm }
+const dialogoBusy = ref(false);
+function pedirConfirmacao(cfg) { dialogo.value = cfg; }
+async function confirmarDialogo() {
+  const fn = dialogo.value?.onConfirm;
+  dialogoBusy.value = true;
+  try {
+    if (fn) await fn();
+    dialogo.value = null;
+  } catch (e) {
+    toast.error(e?.message || 'Não foi possível concluir.');
+  } finally {
+    dialogoBusy.value = false;
+  }
+}
 
 const landSyncStore = useLandSyncStore();
 const contractsStore = useContractsStore();
@@ -179,15 +202,22 @@ async function handleLinkSave() {
     resetLinkForm();
     contractsStore.clearContractsCache();
   } catch (e) {
-    window.alert(e?.message || 'Erro ao salvar vínculo.');
+    toast.error(e?.message || 'Erro ao salvar vínculo.');
   }
 }
 
 async function handleLinkRemove(id) {
-  if (!window.confirm('Remover este vínculo? A projeção desse empreendimento volta a ficar solta.')) return;
-  await erpLinksStore.removeLink(id);
-  if (editingLink.value?.id === id) resetLinkForm();
-  contractsStore.clearContractsCache();
+  pedirConfirmacao({
+    title: 'Remover este vínculo CV ↔ Sienge?',
+    consequence: 'A projeção desse empreendimento volta a ficar solta: ele deixa de casar com o contrato do Sienge no Faturamento.',
+    hint: 'Nada é apagado no CV nem no Sienge — só o vínculo entre os dois.',
+    confirmLabel: 'Remover vínculo',
+    onConfirm: async () => {
+      await erpLinksStore.removeLink(id);
+      if (editingLink.value?.id === id) resetLinkForm();
+      contractsStore.clearContractsCache();
+    },
+  });
 }
 
 // ── Composição de VGV ──────────────────────────────────────────────
@@ -241,15 +271,21 @@ async function handleValueRuleSave() {
     resetValueForm();
     contractsStore.clearContractsCache();
   } catch (e) {
-    window.alert(e?.message || 'Erro ao salvar regra de composição de VGV.');
+    toast.error(e?.message || 'Erro ao salvar regra de composição de VGV.');
   }
 }
 
 async function handleValueRuleRemove(id) {
-  if (!window.confirm('Remover esta regra? O empreendimento volta a somar pelas condições de pagamento.')) return;
-  await valueRulesStore.removeRule(id);
-  if (editingValueRule.value?.id === id) resetValueForm();
-  contractsStore.clearContractsCache();
+  pedirConfirmacao({
+    title: 'Remover esta regra de composição de VGV?',
+    consequence: 'O empreendimento volta a somar pelas condições de pagamento, e o VGV dele muda no Faturamento na hora seguinte.',
+    confirmLabel: 'Remover regra',
+    onConfirm: async () => {
+      await valueRulesStore.removeRule(id);
+      if (editingValueRule.value?.id === id) resetValueForm();
+      contractsStore.clearContractsCache();
+    },
+  });
 }
 
 // ── Terreno externo (OBSTIT) ───────────────────────────────────────
@@ -268,16 +304,21 @@ async function handleLandAdd() {
 }
 
 async function handleLandRemove(id) {
-  if (!window.confirm('Remover este empreendimento da atualização de terreno externo?')) return;
-  await landSyncStore.removeItem(id);
+  pedirConfirmacao({
+    title: 'Tirar este empreendimento da atualização de terreno?',
+    consequence: 'O valor de terreno dele para de ser lido da observação do título no Sienge.',
+    hint: 'O valor já gravado continua; só deixa de ser atualizado.',
+    confirmLabel: 'Remover',
+    onConfirm: () => landSyncStore.removeItem(id),
+  });
 }
 
 async function handleRunSync() {
   try {
     await landSyncStore.runSync();
-    window.alert('Sincronização de terreno disparada com sucesso.');
+    toast.success('Sincronização de terreno disparada com sucesso.');
   } catch (e) {
-    window.alert(e?.message || 'Erro ao rodar sincronização OBSTIT.');
+    toast.error(e?.message || 'Erro ao rodar sincronização OBSTIT.');
   }
 }
 
@@ -389,7 +430,16 @@ async function handleHiddenAdd() {
 
 async function handleHiddenRemove(id) {
   if (hiddenRemoving.value) return;
-  if (!window.confirm('Restaurar visibilidade deste empreendimento?')) return;
+  pedirConfirmacao({
+    title: 'Voltar a mostrar este empreendimento?',
+    consequence: 'Ele reaparece no Faturamento e volta a somar nos totais.',
+    tone: 'accent',
+    confirmLabel: 'Restaurar',
+    onConfirm: () => restaurarOculto(id),
+  });
+}
+
+async function restaurarOculto(id) {
   hiddenRemoving.value = true;
   try {
     await hiddenStore.removeItem(id);
@@ -404,7 +454,16 @@ async function handleHiddenRemoveGroup(group) {
   const label = group.company_name
     ? `da empresa ${group.company_id != null ? group.company_id + ' - ' : ''}${group.company_name}`
     : 'deste grupo';
-  if (!window.confirm(`Restaurar os ${group.items.length} empreendimento(s) ${label}?`)) return;
+  pedirConfirmacao({
+    title: `Voltar a mostrar ${group.items.length} empreendimento(s)?`,
+    consequence: `${label} reaparece(m) no Faturamento e volta(m) a somar nos totais.`,
+    tone: 'accent',
+    confirmLabel: `Restaurar ${group.items.length}`,
+    onConfirm: () => restaurarGrupo(group),
+  });
+}
+
+async function restaurarGrupo(group) {
   hiddenRemoving.value = true;
   try {
     await hiddenStore.removeItems(group.items.map((i) => i.id));
@@ -469,15 +528,21 @@ async function handleCommissionSave() {
     resetCommissionForm();
     contractsStore.clearContractsCache();
   } catch (e) {
-    window.alert(e?.message || 'Erro ao salvar regra.');
+    toast.error(e?.message || 'Erro ao salvar regra.');
   }
 }
 
 async function handleCommissionRemove(id) {
-  if (!window.confirm('Remover esta regra de comissão por etapa?')) return;
-  await commissionRulesStore.removeRule(id);
-  if (editingCommission.value?.id === id) resetCommissionForm();
-  contractsStore.clearContractsCache();
+  pedirConfirmacao({
+    title: 'Remover esta regra de comissão por etapa?',
+    consequence: 'A etapa volta a usar a comissão padrão, e o valor de comissão muda no Faturamento.',
+    confirmLabel: 'Remover regra',
+    onConfirm: async () => {
+      await commissionRulesStore.removeRule(id);
+      if (editingCommission.value?.id === id) resetCommissionForm();
+      contractsStore.clearContractsCache();
+    },
+  });
 }
 
 // ── Satélite de TR ─────────────────────────────────────────────────
@@ -533,15 +598,21 @@ async function handleTrSatSave() {
     resetTrSatForm();
     contractsStore.clearContractsCache();
   } catch (e) {
-    window.alert(e?.message || 'Erro ao salvar satélite de TR.');
+    toast.error(e?.message || 'Erro ao salvar satélite de TR.');
   }
 }
 
 async function handleTrSatRemove(id) {
-  if (!window.confirm('Remover este vínculo de satélite de TR?')) return;
-  await trSatStore.removeItem(id);
-  if (editingTrSat.value?.id === id) resetTrSatForm();
-  contractsStore.clearContractsCache();
+  pedirConfirmacao({
+    title: 'Remover este vínculo de satélite de TR?',
+    consequence: 'O satélite deixa de somar no empreendimento principal e passa a contar sozinho.',
+    confirmLabel: 'Remover vínculo',
+    onConfirm: async () => {
+      await trSatStore.removeItem(id);
+      if (editingTrSat.value?.id === id) resetTrSatForm();
+      contractsStore.clearContractsCache();
+    },
+  });
 }
 
 // ── Reset de formulários ───────────────────────────────────────────
@@ -618,13 +689,15 @@ const handleAdjustmentReview = async (item) => {
 };
 
 const handleAdjustmentRemove = async (item) => {
-  const ok = window.confirm(
-    `Remover o ajuste "${ADJ_TYPE_LABEL[item.type] || item.type}" do contrato #${item.contract_id}?\n\n`
-    + 'O dado volta a ser o que veio do Sienge.'
-  );
-  if (!ok) return;
-  await adjustmentsStore.removeItem(item.id);
-  await contractsStore.refreshAfterAdjustment();
+  pedirConfirmacao({
+    title: `Remover o ajuste ${ADJ_TYPE_LABEL[item.type] || item.type}?`,
+    consequence: `O contrato #${item.contract_id} volta a mostrar o dado como veio do Sienge, e o selo Ajustada some dele.`,
+    confirmLabel: 'Remover ajuste',
+    onConfirm: async () => {
+      await adjustmentsStore.removeItem(item.id);
+      await contractsStore.refreshAfterAdjustment();
+    },
+  });
   adjustFeedback.value = adjustmentsStore.lastDivergences > 0
     ? `Ajuste removido. ${adjustmentsStore.lastDivergences} divergência(s) registrada(s) em mês consolidado.`
     : 'Ajuste removido.';
@@ -1632,4 +1705,15 @@ const closeModal = () => emit('close');
     :editing="editingAdjustment"
     @close="adjustModalOpen = false"
     @saved="handleAdjustmentSaved" />
+
+  <!-- Um diálogo para as sete confirmações desta tela. Cada chamada informa a
+       consequência; o `window.confirm` que estava aqui não informava nenhuma. -->
+  <ConfirmDialog :open="!!dialogo"
+    :tone="dialogo?.tone || 'danger'"
+    :title="dialogo?.title || ''"
+    :consequence="dialogo?.consequence || ''"
+    :hint="dialogo?.hint || ''"
+    :confirm-label="dialogo?.confirmLabel || 'Confirmar'"
+    :loading="dialogoBusy"
+    @confirm="confirmarDialogo" @cancel="dialogo = null" />
 </template>
