@@ -358,8 +358,9 @@ ${inputs}
 ${consentLine}  <button type="submit">${ctaText}</button>
 </form>
 <script>
-// Os alert() abaixo sao de proposito e NAO devem virar toast: este trecho e
-// copiado para o site do cliente, onde nada do Office existe.
+// design:dialogo-proprio(arquivo): os alert() abaixo NAO devem virar toast. Este
+// trecho e copiado para o site do CLIENTE, onde nada do Office existe -
+// nem o toast, nem o tema, nem o Vue.
 const f = document.getElementById('form-menin');
 f.addEventListener('submit', async (e) => {
   e.preventDefault();

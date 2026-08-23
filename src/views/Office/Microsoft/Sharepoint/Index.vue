@@ -5,7 +5,9 @@
     @dragleave="onWindowDragLeave"
     @drop.prevent="onWindowDrop"
   >
-    <!-- Drop zone overlay (for uploading files from desktop) -->
+    <!-- design:dialogo-proprio: nao e dialogo, e o alvo de SOLTAR o arquivo
+         arrastado do desktop. E pointer-events-none de proposito: quem recebe
+         o drop e a pagina atras dele. -->
     <Transition name="dropzone">
       <div v-if="showDropZone"
         class="fixed inset-0 z-50 bg-accent/20 backdrop-blur-sm border-4 border-dashed border-accent flex items-center justify-center pointer-events-none">

@@ -342,6 +342,48 @@ Hífen, nunca travessão.
 
 ---
 
+## Aviso e confirmação
+
+São duas peças, e só duas.
+
+**Aviso é `useToast()`.** O que aconteceu, depois de acontecer. Nenhuma tela
+escreve o próprio balão: oito escreviam, todas no mesmo canto, com a mesma
+duração e o mesmo par verde/vermelho - e todas com o mesmo defeito, porque
+cada cópia tinha fila própria e a segunda mensagem apagava a primeira.
+
+Duas exceções, ambas por motivo:
+
+- **mensagem em linha**, ao lado do botão que a gerou (salvar credencial, testar
+  conexão). Está onde o olho já está; balão no canto oposto é pior.
+- **barra com desfazer.** Aviso que oferece ação precisa ficar parado o tempo de
+  a pessoa decidir, e o toast some sozinho.
+
+**Confirmação é `pedirConfirmacao()`.** Devolve promessa, então a pergunta cabe
+como uma linha no meio do fluxo:
+
+```js
+if (!await pedirConfirmacao({
+  title: 'Excluir a parcela 3/12 do titulo 88421?',
+  consequence: 'As 12 parcelas do titulo saem juntas - nao da para excluir so esta.',
+  confirmLabel: 'Excluir',
+})) return;
+```
+
+`consequence` é o motivo de a peça existir. `confirm()` do navegador não tem
+onde escrever o que vai acontecer, então a pessoa aperta OK sem saber que
+excluir UMA parcela remove as doze, ou que "marcar como baixado" não baixa
+nada no Ecobrança. **Uma confirmação que não diz o que vai acontecer é um "OK"
+caro** - se você não consegue escrever a consequência, provavelmente a ação
+não precisa de confirmação, precisa de desfazer.
+
+Com número quando a ação atinge mais de um: "todo mundo" não é quantidade.
+
+`confirm()`, `alert()` e `prompt()` do navegador estão **proibidos**. Não
+seguem o tema, não têm foco visível, e no celular aparecem com a cara do
+sistema operacional em vez da do Office.
+
+---
+
 ## Modal
 
 **Tamanho por propósito, nunca por gosto.**
@@ -478,6 +520,8 @@ Não recrie nenhum destes. Se faltar uma variante, adicione ao primitivo.
 | `FilterBar` | barra de filtros com selo de ativos e altura fixa |
 | `Skeleton` | carga que não joga o layout fora |
 | `Modal` | `screen` para listagem; tela cheia no celular em qualquer tamanho |
+| `pedirConfirmacao()` | a pergunta "tem certeza?", com a consequência escrita |
+| `useToast()` | o aviso do que já aconteceu |
 | `usePagination` | 100/200/300/500, escolha gravada |
 | `EmptyState` | vazio com uma ação sugerida |
 | `Button` / `IconButton` / `Input` / `Select` / `Switch` / `Badge` | controles |
@@ -601,7 +645,7 @@ Três obrigações:
 
 ## Checklist de aceite
 
-Uma tela só está pronta quando passa nos doze:
+Uma tela só está pronta quando passa nos treze:
 
 1. `PageContainer` + `PageHeader` + `PageHelp` escrito em português de usuário
 2. Zero cor fixa; só token semântico
@@ -615,7 +659,10 @@ Uma tela só está pronta quando passa nos doze:
 9. Carga com `Skeleton` na forma do conteúdo; vazio com `EmptyState`
 10. Erro diz o que deu errado e o que fazer
 11. Nada de camada translúcida sobre área larga
-12. `vite build` passa
+12. Aviso pelo `useToast()`, confirmação pelo `pedirConfirmacao()` com a
+    consequência escrita, diálogo pelo primitivo `Modal` - nenhum `confirm()`
+    do navegador, nenhum balão próprio, nenhum `fixed inset-0` à mão
+13. `vite build` passa
 
 Depois de passar, marque a linha da tela em `ui-checklist.md` e rode
 `node _design/mapscreens.mjs .. && node _design/gen-checklist.mjs ..` para o

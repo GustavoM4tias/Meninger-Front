@@ -197,6 +197,10 @@ function onPopupEventClick(ev) { closePopup(); emit('event-click', ev); }
   <!-- Popup dos eventos do dia -->
   <Teleport to="body">
     <Transition name="popup">
+      <!-- design:dialogo-proprio: nao e dialogo, e a camada invisivel que
+           captura o clique FORA do balao do dia. Nao tem fundo, nem painel,
+           nem foco - trocar pelo Modal escureceria o calendario inteiro so
+           para fechar um popover. -->
       <div v-if="popupDay" class="fixed inset-0 z-[9990]" @click="closePopup">
         <div class="absolute bg-surface-raised rounded-xl shadow-overlay border border-line w-60 max-h-72 overflow-hidden flex flex-col"
           :style="popupStyle" @click.stop>

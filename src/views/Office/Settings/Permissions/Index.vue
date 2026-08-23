@@ -49,7 +49,10 @@ import DepartmentVisibilityPanel from './DepartmentVisibilityPanel.vue';
 import GrantsModal from './GrantsModal.vue';
 import RouteMatrix from './RouteMatrix.vue';
 import ScreensTab from './ScreensTab.vue';
+import { useToast } from 'vue-toastification';
 
+
+const toast = useToast();
 const route = useRoute();
 
 /* ── Abas: os sujeitos da tela ─────────────────────────────────────────────
@@ -377,15 +380,11 @@ async function aplicarEmLote(corpo, rotuloOk) {
   dialogo.value = '';
 
   if (falhas.length) {
-    feedback.value = {
-      msg: `${loteProgresso.value.feitos} de ${alvos.length} aplicadas. Falharam: ${falhas.join(', ')}.`,
-      ok: false,
-    };
+    toast.error(`${loteProgresso.value.feitos} de ${alvos.length} aplicadas. Falharam: ${falhas.join(', ')}.`);
   } else {
-    feedback.value = { msg: `${rotuloOk} (${alvos.length} pessoas).`, ok: true };
+    toast.success(`${rotuloOk} (${alvos.length} pessoas).`);
     limparSelecao();
   }
-  setTimeout(() => { feedback.value = { msg: '', ok: true }; }, 8000);
 }
 
 const lotePerfilId = ref('');
@@ -410,7 +409,6 @@ const localExtra = ref([]);
 const localRemoved = ref([]);
 const original = ref({ profileId: '', extra: [], removed: [] });
 const salvando = ref(false);
-const feedback = ref({ msg: '', ok: true });
 
 const profileById = (id) => profiles.value.find(p => Number(p.id) === Number(id)) || null;
 const profileRoutes = computed(() => {
@@ -482,7 +480,6 @@ function abrirUsuario(u) {
 }
 function aplicarUsuario(u) {
   selectedUser.value = u;
-  feedback.value = { msg: '', ok: true };
   const pid = u?.permission_profile_id ? String(u.permission_profile_id) : '';
   const extra = [...(u?.permission?.routes_extra ?? [])];
   const removed = [...(u?.permission?.routes_removed ?? [])];
@@ -512,12 +509,11 @@ async function salvarUsuario() {
     await carregarUsuarios();
     const atualizado = users.value.find(u => u.id === selectedUser.value.id);
     if (atualizado) aplicarUsuario(atualizado);
-    feedback.value = { msg: `Alçadas de ${selectedUser.value.username} salvas.`, ok: true };
+    toast.success(`Alçadas de ${selectedUser.value.username} salvas.`);
   } catch (e) {
-    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível salvar as alçadas.'), ok: false };
+    toast.error(mensagemDeErro(e, 'Não foi possível salvar as alçadas.'));
   } finally {
     salvando.value = false;
-    setTimeout(() => { feedback.value = { msg: '', ok: true }; }, 5000);
   }
 }
 
@@ -595,12 +591,11 @@ async function salvarPerfil() {
     await Promise.all([carregarPerfis(), carregarUsuarios()]);
     const atualizado = profiles.value.find(p => p.id === selectedProfile.value.id);
     if (atualizado) abrirPerfil(atualizado);
-    feedback.value = { msg: 'Perfil salvo. Quem usa ele já está com as telas novas.', ok: true };
+    toast.success('Perfil salvo. Quem usa ele já está com as telas novas.');
   } catch (e) {
-    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível salvar o perfil.'), ok: false };
+    toast.error(mensagemDeErro(e, 'Não foi possível salvar o perfil.'));
   } finally {
     savingProfile.value = false;
-    setTimeout(() => { feedback.value = { msg: '', ok: true }; }, 5000);
   }
 }
 
@@ -623,7 +618,7 @@ async function criarPerfil() {
     novoPerfil.value = { name: '', description: '', department_id: '' };
     if (criado) abrirPerfil(criado);
   } catch (e) {
-    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível criar o perfil.'), ok: false };
+    toast.error(mensagemDeErro(e, 'Não foi possível criar o perfil.'));
   } finally {
     savingProfile.value = false;
   }
@@ -649,12 +644,11 @@ async function confirmarTravar(motivo) {
       body: JSON.stringify({ route: alvoTela.value.route, adminOnly: true, note: motivo || null }),
     });
     await Promise.all([carregarPoliticas(), carregarUsuarios()]);
-    feedback.value = { msg: `"${alvoTela.value.name}" agora é exclusiva de administradores.`, ok: true };
+    toast.success(`"${alvoTela.value.name}" agora é exclusiva de administradores.`);
   } catch (e) {
-    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível travar a tela.'), ok: false };
+    toast.error(mensagemDeErro(e, 'Não foi possível travar a tela.'));
   } finally {
     dialogoBusy.value = false; lockBusy.value = ''; dialogo.value = ''; alvoTela.value = null;
-    setTimeout(() => { feedback.value = { msg: '', ok: true }; }, 5000);
   }
 }
 
@@ -668,7 +662,7 @@ async function destravar(page) {
     });
     await Promise.all([carregarPoliticas(), carregarUsuarios()]);
   } catch (e) {
-    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível destravar a tela.'), ok: false };
+    toast.error(mensagemDeErro(e, 'Não foi possível destravar a tela.'));
   } finally { lockBusy.value = ''; }
 }
 
@@ -680,7 +674,7 @@ async function confirmarExcluirPerfil() {
     selectedProfile.value = null;
     await carregarUsuarios();
   } catch (e) {
-    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível excluir o perfil.'), ok: false };
+    toast.error(mensagemDeErro(e, 'Não foi possível excluir o perfil.'));
   } finally { dialogoBusy.value = false; dialogo.value = ''; }
 }
 
@@ -692,7 +686,7 @@ async function confirmarRestaurarPerfil() {
     const atualizado = profiles.value.find(p => p.id === selectedProfile.value.id);
     if (atualizado) abrirPerfil(atualizado);
   } catch (e) {
-    feedback.value = { msg: mensagemDeErro(e, 'Não foi possível restaurar o padrão.'), ok: false };
+    toast.error(mensagemDeErro(e, 'Não foi possível restaurar o padrão.'));
   } finally { dialogoBusy.value = false; dialogo.value = ''; }
 }
 
@@ -766,7 +760,7 @@ const orphanPolicies = computed(() => {
 
 /* Trocar de aba com alteração pendente: a barra continua visível, então o
    trabalho não se perde de vista. */
-watch(aba, () => { feedback.value = { msg: '', ok: true }; });
+watch(aba, () => { toast.success(''); });
 
 onMounted(carregarTudo);
 </script>
@@ -1162,18 +1156,7 @@ onMounted(carregarTudo);
       <DepartmentVisibilityPanel v-else-if="aba === 'departments'" />
     </div>
 
-    <!-- Feedback fica no lugar da ação, não num alerta do navegador -->
-    <transition enter-active-class="transition-all duration-200 ease-out-expo"
-      enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0">
-      <div v-if="feedback.msg"
-        class="fixed bottom-24 right-4 z-10 max-w-sm rounded-xl border p-3 text-sm shadow-overlay"
-        :class="feedback.ok
-          ? 'border-data-pos/25 bg-data-pos-soft text-data-pos'
-          : 'border-data-neg/25 bg-data-neg/10 text-data-neg'">
-        <i :class="feedback.ok ? 'fas fa-circle-check' : 'fas fa-circle-exclamation'" class="mr-1.5"></i>
-        {{ feedback.msg }}
-      </div>
-    </transition>
+
 
     <!-- Alterações pendentes: nada é gravado sem passar por aqui -->
     <!-- A barra serve dois estados, e a SELEÇÃO tem precedência: quem marcou

@@ -18,7 +18,15 @@ import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
+import { useToast } from 'vue-toastification';
 
+
+const toast = useToast();
+
+/* O erro da store aparecia num balao proprio no canto INFERIOR ESQUERDO -
+   sozinho no sistema, porque o toast do app mora na direita. Agora ele passa
+   pelo caminho de sempre. */
+watch(() => eventStore.errorMessage, (msg) => { if (msg) toast.error(msg); });
 const route = useRoute();
 const router = useRouter();
 const eventStore = useEventStore();
@@ -262,16 +270,6 @@ const showFinished = computed(() =>
     <ReportModal v-if="showReport" :events="eventsFiltered" @close="showReport = false" />
 
     <!-- Toast de erro flutuante -->
-    <transition
-      enter-active-class="transition ease-out-expo duration-300"
-      enter-from-class="opacity-0 translate-y-2"
-      enter-to-class="opacity-100 translate-y-0">
-      <div v-if="eventStore.errorMessage"
-        class="fixed bottom-5 left-5 z-50 px-4 py-3 rounded-xl bg-data-neg/10 border border-data-neg/20
-               text-data-neg text-sm shadow-elevated backdrop-blur flex items-center gap-2">
-        <i class="fas fa-circle-exclamation"></i>
-        {{ eventStore.errorMessage }}
-      </div>
-    </transition>
+
   </div>
 </template>
