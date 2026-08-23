@@ -3,8 +3,8 @@
 Gerado por `_design/mapscreens.mjs` em 2026-08-20. Para atualizar os números depois de
 mexer nas telas, rode de novo e o checklist se refaz.
 
-- **65** telas pontuadas (+ 6 especiais fora do score)
-- **Score médio: 81/100**
+- **66** telas pontuadas (+ 6 especiais fora do score)
+- **Score médio: 82/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
 ## Como marcar
@@ -17,7 +17,7 @@ carga com `Skeleton`, alvo de toque >= 40px e PageHelp escrito.
 
 ---
 
-## Onda 1 - Reconstrução  `9 telas`
+## Onda 1 - Reconstrução  `8 telas`
 
 Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é uma tarefa própria.
 
@@ -42,8 +42,6 @@ Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é 
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
-- [ ] **Grupos de Workflow** `/workflow/groups` · ` 20`
-      <sub>views/Office/Comercial/Workflow/Index.vue · 345L · sem container, sem header, sem help, 104 cor fixa, 1 modal na mão</sub>
 - [ ] **Builder de Relatório** `/relatorios/:id` · ` 49`
       <sub>views/Office/Relatorios/Builder.vue · 282L · sem container, sem header, sem help, 2 cor fixa</sub>
 - [ ] **InPersonRecording** `/inperson/recording` · ` 50`
@@ -51,7 +49,7 @@ Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é 
 - [ ] **Planner** `/planner` · ` 52`
       <sub>views/Office/Microsoft/Planner/Index.vue · 883L (+1 comp.) · sem container, sem header, 42 cor fixa, 10 texto micro</sub>
 
-## Onda 2 - Alinhamento  `6 telas`
+## Onda 2 - Alinhamento  `7 telas`
 
 Score 55 a 74. Estrutura existe, falta token, help ou plano mobile.
 
@@ -71,6 +69,8 @@ Score 55 a 74. Estrutura existe, falta token, help ou plano mobile.
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
+- [ ] **Link de Cartão** `/link-cartao` · ` 70`
+      <sub>views/Office/Financeiro/LinkCartao/Index.vue · 340L · sem container, sem header, 1 cor fixa</sub>
 - [ ] **SharePoint** `/sharepoint` · ` 70`
       <sub>views/Office/Microsoft/Sharepoint/Index.vue · 1379L (+3 comp.) · 62 cor fixa, 4 texto micro, 1 modal na mão</sub>
 - [ ] **Empreendimentos** `/buildings` · ` 73`
@@ -149,7 +149,7 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
 - [ ] **Eventos** `/events` · ` 94`
       <sub>views/Office/Marketing/Events/Index.vue · 2329L (+9 comp.) · 4 cor fixa, 27 texto micro</sub>
 
-## Onda 4 - Manutenção  `23 telas`
+## Onda 4 - Manutenção  `24 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
 
@@ -199,6 +199,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Meta/Central/Index.vue · 569L (+1 comp.) · 2 texto micro</sub>
 - [ ] **Plano de Eventos** `/plano-eventos` · `100`
       <sub>views/Office/Marketing/EventPlan/Index.vue · 1328L (+6 comp.) · 1 texto micro</sub>
+- [ ] **Grupos de Workflow** `/workflow/groups` · `100`
+      <sub>views/Office/Comercial/Workflow/Index.vue · 404L · ok</sub>
 - [ ] **Fichas Comerciais** `/conditions` · `100`
       <sub>views/Office/Comercial/Conditions/Index.vue · 7725L (+10 comp.) · ok</sub>
 - [ ] **Correspondentes** `/correspondentes` · `100`
