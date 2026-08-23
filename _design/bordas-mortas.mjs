@@ -25,6 +25,9 @@
  *     <Panel class="border-data-warn/30">   <- ok: `.panel` já tem `border`
  *
  * Por isso o relatório separa "tag de componente" (revisar) de "tag HTML"
+ *
+ * LIMITE CONHECIDO: o script nao le `<style scoped>`. Classe propria da tela
+ * que ja traz `border` (ex.: `.cond-textarea`) aparece como falso positivo.
  * (quase sempre bug de verdade).
  */
 import fs from 'node:fs';
@@ -55,7 +58,7 @@ const CLASSE_COM_BORDA = /(?:surface-card|panel-focus|panel-head|panel)/;
 
 /* O `<hr>` recebe `border-top-width: 1px` do preflight do Tailwind, entao
    `border-line` sozinho nele JA desenha. Ainda assim vale escrever o lado. */
-const TAG_COM_BORDA_PROPRIA = /^<hr[\s/>]/;
+const TAG_COM_BORDA_PROPRIA = /^<hr[ />]|type=["']?(?:checkbox|radio)|^<Surface[ >]/;
 
 const TAG = /<[a-zA-Z][^>]*?>/gs;
 

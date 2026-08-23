@@ -760,7 +760,7 @@
               </li>
               <li v-if="!fichaCosts.menin.length" class="text-ink-subtle italic">—</li>
             </ul>
-            <div class="mt-3 pt-3 border-accent/30 flex justify-between text-sm">
+            <div class="mt-3 pt-3 border-t-2 border-accent/30 flex justify-between text-sm">
               <span class="font-bold text-ink">Total Menin</span>
               <strong class="text-base text-accent">{{ formatCurrency(fichaCosts.totalMenin) }}</strong>
             </div>
@@ -776,7 +776,7 @@
               </li>
               <li v-if="!fichaCosts.client.length" class="text-ink-subtle italic">—</li>
             </ul>
-            <div class="mt-3 pt-3 border-accent/30 flex justify-between text-sm">
+            <div class="mt-3 pt-3 border-t-2 border-accent/30 flex justify-between text-sm">
               <span class="font-bold text-ink">Total Cliente</span>
               <strong class="text-base text-accent">{{ formatCurrency(fichaCosts.totalClient) }}</strong>
             </div>
