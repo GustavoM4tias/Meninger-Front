@@ -59,8 +59,8 @@ function onManual(v) { emit('update:displayName', v); emit('update:idempreendime
         <Input v-else :model-value="displayName" placeholder="Nome do empreendimento (manual)"
             @update:model-value="onManual" />
 
-        <p v-if="mode === 'cv' && idempreendimento" class="text-[11px] text-ink-subtle -mt-0.5">
-            <i class="fas fa-circle-check text-emerald-500"></i>
+        <p v-if="mode === 'cv' && idempreendimento" class="text-micro text-ink-subtle -mt-0.5">
+            <i class="fas fa-circle-check text-data-pos"></i>
             {{ displayName }} <span class="text-ink-subtle/70">· #{{ idempreendimento }}</span>
         </p>
 

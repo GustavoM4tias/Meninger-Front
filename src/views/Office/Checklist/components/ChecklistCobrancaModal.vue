@@ -60,7 +60,7 @@ async function save() {
     <Modal :open="true" size="xl" @close="emit('close')">
         <template #header>
             <div class="flex items-center gap-2.5 min-w-0">
-                <span class="grid place-items-center h-9 w-9 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
+                <span class="grid place-items-center h-9 w-9 rounded-xl bg-data-warn/10 text-data-warn border border-data-warn/20 shrink-0">
                     <i class="fas fa-bell"></i>
                 </span>
                 <div class="min-w-0">

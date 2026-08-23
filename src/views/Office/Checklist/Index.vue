@@ -221,7 +221,7 @@ async function submitNew() {
                            bg-surface-raised border border-line text-ink-muted
                            hover:bg-surface-sunken hover:text-ink hover:border-line-strong
                            transition-colors focus-ring">
-                    <i class="fas fa-file-excel text-emerald-500"></i>
+                    <i class="fas fa-file-excel text-data-pos"></i>
                     <span class="hidden sm:inline">{{ importing ? 'Importando...' : 'Importar Excel' }}</span>
                     <input type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="onImport"
                         :disabled="importing" />
@@ -240,7 +240,7 @@ async function submitNew() {
             <button v-for="t in TABS" :key="t" @click="tab = t"
                 class="px-4 py-2 text-sm font-medium -mb-px border-b-2 whitespace-nowrap transition focus-ring"
                 :class="tab === t ? 'border-accent text-accent' : 'border-transparent text-ink-subtle hover:text-ink'">
-                {{ t }}<span v-if="t === 'Aprovações' && pendingApprovals.length" class="ml-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">{{ pendingApprovals.length }}</span>
+                {{ t }}<span v-if="t === 'Aprovações' && pendingApprovals.length" class="ml-1.5 px-1.5 py-0.5 rounded-md text-micro font-semibold bg-data-warn/15 text-data-warn">{{ pendingApprovals.length }}</span>
             </button>
         </div>
 
@@ -254,43 +254,43 @@ async function submitNew() {
                     <span class="h-11 w-11 rounded-xl grid place-items-center bg-accent-soft text-accent shrink-0 text-lg"><i
                             class="fas fa-clipboard-list"></i></span>
                     <div class="min-w-0">
-                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">Checklists ativos</p>
+                        <p class="text-micro font-medium uppercase tracking-wide text-ink-subtle">Checklists ativos</p>
                         <p class="text-2xl font-bold text-ink leading-tight tabular-nums">{{ summary.checklists || 0 }}</p>
                     </div>
                 </div>
                 <div class="surface-card p-4 flex items-center gap-3 hover:shadow-elevated hover:border-line-strong transition-all duration-200">
-                    <span class="h-11 w-11 rounded-xl grid place-items-center bg-sky-500/10 text-sky-500 shrink-0 text-lg"><i
+                    <span class="h-11 w-11 rounded-xl grid place-items-center bg-accent/10 text-accent shrink-0 text-lg"><i
                             class="fas fa-list-check"></i></span>
                     <div class="min-w-0">
-                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">Tarefas</p>
+                        <p class="text-micro font-medium uppercase tracking-wide text-ink-subtle">Tarefas</p>
                         <p class="text-2xl font-bold text-ink leading-tight tabular-nums">{{ summary.totalTasks || 0 }}</p>
                     </div>
                 </div>
                 <div class="surface-card p-4 flex items-center gap-3 hover:shadow-elevated hover:border-line-strong transition-all duration-200">
                     <ProgressRing :pct="summary.pct || 0" :size="44" :stroke="5" />
                     <div class="min-w-0">
-                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">Conclusão</p>
+                        <p class="text-micro font-medium uppercase tracking-wide text-ink-subtle">Conclusão</p>
                         <p class="text-2xl font-bold text-ink leading-tight tabular-nums">{{ summary.pct || 0 }}%</p>
                     </div>
                 </div>
                 <div class="surface-card p-4 flex items-center gap-3 transition-all duration-200"
-                    :class="(summary.totalOverdue || 0) > 0 ? 'border-red-500/30 hover:shadow-elevated' : 'hover:shadow-elevated hover:border-line-strong'">
+                    :class="(summary.totalOverdue || 0) > 0 ? 'border-data-neg/30 hover:shadow-elevated' : 'hover:shadow-elevated hover:border-line-strong'">
                     <span class="h-11 w-11 rounded-xl grid place-items-center shrink-0 text-lg"
-                        :class="(summary.totalOverdue || 0) > 0 ? 'bg-red-500/10 text-red-500' : 'bg-surface-sunken text-ink-subtle'"><i
+                        :class="(summary.totalOverdue || 0) > 0 ? 'bg-data-neg/10 text-data-neg' : 'bg-surface-sunken text-ink-subtle'"><i
                             class="fas fa-triangle-exclamation"></i></span>
                     <div class="min-w-0">
-                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">Em atraso</p>
+                        <p class="text-micro font-medium uppercase tracking-wide text-ink-subtle">Em atraso</p>
                         <p class="text-2xl font-bold leading-tight tabular-nums"
-                            :class="(summary.totalOverdue || 0) > 0 ? 'text-red-500' : 'text-ink'">{{
+                            :class="(summary.totalOverdue || 0) > 0 ? 'text-data-neg' : 'text-ink'">{{
                             summary.totalOverdue || 0 }}</p>
                     </div>
                 </div>
                 <div class="surface-card p-4 flex items-center gap-3 hover:shadow-elevated hover:border-line-strong transition-all duration-200">
                     <span
-                        class="h-11 w-11 rounded-xl grid place-items-center bg-amber-500/10 text-amber-500 shrink-0 text-lg"><i
+                        class="h-11 w-11 rounded-xl grid place-items-center bg-data-warn/10 text-data-warn shrink-0 text-lg"><i
                             class="fas fa-clock"></i></span>
                     <div class="min-w-0">
-                        <p class="text-[11px] font-medium uppercase tracking-wide text-ink-subtle">A vencer (7d)</p>
+                        <p class="text-micro font-medium uppercase tracking-wide text-ink-subtle">A vencer (7d)</p>
                         <p class="text-2xl font-bold text-ink leading-tight tabular-nums">{{ dueSoon.length }}</p>
                     </div>
                 </div>
@@ -353,23 +353,23 @@ async function submitNew() {
                     <div v-else class="space-y-2.5 max-h-80 overflow-y-auto -mx-1 px-1 nav-scroll">
                         <div v-for="a in byAssigneeF" :key="a.key" class="flex items-center gap-3">
                             <span
-                                class="h-8 w-8 rounded-full bg-gradient-to-br from-accent-soft to-surface-sunken text-accent text-[11px] font-semibold grid place-items-center shrink-0 uppercase ring-1 ring-line">{{
+                                class="h-8 w-8 rounded-full bg-gradient-to-br from-accent-soft to-surface-sunken text-accent text-micro font-semibold grid place-items-center shrink-0 uppercase ring-1 ring-line">{{
                                     (a.name || '?').slice(0, 2) }}</span>
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center justify-between text-xs mb-1 gap-2">
                                     <span class="font-medium text-ink truncate flex items-center gap-1">{{ a.name }}<i
                                             v-if="!a.linked && a.name !== 'Sem responsável'"
-                                            class="fas fa-link-slash text-ink-subtle text-[10px]"
+                                            class="fas fa-link-slash text-ink-subtle text-micro"
                                             title="Responsável por texto (não vinculado a usuário)"></i></span>
                                     <span class="shrink-0 flex items-center gap-1.5 tabular-nums">
-                                        <span v-if="a.overdue" class="text-red-500 font-semibold">{{ a.overdue }} atras.</span>
+                                        <span v-if="a.overdue" class="text-data-neg font-semibold">{{ a.overdue }} atras.</span>
                                         <span class="text-ink-muted">{{ a.done }}/{{ a.total }}</span>
                                         <span class="font-semibold text-ink w-9 text-right">{{ a.pct }}%</span>
                                     </span>
                                 </div>
                                 <div class="h-1.5 rounded-full bg-surface-sunken overflow-hidden">
                                     <div class="h-full rounded-full transition-all duration-500 ease-out-expo"
-                                        :class="a.overdue ? 'bg-amber-500' : 'bg-accent'"
+                                        :class="a.overdue ? 'bg-data-warn' : 'bg-accent'"
                                         :style="{ width: a.pct + '%' }"></div>
                                 </div>
                             </div>
@@ -389,23 +389,23 @@ async function submitNew() {
 
                     <div class="max-h-[22rem] overflow-y-auto -mx-1 px-1 space-y-3 nav-scroll">
                         <div v-if="overdueF.length">
-                            <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-red-500/80 mb-1.5">
+                            <p class="flex items-center gap-1.5 text-micro font-semibold uppercase tracking-wide text-data-neg mb-1.5">
                                 <i class="fas fa-triangle-exclamation"></i> Em atraso</p>
                             <div class="space-y-1">
                                 <button v-for="t in overdueF" :key="t.id"
                                     @click="router.push(`/checklists/${t.checklist_id}?task=${t.id}`)"
-                                    class="w-full text-left flex items-center gap-2.5 rounded-lg px-2.5 py-2 hover:bg-red-500/10 transition group">
-                                    <span class="w-1 h-9 rounded-full shrink-0 bg-red-500"></span>
+                                    class="w-full text-left flex items-center gap-2.5 rounded-lg px-2.5 py-2 hover:bg-data-neg/10 transition group">
+                                    <span class="w-1 h-9 rounded-full shrink-0 bg-data-neg"></span>
                                     <div class="min-w-0 flex-1">
                                         <p class="text-sm text-ink truncate group-hover:text-accent">{{ t.title }}</p>
-                                        <p class="text-[11px] text-ink-subtle truncate">{{ t.checklistTitle }} · {{
+                                        <p class="text-micro text-ink-subtle truncate">{{ t.checklistTitle }} · {{
                                             t.assignee || 's/ resp.' }}</p>
                                     </div>
                                     <div class="text-right shrink-0">
                                         <Badge v-if="t.priority && t.priority !== 'MEDIUM'"
                                             :variant="PRIORITY[t.priority]?.v" size="sm">{{ PRIORITY[t.priority]?.l }}
                                         </Badge>
-                                        <p class="text-[11px] text-red-500 font-semibold mt-0.5">{{ dueLabel(t.due_date)
+                                        <p class="text-micro text-data-neg font-semibold mt-0.5">{{ dueLabel(t.due_date)
                                             }}</p>
                                     </div>
                                 </button>
@@ -413,7 +413,7 @@ async function submitNew() {
                         </div>
 
                         <div v-if="dueSoonF.length">
-                            <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-subtle mb-1.5">
+                            <p class="flex items-center gap-1.5 text-micro font-semibold uppercase tracking-wide text-ink-subtle mb-1.5">
                                 <i class="fas fa-clock"></i> Próximos 7 dias</p>
                             <div class="space-y-1">
                                 <button v-for="t in dueSoonF" :key="t.id"
@@ -423,14 +423,14 @@ async function submitNew() {
                                         :style="{ background: scColor(t.state_class) }"></span>
                                     <div class="min-w-0 flex-1">
                                         <p class="text-sm text-ink truncate group-hover:text-accent">{{ t.title }}</p>
-                                        <p class="text-[11px] text-ink-subtle truncate">{{ t.checklistTitle }} · {{
+                                        <p class="text-micro text-ink-subtle truncate">{{ t.checklistTitle }} · {{
                                             t.assignee || 's/ resp.' }}</p>
                                     </div>
                                     <div class="text-right shrink-0">
                                         <Badge v-if="t.priority && t.priority !== 'MEDIUM'"
                                             :variant="PRIORITY[t.priority]?.v" size="sm">{{ PRIORITY[t.priority]?.l }}
                                         </Badge>
-                                        <p class="text-[11px] text-ink-muted mt-0.5">{{ dueLabel(t.due_date) }}</p>
+                                        <p class="text-micro text-ink-muted mt-0.5">{{ dueLabel(t.due_date) }}</p>
                                     </div>
                                 </button>
                             </div>
@@ -557,10 +557,10 @@ async function submitNew() {
                             PRIORITY[t.priority]?.l }}</Badge>
                         <div class="w-24 text-right">
                             <p class="text-xs whitespace-nowrap"
-                                :class="t.due_date && t.due_date < today && t.state_class !== 'DONE' ? 'text-red-500 font-semibold' : 'text-ink-muted'">
+                                :class="t.due_date && t.due_date < today && t.state_class !== 'DONE' ? 'text-data-neg font-semibold' : 'text-ink-muted'">
                                 {{ t.due_date ? fmt(t.due_date) : 'sem prazo' }}</p>
-                            <p v-if="t.due_date" class="text-[10px] whitespace-nowrap"
-                                :class="t.due_date < today && t.state_class !== 'DONE' ? 'text-red-500/80' : 'text-ink-subtle'">
+                            <p v-if="t.due_date" class="text-micro whitespace-nowrap"
+                                :class="t.due_date < today && t.state_class !== 'DONE' ? 'text-data-neg' : 'text-ink-subtle'">
                                 {{ dueLabel(t.due_date) }}</p>
                         </div>
                     </div>
@@ -579,7 +579,7 @@ async function submitNew() {
                 <button v-for="t in pendingApprovals" :key="t.id"
                     @click="router.push(`/checklists/${t.checklist_id}?task=${t.id}`)"
                     class="w-full text-left flex items-center gap-3 surface-card px-3.5 py-3 hover:shadow-elevated transition group">
-                    <span class="w-1 h-11 rounded-full shrink-0 bg-amber-500"></span>
+                    <span class="w-1 h-11 rounded-full shrink-0 bg-data-warn"></span>
                     <div class="min-w-0 flex-1">
                         <p class="text-sm font-medium text-ink truncate group-hover:text-accent transition-colors">{{ t.title }}</p>
                         <p class="text-xs text-ink-muted truncate">

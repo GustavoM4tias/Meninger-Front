@@ -173,11 +173,11 @@ async function save() {
                     <input type="range" min="2" max="16" v-model.number="penSize" class="w-24" />
                 </label>
                 <div class="ml-auto inline-flex items-center gap-1.5">
-                    <Button variant="outline" size="sm" icon="fas fa-rotate-left" :disabled="!actions.length" @click="undo">Desfazer <span class="opacity-60 text-[10px] ml-1">Ctrl+Z</span></Button>
+                    <Button variant="outline" size="sm" icon="fas fa-rotate-left" :disabled="!actions.length" @click="undo">Desfazer <span class="opacity-60 text-micro ml-1">Ctrl+Z</span></Button>
                     <Button variant="ghost" size="sm" icon="fas fa-eraser" :disabled="!actions.length" @click="clearAll">Limpar</Button>
                 </div>
             </div>
-            <p v-if="tool === 'text'" class="text-[11px] text-ink-subtle"><i class="fas fa-circle-info"></i> Clique na imagem onde quer o texto e digite direto na tela. Enter confirma, Esc cancela. Ajuste o tamanho no controle acima antes de clicar.</p>
+            <p v-if="tool === 'text'" class="text-micro text-ink-subtle"><i class="fas fa-circle-info"></i> Clique na imagem onde quer o texto e digite direto na tela. Enter confirma, Esc cancela. Ajuste o tamanho no controle acima antes de clicar.</p>
 
             <!-- Tela -->
             <div class="flex justify-center bg-surface-sunken/60 rounded-lg p-3 overflow-auto max-h-[64vh]">
@@ -188,7 +188,7 @@ async function save() {
                 </div>
                 <div v-else class="relative inline-block">
                     <canvas ref="canvasRef"
-                        class="block rounded-md shadow-soft bg-white touch-none"
+                        class="block rounded-md shadow-soft bg-surface-raised touch-none"
                         :class="tool === 'text' ? 'cursor-text' : 'cursor-crosshair'"
                         @pointerdown="onDown" @pointermove="onMove" @pointerup="onUp" @pointerleave="onUp"></canvas>
                     <input v-if="textInput" ref="textInputRef" v-model="textValue" type="text" placeholder="texto"
@@ -201,7 +201,7 @@ async function save() {
 
             <input v-model="note" placeholder="Comentário sobre as correções (opcional)"
                 class="w-full rounded-lg border border-line bg-surface-raised text-ink px-3 py-2 text-sm focus-ring" />
-            <p class="text-[11px] text-ink-subtle">A imagem marcada entra como <strong>comentário</strong> no chat da tarefa (o anexo original é mantido). Imagem comprimida automaticamente.</p>
+            <p class="text-micro text-ink-subtle">A imagem marcada entra como <strong>comentário</strong> no chat da tarefa (o anexo original é mantido). Imagem comprimida automaticamente.</p>
         </div>
 
         <template #footer>

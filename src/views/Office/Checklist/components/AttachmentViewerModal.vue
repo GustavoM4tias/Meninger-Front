@@ -39,8 +39,8 @@ const iframeSrc = computed(() => (isPdf.value ? url.value : isOffice.value ? off
             <div class="flex-1 overflow-auto p-2 flex flex-col items-center justify-center min-h-[340px]">
                 <img v-if="isImage" :src="url" class="max-w-full max-h-[80vh] object-contain rounded-lg" />
                 <template v-else-if="canIframe">
-                    <iframe :src="iframeSrc" class="w-full h-[80vh] rounded-lg border border-line bg-white"></iframe>
-                    <p class="text-[11px] text-ink-subtle mt-1">Não carregou? <a :href="url" target="_blank" rel="noopener" class="text-accent hover:underline">Abrir em nova aba</a> (alguns links externos bloqueiam a incorporação).</p>
+                    <iframe :src="iframeSrc" class="w-full h-[80vh] rounded-lg border border-line bg-surface-raised"></iframe>
+                    <p class="text-micro text-ink-subtle mt-1">Não carregou? <a :href="url" target="_blank" rel="noopener" class="text-accent hover:underline">Abrir em nova aba</a> (alguns links externos bloqueiam a incorporação).</p>
                 </template>
                 <div v-else class="text-center p-8">
                     <i class="fas fa-file-arrow-down text-4xl text-ink-subtle mb-3"></i>

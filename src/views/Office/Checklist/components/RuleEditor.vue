@@ -42,7 +42,7 @@ const tokensHint = 'Tokens disponíveis: {{task}} {{checklist}} {{due}} {{daysLa
         <div class="flex items-center gap-3 mb-3">
             <input v-model="rule.name" :class="inputCls + ' flex-1 font-semibold'" placeholder="Nome do lembrete (ex.: Aviso 3 dias antes)" />
             <label class="flex items-center gap-1.5 text-xs text-ink-muted whitespace-nowrap"><input type="checkbox" v-model="rule.active" /> ativo</label>
-            <button @click="$emit('remove')" class="text-ink-subtle hover:text-red-500 focus-ring rounded" title="Excluir regra"><i class="fas fa-trash"></i></button>
+            <button @click="$emit('remove')" class="text-ink-subtle hover:text-data-neg focus-ring rounded" title="Excluir regra"><i class="fas fa-trash"></i></button>
         </div>
 
         <!-- Quando -->
@@ -82,7 +82,7 @@ const tokensHint = 'Tokens disponíveis: {{task}} {{checklist}} {{due}} {{daysLa
             </div>
         </div>
 
-        <p class="text-xs text-amber-600 dark:text-amber-400 mb-2"><i class="fas fa-circle-info"></i> {{ summary(rule) }}</p>
+        <p class="text-xs text-data-warn mb-2"><i class="fas fa-circle-info"></i> {{ summary(rule) }}</p>
 
         <!-- Mensagem personalizada (avançado, escondido) -->
         <details class="text-xs">
@@ -90,7 +90,7 @@ const tokensHint = 'Tokens disponíveis: {{task}} {{checklist}} {{due}} {{daysLa
             <div class="mt-2 space-y-2">
                 <input v-model="rule.title_template" placeholder="Título (deixe vazio p/ padrão)" :class="inputCls + ' w-full'" />
                 <input v-model="rule.body_template" placeholder="Mensagem (deixe vazio p/ padrão)" :class="inputCls + ' w-full'" />
-                <p class="text-[11px] text-ink-subtle">{{ tokensHint }}</p>
+                <p class="text-micro text-ink-subtle">{{ tokensHint }}</p>
             </div>
         </details>
     </div>

@@ -8,6 +8,7 @@ import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 
 const emit = defineEmits(['close', 'deleted']);
 const store = useChecklistStore();
@@ -72,8 +73,13 @@ async function clone() {
     finally { saving.value = false; }
 }
 
+/* Excluir leva o checklist E todas as tarefas. O `confirm()` do navegador não
+   dizia QUANTAS — e "todas" não é quantidade. */
+const pedindoExclusao = ref(false);
+const totalTarefas = computed(() => (store.current?.tasks || []).length);
+
 async function del() {
-    if (!confirm('Excluir este checklist e TODAS as tarefas? Esta ação não pode ser desfeita.')) return;
+    pedindoExclusao.value = false;
     saving.value = true;
     try {
         await store.deleteChecklist(store.current.checklist.id);
@@ -121,18 +127,19 @@ const dateField = 'rounded-lg border border-line bg-surface-raised text-ink px-3
                     <div v-for="(k, i) in form.key_dates" :key="i" class="flex items-center gap-2">
                         <input v-model="k.label" placeholder="Marco (ex.: Abertura de Loja)" :class="['flex-1 min-w-0', dateField]" />
                         <input type="date" v-model="k.date" :class="['w-[150px] shrink-0', dateField]" />
-                        <button @click="form.key_dates.splice(i, 1)" class="h-9 w-9 grid place-items-center rounded-lg text-ink-subtle hover:text-red-500 hover:bg-red-500/10 transition shrink-0" title="Remover marco"><i class="fas fa-xmark"></i></button>
+                        <button @click="form.key_dates.splice(i, 1)" class="h-9 w-9 grid place-items-center rounded-lg text-ink-subtle hover:text-data-neg hover:bg-data-neg/10 transition shrink-0" title="Remover marco"><i class="fas fa-xmark"></i></button>
                     </div>
                 </div>
 
                 <button @click="addKeyDate" class="mt-2.5 text-xs text-accent hover:underline focus-ring rounded"><i class="fas fa-plus"></i> adicionar marco livre</button>
-                <p class="text-[11px] text-ink-subtle mt-2">Os marcos "Meeting" e "Abertura de Loja" alimentam os prazos automáticos das tarefas-padrão.</p>
+                <p class="text-micro text-ink-subtle mt-2">Os marcos "Meeting" e "Abertura de Loja" alimentam os prazos automáticos das tarefas-padrão.</p>
             </div>
         </div>
 
         <template #footer>
             <div class="flex flex-wrap items-center gap-2 w-full">
-                <Button variant="danger" size="sm" icon="fas fa-trash" :loading="saving" @click="del">Excluir</Button>
+                <Button variant="danger" size="sm" icon="fas fa-trash" :loading="saving"
+                    @click="pedindoExclusao = true">Excluir</Button>
                 <Button variant="outline" size="sm" icon="fas fa-clone" :loading="saving" @click="clone">Clonar</Button>
                 <div class="flex flex-wrap items-center gap-2 ml-auto">
                     <Button v-if="isActive" variant="outline" size="sm" icon="fas fa-file-pen" :disabled="saving" @click="save('draft')">Mover para rascunho</Button>
@@ -142,4 +149,13 @@ const dateField = 'rounded-lg border border-line bg-surface-raised text-ink px-3
             </div>
         </template>
     </Modal>
+
+    <ConfirmDialog :open="pedindoExclusao" tone="danger"
+        :title="`Excluir o checklist ${store.current?.checklist?.title}?`"
+        :consequence="totalTarefas
+            ? `${totalTarefas} tarefa(s) somem junto, com comentários, anexos e histórico.`
+            : 'O checklist está vazio, então nenhuma tarefa é perdida.'"
+        hint="Não tem desfazer. Para tirar de circulação guardando tudo, use 'Mover para rascunho'."
+        confirm-label="Excluir tudo" :loading="saving"
+        @confirm="del" @cancel="pedindoExclusao = false" />
 </template>

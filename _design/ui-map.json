@@ -3,326 +3,6 @@
   "screens": [
     {
       "routes": [
-        "checklists/:id"
-      ],
-      "name": "Checklist",
-      "file": "views/Office/Checklist/Detail.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 188,
-      "pageContainer": false,
-      "pageHeader": false,
-      "pageHelp": false,
-      "hardcoded": 0,
-      "tinyText": 1,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 5,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
-          "lines": 54,
-          "hardcoded": 1,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/AttachModal.vue",
-          "lines": 104,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistBoard.vue",
-          "lines": 115,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistCobrancaModal.vue",
-          "lines": 119,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistSettingsModal.vue",
-          "lines": 146,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistTable.vue",
-          "lines": 361,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistTimeline.vue",
-          "lines": 133,
-          "hardcoded": 0,
-          "tinyText": 3,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/EnterprisePicker.vue",
-          "lines": 72,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ImageAnnotator.vue",
-          "lines": 217,
-          "hardcoded": 1,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ProgressRing.vue",
-          "lines": 29,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/RuleEditor.vue",
-          "lines": 98,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/TaskDrawer.vue",
-          "lines": 708,
-          "hardcoded": 1,
-          "tinyText": 9,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/TaskPreview.vue",
-          "lines": 54,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/TemplateEditor.vue",
-          "lines": 149,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 2547,
-      "totalHardcoded": 3,
-      "totalTiny": 16,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
-      "score": 46
-    },
-    {
-      "routes": [
-        "checklists/cobranca"
-      ],
-      "name": "Cobrança do Checklist",
-      "file": "views/Office/Checklist/Cobranca.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 190,
-      "pageContainer": false,
-      "pageHeader": false,
-      "pageHelp": false,
-      "hardcoded": 0,
-      "tinyText": 0,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 5,
-      "divClick": 0,
-      "kids": [
-        {
-          "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
-          "lines": 54,
-          "hardcoded": 1,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/AttachModal.vue",
-          "lines": 104,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistBoard.vue",
-          "lines": 115,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistCobrancaModal.vue",
-          "lines": 119,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistSettingsModal.vue",
-          "lines": 146,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistTable.vue",
-          "lines": 361,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistTimeline.vue",
-          "lines": 133,
-          "hardcoded": 0,
-          "tinyText": 3,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/EnterprisePicker.vue",
-          "lines": 72,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ImageAnnotator.vue",
-          "lines": 217,
-          "hardcoded": 1,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ProgressRing.vue",
-          "lines": 29,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/RuleEditor.vue",
-          "lines": 98,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/TaskDrawer.vue",
-          "lines": 708,
-          "hardcoded": 1,
-          "tinyText": 9,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/TaskPreview.vue",
-          "lines": 54,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/TemplateEditor.vue",
-          "lines": 149,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 2549,
-      "totalHardcoded": 3,
-      "totalTiny": 15,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
-      "score": 47
-    },
-    {
-      "routes": [
         "docusign"
       ],
       "name": "Configurações DocuSign",
@@ -2583,166 +2263,6 @@
     },
     {
       "routes": [
-        "checklists"
-      ],
-      "name": "Checklists",
-      "file": "views/Office/Checklist/Index.vue",
-      "group": "",
-      "cat": "",
-      "sub": "",
-      "lines": 658,
-      "pageContainer": true,
-      "pageHeader": true,
-      "pageHelp": true,
-      "hardcoded": 0,
-      "tinyText": 3,
-      "badShadow": 0,
-      "handModal": 0,
-      "table": false,
-      "tableMobile": true,
-      "chart": false,
-      "spinner": false,
-      "skeleton": false,
-      "breakpoints": 19,
-      "divClick": 1,
-      "kids": [
-        {
-          "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
-          "lines": 54,
-          "hardcoded": 1,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/AttachModal.vue",
-          "lines": 104,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistBoard.vue",
-          "lines": 115,
-          "hardcoded": 0,
-          "tinyText": 2,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistCobrancaModal.vue",
-          "lines": 119,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistSettingsModal.vue",
-          "lines": 146,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistTable.vue",
-          "lines": 361,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": true,
-          "tableMobile": true
-        },
-        {
-          "file": "views/Office/Checklist/components/ChecklistTimeline.vue",
-          "lines": 133,
-          "hardcoded": 0,
-          "tinyText": 3,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/EnterprisePicker.vue",
-          "lines": 72,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ImageAnnotator.vue",
-          "lines": 217,
-          "hardcoded": 1,
-          "tinyText": 1,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/ProgressRing.vue",
-          "lines": 29,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/RuleEditor.vue",
-          "lines": 98,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/TaskDrawer.vue",
-          "lines": 708,
-          "hardcoded": 1,
-          "tinyText": 9,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/TaskPreview.vue",
-          "lines": 54,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        },
-        {
-          "file": "views/Office/Checklist/components/TemplateEditor.vue",
-          "lines": 149,
-          "hardcoded": 0,
-          "tinyText": 0,
-          "chart": false,
-          "table": false,
-          "tableMobile": false
-        }
-      ],
-      "totalLines": 3017,
-      "totalHardcoded": 3,
-      "totalTiny": 18,
-      "totalCharts": 0,
-      "totalTables": 1,
-      "archetype": "Operação",
-      "score": 96
-    },
-    {
-      "routes": [
         "cancelamento-reservas"
       ],
       "name": "Cancelamentos CV × Sienge",
@@ -3423,6 +2943,486 @@
     },
     {
       "routes": [
+        "checklists"
+      ],
+      "name": "Checklists",
+      "file": "views/Office/Checklist/Index.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 658,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": false,
+      "breakpoints": 19,
+      "divClick": 1,
+      "kids": [
+        {
+          "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
+          "lines": 54,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/AttachModal.vue",
+          "lines": 104,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistBoard.vue",
+          "lines": 115,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistCobrancaModal.vue",
+          "lines": 119,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistSettingsModal.vue",
+          "lines": 162,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistTable.vue",
+          "lines": 378,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistTimeline.vue",
+          "lines": 136,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/EnterprisePicker.vue",
+          "lines": 72,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ImageAnnotator.vue",
+          "lines": 217,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ProgressRing.vue",
+          "lines": 29,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/RuleEditor.vue",
+          "lines": 98,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/TaskDrawer.vue",
+          "lines": 725,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/TaskPreview.vue",
+          "lines": 54,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/TemplateEditor.vue",
+          "lines": 180,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 3101,
+      "totalHardcoded": 0,
+      "totalTiny": 0,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 100
+    },
+    {
+      "routes": [
+        "checklists/cobranca"
+      ],
+      "name": "Cobrança do Checklist",
+      "file": "views/Office/Checklist/Cobranca.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 455,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": true,
+      "breakpoints": 4,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
+          "lines": 54,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/AttachModal.vue",
+          "lines": 104,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistBoard.vue",
+          "lines": 115,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistCobrancaModal.vue",
+          "lines": 119,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistSettingsModal.vue",
+          "lines": 162,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistTable.vue",
+          "lines": 378,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistTimeline.vue",
+          "lines": 136,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/EnterprisePicker.vue",
+          "lines": 72,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ImageAnnotator.vue",
+          "lines": 217,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ProgressRing.vue",
+          "lines": 29,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/RuleEditor.vue",
+          "lines": 98,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/TaskDrawer.vue",
+          "lines": 725,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/TaskPreview.vue",
+          "lines": 54,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/TemplateEditor.vue",
+          "lines": 180,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 2898,
+      "totalHardcoded": 0,
+      "totalTiny": 0,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 100
+    },
+    {
+      "routes": [
+        "checklists/:id"
+      ],
+      "name": "Checklist",
+      "file": "views/Office/Checklist/Detail.vue",
+      "group": "",
+      "cat": "",
+      "sub": "",
+      "lines": 239,
+      "pageContainer": true,
+      "pageHeader": true,
+      "pageHelp": true,
+      "hardcoded": 0,
+      "tinyText": 0,
+      "badShadow": 0,
+      "handModal": 0,
+      "table": false,
+      "tableMobile": true,
+      "chart": false,
+      "spinner": false,
+      "skeleton": true,
+      "breakpoints": 6,
+      "divClick": 0,
+      "kids": [
+        {
+          "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
+          "lines": 54,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/AttachModal.vue",
+          "lines": 104,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistBoard.vue",
+          "lines": 115,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistCobrancaModal.vue",
+          "lines": 119,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistSettingsModal.vue",
+          "lines": 162,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistTable.vue",
+          "lines": 378,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": true,
+          "tableMobile": true
+        },
+        {
+          "file": "views/Office/Checklist/components/ChecklistTimeline.vue",
+          "lines": 136,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/EnterprisePicker.vue",
+          "lines": 72,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ImageAnnotator.vue",
+          "lines": 217,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/ProgressRing.vue",
+          "lines": 29,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/RuleEditor.vue",
+          "lines": 98,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/TaskDrawer.vue",
+          "lines": 725,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/TaskPreview.vue",
+          "lines": 54,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        },
+        {
+          "file": "views/Office/Checklist/components/TemplateEditor.vue",
+          "lines": 180,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false
+        }
+      ],
+      "totalLines": 2682,
+      "totalHardcoded": 0,
+      "totalTiny": 0,
+      "totalCharts": 0,
+      "totalTables": 1,
+      "archetype": "Operação",
+      "score": 100
+    },
+    {
+      "routes": [
         "meta"
       ],
       "name": "Central Meta",
@@ -3561,7 +3561,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 404,
+      "lines": 407,
       "pageContainer": true,
       "pageHeader": true,
       "pageHelp": true,
@@ -3577,7 +3577,7 @@
       "breakpoints": 7,
       "divClick": 0,
       "kids": [],
-      "totalLines": 404,
+      "totalLines": 407,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalCharts": 0,
@@ -4315,7 +4315,7 @@
         {
           "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
           "lines": 54,
-          "hardcoded": 1,
+          "hardcoded": 0,
           "tinyText": 0,
           "chart": false,
           "table": false,
@@ -4334,7 +4334,7 @@
           "file": "views/Office/Checklist/components/ChecklistBoard.vue",
           "lines": 115,
           "hardcoded": 0,
-          "tinyText": 2,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4350,7 +4350,7 @@
         },
         {
           "file": "views/Office/Checklist/components/ChecklistSettingsModal.vue",
-          "lines": 146,
+          "lines": 162,
           "hardcoded": 0,
           "tinyText": 0,
           "chart": false,
@@ -4359,7 +4359,7 @@
         },
         {
           "file": "views/Office/Checklist/components/ChecklistTable.vue",
-          "lines": 361,
+          "lines": 378,
           "hardcoded": 0,
           "tinyText": 0,
           "chart": false,
@@ -4368,9 +4368,9 @@
         },
         {
           "file": "views/Office/Checklist/components/ChecklistTimeline.vue",
-          "lines": 133,
+          "lines": 136,
           "hardcoded": 0,
-          "tinyText": 3,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4387,8 +4387,8 @@
         {
           "file": "views/Office/Checklist/components/ImageAnnotator.vue",
           "lines": 217,
-          "hardcoded": 1,
-          "tinyText": 1,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4413,9 +4413,9 @@
         },
         {
           "file": "views/Office/Checklist/components/TaskDrawer.vue",
-          "lines": 708,
-          "hardcoded": 1,
-          "tinyText": 9,
+          "lines": 725,
+          "hardcoded": 0,
+          "tinyText": 0,
           "chart": false,
           "table": false,
           "tableMobile": false
@@ -4431,7 +4431,7 @@
         },
         {
           "file": "views/Office/Checklist/components/TemplateEditor.vue",
-          "lines": 149,
+          "lines": 180,
           "hardcoded": 0,
           "tinyText": 0,
           "chart": false,
@@ -6104,9 +6104,9 @@
           "tableMobile": false
         }
       ],
-      "totalLines": 56162,
-      "totalHardcoded": 320,
-      "totalTiny": 738,
+      "totalLines": 56246,
+      "totalHardcoded": 317,
+      "totalTiny": 723,
       "totalCharts": 7,
       "totalTables": 23,
       "archetype": "Especial",

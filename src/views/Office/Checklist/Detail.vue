@@ -16,6 +16,12 @@ import MultiSelector from '@/components/UI/MultiSelector.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import PageHelp from '@/components/UI/PageHelp.vue';
+import Badge from '@/components/UI/Badge.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
 import { useCan } from '@/composables/useCan';
 
 const store = useChecklistStore();
@@ -80,49 +86,94 @@ const VIEW_MODES = [
 </script>
 
 <template>
-    <div class="p-4 md:p-6 max-w-7xl mx-auto">
-        <div v-if="store.loading" class="text-center text-ink-subtle py-16"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
-        <div v-else-if="!checklist" class="text-center text-ink-subtle py-16">Checklist não encontrado.</div>
+    <PageContainer size="xl">
+        <!-- Carregando: o esqueleto tem a forma do cabeçalho e da tabela, para a
+             tela não saltar quando o checklist chega. -->
+        <div v-if="store.loading" class="space-y-4">
+            <div class="flex items-center gap-4">
+                <Skeleton variant="circle" class="w-12 h-12" />
+                <div class="flex-1 space-y-2">
+                    <Skeleton variant="title" class="max-w-sm" />
+                    <Skeleton variant="text" class="max-w-xs" />
+                </div>
+            </div>
+            <Skeleton variant="row" />
+            <Skeleton variant="table" />
+        </div>
+
+        <EmptyState v-else-if="!checklist" icon="fas fa-clipboard-question"
+            title="Checklist não encontrado"
+            description="Ele pode ter sido excluído, ou o endereço está errado.">
+            <template #actions>
+                <Button icon="fas fa-arrow-left" @click="router.push('/checklists')">Voltar para Checklists</Button>
+            </template>
+        </EmptyState>
 
         <template v-else>
-            <!-- Cabeçalho -->
-            <div class="mb-5">
-                <button @click="router.push('/checklists')" class="text-sm text-ink-muted hover:text-ink mb-2"><i class="fas fa-arrow-left"></i> Checklists</button>
-                <div class="flex items-start justify-between flex-wrap gap-4">
-                    <div class="flex items-center gap-4">
-                        <ProgressRing :pct="progress.pct || 0" :size="64" :stroke="6" />
-                        <div>
-                            <h1 class="text-xl md:text-2xl font-bold text-ink flex items-center gap-2 flex-wrap">
-                                {{ checklist.title }}
-                                <span v-if="checklist.status === 'draft'" class="text-[11px] font-semibold uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md">Rascunho</span>
-                                <span v-else-if="checklist.status === 'done'" class="text-[11px] font-semibold uppercase bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md">Concluído</span>
-                            </h1>
-                            <p class="text-sm text-ink-muted">
-                                {{ checklist.display_name || (checklist.idempreendimento ? 'Empreendimento #' + checklist.idempreendimento : '') }}
-                                <span v-if="checklist.cost_center" class="text-ink-subtle"><i class="fas fa-hashtag text-[10px]"></i> CC {{ checklist.cost_center }}</span>
-                            </p>
-                            <div class="flex items-center gap-4 mt-1 text-xs text-ink-muted flex-wrap">
-                                <span><i class="fas fa-list-ul"></i> {{ progress.done || 0 }}/{{ progress.total || 0 }}</span>
-                                <span v-if="(progress.overdue || 0) > 0" class="text-red-500 font-semibold"><i class="fas fa-triangle-exclamation"></i> {{ progress.overdue }} em atraso</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-end gap-2">
-                        <div v-if="can('manage')" class="flex items-center gap-2">
-                            <button @click="showSettings = true" class="inline-flex items-center gap-2 text-xs border border-line rounded-lg px-3 py-1.5 text-ink-muted hover:bg-surface-sunken focus-ring">
-                                <i class="fas fa-gear"></i> Configurar
-                            </button>
-                            <button @click="showCobranca = true" class="inline-flex items-center gap-2 text-xs border border-line rounded-lg px-3 py-1.5 text-ink-muted hover:bg-surface-sunken focus-ring">
-                                <i class="fas fa-bell text-amber-500"></i> Cobrança: <span class="font-semibold text-ink">{{ reminderLabel }}</span>
-                            </button>
-                        </div>
-                        <div class="flex flex-wrap gap-2 justify-end">
-                            <div v-for="k in keyDates" :key="k.key" class="bg-surface-sunken rounded-lg px-3 py-1.5 text-xs">
-                                <span class="text-ink-muted block">{{ k.label }}</span>
-                                <span class="font-semibold text-ink">{{ fmt(k.date) }}</span>
-                            </div>
-                        </div>
-                    </div>
+            <PageHeader>
+                <template #title>
+                    <!-- O anel de progresso É o ícone da tela: o número que
+                         importa aqui é quanto já foi feito. -->
+                    <ProgressRing :pct="progress.pct || 0" :size="40" :stroke="5" class="shrink-0" />
+                    <span class="truncate">{{ checklist.title }}</span>
+                    <Badge v-if="checklist.status === 'draft'" variant="warning" size="sm">Rascunho</Badge>
+                    <Badge v-else-if="checklist.status === 'done'" variant="success" size="sm">Concluído</Badge>
+                </template>
+                <template #subtitle>
+                    <span class="inline-flex items-center gap-x-3 gap-y-1 flex-wrap">
+                        <span v-if="checklist.display_name || checklist.idempreendimento">
+                            {{ checklist.display_name || ('Empreendimento #' + checklist.idempreendimento) }}
+                        </span>
+                        <span v-if="checklist.cost_center" class="text-ink-subtle">
+                            <i class="fas fa-hashtag text-micro"></i> CC {{ checklist.cost_center }}
+                        </span>
+                        <span class="font-mono tabular-nums">
+                            <i class="fas fa-list-ul text-micro"></i>
+                            {{ progress.done || 0 }}/{{ progress.total || 0 }}
+                        </span>
+                        <span v-if="(progress.overdue || 0) > 0" class="text-data-neg font-semibold">
+                            <i class="fas fa-triangle-exclamation text-micro"></i>
+                            {{ progress.overdue }} em atraso
+                        </span>
+                    </span>
+                </template>
+                <template #actions>
+                    <PageHelp
+                        storage-key="checklist-detalhe"
+                        title="Como usar o checklist"
+                        intro="A tarefa é a unidade: cada uma tem responsável, prazo, status e histórico. O anel no topo é a fatia já concluída — status Cancelada/N-A fica fora dessa conta."
+                        :steps="[
+                            { title: 'Escolha a visão', text: 'Tabela mostra tudo agrupado por seção e deixa editar em linha. Quadro arrasta a tarefa entre status.' },
+                            { title: 'Filtre', text: 'Busca, status, responsável, só em atraso e ocultar concluídas. Os filtros valem para a Tabela.' },
+                            { title: 'Abra a tarefa', text: 'Clique na linha ou no cartão. O painel abre com comentários, anexos e histórico, e só grava quando você Salva.' },
+                            { title: 'Edite em lote', text: 'Na Tabela, marque várias linhas da seção para trocar status, responsável, prioridade ou deslocar prazos de uma vez.' },
+                        ]"
+                        :tips="[
+                            'Tarefa com responsável em TEXTO não aparece em Minhas Tarefas: vincule a um usuário no seletor para a cobrança achar a pessoa.',
+                            'Cobrança diz qual régua vale para este checklist: padrão, personalizada ou desligada.',
+                            'Concluir uma tarefa é definitivo: ela não volta para outras etapas.',
+                        ]" />
+                    <Button variant="ghost" size="sm" icon="fas fa-arrow-left" @click="router.push('/checklists')">
+                        <span class="hidden sm:inline">Checklists</span>
+                    </Button>
+                    <template v-if="can('manage')">
+                        <Button variant="outline" size="sm" icon="fas fa-gear" @click="showSettings = true">
+                            <span class="hidden sm:inline">Configurar</span>
+                        </Button>
+                        <Button variant="outline" size="sm" icon="fas fa-bell" @click="showCobranca = true"
+                            v-tippy="'Qual régua de cobrança vale para este checklist'">
+                            <span class="hidden sm:inline">Cobrança: {{ reminderLabel }}</span>
+                        </Button>
+                    </template>
+                </template>
+            </PageHeader>
+
+            <!-- Marcos: datas de referência do checklist -->
+            <div v-if="keyDates.length" class="flex flex-wrap gap-2 mb-4">
+                <div v-for="k in keyDates" :key="k.key"
+                    class="bg-surface-sunken border border-line rounded-lg px-3 py-1.5 text-xs">
+                    <span class="text-ink-muted block text-micro uppercase tracking-wider">{{ k.label }}</span>
+                    <span class="font-semibold text-ink font-mono tabular-nums">{{ fmt(k.date) }}</span>
                 </div>
             </div>
 
@@ -140,7 +191,7 @@ const VIEW_MODES = [
                     <div class="w-full sm:w-44 shrink-0"><MultiSelector :options="assigneeOptions" v-model="filter.assignees" placeholder="Responsável" /></div>
                     <button @click="filter.onlyOverdue = !filter.onlyOverdue" type="button"
                         class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm border transition shrink-0"
-                        :class="filter.onlyOverdue ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30' : 'text-ink-muted border-line hover:bg-surface-sunken'">
+                        :class="filter.onlyOverdue ? 'bg-data-neg/10 text-data-neg border-data-neg/30' : 'text-ink-muted border-line hover:bg-surface-sunken'">
                         <i class="fas fa-triangle-exclamation text-xs"></i> Em atraso
                     </button>
                     <button @click="filter.hideDone = !filter.hideDone" type="button"
@@ -175,7 +226,7 @@ const VIEW_MODES = [
                 </template>
             </Modal>
         </template>
-    </div>
+    </PageContainer>
 </template>
 
 <style scoped>

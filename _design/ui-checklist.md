@@ -4,7 +4,7 @@ Gerado por `_design/mapscreens.mjs` em 2026-08-20. Para atualizar os números de
 mexer nas telas, rode de novo e o checklist se refaz.
 
 - **66** telas pontuadas (+ 6 especiais fora do score)
-- **Score médio: 82/100**
+- **Score médio: 84/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
 ## Como marcar
@@ -17,7 +17,7 @@ carga com `Skeleton`, alvo de toque >= 40px e PageHelp escrito.
 
 ---
 
-## Onda 1 - Reconstrução  `8 telas`
+## Onda 1 - Reconstrução  `6 telas`
 
 Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é uma tarefa própria.
 
@@ -25,13 +25,6 @@ Score abaixo de 55. Fora do esqueleto ou com dívida grande de cor. Cada uma é 
 
 - [ ] **Visualizar Relatório** `/relatorios/:id/view` · ` 50`
       <sub>views/Office/Relatorios/View.vue · 434L · sem container, sem header, sem help, 2 texto micro</sub>
-
-### Operação · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
-
-- [ ] **Checklist** `/checklists/:id` · ` 46`
-      <sub>views/Office/Checklist/Detail.vue · 2547L (+14 comp.) · sem container, sem header, sem help, 3 cor fixa, 16 texto micro, 1 tabela</sub>
-- [ ] **Cobrança do Checklist** `/checklists/cobranca` · ` 47`
-      <sub>views/Office/Checklist/Cobranca.vue · 2549L (+14 comp.) · sem container, sem header, sem help, 3 cor fixa, 15 texto micro, 1 tabela</sub>
 
 ### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
 
@@ -149,14 +142,12 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
 - [ ] **Eventos** `/events` · ` 94`
       <sub>views/Office/Marketing/Events/Index.vue · 2329L (+9 comp.) · 4 cor fixa, 27 texto micro</sub>
 
-## Onda 4 - Manutenção  `24 telas`
+## Onda 4 - Manutenção  `26 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
 
 ### Operação · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
-- [ ] **Checklists** `/checklists` · ` 96`
-      <sub>views/Office/Checklist/Index.vue · 3017L (+14 comp.) · 3 cor fixa, 18 texto micro, 1 tabela</sub>
 - [ ] **Cancelamentos CV × Sienge** `/cancelamento-reservas` · ` 96`
       <sub>views/Office/Comercial/CancelamentoReservas/Index.vue · 1275L (+1 comp.) · 27 texto micro, 1 tabela</sub>
 - [ ] **Reservas** `/reservas-report` · ` 97`
@@ -175,6 +166,12 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Comercial/Imobiliarias/Index.vue · 1457L (+7 comp.) · 1 cor fixa, 7 texto micro, 2 tabela</sub>
 - [ ] **Visão Executiva** `/sobre/relatorio` · ` 99`
       <sub>views/Office/Sobre/Relatorio.vue · 247L · 5 texto micro, 1 tabela</sub>
+- [ ] **Checklists** `/checklists` · `100`
+      <sub>views/Office/Checklist/Index.vue · 3101L (+14 comp.) · 1 tabela</sub>
+- [ ] **Cobrança do Checklist** `/checklists/cobranca` · `100`
+      <sub>views/Office/Checklist/Cobranca.vue · 2898L (+14 comp.) · 1 tabela</sub>
+- [ ] **Checklist** `/checklists/:id` · `100`
+      <sub>views/Office/Checklist/Detail.vue · 2682L (+14 comp.) · 1 tabela</sub>
 
 ### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
 
@@ -200,7 +197,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Plano de Eventos** `/plano-eventos` · `100`
       <sub>views/Office/Marketing/EventPlan/Index.vue · 1328L (+6 comp.) · 1 texto micro</sub>
 - [ ] **Grupos de Workflow** `/workflow/groups` · `100`
-      <sub>views/Office/Comercial/Workflow/Index.vue · 404L · ok</sub>
+      <sub>views/Office/Comercial/Workflow/Index.vue · 407L · ok</sub>
 - [ ] **Fichas Comerciais** `/conditions` · `100`
       <sub>views/Office/Comercial/Conditions/Index.vue · 7725L (+10 comp.) · ok</sub>
 - [ ] **Correspondentes** `/correspondentes` · `100`
@@ -225,7 +222,7 @@ Não seguem o esqueleto de página por natureza (login, shell, home da Eme, inst
 - [ ] **Config** `/` · `--`
       <sub>views/Office/Config/OfficeShell.vue · 212L (+2 comp.) · sem container, sem header, sem help, 1 gráfico</sub>
 - [ ] **Home**  · `--`
-      <sub>views/Office/Home.vue · 56162L (+199 comp.) · sem container, sem header, sem help, 320 cor fixa, 738 texto micro, 7 gráfico, 23 tabela sem mobile</sub>
+      <sub>views/Office/Home.vue · 56246L (+199 comp.) · sem container, sem header, sem help, 317 cor fixa, 723 texto micro, 7 gráfico, 23 tabela sem mobile</sub>
 - [ ] **layouts** `/academy` · `--`
       <sub>views/Academy/layouts/AcademyOfficeArea.vue · 483L (+3 comp.) · sem container, sem header, sem help, 129 cor fixa</sub>
 

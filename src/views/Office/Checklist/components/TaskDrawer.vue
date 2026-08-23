@@ -121,7 +121,18 @@ async function save() {
 }
 async function saveAndClose() { await save(); if (!dirty.value) emit('close'); }
 
-function tryClose() { if (dirty.value && !confirm('Há alterações não salvas. Descartar?')) return; emit('close'); }
+/* Fechar com alteração pendente usa o MESMO diálogo do resto do drawer, em vez
+   da caixa do navegador. E diz o que está em jogo: quantos campos se perdem. */
+function tryClose() {
+    if (!dirty.value) { emit('close'); return; }
+    const n = changedKeys.value.length;
+    confirmState.value = {
+        title: 'Descartar alterações?',
+        message: `${n} campo(s) alterado(s) nesta tarefa não foram salvos e se perdem ao fechar.`,
+        confirmLabel: 'Descartar e fechar', variant: 'danger', icon: 'fas fa-xmark',
+        onConfirm: async () => emit('close'),
+    };
+}
 function onBackdrop() { if (dirty.value) { toast.info('Salve ou descarte as alterações primeiro.'); return; } emit('close'); }
 
 // Menções: autocomplete (aceita nome com espaço) + destaque só de usuários REAIS.
@@ -234,11 +245,11 @@ function onAttachPicked(url) {
 function isImg(a) { return a.kind === 'IMAGE' || (a.mime_type || '').startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp|svg)(\?|$)/i.test(a.url || ''); }
 function attIcon(a) {
     const u = a.url || '';
-    if (a.kind === 'LINK') return 'fas fa-link text-sky-500';
-    if (/\.pdf(\?|$)/i.test(u)) return 'fas fa-file-pdf text-red-500';
-    if (/\.docx?(\?|$)/i.test(u)) return 'fas fa-file-word text-blue-600';
-    if (/\.xlsx?(\?|$)/i.test(u)) return 'fas fa-file-excel text-emerald-600';
-    if (/\.pptx?(\?|$)/i.test(u)) return 'fas fa-file-powerpoint text-orange-500';
+    if (a.kind === 'LINK') return 'fas fa-link text-accent';
+    if (/\.pdf(\?|$)/i.test(u)) return 'fas fa-file-pdf text-data-neg';
+    if (/\.docx?(\?|$)/i.test(u)) return 'fas fa-file-word text-accent';
+    if (/\.xlsx?(\?|$)/i.test(u)) return 'fas fa-file-excel text-data-pos';
+    if (/\.pptx?(\?|$)/i.test(u)) return 'fas fa-file-powerpoint text-data-warn';
     return 'fas fa-file text-ink-subtle';
 }
 
@@ -309,7 +320,13 @@ function fmtWhen(o) { const d = whenOf(o); return d ? dayjs(d).format('DD/MM/YYY
 // ── Comentários como chat: minhas à direita, de outros à esquerda, cor por autor. ──
 const comments = computed(() => data.value?.comments || []);
 function isMine(c) { const id = c.user_id ?? c.author?.id; return myId.value != null && id === myId.value; }
-const AUTHOR_COLORS = ['text-sky-500', 'text-emerald-500', 'text-violet-500', 'text-amber-500', 'text-pink-500', 'text-teal-500', 'text-indigo-500', 'text-rose-500'];
+/* Cor do autor é IDENTIDADE (qual pessoa), não estado — então usa a escala
+   categórica, e não `data-pos`/`data-warn`, que são reservadas. Oito nomes de
+   série distintos: com cor de estado, três autores caíam no mesmo tom. */
+const AUTHOR_COLORS = [
+    'text-series-1', 'text-series-2', 'text-series-3', 'text-series-4',
+    'text-series-5', 'text-series-6', 'text-series-7', 'text-series-8',
+];
 function authorColor(c) { const id = Number(c.user_id ?? c.author?.id ?? 0) || 0; return AUTHOR_COLORS[Math.abs(id) % AUTHOR_COLORS.length]; }
 
 // ── Autorização / aprovação ──
@@ -414,7 +431,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
 </script>
 
 <template>
-    <div class="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-sm animate-fade-in" @mousedown.self="onBackdrop">
+    <div class="fixed inset-0 z-50 flex justify-end bg-surface backdrop-blur-sm animate-fade-in" @mousedown.self="onBackdrop">
         <div class="bg-surface-raised border-l border-line w-full max-w-lg h-full overflow-hidden shadow-overlay flex flex-col animate-slide-up">
 
             <!-- Cabeçalho -->
@@ -433,7 +450,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                     <Badge class="truncate" v-if="dirty" variant="warning" size="sm">não salva</Badge>
                 </div>
                 <div class="flex items-center gap-1">
-                    <button @click="doDelete" title="Excluir tarefa" class="h-8 w-8 grid place-items-center rounded-lg text-ink-subtle hover:text-red-500 hover:bg-red-500/10 transition"><i class="fas fa-trash text-sm"></i></button>
+                    <button @click="doDelete" title="Excluir tarefa" class="h-8 w-8 grid place-items-center rounded-lg text-ink-subtle hover:text-data-neg hover:bg-data-neg/10 transition"><i class="fas fa-trash text-sm"></i></button>
                     <button @click="tryClose" title="Fechar" class="h-8 w-8 grid place-items-center rounded-lg text-ink-muted hover:text-ink hover:bg-surface-sunken transition"><i class="fas fa-xmark"></i></button>
                 </div>
             </div>
@@ -450,25 +467,25 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
 
                 <!-- Painel de autorização / aprovação -->
                 <div v-if="approvalStatus !== 'NONE'" class="rounded-xl border p-3.5"
-                    :class="approvalStatus === 'REJECTED' ? 'border-red-500/30 bg-red-500/5' : approvalStatus === 'APPROVED' ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/5'">
+                    :class="approvalStatus === 'REJECTED' ? 'border-data-neg/30 bg-data-neg/5' : approvalStatus === 'APPROVED' ? 'border-data-pos/30 bg-data-pos/5' : 'border-data-warn/30 bg-data-warn/5'">
                     <div class="flex items-center gap-2 mb-2">
                         <i class="fas fa-user-shield text-ink-muted"></i>
                         <span class="text-sm font-semibold text-ink">Autorização</span>
                         <Badge :variant="APPROVAL_BADGE[approvalStatus]?.v || 'neutral'" size="sm">{{ APPROVAL_BADGE[approvalStatus]?.l || approvalStatus }}</Badge>
-                        <span v-if="locked" class="ml-auto text-[11px] text-ink-subtle"><i class="fas fa-lock"></i> edição bloqueada</span>
+                        <span v-if="locked" class="ml-auto text-micro text-ink-subtle"><i class="fas fa-lock"></i> edição bloqueada</span>
                     </div>
                     <div class="space-y-2.5">
                         <div v-for="p in requiredProfiles" :key="p.id" class="rounded-lg bg-surface-raised border border-line p-2.5">
                             <div class="flex items-center gap-2 mb-1.5">
                                 <span class="text-sm font-medium text-ink">{{ p.name }}</span>
-                                <span v-if="profileProgress(p).rejected" class="text-xs text-red-500 font-semibold">reprovado</span>
-                                <span v-else-if="profileProgress(p).done" class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">aprovado</span>
-                                <span class="ml-auto text-[11px] text-ink-subtle">{{ profileProgress(p).approved }}/{{ profileProgress(p).total }} aprovaram</span>
+                                <span v-if="profileProgress(p).rejected" class="text-xs text-data-neg font-semibold">reprovado</span>
+                                <span v-else-if="profileProgress(p).done" class="text-xs text-data-pos font-semibold">aprovado</span>
+                                <span class="ml-auto text-micro text-ink-subtle">{{ profileProgress(p).approved }}/{{ profileProgress(p).total }} aprovaram</span>
                             </div>
                             <div class="flex flex-wrap gap-1.5">
                                 <span v-for="m in profileProgress(p).byUser" :key="m.userId"
-                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] border"
-                                    :class="m.decision === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : m.decision === 'REJECTED' ? 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20' : 'text-ink-subtle border-line'"
+                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-micro border"
+                                    :class="m.decision === 'APPROVED' ? 'bg-data-pos/10 text-data-pos border-data-pos/20' : m.decision === 'REJECTED' ? 'bg-data-neg/10 text-data-neg border-data-neg/20' : 'text-ink-subtle border-line'"
                                     :title="m.comment || ''">
                                     <i :class="m.decision === 'APPROVED' ? 'fas fa-check' : m.decision === 'REJECTED' ? 'fas fa-xmark' : 'far fa-clock'"></i>{{ m.username }}
                                 </span>
@@ -529,7 +546,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                         <div v-if="draft.needs_authorization" class="mt-2">
                             <label :class="labelBase">Perfis que aprovam (todos os membros precisam aprovar)</label>
                             <MultiSelector :options="profileNames" :model-value="selectedProfileNames" placeholder="Selecionar perfis..." @change="onProfilesChange" />
-                            <p v-if="!profileNames.length" class="text-[11px] text-amber-600 dark:text-amber-400 mt-1">Nenhum perfil cadastrado - peça a um admin para criar na engrenagem do painel.</p>
+                            <p v-if="!profileNames.length" class="text-micro text-data-warn mt-1">Nenhum perfil cadastrado - peça a um admin para criar na engrenagem do painel.</p>
                         </div>
                     </div>
                 </fieldset>
@@ -543,7 +560,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
                         <label class="text-xs font-semibold text-ink-muted uppercase tracking-wide">Subtarefas</label>
-                        <span v-if="(draft.checklist_items || []).length" class="text-[11px] text-ink-subtle">{{ itemsDone }}/{{ draft.checklist_items.length }} feitas</span>
+                        <span v-if="(draft.checklist_items || []).length" class="text-micro text-ink-subtle">{{ itemsDone }}/{{ draft.checklist_items.length }} feitas</span>
                     </div>
                     <div v-if="(draft.checklist_items || []).length" class="h-1 rounded-full bg-surface-sunken overflow-hidden mb-2">
                         <div class="h-full bg-accent rounded-full transition-all" :style="{ width: (itemsDone / draft.checklist_items.length * 100) + '%' }"></div>
@@ -552,7 +569,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                         <div v-for="(it, i) in draft.checklist_items" :key="i" class="flex items-center gap-2 group">
                             <input type="checkbox" :checked="it.done" @change="toggleItem(i)" :disabled="locked" class="h-4 w-4 cursor-pointer rounded shrink-0" />
                             <span class="flex-1 text-sm break-words" :class="it.done ? 'line-through text-ink-subtle' : 'text-ink'">{{ it.text }}</span>
-                            <button v-if="!locked" @click="removeItem(i)" class="text-ink-subtle hover:text-red-500 opacity-0 group-hover:opacity-100 transition shrink-0"><i class="fas fa-xmark text-xs"></i></button>
+                            <button v-if="!locked" @click="removeItem(i)" class="text-ink-subtle hover:text-data-neg opacity-0 group-hover:opacity-100 transition shrink-0"><i class="fas fa-xmark text-xs"></i></button>
                         </div>
                     </div>
                     <div v-if="!locked" class="flex items-center gap-2">
@@ -572,7 +589,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                         </div>
                         <Button size="md" icon="fas fa-plus py-1" :disabled="!attachUrl" @click="addAttach()" class="shrink-0">Adicionar</Button>
                     </div>
-                    <p v-else class="mt-2 text-[11px] text-amber-600 dark:text-amber-400"><i class="fas fa-lock"></i> Em aprovação - anexos bloqueados até a decisão.</p>
+                    <p v-else class="mt-2 text-micro text-data-warn"><i class="fas fa-lock"></i> Em aprovação - anexos bloqueados até a decisão.</p>
 
                     <!-- Mini-visualização (clique abre o visualizador) -->
                     <div v-if="data?.attachments?.length" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
@@ -582,14 +599,14 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                                     <img v-if="isImg(a)" :src="a.url" class="h-full w-full object-cover" loading="lazy" />
                                     <i v-else :class="attIcon(a)" class="text-2xl"></i>
                                 </div>
-                                <p class="text-[11px] text-ink-muted truncate px-2 py-1.5 border-t border-line">{{ a.file_name }}</p>
+                                <p class="text-micro text-ink-muted truncate px-2 py-1.5 border-t border-line">{{ a.file_name }}</p>
                             </button>
                             <div class="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                                <button v-if="isImg(a)" @click.stop="annotateAtt = a" class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-accent shadow-soft" title="Marcar imagem (proofing)"><i class="fas fa-pen text-[10px]"></i></button>
-                                <a :href="a.url" target="_blank" rel="noopener" @click.stop class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-accent shadow-soft" title="Abrir em nova aba"><i class="fas fa-arrow-up-right-from-square text-[10px]"></i></a>
-                                <button v-if="!locked" @click.stop="askRemoveAttachment(a)" class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-red-500 shadow-soft" title="Remover"><i class="fas fa-xmark text-[10px]"></i></button>
+                                <button v-if="isImg(a)" @click.stop="annotateAtt = a" class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-accent shadow-soft" title="Marcar imagem (proofing)"><i class="fas fa-pen text-micro"></i></button>
+                                <a :href="a.url" target="_blank" rel="noopener" @click.stop class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-accent shadow-soft" title="Abrir em nova aba"><i class="fas fa-arrow-up-right-from-square text-micro"></i></a>
+                                <button v-if="!locked" @click.stop="askRemoveAttachment(a)" class="h-6 w-6 grid place-items-center rounded-md bg-surface-overlay/90 text-ink-subtle hover:text-data-neg shadow-soft" title="Remover"><i class="fas fa-xmark text-micro"></i></button>
                             </div>
-                            <span v-if="a.annotated_from_id" class="absolute top-1 left-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-accent text-white shadow-soft"><i class="fas fa-pen"></i> marcação</span>
+                            <span v-if="a.annotated_from_id" class="absolute top-1 left-1 px-1.5 py-0.5 rounded-md text-micro font-semibold bg-accent text-white shadow-soft"><i class="fas fa-pen"></i> marcação</span>
                         </div>
                     </div>
                     <p v-else class="text-xs text-ink-subtle mt-2">Nenhum anexo.</p>
@@ -603,16 +620,16 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                             <div class="max-w-[82%] min-w-0">
                                 <div v-if="!isMine(c)" class="flex items-center gap-1.5 mb-0.5 px-1">
                                     <UserAvatar :name="c.author?.username || 'Usuário'" :size="18" :ring="false" />
-                                    <span class="text-[11px] font-semibold truncate" :class="authorColor(c)">{{ c.author?.username || 'Usuário' }}</span>
+                                    <span class="text-micro font-semibold truncate" :class="authorColor(c)">{{ c.author?.username || 'Usuário' }}</span>
                                 </div>
                                 <div class="rounded-2xl px-3 py-2 text-sm shadow-soft" :class="isMine(c) ? 'bg-accent text-white rounded-br-md' : 'bg-surface-sunken text-ink rounded-bl-md'">
                                     <p v-if="c.body" class="whitespace-pre-wrap break-words"><template v-for="(seg, i) in renderBody(c.body)" :key="i"><span v-if="seg.mention" :class="isMine(c) ? 'font-semibold underline decoration-white/50' : 'text-accent font-medium'">{{ seg.text }}</span><template v-else>{{ seg.text }}</template></template></p>
                                     <button v-if="c.image_url" type="button" @click="viewerAtt = { url: c.image_url, file_name: c.annotated_from_id ? 'Marcação' : 'Imagem', kind: 'IMAGE' }" class="block" :class="c.body ? 'mt-1.5' : ''">
                                         <img :src="c.image_url" class="max-h-44 rounded-lg border border-black/10" loading="lazy" />
-                                        <span v-if="c.annotated_from_id" class="block text-[10px] mt-0.5 opacity-80"><i class="fas fa-pen"></i> marcação sobre anexo</span>
+                                        <span v-if="c.annotated_from_id" class="block text-micro mt-0.5 opacity-80"><i class="fas fa-pen"></i> marcação sobre anexo</span>
                                     </button>
                                 </div>
-                                <p class="text-[10px] text-ink-subtle mt-0.5 px-1" :class="isMine(c) ? 'text-right' : 'text-left'">{{ fmtWhen(c) }}</p>
+                                <p class="text-micro text-ink-subtle mt-0.5 px-1" :class="isMine(c) ? 'text-right' : 'text-left'">{{ fmtWhen(c) }}</p>
                             </div>
                         </div>
                         <p v-if="!comments.length" class="text-xs text-ink-subtle text-center py-3">Nenhum comentário ainda. Comece a conversa.</p>
@@ -637,10 +654,10 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                     <ul v-show="historyOpen" class="mt-3 space-y-3">
                         <li v-for="ev in data.activity.slice(0, 20)" :key="ev.id" class="flex gap-3 text-xs">
                             <UserAvatar v-if="ev.actor?.username" :name="ev.actor.username" :size="24" :ring="false" class="mt-0.5" />
-                            <span v-else class="h-6 w-6 grid place-items-center rounded-full bg-surface-sunken text-ink-subtle shrink-0 mt-0.5"><i :class="actionMeta(ev.action).icon" class="text-[10px]"></i></span>
+                            <span v-else class="h-6 w-6 grid place-items-center rounded-full bg-surface-sunken text-ink-subtle shrink-0 mt-0.5"><i :class="actionMeta(ev.action).icon" class="text-micro"></i></span>
                             <div class="min-w-0 flex-1">
                                 <p class="text-ink-muted">
-                                    <i :class="actionMeta(ev.action).icon" class="text-ink-subtle text-[10px] mr-1"></i>
+                                    <i :class="actionMeta(ev.action).icon" class="text-ink-subtle text-micro mr-1"></i>
                                     <span class="font-medium text-ink">{{ ev.actor?.username || 'Sistema' }}</span>
                                     {{ actionMeta(ev.action).label }}<span v-if="!changeLines(ev).length">{{ fallbackFields(ev) }}</span>
                                     <span class="text-ink-subtle"> · {{ fmtWhen(ev) }}</span>
@@ -649,7 +666,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                                     <li v-for="(ln, i) in changeLines(ev)" :key="i" class="text-ink-subtle">
                                         <span class="text-ink-muted">{{ ln.field }}:</span>
                                         <span class="line-through opacity-60">{{ ln.from }}</span>
-                                        <i class="fas fa-arrow-right-long mx-1 text-[9px]"></i>
+                                        <i class="fas fa-arrow-right-long mx-1 text-micro"></i>
                                         <span class="text-ink font-medium">{{ ln.to }}</span>
                                     </li>
                                 </ul>
@@ -662,7 +679,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
 
             <!-- Rodapé: em aprovação fica bloqueado -->
             <div v-if="data?.task && locked" class="border-t border-line px-5 py-3.5 bg-surface shrink-0 space-y-2 text-center">
-                <p class="text-sm text-amber-600 dark:text-amber-400 font-medium"><i class="fas fa-lock"></i> Em aprovação - edição bloqueada até a decisão.</p>
+                <p class="text-sm text-data-warn font-medium"><i class="fas fa-lock"></i> Em aprovação - edição bloqueada até a decisão.</p>
                 <Button v-if="canCancelApproval" variant="outline" size="sm" icon="fas fa-rotate-left" @click="askCancelApproval">Voltar para ajuste (cancela a autorização)</Button>
             </div>
 
@@ -682,7 +699,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
                 <div class="flex items-center gap-2">
                     <Button :loading="saving" :disabled="saving || (!dirty && !notifyOn)" icon="fas fa-floppy-disk" @click="save">Salvar</Button>
                     <Button variant="outline" :disabled="saving || (!dirty && !notifyOn)" @click="saveAndClose">Salvar e fechar</Button>
-                    <span class="text-xs ml-auto" :class="dirty ? 'text-amber-500' : 'text-ink-subtle'">{{ dirty ? 'Alterações pendentes' : (notifyOn ? 'Salvar p/ notificar' : 'Tudo salvo') }}</span>
+                    <span class="text-xs ml-auto" :class="dirty ? 'text-data-warn' : 'text-ink-subtle'">{{ dirty ? 'Alterações pendentes' : (notifyOn ? 'Salvar p/ notificar' : 'Tudo salvo') }}</span>
                 </div>
             </div>
         </div>
@@ -693,7 +710,7 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
         <!-- Confirmação (excluir tarefa / anexo) -->
         <Modal :open="!!confirmState" size="sm" :title="confirmState?.title" @close="confirmCancel">
             <div class="flex items-start gap-3">
-                <span class="h-9 w-9 grid place-items-center rounded-full shrink-0" :class="confirmState?.variant === 'primary' ? 'bg-accent-soft text-accent' : 'bg-red-500/10 text-red-500'">
+                <span class="h-9 w-9 grid place-items-center rounded-full shrink-0" :class="confirmState?.variant === 'primary' ? 'bg-accent-soft text-accent' : 'bg-data-neg/10 text-data-neg'">
                     <i :class="confirmState?.variant === 'primary' ? 'fas fa-paper-plane' : 'fas fa-triangle-exclamation'"></i>
                 </span>
                 <p class="text-sm text-ink-muted">{{ confirmState?.message }}</p>

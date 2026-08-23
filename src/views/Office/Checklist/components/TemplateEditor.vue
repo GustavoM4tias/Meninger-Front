@@ -1,4 +1,5 @@
 <script setup>
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { ref, onMounted } from 'vue';
 import { useToast } from 'vue-toastification';
 import api from '@/utils/Checklist/api.js';
@@ -48,14 +49,21 @@ async function saveTemplate() {
     try { await api.updateTemplate(data.value.template.id, { name: data.value.template.name, description: data.value.template.description, is_active: data.value.template.is_active }); toast.success('Modelo salvo.'); }
     catch (e) { toast.error(e.message); } finally { saving.value = false; }
 }
+/* Um diálogo por vez: { tipo, alvo }. Antes eram três `confirm()` do navegador,
+   e nenhum dizia o que ia junto. */
+const dialogo = ref(null);
+const fecharDialogo = () => { dialogo.value = null; };
+
 async function deleteTemplate() {
-    if (!confirm(`Excluir o modelo "${data.value.template.name}"?`)) return;
-    try { await api.deleteTemplate(data.value.template.id); selectedId.value = null; await loadList(); toast.success('Modelo excluído.'); }
+    try { await api.deleteTemplate(data.value.template.id); selectedId.value = null; await loadList(); toast.success('Modelo excluído.'); fecharDialogo(); }
     catch (e) { toast.error(e.message); }
 }
 async function addSection() { try { await api.saveTemplateSection(data.value.template.id, { name: 'Nova seção' }); await loadOne(); } catch (e) { toast.error(e.message); } }
 async function saveSection(s) { try { await api.saveTemplateSection(data.value.template.id, { id: s.id, name: s.name, color: s.color }); toast.success('Seção salva.'); } catch (e) { toast.error(e.message); } }
-async function removeSection(s) { if (!confirm(`Excluir a seção "${s.name}" e suas tarefas-modelo?`)) return; try { await api.removeTemplateSection(s.id); await loadOne(); } catch (e) { toast.error(e.message); } }
+async function removeSection(s) {
+    try { await api.removeTemplateSection(s.id); await loadOne(); fecharDialogo(); }
+    catch (e) { toast.error(e.message); }
+}
 async function addItem(sectionId) { try { await api.saveTemplateItem(data.value.template.id, { section_id: sectionId, title: 'Nova tarefa', due_anchor: 'TODAY', due_offset_days: 0, default_priority: 'MEDIUM' }); await loadOne(); } catch (e) { toast.error(e.message); } }
 async function saveItem(it) {
     try {
@@ -69,7 +77,10 @@ async function saveItem(it) {
         toast.success('Tarefa-modelo salva.');
     } catch (e) { toast.error(e.message); }
 }
-async function removeItem(it) { if (!confirm('Excluir esta tarefa-modelo?')) return; try { await api.removeTemplateItem(it.id); await loadOne(); } catch (e) { toast.error(e.message); } }
+async function removeItem(it) {
+    try { await api.removeTemplateItem(it.id); await loadOne(); fecharDialogo(); }
+    catch (e) { toast.error(e.message); }
+}
 
 const fieldCls = 'rounded-lg border border-line bg-surface-raised text-ink px-2.5 h-9 text-sm focus-ring';
 </script>
@@ -96,7 +107,7 @@ const fieldCls = 'rounded-lg border border-line bg-surface-raised text-ink px-2.
                 </div>
                 <div class="flex items-center gap-2 mt-3">
                     <Button size="sm" icon="fas fa-floppy-disk" :loading="saving" @click="saveTemplate">Salvar modelo</Button>
-                    <Button v-if="!data.template.is_default" variant="danger" size="sm" icon="fas fa-trash" @click="deleteTemplate">Excluir modelo</Button>
+                    <Button v-if="!data.template.is_default" variant="danger" size="sm" icon="fas fa-trash" @click="dialogo = { tipo: 'modelo' }">Excluir modelo</Button>
                     <span v-else class="text-xs text-ink-subtle">Modelo padrão (não excluível)</span>
                 </div>
             </div>
@@ -107,7 +118,7 @@ const fieldCls = 'rounded-lg border border-line bg-surface-raised text-ink px-2.
                     <input type="color" :value="s.color || '#64748b'" @input="s.color = $event.target.value" class="w-8 h-8 rounded-lg border border-line bg-surface p-0.5 cursor-pointer shrink-0" title="Cor da seção" />
                     <input v-model="s.name" placeholder="Nome da seção" :class="[fieldCls, 'flex-1 font-semibold']" />
                     <Button size="sm" variant="outline" @click="saveSection(s)">Salvar</Button>
-                    <Button size="sm" variant="ghost" icon="fas fa-trash" class="!text-red-500" @click="removeSection(s)" />
+                    <Button size="sm" variant="ghost" icon="fas fa-trash" class="!text-data-neg" @click="dialogo = { tipo: 'secao', alvo: s }" />
                 </div>
 
                 <div class="space-y-2">
@@ -133,7 +144,7 @@ const fieldCls = 'rounded-lg border border-line bg-surface-raised text-ink px-2.
                             </label>
                             <div class="ml-auto inline-flex gap-1.5">
                                 <Button size="sm" variant="outline" icon="fas fa-floppy-disk" @click="saveItem(it)">Salvar</Button>
-                                <Button size="sm" variant="ghost" icon="fas fa-trash" class="!text-red-500" @click="removeItem(it)" />
+                                <Button size="sm" variant="ghost" icon="fas fa-trash" class="!text-data-neg" @click="dialogo = { tipo: 'item', alvo: it }" />
                             </div>
                         </div>
                     </div>
@@ -142,7 +153,27 @@ const fieldCls = 'rounded-lg border border-line bg-surface-raised text-ink px-2.
             </div>
 
             <Button size="sm" variant="outline" icon="fas fa-plus" @click="addSection">Nova seção</Button>
-            <p class="text-[11px] text-ink-subtle mt-2">"Dias a partir de hoje": o prazo da tarefa = data de criação do checklist + N dias (ex.: 7 = uma semana depois). Use negativo para "antes" dos marcos Meeting/Abertura.</p>
+            <p class="text-micro text-ink-subtle mt-2">"Dias a partir de hoje": o prazo da tarefa = data de criação do checklist + N dias (ex.: 7 = uma semana depois). Use negativo para "antes" dos marcos Meeting/Abertura.</p>
         </template>
     </div>
+
+    <ConfirmDialog :open="dialogo?.tipo === 'modelo'" tone="danger"
+        :title="`Excluir o modelo ${data?.template?.name}?`"
+        consequence="Checklists já criados a partir dele continuam existindo e não mudam; só não dá mais para criar novos por este modelo."
+        confirm-label="Excluir modelo"
+        @confirm="deleteTemplate" @cancel="fecharDialogo" />
+
+    <ConfirmDialog :open="dialogo?.tipo === 'secao'" tone="danger"
+        :title="`Excluir a seção ${dialogo?.alvo?.name}?`"
+        consequence="As tarefas-modelo dentro dela somem junto."
+        hint="Só o modelo muda; checklists já criados ficam como estão."
+        confirm-label="Excluir seção"
+        @confirm="removeSection(dialogo.alvo)" @cancel="fecharDialogo" />
+
+    <ConfirmDialog :open="dialogo?.tipo === 'item'" tone="danger"
+        :title="`Excluir a tarefa-modelo ${dialogo?.alvo?.title}?`"
+        consequence="Novos checklists deste modelo passam a nascer sem ela."
+        hint="Checklists já criados ficam como estão."
+        confirm-label="Excluir tarefa-modelo"
+        @confirm="removeItem(dialogo.alvo)" @cancel="fecharDialogo" />
 </template>

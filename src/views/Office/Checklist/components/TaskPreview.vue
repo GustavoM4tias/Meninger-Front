@@ -43,7 +43,7 @@ const style = computed(() => {
             <span v-if="fmt(task.contracted_at)"><i class="fas fa-file-signature"></i> {{ fmt(task.contracted_at) }}</span>
             <span v-if="fmt(task.due_date)"><i class="fas fa-clock"></i> {{ fmt(task.due_date) }}</span>
         </div>
-        <p v-if="task.category" class="text-[11px] text-ink-subtle mb-1.5"><i class="fas fa-layer-group"></i> {{ task.category }}</p>
+        <p v-if="task.category" class="text-micro text-ink-subtle mb-1.5"><i class="fas fa-layer-group"></i> {{ task.category }}</p>
         <p v-if="task.description" class="text-xs text-ink-muted line-clamp-3 border-t border-line pt-2 whitespace-pre-wrap">{{ task.description }}</p>
         <div class="flex gap-3 text-xs text-ink-subtle mt-2">
             <span><i class="fas fa-paperclip"></i> {{ task.attachments_count || 0 }} anexo(s)</span>

@@ -77,26 +77,26 @@ function onLeave() { clearTimeout(hoverTimer); hover.value = null; }
                     :class="draggedId === t.id ? 'opacity-40' : ''">
                     <div class="flex items-start gap-2">
                         <p class="text-sm font-medium text-ink leading-snug flex-1 min-w-0 group-hover:text-accent transition-colors">{{ t.title }}</p>
-                        <span v-if="prio(t)" class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                        <span v-if="prio(t)" class="shrink-0 text-micro font-semibold px-1.5 py-0.5 rounded-md"
                             :style="{ color: prio(t).c, background: prio(t).c + '1a' }">{{ prio(t).l }}</span>
                     </div>
-                    <p v-if="sectionName(t.section_id)" class="text-[11px] text-ink-subtle mt-1 truncate">{{ sectionName(t.section_id) }}</p>
-                    <div class="flex items-center gap-2 mt-2.5 text-[11px] text-ink-subtle">
+                    <p v-if="sectionName(t.section_id)" class="text-micro text-ink-subtle mt-1 truncate">{{ sectionName(t.section_id) }}</p>
+                    <div class="flex items-center gap-2 mt-2.5 text-micro text-ink-subtle">
                         <span v-if="t.due_date" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md"
-                            :class="isOverdue(t) ? 'bg-red-500/10 text-red-500 font-semibold' : 'bg-surface-sunken text-ink-muted'">
+                            :class="isOverdue(t) ? 'bg-data-neg/10 text-data-neg font-semibold' : 'bg-surface-sunken text-ink-muted'">
                             <i class="fas fa-clock"></i>{{ fmtShort(t.due_date) }}
                         </span>
                         <span v-if="t.attachments_count" class="inline-flex items-center gap-0.5"><i class="fas fa-paperclip"></i>{{ t.attachments_count }}</span>
                         <span v-if="t.comments_count" class="inline-flex items-center gap-0.5"><i class="fas fa-comment"></i>{{ t.comments_count }}</span>
                         <span v-if="t.assignee" class="ml-auto inline-flex items-center gap-1" :title="t.assignee.username">
-                            <span class="h-5 w-5 rounded-full bg-gradient-to-br from-accent-soft to-surface-sunken text-accent text-[9px] font-semibold grid place-items-center uppercase ring-1 ring-line">{{ initials(t.assignee.username) }}</span>
+                            <span class="h-5 w-5 rounded-full bg-gradient-to-br from-accent-soft to-surface-sunken text-accent text-micro font-semibold grid place-items-center uppercase ring-1 ring-line">{{ initials(t.assignee.username) }}</span>
                             <span v-if="(t.assignee_user_ids || []).length > 1" class="text-ink-subtle">+{{ t.assignee_user_ids.length - 1 }}</span>
                         </span>
                         <span v-else-if="t.assignee_label" class="ml-auto truncate max-w-[7rem]" :title="t.assignee_label">{{ t.assignee_label }}</span>
                     </div>
                 </div>
 
-                <p v-if="!col.tasks.length" class="text-center text-[11px] text-ink-subtle py-6 select-none">
+                <p v-if="!col.tasks.length" class="text-center text-micro text-ink-subtle py-6 select-none">
                     {{ dragOverCol === col.key ? 'Solte aqui' : 'Sem tarefas' }}
                 </p>
             </div>

@@ -1,4 +1,5 @@
 <script setup>
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { computed, ref, onMounted } from 'vue';
 import dayjs from 'dayjs';
 import { useChecklistStore } from '@/stores/Checklist/checklistStore.js';
@@ -80,7 +81,16 @@ function bulkAssignee(secId, e) { store.bulkApplyTo(selectedInSection(secId), { 
 function bulkPriority(secId, e) { if (e.target.value) store.bulkApplyTo(selectedInSection(secId), { priority: e.target.value }); e.target.value = ''; }
 function bulkDue(secId, e) { store.bulkApplyTo(selectedInSection(secId), { due_date: e.target.value || null }); }
 function bulkShift(secId) { store.bulkApplyTo(selectedInSection(secId), { shiftDays: Number(shiftN.value) || 0 }); }
-function bulkDelete(secId) { const ids = selectedInSection(secId); if (confirm(`Excluir ${ids.length} tarefa(s)?`)) store.bulkApplyTo(ids, { delete: true }); }
+/* Exclusão em lote: a contagem entra no diálogo, não numa caixa do navegador. */
+const exclusaoLote = ref(null);   // { secId, ids }
+function bulkDelete(secId) {
+    const ids = selectedInSection(secId);
+    if (ids.length) exclusaoLote.value = { secId, ids };
+}
+function confirmarExclusaoLote() {
+    store.bulkApplyTo(exclusaoLote.value.ids, { delete: true });
+    exclusaoLote.value = null;
+}
 // Mover selecionadas para uma categoria (facilita reorganizar em lote).
 const bulkCat = ref({});
 function bulkMoveCategory(secId) {
@@ -184,7 +194,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ background: sec.color || '#64748b' }"></span>
                 <h3 class="font-semibold text-ink">{{ sec.name }}</h3>
                 <span class="text-xs text-ink-subtle bg-surface-sunken px-1.5 py-0.5 rounded-md">{{ topTasks(sec.id).length }}</span>
-                <span v-if="canDrag" class="ml-auto text-[11px] text-ink-subtle inline-flex items-center gap-1"><i class="fas fa-up-down-left-right"></i> arraste para reordenar</span>
+                <span v-if="canDrag" class="ml-auto text-micro text-ink-subtle inline-flex items-center gap-1"><i class="fas fa-up-down-left-right"></i> arraste para reordenar</span>
             </div>
 
             <!-- Barra de edição em lote -->
@@ -215,7 +225,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border-collapse">
                     <thead>
-                        <tr class="text-ink-subtle text-[11px] uppercase tracking-wide border-b border-line bg-surface-sunken/20">
+                        <tr class="text-ink-subtle text-micro uppercase tracking-wide border-b border-line bg-surface-sunken/20">
                             <th class="w-9 px-2 py-2"></th>
                             <th class="px-3 py-2 text-left font-semibold">Tarefa</th>
                             <th class="w-52 px-3 py-2 text-left font-semibold">Anotação</th>
@@ -229,7 +239,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                         <template v-for="cat in categoriesOf(sec.id)" :key="cat || 'geral'">
                             <tr v-if="cat" class="bg-surface-sunken/30" @dragover="onRowDragOver({ id: null }, $event)" @drop="onDrop(null, sec.id, cat)">
                                 <td></td>
-                                <td colspan="6" class="px-3 py-1.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wide">{{ cat }}</td>
+                                <td colspan="6" class="px-3 py-1.5 text-micro font-semibold text-ink-muted uppercase tracking-wide">{{ cat }}</td>
                             </tr>
                             <tr v-for="t in tasksByCategory(sec.id, cat)" :key="t.id"
                                 :draggable="canDrag"
@@ -244,7 +254,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                                 ]"
                                 @mouseenter="onHover(t, $event)" @mouseleave="onLeave">
                                 <td class="px-2 py-1.5 text-center align-middle whitespace-nowrap">
-                                    <i v-if="canDrag" class="fas fa-grip-vertical text-[11px] text-ink-subtle/40 group-hover:text-ink-subtle mr-1" title="Arraste para reordenar ou mover de categoria"></i>
+                                    <i v-if="canDrag" class="fas fa-grip-vertical text-micro text-ink-subtle/40 group-hover:text-ink-subtle mr-1" title="Arraste para reordenar ou mover de categoria"></i>
                                     <input v-if="canManage" type="checkbox" :checked="store.isSelected(t.id)" @change="store.toggleSelect(t.id)" class="h-4 w-4 cursor-pointer rounded align-middle" />
                                 </td>
                                 <td class="px-3 py-1.5 align-middle">
@@ -274,7 +284,7 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                                 </td>
                                 <td class="px-2 py-1.5 align-middle">
                                     <input type="date" :value="t.due_date || ''" :disabled="!canManage" @change="store.patchTask(t.id, { due_date: $event.target.value || null })"
-                                        class="text-center -me-6" :class="[cellInput, t.due_date && t.due_date < today && t.state_class !== 'DONE' ? '!text-red-500 font-semibold' : 'text-ink-muted']" />
+                                        class="text-center -me-6" :class="[cellInput, t.due_date && t.due_date < today && t.state_class !== 'DONE' ? '!text-data-neg font-semibold' : 'text-ink-muted']" />
                                 </td>
                                 <td class="px-2 py-1.5 text-right align-middle">
                                     <button @click="emit('open-task', t.id)" title="Abrir" class="text-ink-subtle hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity focus-ring rounded"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
@@ -356,5 +366,12 @@ const bulkCtrl = 'text-xs rounded-lg border border-line bg-surface-raised text-i
                 <Button variant="primary" size="sm" icon="fas fa-flag-checkered" @click="confirmDone">Concluir</Button>
             </template>
         </Modal>
+
+        <ConfirmDialog :open="!!exclusaoLote" tone="danger"
+            :title="`Excluir ${exclusaoLote?.ids.length} tarefa(s)?`"
+            consequence="Comentários, anexos e histórico de cada uma somem junto."
+            hint="Não tem desfazer. Para tirar do caminho sem perder, mova para um status Cancelada/N-A."
+            confirm-label="Excluir tarefas"
+            @confirm="confirmarExclusaoLote" @cancel="exclusaoLote = null" />
     </div>
 </template>

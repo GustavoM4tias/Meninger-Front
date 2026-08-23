@@ -10,13 +10,16 @@ const TODAY = dayjs().format('YYYY-MM-DD');
 const allTasks = computed(() => (store.current?.tasks || []).filter((t) => !t.parent_task_id));
 const sections = computed(() => store.current?.sections || []);
 
-// Marcos (datas de referência) com cor própria — rotuladas na legenda, não sobre a linha.
-const MILESTONE_COLORS = ['#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'];
+// Marcos (datas de referência) com cor própria — rotuladas na legenda, não sobre
+// a linha. Cor de marco é IDENTIDADE, então vem da escala categórica do sistema
+// e acompanha o tema; hex fixo ficava igual no claro e no escuro.
+const t = useChartTheme();
+const MILESTONE_COLORS = computed(() => [1, 2, 3, 4, 5].map((n) => t.color(n)));
 const keyDates = computed(() =>
     (store.current?.checklist?.key_dates || [])
         .filter((k) => k.date)
         .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-        .map((k, i) => ({ ...k, color: MILESTONE_COLORS[i % MILESTONE_COLORS.length] })),
+        .map((k, i) => ({ ...k, color: MILESTONE_COLORS.value[i % MILESTONE_COLORS.value.length] })),
 );
 
 const range = computed(() => {
@@ -82,10 +85,10 @@ const fmt = (d) => (d ? dayjs(d).format('DD/MM/YY') : '');
                 <div class="min-w-[760px]">
                     <!-- Cabeçalho: eixo de meses -->
                     <div class="flex border-b border-line bg-surface-sunken/40 sticky top-0 z-20">
-                        <div class="w-48 shrink-0 px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wide border-r border-line">Tarefa</div>
+                        <div class="w-48 shrink-0 px-3 py-2.5 text-micro font-semibold text-ink-muted uppercase tracking-wide border-r border-line">Tarefa</div>
                         <div class="flex-1 relative h-9">
                             <div v-for="m in months" :key="'m' + m.left" class="absolute bottom-1.5 -translate-x-1/2 flex flex-col items-center" :style="{ left: m.left + '%' }">
-                                <span class="text-[10px] font-medium text-ink-subtle whitespace-nowrap">{{ m.label }}</span>
+                                <span class="text-micro font-medium text-ink-subtle whitespace-nowrap">{{ m.label }}</span>
                             </div>
                         </div>
                     </div>
@@ -117,10 +120,10 @@ const fmt = (d) => (d ? dayjs(d).format('DD/MM/YY') : '');
                                     <template v-if="t.due_date">
                                         <div class="absolute h-4 top-2 rounded-md shadow-soft ring-1 ring-black/5" :style="barStyle(t)"
                                             :title="`${t.title}${t.contracted_at ? ' · ' + fmt(t.contracted_at) + ' → ' : ' · '}${fmt(t.due_date)}`"></div>
-                                        <span class="absolute top-1.5 text-[10px] text-ink-subtle whitespace-nowrap"
+                                        <span class="absolute top-1.5 text-micro text-ink-subtle whitespace-nowrap"
                                             :style="{ left: `calc(${pct(t.due_date)}% + 6px)` }">{{ fmt(t.due_date) }}</span>
                                     </template>
-                                    <span v-else class="absolute left-2 top-2 text-[10px] text-ink-subtle italic">sem prazo</span>
+                                    <span v-else class="absolute left-2 top-2 text-micro text-ink-subtle italic">sem prazo</span>
                                 </div>
                             </div>
                         </template>
