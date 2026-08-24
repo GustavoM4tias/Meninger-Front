@@ -40,6 +40,10 @@ import { RELATORIOS } from '@/views/Office/Comercial/Relatorios/relatorios';
  *   iconColor — (opcional) cor fixa do ícone (ex.: '#25D366'); usa o glifo da marca
  *   section   — (opcional) query param ?section= para navegação interna
  *   adminOnly — (opcional) true = visível apenas para admin (trava de CÓDIGO)
+ *   hiddenInNav — (opcional) true = NÃO aparece no menu, mas continua existindo
+ *                 para alçadas, busca e links. Use quando a tela virou ABA de
+ *                 outra: a rota precisa sobreviver (é ela que a permissão
+ *                 nomeia), mas dois itens de menu para a mesma tela confundem.
  *
  * ─── Como uma tela vira exclusiva de admin ────────────────────────────────────
  *   a) PELA TELA DE ALÇADAS (padrão, sem deploy): o admin liga "somente admin"
@@ -357,7 +361,12 @@ export const navRegistry = [
                     // Delegável desde 2026-08-20: redigir, definir público e
                     // publicar vão por alçada; EXCLUIR comunicado segue admin
                     // (some com a trilha de leitura) — ver screenCapabilities.
-                    { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack' },
+                    //
+                    // hiddenInNav desde 2026-08-24: a gestão virou a aba "Gestão"
+                    // dentro de /mural. A entrada continua aqui porque é ela que
+                    // a tela de Alçadas lista e que as capacidades nomeiam —
+                    // tirá-la daqui tornaria a delegação impossível de configurar.
+                    { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack', hiddenInNav: true },
                     // Preferências do próprio usuário — permissionManaged:false → visíveis a todos.
                     { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
                     { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false },

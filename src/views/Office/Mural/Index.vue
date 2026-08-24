@@ -1,126 +1,101 @@
 <script setup>
-// Mural de Avisos — visão do USUÁRIO. Lista os comunicados ativos direcionados
-// a ele (já ordenados no backend: fixados/urgentes primeiro) e permite confirmar
-// a ciência ("Li e estou ciente") dos que exigem.
-
-import { ref, onMounted } from 'vue';
+// Mural de avisos: UMA tela, dois papéis.
+//
+// Eram duas telas com o mesmo nome no menu - "Mural de Avisos" e "Gestão do
+// Mural" - e a mesma pessoa transitava entre elas o tempo todo: quem publica
+// comunicado também recebe comunicado. Agora a gestão é uma ABA daqui, oferecida
+// a quem tem a capacidade da tela.
+//
+// A permissão continua sendo a do backend: `useCan('/mural/admin')` consulta as
+// capacidades que o servidor mandou prontas (lib/screenCapabilities.js). Esconder
+// a aba é COSMÉTICO - quem barra de verdade é o requireCapability em cada rota
+// da API. Nunca escrever `role === 'admin'` aqui.
+import { computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useMuralStore } from '@/stores/Mural/muralStore';
+import { useCan } from '@/composables/useCan';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Badge from '@/components/UI/Badge.vue';
-import Button from '@/components/UI/Button.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
-import { kindMeta, formatDate, formatDateTime } from '@/utils/Mural/muralFormat';
+import MuralAvisos from './components/MuralAvisos.vue';
+import MuralGestao from './components/MuralGestao.vue';
 
+const route = useRoute();
+const router = useRouter();
 const store = useMuralStore();
-const ackingId = ref(null);
+const can = useCan('/mural/admin');
 
-onMounted(() => {
-    store.fetchMine();
-    store.fetchPending();
+const podeGerir = computed(() => can('view') || can('manage'));
+
+// A aba vive na URL: /mural?tab=gestao. É o que mantém de pé o link antigo de
+// /mural/admin (a rota aponta para cá) e o que deixa a aba de gestão ser
+// compartilhada por link.
+const aba = computed({
+  get() {
+    const q = String(route.query.tab || '').toLowerCase();
+    const querGestao = q === 'gestao' || route.path.startsWith('/mural/admin');
+    return querGestao && podeGerir.value ? 'gestao' : 'avisos';
+  },
+  set(v) {
+    router.replace({ path: '/mural', query: v === 'gestao' ? { tab: 'gestao' } : {} });
+  },
 });
 
-async function confirm(c) {
-    ackingId.value = c.id;
-    try {
-        await store.ack(c.id);
-    } finally {
-        ackingId.value = null;
-    }
-}
+// Quem chega em /mural/admin cai na tela nova sem perceber, com a aba certa e a
+// URL limpa. Sem isto, a rota antiga ficaria com duas verdades na barra.
+watch(() => route.path, (p) => {
+  if (p.startsWith('/mural/admin')) {
+    router.replace({ path: '/mural', query: { tab: 'gestao' } });
+  }
+}, { immediate: true });
+
+const abas = computed(() => {
+  const lista = [
+    { value: 'avisos', label: 'Avisos', icon: 'fas fa-bullhorn', count: store.items.length || undefined },
+  ];
+  if (podeGerir.value) {
+    lista.push({ value: 'gestao', label: 'Gestão', icon: 'fas fa-sliders' });
+  }
+  return lista;
+});
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="full">
-      <PageHeader
-        title="Mural de Avisos"
-        subtitle="Comunicados e avisos internos direcionados a você."
-        icon="fas fa-bullhorn">
-        <template #actions>
-          <PageHelp
-            storage-key="mural"
-            title="Como usar o Mural"
-            intro="O Mural traz os comunicados internos endereçados a você. O que aparece aqui depende do público que quem publicou escolheu, então dois colegas podem ver murais diferentes."
-            :steps="[
-              { title: 'Leia os avisos', text: 'Os comunicados vêm do mais recente para o mais antigo. Os que você ainda não abriu ficam destacados.' },
-              { title: 'Dê ciência', text: 'Comunicado que pede confirmação só sai da sua lista quando você confirma. Quem publicou acompanha quem já deu ciência.' },
-            ]"
-            :tips="[
-              'O sino no topo avisa de comunicado novo mesmo sem esta tela aberta.',
-              'Não achou um aviso que alguém citou? Ele pode ter sido dirigido a outro público.',
-            ]" />
-          <Badge v-if="store.hasPending" variant="warning" size="md">
-            <i class="fas fa-clock"></i>
-            {{ store.pending }} pendente{{ store.pending > 1 ? 's' : '' }}
-          </Badge>
-        </template>
-      </PageHeader>
+  <PageContainer size="full">
+    <PageHeader
+      title="Mural de avisos"
+      :subtitle="aba === 'gestao'
+        ? 'Escrever, publicar e acompanhar a leitura dos comunicados.'
+        : 'Comunicados internos direcionados a você.'"
+      icon="fas fa-bullhorn">
+      <template #actions>
+        <PageHelp
+          storage-key="mural"
+          title="Como usar o Mural"
+          intro="O Mural é o canal de comunicado interno. Em Avisos ficam os que foram endereçados a você; em Gestão, para quem tem a alçada, é onde eles são escritos e publicados."
+          :steps="[
+            { title: 'Resolva o que espera por você', text: 'Comunicado que pede confirmação aparece separado, no topo. Confirmar registra o seu nome e a data.' },
+            { title: 'Leia o resto', text: 'Abaixo ficam os demais comunicados ativos, do mais recente para o mais antigo.' },
+            { title: 'Publicando (aba Gestão)', text: 'Escreva, escolha o público e publique. Publicar dispara a notificação; antes disso é rascunho e ninguém vê.' },
+          ]"
+          :tips="[
+            'O que aparece depende do público que quem publicou escolheu, então dois colegas veem murais diferentes.',
+            'Os comunicados também chegam na sua caixa de notificações, e a confirmação pode ser dada de lá.',
+          ]" />
+        <Badge v-if="store.hasPending && aba === 'avisos'" variant="warning" size="md">
+          <i class="fas fa-clock"></i>
+          {{ store.pending }} pendente{{ store.pending > 1 ? 's' : '' }}
+        </Badge>
+      </template>
+    </PageHeader>
 
-      <div v-if="store.loading" class="py-16 grid place-items-center text-ink-subtle">
-        <i class="fas fa-circle-notch fa-spin text-2xl"></i>
-      </div>
+    <div v-if="podeGerir" class="mb-4">
+      <SegmentedControl v-model="aba" :options="abas" size="sm" />
+    </div>
 
-      <EmptyState
-        v-else-if="!store.items.length"
-        icon="fas fa-bullhorn"
-        title="Nenhum aviso ativo"
-        description="Quando houver comunicados direcionados a você, eles aparecem aqui." />
-
-      <div v-else class="space-y-3 max-w-3xl">
-        <article
-          v-for="c in store.items"
-          :key="c.id"
-          class="rounded-xl border bg-surface-raised shadow-soft surface-gradient overflow-hidden"
-          :class="c.kind === 'URGENTE' ? 'border-data-neg/30' : c.pinned ? 'border-accent/30' : 'border-line'">
-          <div class="p-4">
-            <div class="flex items-start justify-between gap-3">
-              <div class="flex items-center gap-2 flex-wrap">
-                <Badge :variant="kindMeta(c.kind).badge" size="md">
-                  <i :class="kindMeta(c.kind).icon"></i> {{ kindMeta(c.kind).label }}
-                </Badge>
-                <Badge v-if="c.pinned" variant="accent" size="sm">
-                  <i class="fas fa-thumbtack"></i> Fixado
-                </Badge>
-                <span v-if="c.publishedAt" class="text-xs text-ink-subtle">{{ formatDate(c.publishedAt) }}</span>
-              </div>
-              <Badge v-if="c.acked" variant="success" size="sm">
-                <i class="fas fa-check"></i> Ciente
-              </Badge>
-            </div>
-
-            <h3 class="mt-2 text-base font-semibold text-ink">{{ c.title }}</h3>
-            <p class="mt-1 text-sm text-ink-muted whitespace-pre-line leading-relaxed">{{ c.body }}</p>
-
-            <a
-              v-if="c.link"
-              :href="c.link"
-              target="_blank"
-              rel="noopener"
-              class="mt-2 inline-flex items-center gap-1 text-sm text-accent hover:underline">
-              <i class="fas fa-arrow-up-right-from-square text-xs"></i> Abrir link
-            </a>
-
-            <div v-if="c.requiresAck" class="mt-3 flex items-center gap-3 flex-wrap">
-              <Button
-                v-if="!c.acked"
-                variant="primary"
-                size="sm"
-                icon="fas fa-check"
-                :loading="ackingId === c.id"
-                @click="confirm(c)">
-                Li e estou ciente
-              </Button>
-              <span v-else class="text-xs text-data-pos">
-                <i class="fas fa-circle-check"></i> Confirmado em {{ formatDateTime(c.ackedAt) }}
-              </span>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <p v-if="store.error" class="mt-4 text-sm text-data-neg">{{ store.error }}</p>
-    </PageContainer>
-  </div>
+    <MuralGestao v-if="aba === 'gestao'" />
+    <MuralAvisos v-else />
+  </PageContainer>
 </template>

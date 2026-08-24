@@ -39,6 +39,10 @@ const academyHref = computed(() => academyUrl('/panel'));
 const getCat = (key) => navRegistry.find(c => c.key === key);
 
 const canSeeItem = (item) => {
+  // Tela que virou aba de outra continua no registry (é ela que a alçada
+  // nomeia), mas não pode aparecer como item próprio — dois caminhos para a
+  // mesma tela é o que se quis eliminar. Vale inclusive para admin.
+  if (item.hiddenInNav) return false;
   if (isAdmin.value) return true;
   // adminOnly do código + telas travadas pelo admin na tela de Alçadas.
   if (item.adminOnly || permissionStore.isRouteAdminOnly(item.route)) return false;
@@ -83,12 +87,12 @@ const subcatEntries = (key) => {
   const list = isAdmin.value ? subs : subs.filter(subcatHasVisible);
   return list.map(sub => ({
     ...sub,
-    items: (isAdmin.value ? (sub.pages || []) : (sub.pages || []).filter(canSeeItem)),
+    items: (sub.pages || []).filter(p => !p.hiddenInNav && (isAdmin.value || canSeeItem(p))),
   }));
 };
 
 const categoryFlatItems = (key) => {
-  const items = getCat(key)?.pages || [];
+  const items = (getCat(key)?.pages || []).filter(p => !p.hiddenInNav);
   return isAdmin.value ? items : items.filter(canSeeItem);
 };
 

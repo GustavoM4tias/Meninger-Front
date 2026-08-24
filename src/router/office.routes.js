@@ -72,9 +72,15 @@ export default [
                 meta: { requiresAuth: true, searchable: true, content: 'Mural de avisos e comunicados internos' },
             },
             {
+                // A gestão virou ABA de /mural (?tab=gestao). A rota continua
+                // existindo por três motivos: é ela que a alçada e as
+                // capacidades nomeiam (lib/screenCapabilities.js), é o alvo dos
+                // links já espalhados por notificação e favorito, e é o que a
+                // busca do sistema indexa. Aponta para a mesma tela, que troca
+                // a URL para /mural?tab=gestao ao montar.
                 path: 'mural/admin',
                 name: 'Gestão de Comunicados',
-                component: () => import('@/views/Office/Mural/Admin.vue'),
+                component: () => import('@/views/Office/Mural/Index.vue'),
                 // Sem requiresAdmin: a tela é delegável por alçada e as ações
                 // de dentro seguem lib/screenCapabilities.js (excluir = admin).
                 meta: { requiresAuth: true, searchable: true, content: 'Gestão do mural de avisos e comunicados: redigir, definir público-alvo, publicar e acompanhar a leitura' },
