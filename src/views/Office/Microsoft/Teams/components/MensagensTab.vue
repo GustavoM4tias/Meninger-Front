@@ -91,9 +91,17 @@ function horaCheia(iso) {
   return iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 }
 
+// O aviso de "lida no Teams" some sozinho: ele informa um efeito colateral,
+// não é status permanente da conversa.
+const avisoLida = ref(false);
+let avisoTimer = null;
+
 async function abrir(c) {
   await cs.abrir(c.id);
   rolarParaOFim();
+  clearTimeout(avisoTimer);
+  avisoLida.value = cs.marcadaLida === c.id;
+  if (avisoLida.value) avisoTimer = setTimeout(() => { avisoLida.value = false; }, 6000);
 }
 
 function rolarParaOFim() {
@@ -140,7 +148,7 @@ onMounted(async () => {
   cs.carregarPessoas();
   cs.ligarAtualizacao();
 });
-onUnmounted(() => cs.desligarAtualizacao());
+onUnmounted(() => { cs.desligarAtualizacao(); clearTimeout(avisoTimer); });
 </script>
 
 <template>
@@ -224,7 +232,10 @@ onUnmounted(() => cs.desligarAtualizacao());
           <IconButton icon="fas fa-arrow-left" label="Voltar" class="lg:hidden" @click="cs.chatId = null" />
           <div class="min-w-0 flex-1">
             <p class="text-sm font-semibold text-ink truncate">{{ cs.chatAtual?.titulo }}</p>
-            <p v-if="cs.chatAtual?.participantes?.length" class="text-micro text-ink-subtle truncate flex items-center gap-1.5">
+            <p v-if="avisoLida" class="text-micro text-data-pos flex items-center gap-1.5">
+              <i class="fas fa-check-double text-micro"></i> Marcada como lida no Teams
+            </p>
+            <p v-else-if="cs.chatAtual?.participantes?.length" class="text-micro text-ink-subtle truncate flex items-center gap-1.5">
               <span v-if="presencaDe(cs.chatAtual)" :class="corPresenca(presencaDe(cs.chatAtual))"
                 class="w-2 h-2 rounded-full shrink-0"></span>
               <span v-if="presencaDe(cs.chatAtual)">{{ rotuloPresenca(presencaDe(cs.chatAtual)) }} ·</span>
@@ -282,7 +293,7 @@ onUnmounted(() => cs.desligarAtualizacao());
             </button>
           </div>
           <p class="text-micro text-ink-subtle mt-1 px-1">
-            A mensagem sai no seu nome, e aparece no Teams como se você tivesse escrito por lá.
+            A mensagem sai no seu nome e aparece no Teams. Abrir a conversa aqui também marca como lida lá.
           </p>
         </div>
       </template>

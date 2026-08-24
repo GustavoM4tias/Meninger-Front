@@ -133,10 +133,24 @@ const horasEmReuniao = computed(() => {
   return total >= 60 ? `${Math.floor(total / 60)}h${total % 60 ? String(total % 60).padStart(2, '0') : ''}` : `${total} min`;
 });
 
+// Cada número leva para onde ele é resolvido: número que não é clicável obriga
+// a pessoa a procurar de novo o que a tela acabou de mostrar.
 const metricas = computed(() => [
-  { rotulo: 'Compromissos hoje', valor: doDia.value.length, nota: online.value ? `${online.value} no Teams` : 'nenhum online', icone: 'fas fa-calendar-day' },
-  { rotulo: 'Tempo em reunião',  valor: horasEmReuniao.value, nota: 'das 8h às 19h', icone: 'fas fa-hourglass-half' },
-  { rotulo: 'Conversas novas',   valor: cs.naoLidos, nota: cs.naoLidos ? 'esperando resposta' : 'tudo respondido', icone: 'fas fa-comments' },
+  {
+    rotulo: 'Compromissos hoje', valor: doDia.value.length,
+    nota: online.value ? `${online.value} no Teams` : 'nenhum online',
+    icone: 'fas fa-calendar-day', ir: 'agenda', cta: 'Ver a agenda',
+  },
+  {
+    rotulo: 'Tempo em reunião', valor: horasEmReuniao.value,
+    nota: 'das 8h às 19h',
+    icone: 'fas fa-hourglass-half', ir: 'agenda', cta: 'Ver a agenda',
+  },
+  {
+    rotulo: 'Conversas novas', valor: cs.naoLidos,
+    nota: cs.naoLidos ? 'esperando resposta' : 'tudo respondido',
+    icone: 'fas fa-comments', ir: 'mensagens', cta: 'Abrir mensagens',
+  },
 ]);
 
 // ── Esperando você ────────────────────────────────────────────────────────────
@@ -194,6 +208,27 @@ const pendencias = computed(() => {
 
 const carregandoAgenda = computed(() => ts.loading && !ts.events.length);
 const carregandoAtas   = computed(() => tr.loadingReports && !(tr.reports || []).length);
+
+// Quando não há mais nada hoje, o lugar nobre da tela não pode dizer só "nada
+// mais hoje": mostra o PRÓXIMO compromisso que existe na agenda carregada e o
+// fechamento do dia que passou.
+const proximoFuturo = computed(() => {
+  const agoraISO = agora.value;
+  return ts.events
+    .filter(e => !e.isCancelled && !e.isAllDay && new Date(e.start) > agoraISO)
+    .sort((a, b) => String(a.start).localeCompare(String(b.start)))[0] || null;
+});
+
+function quandoEvento(e) {
+  if (!e?.start) return '';
+  const d = new Date(e.start);
+  const hoje = new Date();
+  const amanha = new Date(hoje); amanha.setDate(hoje.getDate() + 1);
+  if (d.toDateString() === amanha.toDateString()) return `amanhã, ${hhmm(e.start)}`;
+  return `${d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}, ${hhmm(e.start)}`;
+}
+
+const jaPassaram = computed(() => doDia.value.filter(e => minutos(e.end) <= minutosAgora.value));
 
 const relatoriosRecentes = computed(() => (tr.reports || []).slice(0, 3));
 
@@ -283,25 +318,60 @@ function quandoRelatorio(r) {
           </div>
         </template>
 
-        <p v-else class="text-sm text-ink-muted mt-2">
-          Nada mais hoje. <button class="text-accent hover:underline" @click="emit('ir', 'agenda')">Ver a semana</button>
-        </p>
+        <template v-else>
+          <h3 class="text-lg font-bold text-ink mt-1.5 leading-snug">
+            {{ jaPassaram.length ? 'Dia encerrado' : 'Nenhum compromisso hoje' }}
+          </h3>
+          <p class="text-sm text-ink-muted mt-0.5">
+            <template v-if="jaPassaram.length">
+              {{ jaPassaram.length }} compromisso(s) atrás de você, {{ horasEmReuniao }} em reunião.
+            </template>
+            <template v-else>A agenda de hoje está livre.</template>
+          </p>
+
+          <!-- O lugar nobre da tela não pode ficar vazio: se não há mais nada
+               hoje, o que interessa é o que vem depois. -->
+          <div v-if="proximoFuturo"
+            class="mt-3 p-3 rounded-xl border border-line bg-surface-raised">
+            <p class="text-micro font-semibold text-ink-subtle uppercase tracking-wide">Próximo compromisso</p>
+            <p class="text-sm font-medium text-ink mt-1 truncate">{{ proximoFuturo.subject }}</p>
+            <p class="text-micro text-ink-muted mt-0.5">
+              {{ quandoEvento(proximoFuturo) }}
+              <span v-if="proximoFuturo.attendees?.length"> · {{ proximoFuturo.attendees.length }} participante(s)</span>
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 mt-auto pt-4">
+            <Button size="sm" variant="outline" icon="fas fa-calendar-days" @click="emit('ir', 'agenda')">
+              Ver a semana
+            </Button>
+            <Button v-if="jaPassaram.length" size="sm" variant="ghost"
+              icon="fas fa-wand-magic-sparkles" @click="emit('ir', 'reunioes')">
+              Atas de hoje
+            </Button>
+          </div>
+        </template>
       </section>
 
       <div class="grid grid-rows-3 gap-2.5">
         <template v-if="carregandoAgenda">
           <Skeleton v-for="i in 3" :key="i" class="h-full min-h-[4.25rem] rounded-2xl" />
         </template>
-        <div v-else v-for="m in metricas" :key="m.rotulo"
-          class="rounded-2xl border border-line bg-surface-raised px-3.5 py-3">
+        <button v-else v-for="m in metricas" :key="m.rotulo" type="button"
+          :title="m.cta" @click="emit('ir', m.ir)"
+          class="group rounded-2xl border border-line bg-surface-raised px-3.5 py-3 text-left
+                 hover:border-accent/40 hover:-translate-y-0.5 transition-all duration-150">
           <p class="text-micro font-semibold text-ink-subtle uppercase tracking-wide flex items-center gap-2">
-            <i :class="m.icone" class="text-micro text-ink-subtle"></i> {{ m.rotulo }}
+            <i :class="m.icone" class="text-micro text-ink-subtle group-hover:text-accent transition-colors"></i>
+            {{ m.rotulo }}
+            <i class="fas fa-arrow-right text-micro ml-auto opacity-0 -translate-x-1
+                      group-hover:opacity-100 group-hover:translate-x-0 text-accent transition-all"></i>
           </p>
           <p class="flex items-baseline gap-2 mt-0.5">
-            <span class="text-xl font-bold text-ink tabular-nums">{{ m.valor }}</span>
+            <span class="text-xl font-bold text-ink tabular-nums group-hover:text-accent transition-colors">{{ m.valor }}</span>
             <span class="text-xs text-ink-muted">{{ m.nota }}</span>
           </p>
-        </div>
+        </button>
       </div>
     </div>
 

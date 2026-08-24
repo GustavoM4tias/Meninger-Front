@@ -33,6 +33,10 @@ export const useTeamsChatStore = defineStore('teamsChat', () => {
     // Presença por id do Azure. Saber que o fulano está em reunião AGORA muda
     // se você manda mensagem ou espera - e é o dado mais barato do Graph.
     const presencas   = ref({});
+    // Abrir a conversa no Office marca como lida NO TEAMS (markChatReadForUser).
+    // Isso é efeito fora do Office e a pessoa precisa saber: guardamos o id da
+    // conversa em que isso acabou de acontecer para a tela poder dizer.
+    const marcadaLida = ref(null);
 
     const chatAtual = computed(() => chats.value.find(c => c.id === chatId.value) || null);
     const naoLidos  = computed(() => chats.value.filter(c => c.naoLido).length);
@@ -78,13 +82,18 @@ export const useTeamsChatStore = defineStore('teamsChat', () => {
 
     async function abrir(id) {
         chatId.value = id;
+        marcadaLida.value = null;
+        const tinhaNaoLido = !!chats.value.find(x => x.id === id)?.naoLido;
+
         await carregarMensagens(id);
+
         // Abrir no Office conta como ler, igual ao Teams. Falhar aqui não é
         // motivo para atrapalhar a leitura.
         try {
             await requestWithAuth(`${BASE}/chats/${encodeURIComponent(id)}/read`, { method: 'POST' });
             const c = chats.value.find(x => x.id === id);
             if (c) c.naoLido = false;
+            if (tinhaNaoLido) marcadaLida.value = id;
         } catch { /* silencioso de propósito */ }
     }
 
@@ -152,7 +161,7 @@ export const useTeamsChatStore = defineStore('teamsChat', () => {
     }
 
     return {
-        chats, chatId, mensagens, pessoas, erro, presencas,
+        chats, chatId, mensagens, pessoas, erro, presencas, marcadaLida,
         carregandoLista, carregandoMensagens, enviando,
         chatAtual, naoLidos,
         carregarChats, carregarMensagens, abrir, enviar, conversarCom, carregarPessoas, carregarPresencas,
