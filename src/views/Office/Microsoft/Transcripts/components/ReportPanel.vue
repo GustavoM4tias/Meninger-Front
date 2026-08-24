@@ -59,10 +59,40 @@
     <section v-if="report.decisoes?.length">
       <h3 class="section-title"><i class="fas fa-gavel text-data-warn"></i> Decisões Tomadas</h3>
       <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
+        <!-- Ata antiga trazia texto puro; a nova traz quem fechou e em que
+             minuto. As duas continuam abrindo. -->
         <div v-for="(dec, i) in report.decisoes" :key="i"
           class="flex items-start gap-3 px-4 py-3 text-sm text-ink-muted">
           <i class="fas fa-check-circle text-data-warn mt-0.5 shrink-0"></i>
-          {{ dec }}
+          <span class="min-w-0 flex-1">
+            {{ texto(dec) }}
+            <span v-if="ancora(dec)" class="block text-micro text-ink-subtle mt-0.5">{{ ancora(dec) }}</span>
+          </span>
+          <span v-if="dec?.confianca && dec.confianca !== 'alta'"
+            class="text-micro text-data-warn border border-data-warn/30 rounded px-1.5 py-0.5 shrink-0"
+            title="A transcrição não deixou isso totalmente claro">
+            confiança {{ dec.confianca }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Questões em aberto -->
+    <!-- Vale tanto quanto as decisões: antes, o que ficou no ar ou sumia da ata
+         ou virava "decisão" porque alguém sugeriu e ninguém respondeu. -->
+    <section v-if="report.questoes_abertas?.length">
+      <h3 class="section-title"><i class="fas fa-circle-question text-accent"></i> Ficou em aberto</h3>
+      <div class="bg-surface-raised rounded-xl border border-line divide-y divide-line">
+        <div v-for="(q, i) in report.questoes_abertas" :key="i" class="px-4 py-3 text-sm">
+          <p class="text-ink font-medium">{{ q.questao || q }}</p>
+          <p v-if="q.o_que_falta" class="text-ink-muted mt-1">
+            <i class="fas fa-arrow-right text-micro mr-1 text-ink-subtle"></i>{{ q.o_que_falta }}
+          </p>
+          <p class="text-micro text-ink-subtle mt-1">
+            <span v-if="q.esperando">Esperando {{ q.esperando }}</span>
+            <span v-else-if="q.quem_levantou">Levantado por {{ q.quem_levantou }}</span>
+            <span v-if="q.minuto"> · {{ q.minuto }}</span>
+          </p>
         </div>
       </div>
     </section>
@@ -134,7 +164,10 @@
         <div v-for="(ponto, i) in report.pontos_atencao" :key="i"
           class="flex items-start gap-3 px-4 py-3 rounded-xl bg-data-warn/10 border border-data-warn/25/50 text-sm text-data-warn">
           <i class="fas fa-exclamation-circle mt-0.5 shrink-0"></i>
-          {{ ponto }}
+          <span class="min-w-0 flex-1">
+            {{ texto(ponto) }}
+            <span v-if="ancora(ponto)" class="block text-micro opacity-70 mt-0.5">{{ ancora(ponto) }}</span>
+          </span>
         </div>
       </div>
     </section>
@@ -185,6 +218,20 @@ const props = defineProps({
 });
 
 defineEmits(['email']);
+
+// A ata mudou de forma: decisão e ponto de atenção passaram de texto puro para
+// objeto com QUEM disse e em QUE MINUTO - a âncora que permite conferir na
+// transcrição. As atas geradas antes disso continuam sendo texto puro, e as
+// duas formas precisam abrir na mesma tela.
+function texto(item) {
+  if (typeof item === 'string') return item;
+  return item?.texto || item?.ponto || item?.questao || '';
+}
+
+function ancora(item) {
+  if (typeof item === 'string' || !item) return '';
+  return [item.quem, item.minuto].filter(Boolean).join(' · ');
+}
 
 // Checklist reativo local (não salvo no backend — é visual)
 const checklistLocal = ref([]);
@@ -252,9 +299,14 @@ function printReport() {
     `<div class="item"><span class="num">${i+1}</span><span>${esc(item)}</span></div>`
   ).join('');
 
-  const bulleted = (arr, color='#f59e0b') => arr.map(item =>
-    `<div class="item"><span style="color:${color};margin-top:2px">●</span><span>${esc(item)}</span></div>`
-  ).join('');
+  // Aceita as duas formas: texto puro (ata antiga) e objeto com âncora (nova).
+  const bulleted = (arr, color = '#f59e0b') => arr.map(item => {
+    const t = esc(texto(item));
+    const a = ancora(item);
+    return `<div class="item"><span style="color:${color};margin-top:2px">●</span><span>${t}`
+         + (a ? `<br><span style="color:#9ca3af;font-size:11px">${esc(a)}</span>` : '')
+         + `</span></div>`;
+  }).join('');
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -301,6 +353,19 @@ function printReport() {
   ${r.pauta?.length ? `<h2>📝 Pauta Discutida</h2>${numbered(r.pauta)}` : ''}
 
   ${r.decisoes?.length ? `<h2>✅ Decisões Tomadas</h2>${bulleted(r.decisoes)}` : ''}
+  ${r.questoes_abertas?.length ? `<h2>❓ Ficou em aberto</h2>${r.questoes_abertas.map(q =>
+    `<div class="warn"><strong>${esc(q.questao || q)}</strong>`
+    + (q.o_que_falta ? `<br>&rarr; ${esc(q.o_que_falta)}` : '')
+    + (q.esperando || q.minuto
+        ? `<br><span style="font-size:11px">${q.esperando ? `Esperando ${esc(q.esperando)}` : ''}${q.minuto ? ` · ${esc(q.minuto)}` : ''}</span>`
+        : '')
+    + `</div>`
+  ).join('')}` : ''}
+  ${r.questoes_abertas?.length ? `<h2>❓ Ficou em aberto</h2>${r.questoes_abertas.map(q => `
+    <div class="warn"><strong>${esc(q.questao || q)}</strong>` +
+    (q.o_que_falta ? `<br>→ ${esc(q.o_que_falta)}` : '') +
+    (q.esperando ? `<br><span style="font-size:11px">Esperando ${esc(q.esperando)}${q.minuto ? ` · ${esc(q.minuto)}` : ''}</span>` : '') +
+    `</div>`).join('')}` : ''}
 
   ${r.acoes?.length ? `
   <h2>⚡ Ações & Responsabilidades</h2>
