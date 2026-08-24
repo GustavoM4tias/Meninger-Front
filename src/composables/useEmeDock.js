@@ -25,6 +25,7 @@ import { ref, computed, watch } from 'vue';
 const MODO_KEY    = 'eme:dock:modo';
 const LARGURA_KEY = 'eme:dock:largura';
 const CAIXA_KEY   = 'eme:flutuante:caixa';
+const ABERTA_KEY  = 'eme:aberta';
 
 const MIN = 320;
 const MAX = 720;
@@ -51,18 +52,30 @@ function lerLargura() {
 const modo    = ref(localStorage.getItem(MODO_KEY) === 'docada' ? 'docada' : 'flutuante');
 const largura = ref(lerLargura());
 const caixa   = ref(lerCaixa());
+// Durante o arrasto da largura, shell e nav NÃO podem animar: a transição de
+// 200ms brigava com um evento de ponteiro a cada frame e a barra do topo ficava
+// tremendo atrás do painel.
+const ajustando = ref(false);
+
+// Recarregar a página fechava o painel (o estado era local do componente) mas o
+// espaço continuava reservado: ficava uma faixa vazia à direita e a bolinha no
+// canto. Agora o "aberta" mora aqui, junto do modo, e é ele quem manda no recuo.
+const aberta = ref(localStorage.getItem(ABERTA_KEY) === '1');
 
 const docada = computed(() => modo.value === 'docada');
+/** Docada E aberta: é isto que empurra o Office. */
+const ocupando = computed(() => docada.value && aberta.value);
 
 function aplicar() {
     if (typeof document === 'undefined') return;
     document.documentElement.style.setProperty('--eme-dock-w', `${largura.value}px`);
-    document.body.classList.toggle('eme-docada', docada.value);
+    document.body.classList.toggle('eme-docada', ocupando.value);
 }
 
-watch([modo, largura], () => {
+watch([modo, largura, aberta], () => {
     localStorage.setItem(MODO_KEY, modo.value);
     localStorage.setItem(LARGURA_KEY, String(largura.value));
+    localStorage.setItem(ABERTA_KEY, aberta.value ? '1' : '0');
     aplicar();
 }, { immediate: true });
 
@@ -74,6 +87,8 @@ export function useEmeDock() {
     return {
         modo,
         docada,
+        ocupando,
+        aberta,
         largura,
         MIN,
         MAX,
@@ -81,11 +96,14 @@ export function useEmeDock() {
         alternar() { modo.value = docada.value ? 'flutuante' : 'docada'; },
         /** Largura nova, presa entre o mínimo e o máximo. */
         redimensionar(px) { largura.value = Math.max(MIN, Math.min(MAX, Math.round(px))); },
+        /** Liga/desliga o modo arrasto (desliga as transições de layout). */
+        ajustar(v) { ajustando.value = !!v; },
         /** Sair do modo docado sem fechar a Eme (ex.: virou celular). */
         soltar() { modo.value = 'flutuante'; },
         /** Encostar (usado pelo arrastar-até-a-borda). */
         docar() { modo.value = 'docada'; },
 
+        ajustando,
         caixa,
         /** Tamanho do painel flutuante, preso ao mínimo e à viewport. */
         redimensionarCaixa(w, h) {

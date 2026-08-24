@@ -19,7 +19,7 @@ const authStore = useAuthStore();
 // elementos FIXOS do Nav (barra do topo e menu lateral), que continuavam
 // passando por baixo do painel. Agora quem empurra é o próprio shell.
 const dock = useEmeDock();
-const recuo = computed(() => (dock.docada.value ? { paddingRight: `${dock.largura.value}px` } : null));
+const recuo = computed(() => (dock.ocupando.value ? { paddingRight: `${dock.largura.value}px` } : null));
 const route = useRoute();
 const router = useRouter();
 
@@ -55,7 +55,7 @@ function dispensar() {
     </div>
 
     <!-- Office: autenticado -->
-    <div v-else class="flex w-full transition-[padding] duration-200" :style="recuo">
+    <div v-else class="flex w-full" :class="dock.ajustando.value ? '' : 'transition-[padding] duration-200'" :style="recuo">
         <main class="flex flex-col h-dvh w-full md:overflow-hidden">
             <div class="flex">
                 <Nav />

@@ -26,7 +26,7 @@ const route = useRoute();
 // A barra do topo é fixa e ocupa a largura toda: com a Eme encostada na direita
 // ela passaria POR BAIXO do painel. Aqui ela termina onde o painel começa.
 const dockEme = useEmeDock();
-const recuoTopo = computed(() => (dockEme.docada.value ? { right: `${dockEme.largura.value}px`, width: 'auto' } : null));
+const recuoTopo = computed(() => (dockEme.ocupando.value ? { right: `${dockEme.largura.value}px`, width: 'auto' } : null));
 
 // ─── Stores ──────────────────────────────────────────
 const authStore       = useAuthStore();
@@ -381,7 +381,8 @@ watch(() => route.fullPath, closeMobile);
 
     <!-- ─── Top Bar ─── -->
     <nav ref="topbarEl" :style="recuoTopo"
-      class="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-xl border-b border-line transition-[right] duration-200">
+      :class="dockEme.ajustando.value ? '' : 'transition-[right] duration-200'"
+      class="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-xl border-b border-line">
       <div class="px-3 py-2 lg:px-5 lg:pl-3 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <IconButton

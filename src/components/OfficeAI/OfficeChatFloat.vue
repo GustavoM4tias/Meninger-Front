@@ -12,13 +12,18 @@ import { setEmeScreen, instalarCapturaCtrlClique } from '@/composables/useEmeScr
 import { useEmeDock } from '@/composables/useEmeDock';
 
 const aiStore = useOfficeAIStore();
+// ── Docada x flutuante ───────────────────────────────────────────────────────
+const dock = useEmeDock();
 const permStore = usePermissionStore();
 const router = useRouter();
 const route  = useRoute();
-const expanded = ref(false);
-
-// ── Docada x flutuante ───────────────────────────────────────────────────────
-const dock = useEmeDock();
+// Aberto/fechado mora no composable: sobrevive à recarga da página e é ele que
+// reserva o espaço quando ela está encostada. Antes, um reload fechava o painel
+// e o espaço continuava lá, vazio.
+const expanded = computed({
+  get: () => dock.aberta.value,
+  set: (v) => { dock.aberta.value = v; },
+});
 
 // ── Retomar a conversa ───────────────────────────────────────────────────────
 // Recarregar a página zerava a Eme: ela abria em branco, como se nunca tivesse
@@ -279,15 +284,28 @@ const redimensionando = ref(false);
 function iniciarResize(e) {
   if (!emDock.value) return;
   redimensionando.value = true;
+  dock.ajustar(true);      // desliga as transições do shell e da barra do topo
   e.preventDefault();
   window.addEventListener('pointermove', aoRedimensionar);
   window.addEventListener('pointerup', pararResize, { once: true });
 }
+
+// Um quadro por vez: sem isto, cada pixel de movimento reflow-ava o Office
+// inteiro (o conteúdo recua e a barra do topo encolhe junto) e a tela travava.
+let quadroResize = null;
 function aoRedimensionar(e) {
-  dock.redimensionar(window.innerWidth - e.clientX);
+  const x = e.clientX;
+  if (quadroResize) return;
+  quadroResize = requestAnimationFrame(() => {
+    quadroResize = null;
+    dock.redimensionar(window.innerWidth - x);
+  });
 }
+
 function pararResize() {
   redimensionando.value = false;
+  dock.ajustar(false);
+  if (quadroResize) { cancelAnimationFrame(quadroResize); quadroResize = null; }
   window.removeEventListener('pointermove', aoRedimensionar);
 }
 
@@ -360,11 +378,26 @@ function onPointerDown(e) {
   iniciarArrasto(e);
 }
 
+// Vira true quando o arrasto começou com a Eme encostada: no primeiro
+// movimento ela se solta e passa a seguir o ponteiro.
+let soltandoDoDock = false;
+
 // Aberta, a alça é o CABEÇALHO - como em qualquer janela. Antes o arrasto era
 // bloqueado quando aberta ('if (expanded) return'), então a Eme aberta ficava
 // presa no canto e a pessoa tinha que fechar, arrastar e abrir de novo.
 function onHeaderPointerDown(e) {
-  if (!expanded.value || emDock.value || isMobileViewport.value) return;
+  if (!expanded.value || isMobileViewport.value) return;
+  // Botão, campo e o editor de título continuam funcionando: só o vazio arrasta.
+  if (e.target?.closest?.('button, a, input, textarea, [contenteditable="true"]')) return;
+
+  // Docada: arrastar o cabeçalho SOLTA. Colar arrastando e não poder tirar
+  // arrastando seria meio caminho - o gesto tem que valer nos dois sentidos.
+  if (emDock.value) {
+    e.preventDefault();
+    soltandoDoDock = true;
+    iniciarArrasto(e);
+    return;
+  }
   // Botão, campo e o editor de título continuam funcionando: só o vazio arrasta.
   if (e.target?.closest?.('button, a, input, textarea, [contenteditable="true"]')) return;
   e.preventDefault();
@@ -377,6 +410,21 @@ function onPointerMove(e) {
   const dy = e.clientY - startY;
   if (!isDragging.value && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
     isDragging.value = true;
+
+    // Saiu do dock: vira flutuante embaixo do ponteiro e o arrasto recomeça
+    // dali, senão ela saltaria para a última posição guardada.
+    if (soltandoDoDock) {
+      soltandoDoDock = false;
+      dock.soltar();
+      pos.value = clampPos({
+        right:  window.innerWidth  - e.clientX - Math.round(dock.caixa.value.w / 2),
+        bottom: window.innerHeight - e.clientY - 28,
+      });
+      startX = e.clientX;
+      startY = e.clientY;
+      startPos = { ...pos.value };
+      return;
+    }
   }
   if (isDragging.value) {
     // pos.right cresce pra esquerda (oposto do mouse X)
@@ -392,6 +440,7 @@ function onPointerMove(e) {
 function onPointerUp() {
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup',   onPointerUp);
+  soltandoDoDock = false;
   if (isDragging.value && propondoDock.value) {
     // Soltou na zona: cola e abre, que é o que a pessoa queria ao levar até lá.
     propondoDock.value = false;
@@ -433,6 +482,8 @@ watch(() => route.path, (p) => setEmeScreen(p, route.meta?.content || ''), { imm
 let desinstalarCaptura = null;
 
 onMounted(() => {
+  // Já abre aberta (o estado sobreviveu à recarga): retoma a conversa também.
+  if (expanded.value) retomarUltimaConversa();
   desinstalarCaptura = instalarCapturaCtrlClique(() => { expanded.value = true; });
   loadPos();
   window.addEventListener('eme:navigate', onEmeNavigate);
@@ -470,12 +521,18 @@ function rename(title) { aiStore.renameSession(title); }
       leave-to-class="opacity-0">
       <div v-if="propondoDock"
         :style="{ width: dock.largura.value + 'px' }"
-        class="fixed right-0 top-0 bottom-0 z-40 pointer-events-none
-               border-l-2 border-accent bg-accent-soft/60 grid place-items-center">
-        <span class="px-3 py-1.5 rounded-lg bg-surface-overlay border border-accent/30
-                     text-xs font-medium text-accent shadow-soft">
-          Soltar para encostar na lateral
-        </span>
+        class="fixed right-0 top-0 bottom-0 z-40 pointer-events-none p-2">
+        <div class="h-full w-full rounded-2xl border-2 border-dashed border-accent/50
+                    bg-accent-soft/40 grid place-items-center">
+          <div class="flex flex-col items-center gap-2 px-4 py-3 rounded-xl
+                      bg-surface-overlay border border-accent/25 shadow-soft">
+            <span class="w-9 h-9 rounded-lg bg-accent-soft grid place-items-center">
+              <i class="fas fa-table-columns text-accent text-sm"></i>
+            </span>
+            <span class="text-xs font-medium text-ink">Encostar na lateral</span>
+            <span class="text-micro text-ink-subtle">O Office encolhe, nada fica coberto</span>
+          </div>
+        </div>
       </div>
     </Transition>
     <Transition name="float-slide">
@@ -523,8 +580,9 @@ function rename(title) { aiStore.renameSession(title); }
           <!-- O cabeçalho é a alça: arrastar daqui move a Eme aberta, e levar
                até a borda direita propõe encostar. -->
           <div @pointerdown="onHeaderPointerDown"
-            :class="emDock || isMobileViewport ? '' : 'cursor-grab active:cursor-grabbing select-none'"
-            class="flex items-center gap-1.5 px-3 py-2 border-b border-line bg-surface-raised">
+            :class="isMobileViewport ? '' : 'cursor-grab active:cursor-grabbing select-none'"
+            class="flex items-center gap-1.5 px-3 h-12 shrink-0 border-b border-line
+                   bg-surface/80 backdrop-blur-xl">
             <img src="/Mlogo.png" class="h-4 flex-shrink-0 invert dark:invert-0" alt="Eme" />
             <!-- min-w-0 + truncate: título longo cortava em cima dos botões. -->
             <div class="flex-1 min-w-0 overflow-hidden">
