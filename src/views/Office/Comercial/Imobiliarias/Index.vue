@@ -20,6 +20,7 @@ import ImobiliariasTab from './components/ImobiliariasTab.vue';
 import RegistrationsTab from './components/RegistrationsTab.vue';
 import InviteModal from './components/InviteModal.vue';
 import CreateModal from './components/CreateModal.vue';
+import CvPanelModal from './components/CvPanelModal.vue';
 
 const store = useRealEstateStore();
 const toast = useToast();
@@ -35,6 +36,13 @@ const tab = ref(route.query.tab === 'cadastros' ? 'cadastros' : 'imobiliarias');
 const initialQuery = String(route.query.q || '');
 const inviteOpen = ref(false);
 const createOpen = ref(false);
+const cvPanelOpen = ref(false);
+
+// A leitura de "quais empreendimentos esta imobiliária atende" depende de uma
+// credencial do CV que o próprio CV expira de tempos em tempos. Quando ela cai,
+// o vínculo apenas para de atualizar - sem este aviso, ninguém percebe.
+const credencialCaida = computed(() =>
+    can('configure') && store.cvPanel && store.cvPanel.configurado && !store.cvPanel.saudavel);
 
 const pendentes = computed(() =>
     store.registrations.filter(r => r.status === 'invite' || r.status === 'error' || r.status === 'processing').length);
@@ -59,6 +67,8 @@ onMounted(() => {
     store.fetchReport().catch(() => {});
     store.fetchRegistrations().catch(() => {});
     store.fetchEnterprises().catch(() => {});
+    // Só quem pode configurar precisa saber do estado da credencial.
+    if (can('configure')) store.fetchCvPanel().catch(() => {});
 });
 </script>
 
@@ -91,9 +101,25 @@ onMounted(() => {
                     ]"
                 />
                 <Button v-if="can('register')" variant="secondary" icon="fas fa-link" @click="inviteOpen = true">Gerar link</Button>
+                <Button v-if="can('configure')" variant="ghost" icon="fas fa-key"
+                    v-tippy="'Credencial do CV: login usado para ler os empreendimentos de cada imobiliária'"
+                    @click="cvPanelOpen = true" />
                 <Button v-if="can('register')" variant="primary" icon="fas fa-plus" @click="createOpen = true">Nova imobiliária</Button>
             </template>
         </PageHeader>
+
+        <button v-if="credencialCaida" type="button"
+            class="mb-4 w-full flex items-start gap-3 rounded-xl border border-data-neg/30 bg-data-neg/10 p-3.5 text-left"
+            @click="cvPanelOpen = true">
+            <i class="fas fa-triangle-exclamation text-data-neg mt-0.5"></i>
+            <span class="min-w-0">
+                <span class="block text-sm font-medium text-ink">A credencial do CV parou de funcionar</span>
+                <span class="block text-xs text-ink-muted">
+                    Os empreendimentos de cada imobiliária pararam de atualizar. Normalmente é o CV forçando
+                    troca de senha - clique para corrigir.
+                </span>
+            </span>
+        </button>
 
         <div class="mb-4">
             <SegmentedControl v-model="tab" :options="tabOptions" />
@@ -104,5 +130,6 @@ onMounted(() => {
 
         <InviteModal :open="inviteOpen" @close="inviteOpen = false" />
         <CreateModal :open="createOpen" @close="createOpen = false" />
+        <CvPanelModal :open="cvPanelOpen" @close="cvPanelOpen = false" />
     </PageContainer>
 </template>

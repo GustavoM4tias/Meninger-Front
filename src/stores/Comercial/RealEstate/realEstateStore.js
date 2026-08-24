@@ -121,6 +121,50 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         }
     }
 
+    // ── Credencial do painel do CV (v3) ──────────────────────────────────────
+    // A associação imobiliária x empreendimento só é legível pela API v3, que
+    // exige e-mail e senha de um usuário do CV. Como o CV força troca de senha
+    // de tempos em tempos, isso mora numa tela: rotação vira formulário, não
+    // deploy. A senha NUNCA volta do servidor - só o "senha_definida".
+    const cvPanel = ref(null);
+    const cvPanelLoading = ref(false);
+    const officeUsers = ref([]);
+
+    async function fetchCvPanel() {
+        cvPanelLoading.value = true;
+        try {
+            cvPanel.value = await requestWithAuth('/realestate/cv-panel');
+        } finally {
+            cvPanelLoading.value = false;
+        }
+    }
+
+    async function saveCvPanel(patch) {
+        const data = await requestWithAuth('/realestate/cv-panel', {
+            method: 'PUT',
+            body: JSON.stringify(patch),
+        });
+        cvPanel.value = data;
+        return data;
+    }
+
+    async function testCvPanel() {
+        const data = await requestWithAuth('/realestate/cv-panel/test', { method: 'POST' });
+        cvPanel.value = data;
+        return data;
+    }
+
+    // Mesma lista do menu Configurações > Usuários (admin), usada para escolher
+    // quem é avisado quando a credencial cai.
+    async function fetchOfficeUsers() {
+        if (officeUsers.value.length) return;
+        const data = await requestWithAuth('/auth/users');
+        const all = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+        officeUsers.value = all
+            .filter(u => u.username && u.status !== false)
+            .sort((a, b) => String(a.username).localeCompare(String(b.username)));
+    }
+
     async function parseCnpjCard(file) {
         const form = new FormData();
         form.append('file', file);
@@ -153,5 +197,12 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         createRegistration,
         retryRegistration,
         parseCnpjCard,
+        cvPanel,
+        cvPanelLoading,
+        officeUsers,
+        fetchCvPanel,
+        saveCvPanel,
+        testCvPanel,
+        fetchOfficeUsers,
     };
 });
