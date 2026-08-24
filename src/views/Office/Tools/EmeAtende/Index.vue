@@ -105,7 +105,7 @@ const sourceTest = reactive({ running: false, error: '', total: 0, campos: [], c
 const siteSyncsOpen = ref(false)
 const siteState = reactive({ loading: false, error: '', syncing: 0 })
 const newFlowName = ref('')
-const newRule = reactive({ field: 'campaign', operator: 'contains', value: '', flow_id: null, priority: 100 })
+const newRule = reactive({ field: 'site_slug', operator: 'equals', value: '', flow_id: null, priority: 100 })
 
 // ── Regras por empreendimento ────────────────────────────────────────────────
 // Override PARCIAL: '' = herda o geral, então o valor vazio é apagado do objeto
@@ -145,6 +145,8 @@ async function previewRules(f) {
 }
 
 const fieldOpts = [
+  // Vínculo por IDENTIDADE: o valor é o empreendimento do site, não texto solto.
+  { value: 'site_slug', label: 'Empreendimento (do site)' },
   { value: 'source', label: 'Origem (source)' },
   { value: 'campaign', label: 'Campanha' },
   { value: 'empreendimento', label: 'Empreendimento' },
@@ -161,6 +163,15 @@ const templateOpts = computed(() => [
   { value: '', label: '(sem abertura - só responde quem chama)' },
   ...templates.value.map(t => ({ value: t.name, label: `${t.name} (${t.language})` })),
 ])
+// Empreendimentos do site viram as opções da regra - a mesma lista que o
+// editor de fluxo usa, então regra e fluxo falam do mesmo cadastro.
+const empreendimentoOpts = computed(() => [
+  { value: '', label: 'Escolha o empreendimento…' },
+  ...siteEnterprises.value.map(e => ({ value: e.slug, label: `${e.nome}${e.cidade ? ` - ${e.cidade}` : ''}` })),
+])
+const empreendimentoNome = (slug) => siteEnterprises.value.find(e => e.slug === slug)?.nome || slug
+const regraValorTexto = (r) =>
+  r.field === 'site_slug' ? empreendimentoNome(r.value) : `"${r.value}"`
 const flowName = (id) => flows.value.find(f => f.id === id)?.name || `#${id}`
 
 async function loadFlows() {
@@ -306,7 +317,10 @@ async function addRule() {
   if (!newRule.value.trim() || !newRule.flow_id) return
   busy.value = true
   try {
-    await api.createRule({ ...newRule, value: newRule.value.trim() })
+    const payload = newRule.field === 'site_slug'
+      ? { ...newRule, operator: 'equals', value: newRule.value }
+      : { ...newRule, value: newRule.value.trim() }
+    await api.createRule(payload)
     newRule.value = ''
     rules.value = await api.listRules()
     notify('Regra criada.')
@@ -662,12 +676,16 @@ onMounted(loadConversations)
         <Surface variant="raised" padding="md">
           <h2 class="text-base font-semibold text-ink mb-1">Segmentação da base</h2>
           <p class="text-xs text-ink-muted mb-4">A primeira regra que casar decide o fluxo do lead novo. Sem match, cai no fluxo default.</p>
+          <p v-if="!siteEnterprises.length" class="text-xs text-amber-600 dark:text-amber-400 mb-4">
+            Não consegui ler os empreendimentos do site, então a lista de escolha está vazia. Confira em Config › Fonte do site.
+          </p>
           <div class="space-y-2 mb-4">
             <div v-for="r in rules" :key="r.id" class="flex items-center gap-2 flex-wrap text-sm rounded-lg border border-line bg-surface-sunken px-3 py-2">
               <Badge variant="neutral" size="sm">#{{ r.priority }}</Badge>
               <span class="text-ink-muted">{{ fieldOpts.find(o => o.value === r.field)?.label || r.field }}</span>
-              <span class="text-ink-subtle">{{ operatorOpts.find(o => o.value === r.operator)?.label }}</span>
-              <code class="font-mono text-xs text-ink">"{{ r.value }}"</code>
+              <span v-if="r.field !== 'site_slug'" class="text-ink-subtle">{{ operatorOpts.find(o => o.value === r.operator)?.label }}</span>
+              <span v-else class="text-ink-subtle">é</span>
+              <code class="font-mono text-xs text-ink">{{ regraValorTexto(r) }}</code>
               <i class="fas fa-arrow-right text-ink-subtle text-xs"></i>
               <span class="font-semibold text-ink">{{ r.flow?.name || flowName(r.flow_id) }}</span>
               <button class="ml-auto text-ink-subtle hover:text-data-neg transition" title="Remover" @click="removeRule(r)"><i class="fas fa-trash text-xs"></i></button>
@@ -675,9 +693,17 @@ onMounted(loadConversations)
             <p v-if="!rules.length" class="text-xs text-ink-subtle">Nenhuma regra - todo lead cai no fluxo default.</p>
           </div>
           <div class="grid sm:grid-cols-5 gap-2 items-end">
-            <Select :model-value="newRule.field" :options="fieldOpts" label="Campo" @change="(v) => newRule.field = v" />
-            <Select :model-value="newRule.operator" :options="operatorOpts" label="Condição" @change="(v) => newRule.operator = v" />
-            <Input v-model="newRule.value" label="Valor" placeholder="Esmeralda" />
+            <Select :model-value="newRule.field" :options="fieldOpts" label="Campo"
+              @change="(v) => { newRule.field = v; newRule.value = '' }" />
+            <!-- Empreendimento é escolhido, não digitado: o matcher não ignora acento,
+                 e "orquideas" digitado nunca casaria com "Orquídeas" da campanha. -->
+            <Select v-if="newRule.field === 'site_slug'" :model-value="newRule.value"
+              :options="empreendimentoOpts" label="Empreendimento"
+              @change="(v) => newRule.value = v" />
+            <template v-else>
+              <Select :model-value="newRule.operator" :options="operatorOpts" label="Condição" @change="(v) => newRule.operator = v" />
+              <Input v-model="newRule.value" label="Valor" placeholder="Esmeralda" />
+            </template>
             <Select :model-value="newRule.flow_id" :options="flowOpts" label="Fluxo" @change="(v) => newRule.flow_id = v" />
             <Button variant="primary" size="sm" icon="fas fa-plus" :loading="busy" :disabled="!newRule.value" @click="addRule">Adicionar</Button>
           </div>
