@@ -196,6 +196,7 @@ async function confirmFeedback({ comment }) {
           :disabled="aiStore.isStreaming || aiStore.isAtStorageLimit" rows="1"
           :class="[
             'flex-1 bg-transparent border-none outline-none resize-none text-sm text-ink placeholder:text-ink-subtle',
+            'eme-placeholder-1-linha',
             'max-h-32 min-h-[1.5rem] leading-relaxed py-2 px-2',
             voice.state.value === 'LISTENING' ? 'placeholder:text-ink placeholder:italic' : '',
           ]" />
@@ -231,3 +232,14 @@ async function confirmFeedback({ comment }) {
   <FeedbackModal :open="feedbackModal.open" :rating="feedbackModal.rating" @confirm="confirmFeedback"
     @close="closeFeedback" />
 </template>
+
+<style scoped>
+/* O placeholder é uma frase-exemplo ("Pergunte à Eme: teto de comissão do...").
+   Numa caixa estreita ela rolava dentro do campo e a pessoa via meia frase em
+   movimento. Uma linha só, cortada com reticências. */
+.eme-placeholder-1-linha::placeholder {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>

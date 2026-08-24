@@ -9,12 +9,39 @@ import OfficeChatHistory from './OfficeChatHistory.vue';
 import ChatTitleEditor from './ChatTitleEditor.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import { setEmeScreen, instalarCapturaCtrlClique } from '@/composables/useEmeScreenContext';
+import { useEmeDock } from '@/composables/useEmeDock';
 
 const aiStore = useOfficeAIStore();
 const permStore = usePermissionStore();
 const router = useRouter();
 const route  = useRoute();
 const expanded = ref(false);
+
+// ── Docada x flutuante ───────────────────────────────────────────────────────
+const dock = useEmeDock();
+
+// ── Retomar a conversa ───────────────────────────────────────────────────────
+// Recarregar a página zerava a Eme: ela abria em branco, como se nunca tivesse
+// conversado. O id da sessão não sobrevive ao reload, mas o histórico está no
+// banco - então ao abrir sem conversa carregada ela retoma a última.
+const retomando = ref(false);
+const retomada = ref(null);   // título da conversa retomada, para avisar
+
+async function retomarUltimaConversa() {
+  if (aiStore.currentSessionId || aiStore.messages.length || retomando.value) return;
+  retomando.value = true;
+  try {
+    if (!aiStore.sessions.length) await aiStore.loadSessions();
+    const ultima = aiStore.sessions[0];
+    if (!ultima) return;
+    await aiStore.loadMessages(ultima.id);
+    retomada.value = ultima.title || 'conversa anterior';
+    setTimeout(() => { retomada.value = null; }, 6000);
+  } catch { /* sem histórico: abre em branco, como antes */ }
+  finally { retomando.value = false; }
+}
+
+watch(expanded, (aberto) => { if (aberto) retomarUltimaConversa(); });
 
 // ── Inicialização da voz da Eme (admin only) ───────────────────────────────
 // Preferências persistidas.
@@ -225,11 +252,39 @@ function clampPos(p) {
 
 // No mobile expandido o painel vira bottom-sheet (classes cuidam da posição);
 // nos demais casos vale a posição arrastável persistida.
-const fabStyle = computed(() => (
-  expanded.value && isMobileViewport.value
+const podeDocar = computed(() => viewportW.value >= 1024);
+const emDock = computed(() => dock.docada.value && expanded.value && podeDocar.value);
+
+const fabStyle = computed(() => {
+  // Docada: coluna colada na direita, do topo ao rodapé.
+  if (emDock.value) return { right: '0px', top: '0px', bottom: '0px', width: `${dock.largura.value}px` };
+  return expanded.value && isMobileViewport.value
     ? {}
-    : { right: `${pos.value.right}px`, bottom: `${pos.value.bottom}px` }
-));
+    : { right: `${pos.value.right}px`, bottom: `${pos.value.bottom}px` };
+});
+
+// ── Redimensionar o painel docado ────────────────────────────────────────────
+// Puxar a borda esquerda. A largura é persistida: quem usa a Eme o dia todo
+// quer ela larga, quem usa de vez em quando quer ela estreita.
+const redimensionando = ref(false);
+
+function iniciarResize(e) {
+  if (!emDock.value) return;
+  redimensionando.value = true;
+  e.preventDefault();
+  window.addEventListener('pointermove', aoRedimensionar);
+  window.addEventListener('pointerup', pararResize, { once: true });
+}
+function aoRedimensionar(e) {
+  dock.redimensionar(window.innerWidth - e.clientX);
+}
+function pararResize() {
+  redimensionando.value = false;
+  window.removeEventListener('pointermove', aoRedimensionar);
+}
+
+// Tela estreita não comporta o dock: 400px a menos não deixa Office nenhum.
+watch(() => viewportW.value, (w) => { if (w < 1024 && dock.docada.value) dock.soltar(); });
 
 // Ao expandir, re-clampa para o painel caber na viewport a partir da posição do pill.
 watch(expanded, () => { pos.value = clampPos(pos.value); });
@@ -348,13 +403,22 @@ function rename(title) { aiStore.renameSession(title); }
         data-eme-float
         class="fixed z-50 flex flex-col"
         :style="fabStyle"
-        :class="expanded
-          ? 'max-sm:inset-x-2 max-sm:bottom-2 max-sm:w-auto max-sm:h-[min(calc(100dvh-4rem),34rem)] sm:w-96 sm:h-[32rem]'
-          : 'w-auto h-auto'"
+        :class="emDock
+          ? 'h-dvh'
+          : expanded
+            ? 'max-sm:inset-x-2 max-sm:bottom-2 max-sm:w-auto max-sm:h-[min(calc(100dvh-4rem),34rem)] sm:w-96 sm:h-[32rem]'
+            : 'w-auto h-auto'"
       >
         <!-- ── Modo expandido ───────────────────────────────────────── -->
         <div v-if="expanded"
-          class="flex flex-col h-full bg-surface-overlay border border-line rounded-2xl shadow-overlay overflow-hidden">
+          class="relative flex flex-col h-full bg-surface-overlay border-line overflow-hidden"
+          :class="emDock ? 'border-l' : 'border rounded-2xl shadow-overlay'">
+
+          <!-- Puxador: só existe docada, e é a borda inteira. -->
+          <div v-if="emDock" @pointerdown="iniciarResize"
+            :class="redimensionando ? 'bg-accent/40' : 'hover:bg-accent/25'"
+            class="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize z-10 transition-colors"
+            title="Arraste para ajustar a largura"></div>
 
           <div class="flex items-center gap-1.5 px-3 py-2 border-b border-line bg-surface-raised">
             <img src="/Mlogo.png" class="h-4 flex-shrink-0 invert dark:invert-0" alt="Eme" />
@@ -368,9 +432,28 @@ function rename(title) { aiStore.renameSession(title); }
               @click="aiStore.historyOpen = !aiStore.historyOpen" />
             <IconButton icon="fas fa-up-right-and-down-left-from-center" size="sm" label="Voltar à home"
               @click="backToHome" />
+            <IconButton v-if="podeDocar"
+              :icon="dock.docada.value ? 'fas fa-window-restore' : 'fas fa-table-columns'"
+              size="sm"
+              :label="dock.docada.value ? 'Soltar (flutuante)' : 'Encostar na lateral'"
+              @click="dock.alternar()" />
             <IconButton icon="fas fa-minus" size="sm" label="Minimizar"
               @click="expanded = false" />
           </div>
+          <!-- Recarregar a página zerava a Eme: ela abria em branco como se
+               nunca tivesse conversado. Agora ela retoma a última conversa e
+               DIZ que retomou - senão a pessoa não sabe se aquilo é novo. -->
+          <Transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="opacity-0 -translate-y-1"
+            leave-active-class="transition duration-150 ease-in"
+            leave-to-class="opacity-0">
+            <div v-if="retomada"
+              class="flex items-center gap-2 px-3 py-1.5 bg-accent-soft border-b border-accent/20">
+              <i class="fas fa-clock-rotate-left text-micro text-accent shrink-0"></i>
+              <span class="text-micro text-accent truncate">Retomando: {{ retomada }}</span>
+            </div>
+          </Transition>
 
           <transition
             enter-active-class="transition duration-200 ease-out-expo"

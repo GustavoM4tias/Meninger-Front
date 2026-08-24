@@ -857,3 +857,25 @@ html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }
     scroll-behavior: auto !important;
   }
 }
+
+/* ───────────────────────────────────────────────
+   EME DOCADA
+   A Eme encostada na direita não pode COBRIR a tela: o conteúdo do Office
+   encolhe e a barra do topo termina antes dela. São as duas únicas regras
+   globais do recurso - o estado mora em composables/useEmeDock.js.
+
+   Abaixo de 1024px o dock não vale: numa tela estreita, tirar 400px do
+   conteúdo não sobra Office nenhum, e a Eme volta a flutuar.
+   ─────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  body.eme-docada #app {
+    padding-right: var(--eme-dock-w, 400px);
+  }
+
+  /* A barra superior é fixa e ocupa a largura toda: sem isto ela passaria por
+     baixo do painel. */
+  body.eme-docada nav.fixed.top-0 {
+    right: var(--eme-dock-w, 400px);
+    width: auto;
+  }
+}
