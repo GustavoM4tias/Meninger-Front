@@ -24,6 +24,7 @@ export function fmtDate(date) {
 }
 
 export const useTeamsStore = defineStore('teams', () => {
+    const salas = ref([]);
 
     const events      = ref([]);
     const loading     = ref(false);
@@ -145,6 +146,17 @@ export const useTeamsStore = defineStore('teams', () => {
      * deveria. Erro por pessoa vem no campo `erro`, para a tela nao chamar de
      * livre quem ela apenas nao conseguiu consultar.
      */
+    async function carregarSalas() {
+        if (salas.value.length) return salas.value;
+        try {
+            salas.value = await requestWithAuth(`${BASE}/rooms`);
+        } catch (err) {
+            // Sem Place.Read.All a tela segue com o campo de local à mão.
+            noteGraphError(err);
+        }
+        return salas.value;
+    }
+
     async function checkSchedule(emails, start, end) {
         const data = await requestWithAuth(`${BASE}/schedule`, {
             method: 'POST',
@@ -280,7 +292,8 @@ export const useTeamsStore = defineStore('teams', () => {
         weekStart, weekDays, weekEnd, dayDays, monthDays,
         isCurrentWeek, isCurrentPeriod, eventsByDay, upcomingEvents,
         nextWeek, prevWeek, nextPeriod, prevPeriod, goToToday, switchView,
-        fetchWeek, fetchCurrent, fetchRange, getEvent, checkSchedule,
+        fetchWeek, fetchCurrent, fetchRange, getEvent, checkSchedule, carregarSalas,
+        salas,
         createScheduledMeeting, createInstantMeeting,
         cancelEvent, deleteEvent, updateEvent,
     };

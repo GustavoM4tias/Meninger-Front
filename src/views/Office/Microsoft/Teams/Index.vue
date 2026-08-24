@@ -28,6 +28,7 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Button from '@/components/UI/Button.vue';
 import { useToast } from 'vue-toastification';
+import AcompanhamentoTeams from './components/AcompanhamentoTeams.vue';
 
 
 const toast = useToast();
@@ -84,6 +85,9 @@ onMounted(async () => {
   if (!ms.connected) return;
   if (isMobile && ts.currentView === 'week') ts.currentView = 'list';
   ts.fetchCurrent();
+  // O contador de mensagens (na aba e na faixa) precisa existir ANTES de a aba
+  // Mensagens ser aberta - senão ninguém descobre que chegou mensagem.
+  cs.carregarChats({ silencioso: true });
 });
 
 // ── Notificações (reuniões que começam em ≤15 min) — globais ao hub ───────────
@@ -213,6 +217,10 @@ function showToast(message, type = 'success') {
             </div>
           </div>
         </Transition>
+
+        <!-- Acompanhamento: o que vem agora, como está o dia e o que espera
+             resposta. Fica ACIMA das abas porque vale para as três. -->
+        <AcompanhamentoTeams @ir="tab = $event" />
 
         <!-- Abas (o SegmentedControl é scrollável no mobile) -->
         <div class="mb-4">

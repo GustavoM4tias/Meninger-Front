@@ -55,6 +55,28 @@ function escapar(txt) {
     .replace(/\r?\n/g, '<br>');
 }
 
+// Presença: bolinha ao lado do nome. Cinza é "não sei", e não pode parecer
+// "offline" - dizer o que não se sabe é pior que não dizer.
+const CORES = {
+  Available: "bg-data-pos", AvailableIdle: "bg-data-pos",
+  Busy: "bg-data-neg", BusyIdle: "bg-data-neg", DoNotDisturb: "bg-data-neg",
+  Away: "bg-data-warn", BeRightBack: "bg-data-warn",
+  Offline: "bg-ink-subtle/40",
+};
+function presencaDe(c) {
+  if (c.tipo !== "oneOnOne") return null;
+  const id = (c.participantes || [])[0]?.id;
+  return id ? cs.presencas[id] || null : null;
+}
+function corPresenca(p) { return CORES[p?.estado] || "bg-ink-subtle/30"; }
+function rotuloPresenca(p) {
+  if (!p) return "";
+  return p.atividade === "InAMeeting" ? "Em reunião"
+       : p.atividade === "InACall"    ? "Em chamada"
+       : p.atividade === "Presenting" ? "Apresentando"
+       : p.rotulo;
+}
+
 function quando(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -164,9 +186,14 @@ onUnmounted(() => cs.desligarAtualizacao());
         <button v-for="c in filtradas" :key="c.id" type="button" @click="abrir(c)"
           :class="cs.chatId === c.id ? 'bg-accent-soft' : 'hover:bg-surface-hover'"
           class="w-full text-left px-3 py-2.5 min-h-14 border-b border-line/60 transition-colors flex gap-2.5">
-          <div class="w-9 h-9 rounded-full bg-surface-sunken grid place-items-center shrink-0 mt-0.5">
-            <i :class="c.tipo === 'group' ? 'fas fa-user-group' : c.tipo === 'meeting' ? 'fas fa-video' : 'fas fa-user'"
-              class="text-xs text-ink-subtle"></i>
+          <div class="relative shrink-0 mt-0.5">
+            <div class="w-9 h-9 rounded-full bg-surface-sunken grid place-items-center">
+              <i :class="c.tipo === 'group' ? 'fas fa-user-group' : c.tipo === 'meeting' ? 'fas fa-video' : 'fas fa-user'"
+                class="text-xs text-ink-subtle"></i>
+            </div>
+            <span v-if="presencaDe(c)" :class="corPresenca(presencaDe(c))"
+              :title="rotuloPresenca(presencaDe(c))"
+              class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-surface-raised"></span>
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-baseline gap-2">
@@ -197,7 +224,10 @@ onUnmounted(() => cs.desligarAtualizacao());
           <IconButton icon="fas fa-arrow-left" label="Voltar" class="lg:hidden" @click="cs.chatId = null" />
           <div class="min-w-0 flex-1">
             <p class="text-sm font-semibold text-ink truncate">{{ cs.chatAtual?.titulo }}</p>
-            <p v-if="cs.chatAtual?.participantes?.length" class="text-micro text-ink-subtle truncate">
+            <p v-if="cs.chatAtual?.participantes?.length" class="text-micro text-ink-subtle truncate flex items-center gap-1.5">
+              <span v-if="presencaDe(cs.chatAtual)" :class="corPresenca(presencaDe(cs.chatAtual))"
+                class="w-2 h-2 rounded-full shrink-0"></span>
+              <span v-if="presencaDe(cs.chatAtual)">{{ rotuloPresenca(presencaDe(cs.chatAtual)) }} ·</span>
               {{ cs.chatAtual.participantes.map(p => p.nome || p.email).join(', ') }}
             </p>
           </div>

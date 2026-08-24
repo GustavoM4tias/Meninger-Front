@@ -30,9 +30,24 @@ export const useTeamsChatStore = defineStore('teamsChat', () => {
     const carregandoMensagens = ref(false);
     const enviando    = ref(false);
     const erro        = ref(null);
+    // Presença por id do Azure. Saber que o fulano está em reunião AGORA muda
+    // se você manda mensagem ou espera - e é o dado mais barato do Graph.
+    const presencas   = ref({});
 
     const chatAtual = computed(() => chats.value.find(c => c.id === chatId.value) || null);
     const naoLidos  = computed(() => chats.value.filter(c => c.naoLido).length);
+
+    /** Presença de quem aparece na lista de conversas de dois. */
+    async function carregarPresencas() {
+        const ids = chats.value
+            .filter(c => c.tipo === "oneOnOne")
+            .flatMap(c => (c.participantes || []).map(p => p.id))
+            .filter(Boolean);
+        if (!ids.length) return;
+        try {
+            presencas.value = await requestWithAuth(`${BASE}/presence?ids=${encodeURIComponent(ids.join(","))}`);
+        } catch { /* sem permissão ou sem resposta: a lista funciona sem isso */ }
+    }
 
     async function carregarChats({ silencioso = false } = {}) {
         if (!silencioso) carregandoLista.value = true;
@@ -40,6 +55,7 @@ export const useTeamsChatStore = defineStore('teamsChat', () => {
             const data = await requestWithAuth(`${BASE}/chats`);
             chats.value = data.items || [];
             erro.value = null;
+            carregarPresencas();
         } catch (err) {
             erro.value = err.message; noteGraphError(err);
         } finally {
@@ -136,10 +152,10 @@ export const useTeamsChatStore = defineStore('teamsChat', () => {
     }
 
     return {
-        chats, chatId, mensagens, pessoas, erro,
+        chats, chatId, mensagens, pessoas, erro, presencas,
         carregandoLista, carregandoMensagens, enviando,
         chatAtual, naoLidos,
-        carregarChats, carregarMensagens, abrir, enviar, conversarCom, carregarPessoas,
+        carregarChats, carregarMensagens, abrir, enviar, conversarCom, carregarPessoas, carregarPresencas,
         ligarAtualizacao, desligarAtualizacao,
     };
 });

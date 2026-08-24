@@ -180,11 +180,28 @@
               <!-- Local -->
               <div>
                 <label class="field-label">Local <span class="text-ink-subtle font-normal text-micro">(opcional)</span></label>
+
+                <!-- Sala cadastrada: reserva de verdade. Escrever "sala 2" no
+                     campo de texto não reserva nada e duas reuniões caem no
+                     mesmo lugar; escolhida aqui, ela entra como recurso e o
+                     Exchange aceita ou recusa. -->
+                <select v-if="ts.salas.length" v-model="salaEmail" class="field-input mb-2">
+                  <option value="">Sem sala reservada</option>
+                  <option v-for="s in ts.salas" :key="s.email" :value="s.email">
+                    {{ s.nome }}{{ s.capacidade ? ` · ${s.capacidade} lugares` : '' }}{{ s.andar ? ` · ${s.andar}` : '' }}
+                  </option>
+                </select>
+
                 <div class="relative">
                   <i class="fas fa-location-dot absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle text-sm pointer-events-none"></i>
-                  <input v-model="form.location" type="text" placeholder="Sala de reunião, endereço, link externo..."
-                    class="field-input pl-9" />
+                  <input v-model="form.location" type="text"
+                    :disabled="!!salaEmail"
+                    :placeholder="salaEmail ? 'A sala escolhida vira o local' : 'Sala de reunião, endereço, link externo...'"
+                    class="field-input pl-9 disabled:opacity-50" />
                 </div>
+                <p v-if="salaEmail" class="text-micro text-ink-subtle mt-1">
+                  A sala recebe o convite como recurso e responde sozinha: se já estiver ocupada, ela recusa.
+                </p>
               </div>
 
               <!-- Participantes -->
@@ -318,6 +335,10 @@ const EVENT_TYPES = [
 ];
 
 const isEdit     = computed(() => !!props.editEvent);
+// Sala escolhida (e-mail do recurso). Só existe na criação: mudar sala de
+// reunião já marcada mexe na reserva do Exchange, e isso pede tela própria.
+const salaEmail  = ref("");
+const salaEscolhida = computed(() => ts.salas.find(s => s.email === salaEmail.value) || null);
 const submitting = ref(false);
 const attendeeInput = ref('');
 
@@ -523,6 +544,9 @@ function applyPrefill(pf) {
 
 // Reset when modal opens (non-edit)
 watch(() => props.modelValue, (v) => {
+  // As salas são carregadas ao ABRIR o modal, não no boot da tela: quem nunca
+  // marca reunião não paga por essa chamada.
+  if (v) { salaEmail.value = ''; ts.carregarSalas(); }
   if (v && !props.editEvent) {
     form.value = defaultForm();
     applyPrefill(props.prefill);
@@ -628,6 +652,12 @@ async function submit() {
         location:        form.value.location,
         isAllDay:        form.value.isAllDay,
       };
+
+      // Sala só na criação: mudar a sala de uma reunião já marcada mexe na
+      // reserva do Exchange e pede tela própria.
+      if (!isEdit.value && salaEscolhida.value) {
+        payload.sala = { email: salaEscolhida.value.email, nome: salaEscolhida.value.nome };
+      }
 
       if (isEdit.value) {
         // A descrição só entra no PATCH se o usuário mexeu nela. O corpo do
