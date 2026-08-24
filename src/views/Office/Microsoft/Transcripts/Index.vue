@@ -666,11 +666,20 @@ const route    = useRoute();
 const ts       = useTranscriptStore();
 const recStore = useInPersonRecordingStore();
 
-onMounted(() => {
-  ts.fetchMeetings();
+onMounted(async () => {
+  await ts.fetchMeetings();
   // Deep-link nas sub-abas (?sub=): links antigos redirecionados preservam a query
   const sub = route.query.sub;
   if (sub === 'reports' || sub === 'inperson') onTabChange(sub);
+
+  // Veio de um clique no evento do calendário: abre direto aquela reunião, em
+  // vez de largar a pessoa na lista para procurar de novo o que ela já achou.
+  if (ts.pendente) {
+    const pedida = ts.pendente;
+    ts.pendente = null;
+    const alvo = ts.meetings.find(m => m.joinUrl && m.joinUrl === pedida.joinUrl) || pedida;
+    selectMeeting(alvo);
+  }
 });
 
 watch(() => ts.error, (msg) => {

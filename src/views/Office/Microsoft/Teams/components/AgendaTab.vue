@@ -7,8 +7,9 @@
 // Visões: Semana/Mês/Lista no desktop; Dia/Lista/Mês no celular (a visão Dia
 // reusa o CalendarWeek com uma única coluna; Lista é o padrão mobile).
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, inject } from 'vue';
 import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
+import { useTranscriptStore } from '@/stores/Microsoft/transcriptStore';
 
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
@@ -23,6 +24,9 @@ import CreateMeetingModal from './CreateMeetingModal.vue';
 
 const emit = defineEmits(['toast']);
 const ts = useTeamsStore();
+const trStore = useTranscriptStore();
+// A troca de aba vem do hub: o painel não conhece o router.
+const irParaAba = inject('msSetTab', null);
 
 const isMobile = window.matchMedia('(max-width: 767px)').matches;
 
@@ -178,6 +182,22 @@ const DONE_MESSAGES = {
 function onEventDone({ kind, scope }) {
   emit('toast', DONE_MESSAGES[`${kind}:${scope}`] || 'Evento removido.', 'success');
 }
+// Clicar no evento e chegar na transcrição, sem passar pela lista de reuniões
+// para procurar de novo o que a pessoa já tinha achado no calendário.
+function verTranscricao(ev) {
+  trStore.pendente = {
+    eventId: ev.id,
+    subject: ev.subject,
+    start: ev.start,
+    end: ev.end,
+    joinUrl: ev.joinUrl,
+    webLink: ev.webLink,
+    organizer: ev.organizer,
+    attendees: ev.attendees || [],
+  };
+  irParaAba?.("reunioes");
+}
+
 function onEventError(message) { emit('toast', `Erro: ${message}`, 'error'); }
 </script>
 
@@ -293,7 +313,8 @@ function onEventError(message) { emit('toast', `Erro: ${message}`, 'error'); }
       @close="selectedEvent = null"
       @done="onEventDone"
       @error="onEventError"
-      @edit="onEditEvent" />
+      @edit="onEditEvent"
+      @transcricao="verTranscricao" />
   </div>
 </template>
 

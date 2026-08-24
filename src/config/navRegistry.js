@@ -273,8 +273,8 @@ export const navRegistry = [
         pages: [
             // Central Microsoft (2026-07-27): Agenda · Tarefas (To Do) · Reuniões
             // (Transcrições & IA). Rotas antigas viram redirect p/ ?tab=.
-            { route: '/microsoft/outlook', section: 'E-mail', name: 'E-mail', icon: 'fas fa-envelope', iconImg: '/icons/ms-outlook.svg' },
-            { route: '/microsoft/teams', section: 'Central Microsoft', name: 'Central Microsoft', icon: 'fas fa-people-group', iconImg: '/icons/ms-teams.svg' },
+            { route: '/microsoft/outlook', section: 'Outlook', name: 'Outlook', icon: 'fas fa-envelope', iconImg: '/icons/ms-outlook.svg' },
+            { route: '/microsoft/teams', section: 'Teams', name: 'Teams', icon: 'fas fa-people-group', iconImg: '/icons/ms-teams.svg' },
             { route: '/microsoft/sharepoint', section: 'SharePoint', name: 'SharePoint', icon: 'fas fa-folder-open', iconImg: '/icons/ms-sharepoint.svg' },
             { route: '/microsoft/planner', section: 'Planner', name: 'Planner', icon: 'fas fa-table-columns', iconImg: '/icons/ms-planner.svg' },
         ],

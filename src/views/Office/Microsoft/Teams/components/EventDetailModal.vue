@@ -114,6 +114,12 @@
               <i class="fas fa-envelope text-xs"></i> Convidar
             </a>
 
+            <!-- Transcrição: só faz sentido depois que a reunião aconteceu -->
+            <button v-if="jaAconteceu && event.isOnlineMeeting" @click="$emit('transcricao', event); $emit('close')"
+              class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-sunken hover:bg-surface-hover text-ink text-sm transition-colors">
+              <i class="fas fa-wand-magic-sparkles text-xs"></i> Transcrição e relatório
+            </button>
+
             <!-- Edit event -->
             <button v-if="!event.isCancelled" @click="$emit('edit', event); $emit('close')"
               class="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent/10 border border-accent/25 text-accent hover:bg-accent/10  text-sm transition-colors">
@@ -192,7 +198,15 @@ import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
 import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({ event: { type: Object, default: null } });
-const emit = defineEmits(['close', 'done', 'error', 'edit']);
+const emit = defineEmits(["close", "done", "error", "edit", "transcricao"]);
+
+// Reunião que ainda vai acontecer não tem transcrição para mostrar.
+const jaAconteceu = computed(() => {
+  const fim = props.event?.end;
+  if (!fim) return false;
+  // O horário vem no fuso de Brasília, sem Z: comparar como local é o certo.
+  return new Date(fim.replace(" ", "T")) < new Date();
+});
 
 const ts = useTeamsStore();
 

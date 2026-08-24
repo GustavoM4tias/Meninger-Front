@@ -1,5 +1,5 @@
 <script setup>
-// /microsoft/teams — Central Microsoft: hub de agenda e reuniões.
+// /microsoft/teams — Teams: agenda, mensagens e reuniões num lugar só.
 //
 // Consolida (2026-07-27) as telas que viviam soltas na categoria Microsoft:
 //   Agenda (calendário Teams) · Reuniões (Transcrições & IA)
@@ -18,6 +18,7 @@
 import { ref, computed, reactive, watch, onMounted, onUnmounted, provide, defineAsyncComponent } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
+import { useTeamsChatStore } from '@/stores/Microsoft/teamsChatStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -31,19 +32,24 @@ import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 const AgendaTab   = defineAsyncComponent(() => import('./components/AgendaTab.vue'));
-const ReunioesTab = defineAsyncComponent(() => import('@/views/Office/Microsoft/Transcripts/Index.vue'));
+const ReunioesTab  = defineAsyncComponent(() => import('@/views/Office/Microsoft/Transcripts/Index.vue'));
+const MensagensTab = defineAsyncComponent(() => import('./components/MensagensTab.vue'));
 
 const ts = useTeamsStore();
+const cs = useTeamsChatStore();
 const ms = useMicrosoftStore();
 const route = useRoute();
 const router = useRouter();
 
 // ── Abas ──────────────────────────────────────────────────────────────────────
-const TABS = [
-  { value: 'agenda',   label: 'Agenda',   icon: 'fas fa-calendar-days' },
-  { value: 'reunioes', label: 'Reuniões', icon: 'fas fa-wand-magic-sparkles' },
-];
-const VALID_TABS = TABS.map(t => t.value);
+// O contador de não lidas mora na aba: é o que faz a pessoa perceber que tem
+// mensagem sem precisar entrar nela.
+const TABS = computed(() => [
+  { value: 'agenda',    label: 'Agenda',    icon: 'fas fa-calendar-days' },
+  { value: 'mensagens', label: 'Mensagens', icon: 'fas fa-comments', count: cs.naoLidos || undefined },
+  { value: 'reunioes',  label: 'Reuniões',  icon: 'fas fa-wand-magic-sparkles' },
+]);
+const VALID_TABS = ['agenda', 'mensagens', 'reunioes'];
 
 const tab = ref(VALID_TABS.includes(route.query.tab) ? route.query.tab : 'agenda');
 
@@ -59,12 +65,13 @@ watch(() => route.query.tab, (v) => {
 // Painéis internos (TodayPanel) podem trocar de aba sem conhecer o router
 provide('msSetTab', (v) => { if (VALID_TABS.includes(v)) tab.value = v; });
 
-const PANELS = { agenda: AgendaTab, reunioes: ReunioesTab };
+const PANELS = { agenda: AgendaTab, mensagens: MensagensTab, reunioes: ReunioesTab };
 const currentPanel = computed(() => PANELS[tab.value] || AgendaTab);
 
 const SUBTITLES = {
-  agenda:   'Calendário e reuniões do Teams: agende, entre com um clique e gerencie séries recorrentes.',
-  reunioes: 'Transcrições das reuniões (Teams e presenciais) com relatório de IA por e-mail.',
+  agenda:    'Calendário e reuniões do Teams: agende, entre com um clique e gerencie séries recorrentes.',
+  mensagens: 'Suas conversas do Teams. O que você responder daqui sai no seu nome, e aparece lá também.',
+  reunioes:  'Transcrições das reuniões (Teams e presenciais) com relatório de IA por e-mail.',
 };
 const subtitle = computed(() => SUBTITLES[tab.value] || '');
 
@@ -134,14 +141,16 @@ function showToast(message, type = 'success') {
 
       <!-- Header -->
       <PageHeader
-        title="Central Microsoft"
+        title="Teams"
         :subtitle="subtitle"
         icon-img="/icons/ms-teams.svg">
         <template #actions>
-          <PageHelp storage-key="central-microsoft" title="Como usar a Central Microsoft"
-            intro="Sua agenda do Teams e o registro das reuniões num lugar só."
+          <PageHelp storage-key="central-microsoft" title="Como usar o Teams no Office"
+            intro="Sua agenda, suas conversas e o registro das reuniões do Teams, dentro do Office."
             :steps="[
               { title: 'Agenda', text: 'Seu calendário do Teams. Toque num horário vazio para agendar, ou num evento para ver detalhes, entrar na reunião, editar ou cancelar.' },
+              { title: 'Mensagens', text: 'Suas conversas do Teams. Responder daqui é o mesmo que responder no Teams: sai no seu nome e aparece lá. O número na aba é o de conversas com mensagem nova.' },
+              { title: 'Do calendário para a transcrição', text: 'Clique num evento que já aconteceu e use o botão de transcrição e relatório: abre direto aquela reunião, sem procurar de novo na lista.' },
               { title: 'Reuniões recorrentes', text: 'Ao editar ou cancelar uma reunião que se repete, o sistema pergunta se a ação vale só para aquele dia ou para a série toda.' },
               { title: 'Instantânea', text: 'Cria uma reunião Teams na hora, com link pronto para copiar ou enviar por e-mail.' },
               { title: 'Reuniões (transcrições)', text: 'Transcrições das reuniões do Teams e das presenciais (gravadas pelo navegador), com relatório de IA que pode ser enviado por e-mail.' },
@@ -149,7 +158,7 @@ function showToast(message, type = 'success') {
             ]"
             :tips="[
               'No celular, a visão Lista é a mais confortável; a visão Dia mostra os horários lado a lado.',
-              'O aviso de reunião começando aparece nas duas abas.',
+              'O aviso de reunião começando aparece em qualquer aba.',
               'Pergunte à Eme sobre suas reuniões: ela lê o relatório e a transcrição das que você participou e cita quem falou o quê.',
             ]" />
         </template>

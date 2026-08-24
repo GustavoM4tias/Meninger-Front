@@ -30,6 +30,10 @@ export const useTranscriptStore = defineStore('transcript', () => {
     // a mesma para todo mundo que esteve na reunião: quando ela vem de outro
     // participante, a tela diz de quem veio em vez de fingir que baixou agora.
     const sharedFrom          = ref(null);
+    // Reunião pedida de FORA (clique no evento do calendário). A aba Reuniões
+    // ainda nem está montada quando o pedido acontece, então ele fica aqui e é
+    // consumido no mount - em vez de a agenda ter que conhecer a outra tela.
+    const pendente            = ref(null);
 
     // ── Reuniões recentes ─────────────────────────────────────────────────────
 
@@ -217,7 +221,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
     return {
         meetings, reports, loadingMeetings, loadingReports, error,
         selectedMeeting, transcriptInfo, cues, report, reportDbId,
-        checkingTranscript, loadingTranscript, generatingReport, sharedFrom,
+        checkingTranscript, loadingTranscript, generatingReport, sharedFrom, pendente,
         fetchMeetings, checkTranscript, loadTranscript,
         generateReport, fetchReports, loadReport, openSavedReport, reset,
     };
