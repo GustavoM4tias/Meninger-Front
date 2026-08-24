@@ -33,9 +33,10 @@ export function compararVersoes(a, b) {
     return 0;
 }
 
-// Teto de versões mostradas de uma vez. Quem passou férias fora não precisa ler
-// quatro publicações num modal; lê a mais recente e o resto está em /docs.
-const MAX_NO_MURAL = 3;
+// Teto de versões mostradas de uma vez. A mais recente vem aberta e as outras
+// ficam dobradas numa linha cada (ver NovidadesModal), então quatro cabem sem
+// virar paredão. O que passar disso fica em /docs.
+const MAX_NO_MURAL = 4;
 
 export const usePlatformUpdatesStore = defineStore('platformUpdates', () => {
     const lastSeenRelease = ref(null);
