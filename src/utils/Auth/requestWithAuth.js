@@ -47,16 +47,6 @@ export async function requestWithAuth(path, options = {}) {
         err.status = res.status;
         err.payload = json || text;
 
-        // Permissão da Microsoft faltando: o backend diz QUAL é, de que tipo e o
-        // que ela destrava. O aviso sai daqui, e não de cada tela, porque
-        // qualquer módulo pode esbarrar nisso - e ele precisa aparecer TODA vez
-        // que a operação for tentada, senão ninguém pede a liberação.
-        if (json?.permissao?.nome) {
-            try {
-                window.dispatchEvent(new CustomEvent('microsoft:permissao', { detail: json.permissao }));
-            } catch { /* ambiente sem window (teste): o erro segue normalmente */ }
-        }
-
         throw err;
     }
 

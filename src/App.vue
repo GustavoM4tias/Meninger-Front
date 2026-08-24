@@ -4,7 +4,7 @@ import { useAuthStore } from './stores/Settings/Auth/authStore';
 import OfficeChatFloat from './components/OfficeAI/OfficeChatFloat.vue';
 import { isAcademyContext } from '@/utils/appContext';
 import ConfirmHost from '@/components/UI/ConfirmHost.vue';
-import PermissaoMicrosoftModal from '@/components/Microsoft/PermissaoMicrosoftModal.vue';
+import NotificationToaster from '@/components/Notifications/NotificationToaster.vue';
 
 const authStore = useAuthStore();
 const isAuthenticated = computed(() => authStore.isAuthenticated());
@@ -21,7 +21,8 @@ const showOfficeChat = computed(() => isAuthenticated.value && !isAcademyContext
     <OfficeChatFloat v-if="showOfficeChat" />
     <!-- Uma confirmacao para o app inteiro: ver composables/useConfirm.js -->
     <ConfirmHost />
-    <!-- Permissao da Microsoft faltando: avisa toda vez que a operacao for tentada -->
-    <PermissaoMicrosoftModal v-if="isAuthenticated" />
+    <!-- Aviso nao lido aparece sozinho no canto ao abrir o Office e ao voltar
+         para a tela inicial: ver components/Notifications/NotificationToaster -->
+    <NotificationToaster v-if="isAuthenticated" />
   </div>
 </template>
