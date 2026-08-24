@@ -581,6 +581,7 @@ function rename(title) { aiStore.renameSession(title); }
                até a borda direita propõe encostar. -->
           <div @pointerdown="onHeaderPointerDown"
             :class="isMobileViewport ? '' : 'cursor-grab active:cursor-grabbing select-none'"
+            :style="emDock ? { height: 'var(--nav-topbar-h, 48px)' } : null"
             class="flex items-center gap-1.5 px-3 h-12 shrink-0 border-b border-line
                    bg-surface/80 backdrop-blur-xl">
             <img src="/Mlogo.png" class="h-4 flex-shrink-0 invert dark:invert-0" alt="Eme" />
