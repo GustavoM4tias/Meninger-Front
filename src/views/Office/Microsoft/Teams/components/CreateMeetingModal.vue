@@ -407,6 +407,7 @@ const editScope = ref('occurrence');      // 'occurrence' | 'series'
 const seriesMaster = ref(null);            // evento master carregado sob demanda
 const seriesLoading = ref(false);
 const recurrenceTouched = ref(false);
+const bodyTouched = ref(false);            // idem para a descrição (ver submit)
 let hydrating = false;                     // evita marcar touched durante hidratação
 
 const isRecurringEdit = computed(() => isEdit.value && !!props.editEvent?.isRecurring);
@@ -420,8 +421,22 @@ const showRecurrenceSection = computed(() =>
   !isRecurringEdit.value || editScope.value === 'series'
 );
 
+// O corpo do evento é HTML, e no convite de uma reunião do Teams ele traz o
+// bloco "Ingressar na reunião" gerado pela Microsoft. Aqui a descrição é
+// mostrada como texto e SEM esse bloco - quem edita a pauta não deve precisar
+// desviar dele (o backend recola o bloco no fim).
+function bodyToText(html) {
+  const bruto = String(html || '');
+  const corte = bruto.search(/class="[^"]*me-email-text|_{20,}|<div[^>]*id="meeting-join/i);
+  const util  = corte >= 0 ? bruto.slice(0, corte) : bruto;
+  const doc = document.createElement('div');
+  doc.innerHTML = util.replace(/<\/(p|div)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n');
+  return (doc.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 function hydrateForm(ev, { keepType = false } = {}) {
   hydrating = true;
+  bodyTouched.value = false;
   const rec = ev.recurrence && !ev.recurrence.unsupported ? ev.recurrence : null;
   form.value = {
     type: keepType ? form.value.type : (ev.isOnlineMeeting ? 'meeting' : 'event'),
@@ -433,7 +448,9 @@ function hydrateForm(ev, { keepType = false } = {}) {
     isAllDay:  ev.isAllDay || false,
     location:  ev.location || '',
     attendees: (ev.attendees || []).map(a => a.email).filter(Boolean),
-    body:      ev.bodyPreview || '',
+    // `bodyPreview` é um resumo cortado pelo Graph: hidratar com ele e salvar
+    // truncava a descrição de quem só quis mudar o horário.
+    body:      bodyToText(ev.body) || ev.bodyPreview || '',
     recurrenceType:        rec?.type || '',
     recurrenceInterval:    rec?.interval || 1,
     recurrenceEndType:     rec?.endType || 'noEnd',
@@ -470,6 +487,10 @@ watch(
          form.value.recurrenceEndDate, form.value.recurrenceOccurrences],
   () => { if (!hydrating) recurrenceTouched.value = true; }
 );
+
+// Mesma ideia para a descrição: sem isto, abrir e salvar reescrevia o corpo do
+// convite de quem nem tocou nele.
+watch(() => form.value.body, () => { if (!hydrating) bodyTouched.value = true; });
 
 // ── Watchers ──────────────────────────────────────────────────────────────────
 
@@ -609,6 +630,11 @@ async function submit() {
       };
 
       if (isEdit.value) {
+        // A descrição só entra no PATCH se o usuário mexeu nela. O corpo do
+        // convite de uma reunião do Teams carrega o bloco de entrada gerado pela
+        // Microsoft; reescrever por reescrever apagava esse bloco do convite que
+        // já está na caixa de todo mundo.
+        if (!bodyTouched.value) delete payload.body;
         // A chave `recurrence` só entra no PATCH se o usuário mexeu nela
         // (e nunca no modo "somente esta ocorrência" nem em séries unsupported).
         if (recurrenceTouched.value && showRecurrenceSection.value && !recurrenceUnsupported.value) {
