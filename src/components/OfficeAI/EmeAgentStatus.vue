@@ -5,6 +5,7 @@
 // nenhuma explicação enquanto as tools rodavam.
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useOfficeAIStore } from '@/stores/officeAIStore'
+import { verboDoPasso, ehEscrita } from '@/utils/OfficeAI/toolKind'
 
 defineProps({
   compact: { type: Boolean, default: false },
@@ -28,7 +29,7 @@ const finishedSteps = computed(() => aiStore.agentSteps.filter(s => s.status !==
 
 const currentLabel = computed(() => {
   const s = runningStep.value
-  if (s) return s.verbatim ? s.label : `Consultando ${s.label}…`
+  if (s) return s.verbatim ? s.label : `${verboDoPasso(s.name)} ${s.label}…`
   if (aiStore.streamingText) return 'Escrevendo a resposta…'
   if (finishedSteps.value.length) return 'Analisando os dados…'
   return 'Pensando…'
@@ -46,7 +47,7 @@ const showCancel = computed(() => elapsed.value >= 8)
       <i class="shrink-0"
         :class="s.status === 'error'
           ? 'fas fa-circle-exclamation text-data-warn'
-          : 'fas fa-circle-check text-data-pos'" />
+          : ehEscrita(s.name) ? 'fas fa-bolt text-accent' : 'fas fa-circle-check text-data-pos'" />
       <span class="truncate">{{ s.label }}</span>
       <span v-if="s.ms != null" class="shrink-0 font-mono text-micro opacity-70">
         {{ (s.ms / 1000).toFixed(1) }}s

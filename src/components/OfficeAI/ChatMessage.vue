@@ -5,6 +5,7 @@
 // só funcionavam no flutuante).
 import { computed, ref } from 'vue';
 
+import { ehEscrita } from '@/utils/OfficeAI/toolKind';
 import ChatText from './renderers/ChatText.vue';
 import ChatTable from './renderers/ChatTable.vue';
 import ChatChart from './renderers/ChatChart.vue';
@@ -85,6 +86,13 @@ const actionSource = computed(() => {
 
 // "O que a Eme fez": passos de tool + tempo total, gravados pelo store no done.
 const steps = computed(() => props.message.metadata?.steps || []);
+// "3 consultas" mentia quando um dos passos era cancelar uma reunião.
+const temEscrita = computed(() => steps.value.some(s => ehEscrita(s.name)));
+const rotuloPassos = computed(() => {
+  const n = steps.value.length;
+  if (temEscrita.value) return `${n} execução${n > 1 ? 'ões' : ''}`;
+  return `${n} consulta${n > 1 ? 's' : ''}`;
+});
 const elapsedSec = computed(() => {
   const ms = props.message.metadata?.elapsed_ms;
   return ms ? Math.round(ms / 1000) : null;
@@ -208,7 +216,7 @@ const stepsOpen = ref(false);
           <button type="button" @click="stepsOpen = !stepsOpen"
             class="inline-flex items-center gap-1.5 hover:text-ink-muted transition-colors">
             <i class="fas fa-circle-check text-data-pos"></i>
-            <span>{{ steps.length }} consulta{{ steps.length > 1 ? 's' : '' }}<template v-if="elapsedSec"> · {{ elapsedSec }}s</template></span>
+            <span>{{ rotuloPassos }}<template v-if="elapsedSec"> · {{ elapsedSec }}s</template></span>
             <i class="fas text-[9px]" :class="stepsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
           </button>
           <ul v-if="stepsOpen" class="mt-1 space-y-0.5 pl-0.5">
