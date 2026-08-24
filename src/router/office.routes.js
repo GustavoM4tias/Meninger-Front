@@ -158,11 +158,14 @@ export default [
             // gravadas migram no boot, em lib/ensurePermissionRouteRenames.js —
             // sem isso todo mundo perderia o acesso a estas telas.
             {
+                // Sem `name` de propósito: é só o agrupador das rotas /crm, e
+                // dar nome a um pai que tem filho de path vazio faz o Vue Router
+                // avisar que navegar por esse nome não renderizaria o filho.
+                // Ninguém navega por nome aqui - a navegação é toda por path.
                 path: 'crm',
-                name: 'crm',
                 meta: { requiresAuth: true },
                 children: [
-                    { path: '', redirect: '/crm/configuracoes' },
+                    { path: '', name: 'crm', redirect: '/crm/configuracoes' },
                     {
                         path: 'configuracoes',
                         name: 'CV CRM',
