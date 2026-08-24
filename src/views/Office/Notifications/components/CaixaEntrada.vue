@@ -33,6 +33,23 @@ const mural = useMuralStore();
 const route = useRoute();
 
 const tab = ref('all'); // all | unread
+
+// Paginação e as abas ficaram para trás quando a tela virou casca + seção: o
+// template continuou usando `tabs` e o `load()` continuou lendo `offset`, mas as
+// declarações tinham ficado no Index. A tela abria e quebrava no primeiro render.
+const limit = 30;
+const offset = ref(0);
+
+// O total da store é o da CONSULTA atual (na aba "Não lidas" ele vira o total de
+// não lidas). Guardar o total geral à parte evita o chip de "Todas" encolher
+// quando a pessoa alterna de aba.
+const totalAll = ref(0);
+watch(() => store.total, (v) => { if (tab.value === 'all') totalAll.value = v; });
+
+const tabs = computed(() => [
+  { value: 'all',    label: 'Todas',     icon: 'fas fa-list',       count: totalAll.value },
+  { value: 'unread', label: 'Não lidas', icon: 'fas fa-circle-dot', count: store.unread },
+]);
 // A origem também é PORTA DE ENTRADA: /mural cai aqui já recortado no mural, e
 // é assim que o item "Mural de Avisos" do menu continua levando ao mural sem
 // existir uma segunda tela desenhando o mesmo dado.
