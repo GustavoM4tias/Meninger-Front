@@ -9,7 +9,7 @@ import Nav from '@/components/Navigation/Nav.vue';
 import Carregamento from '@/components/Loading/Carregamento.vue';
 import InPersonRecordingBar from '@/components/InPersonRecordingBar.vue';
 import MuralFloatingCard from '@/components/Mural/MuralFloatingCard.vue';
-import PwaInstallPrompt from '@/components/Pwa/InstallPrompt.vue';
+import MuralHost from '@/components/Platform/MuralHost.vue';
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -95,10 +95,10 @@ function dispensar() {
  
         <InPersonRecordingBar />
         <MuralFloatingCard />
-        <!-- Convite para instalar o app. Só aparece para quem ainda não instalou
-             NESTE aparelho, uma vez por sessão, e some de vez se a pessoa
-             marcar o checkbox. Fica só no ramo autenticado. -->
-        <PwaInstallPrompt />
+        <!-- Mural: novidades da plataforma e convite para instalar o app, UM
+             POR VEZ. O porteiro é quem decide a ordem - ver
+             components/Platform/MuralHost.vue. Fica só no ramo autenticado. -->
+        <MuralHost />
         <Carregamento />
     </div>
 </template>
