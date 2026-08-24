@@ -522,6 +522,15 @@ export default [
                         redirect: to => ({ path: '/meta', query: { ...to.query, tab: 'credenciais' } }),
                     },
                     {
+                        // Administração do próprio sistema: trava de CÓDIGO nos três
+                        // níveis (adminOnly no navRegistry, allowedRole aqui e
+                        // requireAdmin nas rotas de API).
+                        path: 'integracao-microsoft',
+                        name: 'Integração Microsoft',
+                        component: () => import('@/views/Office/Settings/MicrosoftIntegration/Index.vue'),
+                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Integração Microsoft 365: permissões concedidas por recurso, limites de listagem e de envio de arquivo' },
+                    },
+                    {
                         path: 'docusign',
                         name: 'Configurações DocuSign',
                         component: () => import('@/views/Office/Settings/Docusign/Index.vue'),

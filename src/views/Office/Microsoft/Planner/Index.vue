@@ -189,6 +189,20 @@
                   Em progresso
                 </span>
 
+                <!-- Responsáveis: quem toca a tarefa precisa aparecer no cartão,
+                     senão só quem abre o detalhe sabe de quem ela é. -->
+                <span
+                  v-for="id in store.taskAssignees(task).slice(0, 3)" :key="id"
+                  class="text-micro px-1.5 py-0.5 rounded-full bg-accent-soft text-accent font-medium max-w-[7rem] truncate"
+                  :title="store.personName(id)">
+                  {{ store.personName(id) }}
+                </span>
+                <span
+                  v-if="store.taskAssignees(task).length > 3"
+                  class="text-micro text-ink-subtle font-mono">
+                  +{{ store.taskAssignees(task).length - 3 }}
+                </span>
+
                 <!-- Checklist count -->
                 <span
                   v-if="task.checklistItemCount > 0"
@@ -491,6 +505,7 @@ function toggleDefaultPlan() {
 }
 
 onMounted(async () => {
+  store.fetchPeople(); // nomes dos responsáveis nos cartões
   await store.initWithDefault();
   // Reflete nos seletores o que o padrão abriu automaticamente
   selectedGroupId.value = store.selectedGroup?.id || '';

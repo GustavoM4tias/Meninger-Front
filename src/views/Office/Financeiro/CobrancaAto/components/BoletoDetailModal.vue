@@ -77,7 +77,7 @@ function startPolling({ intervalMs = 5000, maxMs = 90000 } = {}) {
     try {
       await Promise.all([
         store.fetchHistory({ silent: true }),
-        store.fetchTimeline(props.item.id, { silent: true }),
+        store.fetchTimeline(props.item.id, { silent: true }, props.item.idreserva),
       ]);
       const now = live.value?.payment_status;
       if (now && now !== initialStatus) {
@@ -108,7 +108,7 @@ watch(() => [props.open, props.item?.id], async ([open, id]) => {
     store.timelineEvents = [];
     store.timelineHistory = null;
     store.timelineAttempts = [];
-    await store.fetchTimeline(id);
+    await store.fetchTimeline(id, {}, props.item?.idreserva ?? live.value?.idreserva);
   } else if (!open) {
     stopPolling();
     // Ao fechar, limpa pra próxima abertura não mostrar resíduo de quem fechou.
@@ -432,7 +432,7 @@ async function doResend() {
   resendConfirm.value.sending = true;
   actionState.value.resending = true;
   try {
-    const res = await store.resendHistoryItem(live.value.id);
+    const res = await store.resendHistoryItem(live.value.id, live.value);
     if (res.ok) {
       const e = res.data?.email; const w = res.data?.whatsapp;
       const msgE = e?.ok ? `✓ E-mail enviado pra ${e.to}` : `✗ E-mail: ${e?.error || 'não enviado'}`;
@@ -441,7 +441,7 @@ async function doResend() {
       resendConfirm.value.open = false;
       await Promise.all([
         store.fetchHistory({ silent: true }),
-        store.fetchTimeline(live.value.id, { silent: true }),
+        store.fetchTimeline(live.value.id, { silent: true }, live.value.idreserva),
       ]);
       emit('changed');
     } else {
@@ -502,8 +502,8 @@ async function handleRetry() {
   actionState.value.retrying = true;
   try {
     const ok = isRegenerate
-      ? await store.regenerateHistoryItem(live.value.id)
-      : await store.retryHistoryItem(live.value.id);
+      ? await store.regenerateHistoryItem(live.value.id, live.value)
+      : await store.retryHistoryItem(live.value.id, live.value);
     if (ok) {
       actionMsg.value = {
         variant: 'success',
@@ -538,12 +538,12 @@ async function handleMarkCancelled() {
   actionState.value.marking = true;
   actionMsg.value = null;
   try {
-    const res = await store.markCancelled(live.value.id);
+    const res = await store.markCancelled(live.value.id, live.value);
     if (res.ok) {
       actionMsg.value = { variant: 'success', text: 'Marcado como baixado. Agora use "Gerar novo boleto" para emitir a nova via.' };
       await Promise.all([
         store.fetchHistory({ silent: true }),
-        store.fetchTimeline(live.value.id, { silent: true }),
+        store.fetchTimeline(live.value.id, { silent: true }, live.value.idreserva),
       ]);
       emit('changed');
     } else {
@@ -564,7 +564,7 @@ async function handleCheckPayment() {
   })) return;
   actionState.value.checking = true;
   try {
-    const r = await store.triggerPaymentCheck(live.value.id);
+    const r = await store.triggerPaymentCheck(live.value.id, live.value);
     if (r.ok) {
       actionMsg.value = { variant: 'success', text: 'Verificação disparada — acompanhando atualizações…' };
       // Backend retornou 202 (lock adquirido) e está processando em background.

@@ -179,6 +179,13 @@
               <span><i class="fas fa-magnifying-glass mr-1.5"></i>{{ sp.searchResults.length }} resultado(s) para "{{ sp.searchQuery }}"</span>
               <button @click="sp.clearSearch()" class="hover:underline font-medium">Limpar busca</button>
             </div>
+            <!-- A busca tem teto próprio, baixo de propósito: dizer isso evita
+                 a leitura de que "só existem estes arquivos". -->
+            <div v-if="sp.searchTruncated"
+              class="px-4 sm:px-5 py-2 bg-data-warn/10 border-b border-data-warn/30 flex items-center gap-2 text-xs text-data-warn">
+              <i class="fas fa-triangle-exclamation"></i>
+              <span>Há mais resultados do que cabe nesta lista. Escreva mais palavras para afinar a busca.</span>
+            </div>
             <FileGrid
               :items="sp.searchResults"
               :loading="sp.isSearching"
@@ -189,6 +196,16 @@
           </template>
 
           <template v-else>
+            <!-- Listagem cortada no teto configurado: dizer é obrigatório, senão
+                 a tela afirma que a pasta acabou quando ela não acabou. -->
+            <div v-if="sp.listTruncated"
+              class="px-4 sm:px-5 py-2 bg-data-warn/10 border-b border-data-warn/30 flex items-center gap-2 text-xs text-data-warn">
+              <i class="fas fa-triangle-exclamation"></i>
+              <span>
+                Esta pasta tem mais itens do que o limite de exibição. Use a busca para
+                achar o que precisa, ou peça ao administrador para aumentar o limite.
+              </span>
+            </div>
             <FileGrid
               :items="sp.items"
               :loading="sp.loading"

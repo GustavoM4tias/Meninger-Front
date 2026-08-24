@@ -4,6 +4,7 @@ import { ref, computed } from 'vue';
 import * as api from '@/utils/Microsoft/apiPlanner';
 import { readDefaultPref, writeDefaultPref } from '@/utils/Microsoft/defaultPref';
 
+import { noteGraphError } from '@/utils/Microsoft/noteGraphError';
 export const usePlannerStore = defineStore('planner', () => {
 
     // ── Estado ────────────────────────────────────────────────────────────────
@@ -13,6 +14,9 @@ export const usePlannerStore = defineStore('planner', () => {
     const selectedPlan  = ref(null);
     const buckets       = ref([]);
     const tasks         = ref([]);
+
+    // Pessoas que podem receber tarefa (Office, com Microsoft vinculada).
+    const people        = ref([]);
 
     const loadingGroups  = ref(false);
     const loadingPlan    = ref(false);
@@ -48,7 +52,7 @@ export const usePlannerStore = defineStore('planner', () => {
         try {
             groups.value = await api.getGroups();
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
         } finally {
             loadingGroups.value = false;
         }
@@ -64,7 +68,7 @@ export const usePlannerStore = defineStore('planner', () => {
         try {
             plans.value = await api.getGroupPlans(group.id);
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
         } finally {
             loadingGroups.value = false;
         }
@@ -127,7 +131,7 @@ export const usePlannerStore = defineStore('planner', () => {
             buckets.value = data.buckets;
             tasks.value   = data.tasks;
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
         } finally {
             loadingPlan.value = false;
         }
@@ -189,6 +193,31 @@ export const usePlannerStore = defineStore('planner', () => {
         }
     }
 
+    /** Carrega a lista de responsáveis possíveis (uma vez por sessão). */
+    async function fetchPeople() {
+        if (people.value.length) return people.value;
+        try {
+            people.value = await api.getPeople();
+        } catch (err) {
+            // Sem a lista o quadro continua funcionando, só sem seletor.
+            console.warn('[plannerStore] fetchPeople:', err.message);
+            people.value = [];
+        }
+        return people.value;
+    }
+
+    /** Nome de exibição a partir do id da Microsoft. */
+    function personName(microsoftId) {
+        return people.value.find(p => p.microsoftId === microsoftId)?.name || 'Pessoa da equipe';
+    }
+
+    /** Responsáveis atuais de uma tarefa (ids), ignorando remoções pendentes. */
+    function taskAssignees(task) {
+        return Object.entries(task?.assignments || {})
+            .filter(([, v]) => v)
+            .map(([id]) => id);
+    }
+
     async function updateTask(taskId, data) {
         savingTask.value = true;
         try {
@@ -208,6 +237,18 @@ export const usePlannerStore = defineStore('planner', () => {
     async function toggleTaskComplete(task) {
         const newPercent = task.percentComplete === 100 ? 0 : 100;
         return updateTask(task.id, { percentComplete: newPercent, etag: task['@odata.etag'] });
+    }
+
+    /**
+     * Troca os responsáveis de uma tarefa.
+     * Manda a lista FINAL; o backend calcula o diff que o Planner exige.
+     */
+    async function setTaskAssignees(task, microsoftIds) {
+        return updateTask(task.id, {
+            assignedTo: microsoftIds,
+            currentAssignments: task.assignments || {},
+            etag: task['@odata.etag'],
+        });
     }
 
     async function deleteTask(task) {
@@ -235,6 +276,7 @@ export const usePlannerStore = defineStore('planner', () => {
     return {
         groups, selectedGroup, plans, selectedPlan,
         buckets, bucketsOrdered, tasks, tasksByBucket,
+        people, fetchPeople, personName, taskAssignees, setTaskAssignees,
         loadingGroups, loadingPlan, savingTask, error,
         fetchGroups, selectGroup, selectPlan, refreshPlan,
         defaultPlan, isCurrentDefault, setDefaultPlan, clearDefaultPlan, initWithDefault,

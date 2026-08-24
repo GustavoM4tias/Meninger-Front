@@ -4,6 +4,7 @@ import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
+import { noteGraphError } from '@/utils/Microsoft/noteGraphError';
 const BASE = `${API_URL}/microsoft/teams`;
 
 function getWeekStart(date) {
@@ -128,7 +129,7 @@ export const useTeamsStore = defineStore('teams', () => {
                 `${BASE}/calendar?start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}`
             );
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
         } finally {
             loading.value = false;
         }

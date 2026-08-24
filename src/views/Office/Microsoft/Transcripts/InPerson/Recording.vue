@@ -26,16 +26,16 @@
           storage-key="gravacao-presencial"
           label=""
           title="Como gravar uma reunião presencial"
-          intro="Esta tela usa o microfone deste aparelho para transcrever a conversa em tempo real. A transcrição fica salva; o resumo da Eme é um passo separado, depois."
+          intro="Esta tela usa o microfone deste aparelho para transcrever a conversa. A transcrição fica salva; o resumo da Eme é um passo separado, depois."
           :steps="[
             { title: 'Deixe a tela aberta', text: 'A captura depende desta aba estar viva. Continuar trabalhando minimiza a gravação sem parar - fechar a aba, não.' },
-            { title: 'Acompanhe o texto', text: 'As falas aparecem conforme são reconhecidas. Nome de pessoa e sigla costumam sair errados, e isso se ajusta depois no texto salvo.' },
-            { title: 'Encerre ao final', text: 'Encerrar salva a transcrição. Só depois disso dá para pedir o resumo com a Eme.' },
+            { title: 'Duas formas de transcrever', text: 'No Chrome do computador as falas aparecem ao vivo. No celular e nos demais navegadores a conversa é gravada e transcrita ao encerrar, com a separação de quem falou.' },
+            { title: 'Encerre ao final', text: 'Encerrar salva a transcrição. Quando ela é feita ao encerrar, espere alguns segundos sem fechar a tela. Só depois dá para pedir o resumo com a Eme.' },
           ]"
           :tips="[
             'Microfone longe de quem fala é o que mais estraga a transcrição: o aparelho no meio da mesa rende mais que o volume alto.',
             'Avise os presentes que a conversa está sendo transcrita.',
-            'Sem internet a transcrição para; a gravação já feita não se perde.',
+            'Reunião muito longa é melhor gravar em partes: acima de 20 MB de áudio a transcrição é recusada.',
           ]" />
         <span class="hidden sm:inline-flex items-center gap-1 text-xs text-ink-subtle">
           <i class="fas fa-users"></i>
@@ -125,13 +125,23 @@
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xs font-semibold text-ink-subtle uppercase tracking-widest flex items-center gap-2">
             <i class="fas fa-wave-square text-accent text-[10px]"></i>
-            Transcrição ao vivo
+            {{ store.captureMode === 'audio' ? 'Gravando' : 'Transcrição ao vivo' }}
           </h3>
-          <span class="text-xs text-ink-subtle font-mono tabular-nums">{{ store.cues.length }} segmentos</span>
+          <span v-if="store.captureMode !== 'audio'" class="text-xs text-ink-subtle font-mono tabular-nums">{{ store.cues.length }} segmentos</span>
         </div>
         <div ref="transcriptEl"
           class="h-44 overflow-y-auto space-y-2 p-4 rounded-2xl border border-line bg-surface-raised scroll-smooth">
-          <div v-if="!store.cues.length && !store.interimText"
+          <!-- Neste navegador a transcrição sai no fim: dizer isso evita a
+               impressão de que a gravação não está funcionando. -->
+          <div v-if="store.captureMode === 'audio'"
+            class="h-full flex flex-col items-center justify-center gap-2 text-center px-4">
+            <i class="fas fa-microphone-lines text-accent text-lg"></i>
+            <p class="text-sm text-ink-muted">
+              A conversa está sendo gravada. A transcrição, com a separação de quem falou,
+              é feita ao encerrar.
+            </p>
+          </div>
+          <div v-else-if="!store.cues.length && !store.interimText"
             class="h-full flex items-center justify-center text-ink-subtle text-sm">
             {{ store.isRecording ? 'Aguardando fala...' : 'Inicie a gravação' }}
           </div>
@@ -165,10 +175,18 @@
           @click="store.pause()">
           Pausar
         </Button>
-        <Button variant="danger" icon="fas fa-stop" @click="confirmStop = true">
+        <Button variant="danger" icon="fas fa-stop" :loading="store.transcribing" @click="confirmStop = true">
           Encerrar
         </Button>
       </div>
+
+      <!-- Transcrição no servidor: pode levar alguns segundos -->
+      <Surface v-if="store.transcribing" variant="raised" padding="sm" class="border-accent/30 bg-accent-soft">
+        <div class="flex items-center gap-2 text-accent text-xs">
+          <i class="fas fa-spinner fa-spin"></i>
+          Transcrevendo a gravação. Não feche esta tela.
+        </div>
+      </Surface>
 
       <!-- Aviso Web Speech API -->
       <Surface v-if="!store.hasMicSupport"
@@ -194,7 +212,13 @@
           </div>
         </div>
         <p class="text-sm text-ink-muted">
-          A transcrição será salva. Você poderá gerar o resumo de IA depois.
+          <template v-if="store.captureMode === 'audio'">
+            A gravação vai ser transcrita agora - leva alguns segundos. Depois disso
+            você pode pedir o resumo à Eme.
+          </template>
+          <template v-else>
+            A transcrição será salva. Você poderá gerar o resumo de IA depois.
+          </template>
         </p>
       </div>
       <template #footer>
@@ -216,6 +240,7 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import { useInPersonRecordingStore } from '@/stores/Microsoft/inPersonRecording';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -225,6 +250,7 @@ import Surface from '@/components/UI/Surface.vue';
 
 const router = useRouter();
 const store  = useInPersonRecordingStore();
+const toast  = useToast();
 
 const confirmStop = ref(false);
 
@@ -235,7 +261,14 @@ function handleMinimize() {
 async function handleStop() {
   confirmStop.value = false;
   stopVisualization();
-  await store.stop();
+  try {
+    // No modo áudio, encerrar inclui transcrever no servidor: leva alguns
+    // segundos e pode falhar, então a tela espera e avisa em vez de sair.
+    await store.stop();
+  } catch (err) {
+    toast.error(err?.message || 'Não foi possível transcrever a gravação.');
+    return;
+  }
   router.push('/microsoft/teams?tab=reunioes');
 }
 

@@ -153,14 +153,16 @@ function showToast(message, type = 'success') {
         </template>
       </PageHeader>
 
-      <!-- Sem conta Microsoft conectada -->
+      <!-- Sem sessão Microsoft utilizável -->
       <div v-if="!ms.connected && !ms.loading" class="py-16">
         <EmptyState icon="fab fa-microsoft" size="lg"
-          title="Conecte sua conta Microsoft"
-          description="A Central Microsoft precisa da sua conta @menin.com.br para mostrar sua agenda e suas reuniões.">
+          :title="ms.needsReconnect ? 'Sua sessão Microsoft expirou' : 'Conecte sua conta Microsoft'"
+          :description="ms.needsReconnect
+            ? 'A conta continua vinculada, mas o acesso caducou (troca de senha ou muito tempo sem uso). Entre de novo para voltar a ver sua agenda.'
+            : 'A Central Microsoft precisa da sua conta @menin.com.br para mostrar sua agenda e suas reuniões.'">
           <template #actions>
-            <Button variant="primary" icon="fab fa-microsoft" @click="ms.redirectToLogin()">
-              Conectar conta Microsoft
+            <Button variant="primary" icon="fab fa-microsoft" :loading="ms.loading" @click="ms.startLink()">
+              {{ ms.needsReconnect ? 'Reconectar conta Microsoft' : 'Conectar conta Microsoft' }}
             </Button>
           </template>
         </EmptyState>

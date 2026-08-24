@@ -96,6 +96,44 @@
             </select>
           </div>
 
+          <!-- Responsáveis -->
+          <div class="space-y-1.5">
+            <label class="text-micro font-semibold text-ink-subtle uppercase tracking-wide">Responsáveis</label>
+
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span v-for="id in assignees" :key="id"
+                class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-lg bg-accent-soft border border-accent/20 text-accent text-xs font-medium max-w-full">
+                <span class="truncate">{{ store.personName(id) }}</span>
+                <button type="button" :disabled="saving" @click="toggleAssignee(id)"
+                  class="h-5 w-5 grid place-items-center rounded hover:bg-accent/15 transition shrink-0"
+                  :aria-label="`Tirar ${store.personName(id)} da tarefa`">
+                  <i class="fas fa-xmark text-micro"></i>
+                </button>
+              </span>
+
+              <button type="button" @click="pickerOpen = !pickerOpen"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-10 sm:min-h-0 rounded-lg border border-dashed border-line text-ink-muted hover:text-accent hover:border-accent/40 text-xs font-medium transition">
+                <i class="fas fa-user-plus text-micro"></i>
+                {{ assignees.length ? 'Adicionar' : 'Definir responsável' }}
+              </button>
+            </div>
+
+            <div v-if="pickerOpen" class="rounded-lg border border-line bg-surface-sunken max-h-52 overflow-y-auto">
+              <p v-if="!assignablePeople.length" class="px-3 py-2.5 text-xs text-ink-muted">
+                Ninguém disponível. Só aparecem aqui as pessoas ativas do Office com conta Microsoft vinculada.
+              </p>
+              <button v-for="p in assignablePeople" :key="p.microsoftId" type="button"
+                :disabled="saving" @click="toggleAssignee(p.microsoftId)"
+                class="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left text-xs hover:bg-surface-hover transition disabled:opacity-50">
+                <span class="min-w-0">
+                  <span class="block text-ink font-medium truncate">{{ p.name }}</span>
+                  <span class="block text-ink-subtle truncate">{{ p.email }}</span>
+                </span>
+                <i v-if="isAssigned(p.microsoftId)" class="fas fa-check text-accent shrink-0"></i>
+              </button>
+            </div>
+          </div>
+
           <!-- Descrição -->
           <div class="space-y-1.5">
             <label class="text-micro font-semibold text-ink-subtle uppercase tracking-wide">Descrição</label>
@@ -233,7 +271,42 @@ const form = ref({
   description: '',
 });
 
+// ── Responsáveis ──────────────────────────────────────────────────────────────
+// O quadro não tinha responsável: sem isso um kanban de equipe não fecha o
+// ciclo (ninguém sabe de quem é a tarefa). A lista de pessoas vem do próprio
+// Office, então não depende de permissão nova no portal do Azure.
+const assignees = ref([]);
+const pickerOpen = ref(false);
+
+const assignablePeople = computed(() => store.people);
+
+function isAssigned(microsoftId) {
+  return assignees.value.includes(microsoftId);
+}
+
+async function toggleAssignee(microsoftId) {
+  const next = isAssigned(microsoftId)
+    ? assignees.value.filter(id => id !== microsoftId)
+    : [...assignees.value, microsoftId];
+
+  const previous = assignees.value;
+  assignees.value = next; // resposta imediata; desfaz se o Planner recusar
+  saving.value = true;
+  try {
+    const updated = await store.setTaskAssignees(props.task, next);
+    assignees.value = store.taskAssignees(updated || props.task);
+    flashSaved();
+  } catch (err) {
+    assignees.value = previous;
+    toast.error(err.message);
+  } finally {
+    saving.value = false;
+  }
+}
+
 onMounted(async () => {
+  assignees.value = store.taskAssignees(props.task);
+  store.fetchPeople();
   try {
     details.value = await store.getTaskDetails(props.task.id);
     form.value.description = details.value?.description ?? '';

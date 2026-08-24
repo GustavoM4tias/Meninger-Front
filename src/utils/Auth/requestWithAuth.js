@@ -50,6 +50,12 @@ export async function requestWithAuth(path, options = {}) {
     }
 
     // se não for json, devolve texto
-    if (!json) return await safeReadText(res);
-    return json;
+    const data = json ?? await safeReadText(res);
+
+    // Opt-in: quem precisa dos cabeçalhos da resposta pede { withMeta: true } e
+    // recebe { data, headers }. Sem a flag, o retorno é exatamente o de sempre —
+    // nenhum chamador existente muda de comportamento.
+    if (options.withMeta) return { data, headers: res.headers };
+
+    return data;
 }

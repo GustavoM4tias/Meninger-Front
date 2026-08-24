@@ -5,6 +5,7 @@ import API_URL from '@/config/apiUrl';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import { readDefaultPref, writeDefaultPref } from '@/utils/Microsoft/defaultPref';
 
+import { noteGraphError } from '@/utils/Microsoft/noteGraphError';
 const BASE = `${API_URL}/microsoft/sharepoint`;
 
 // Upload com progresso via XMLHttpRequest
@@ -77,6 +78,20 @@ export const useSharepointStore = defineStore('sharepoint', () => {
     const loading = ref(false);
     const error   = ref(null);
 
+    // ── Corte de listagem ─────────────────────────────────────────────────────
+    // O backend agora completa a lista seguindo o @odata.nextLink; quando bate
+    // no teto configurado, avisa pelo cabeçalho X-Graph-Truncated. A tela DIZ
+    // que está cortada em vez de fingir que a pasta acabou.
+    const listTruncated = ref(false);
+    const searchTruncated = ref(false);
+
+    /** GET que devolve o array e registra se a listagem veio cortada. */
+    async function _getList(url) {
+        const { data, headers } = await requestWithAuth(url, { withMeta: true });
+        listTruncated.value = headers?.get?.('X-Graph-Truncated') === '1';
+        return Array.isArray(data) ? data : [];
+    }
+
     // ── Computed ──────────────────────────────────────────────────────────────
     const currentFolderId = computed(() =>
         breadcrumb.value.length ? breadcrumb.value[breadcrumb.value.length - 1].id : null
@@ -87,8 +102,8 @@ export const useSharepointStore = defineStore('sharepoint', () => {
 
     async function fetchSites() {
         loading.value = true; error.value = null;
-        try { sites.value = await requestWithAuth(`${BASE}/sites`); }
-        catch (err) { error.value = err.message; }
+        try { sites.value = await _getList(`${BASE}/sites`); }
+        catch (err) { error.value = err.message; noteGraphError(err); }
         finally { loading.value = false; }
     }
 
@@ -141,9 +156,9 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         breadcrumb.value = []; searchQuery.value = ''; searchResults.value = [];
         loading.value = true; error.value = null;
         try {
-            drives.value = await requestWithAuth(`${BASE}/sites/${site.id}/drives`);
+            drives.value = await _getList(`${BASE}/sites/${site.id}/drives`);
             if (drives.value.length === 1) await selectDrive(drives.value[0]);
-        } catch (err) { error.value = err.message; }
+        } catch (err) { error.value = err.message; noteGraphError(err); }
         finally { loading.value = false; }
     }
 
@@ -156,8 +171,8 @@ export const useSharepointStore = defineStore('sharepoint', () => {
     async function _loadRoot() {
         if (!selectedDrive.value) return;
         loading.value = true; error.value = null;
-        try { items.value = await requestWithAuth(`${BASE}/drives/${selectedDrive.value.id}/root`); }
-        catch (err) { error.value = err.message; }
+        try { items.value = await _getList(`${BASE}/drives/${selectedDrive.value.id}/root`); }
+        catch (err) { error.value = err.message; noteGraphError(err); }
         finally { loading.value = false; }
     }
 
@@ -166,10 +181,10 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         breadcrumb.value = [...breadcrumb.value, { id: folder.id, name: folder.name }];
         loading.value = true; error.value = null;
         try {
-            items.value = await requestWithAuth(
+            items.value = await _getList(
                 `${BASE}/drives/${selectedDrive.value.id}/items/${folder.id}/children`
             );
-        } catch (err) { error.value = err.message; }
+        } catch (err) { error.value = err.message; noteGraphError(err); }
         finally { loading.value = false; }
     }
 
@@ -179,10 +194,10 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         const target = breadcrumb.value[index];
         loading.value = true; error.value = null;
         try {
-            items.value = await requestWithAuth(
+            items.value = await _getList(
                 `${BASE}/drives/${selectedDrive.value.id}/items/${target.id}/children`
             );
-        } catch (err) { error.value = err.message; }
+        } catch (err) { error.value = err.message; noteGraphError(err); }
         finally { loading.value = false; }
     }
 
@@ -190,14 +205,17 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         if (!selectedDrive.value || !searchQuery.value.trim()) return;
         isSearching.value = true; error.value = null;
         try {
-            searchResults.value = await requestWithAuth(
-                `${BASE}/drives/${selectedDrive.value.id}/search?q=${encodeURIComponent(searchQuery.value.trim())}`
+            const { data, headers } = await requestWithAuth(
+                `${BASE}/drives/${selectedDrive.value.id}/search?q=${encodeURIComponent(searchQuery.value.trim())}`,
+                { withMeta: true }
             );
-        } catch (err) { error.value = err.message; }
+            searchResults.value = Array.isArray(data) ? data : [];
+            searchTruncated.value = headers?.get?.('X-Graph-Truncated') === '1';
+        } catch (err) { error.value = err.message; noteGraphError(err); }
         finally { isSearching.value = false; }
     }
 
-    function clearSearch() { searchQuery.value = ''; searchResults.value = []; }
+    function clearSearch() { searchQuery.value = ''; searchResults.value = []; searchTruncated.value = false; }
 
     // ── Actions: mutações ─────────────────────────────────────────────────────
 
@@ -212,7 +230,7 @@ export const useSharepointStore = defineStore('sharepoint', () => {
             items.value = items.value.filter(i => i.id !== itemId);
             searchResults.value = searchResults.value.filter(i => i.id !== itemId);
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
             throw err;
         }
     }
@@ -228,7 +246,7 @@ export const useSharepointStore = defineStore('sharepoint', () => {
             _replaceItem(updated);
             return updated;
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
             throw err;
         }
     }
@@ -245,13 +263,39 @@ export const useSharepointStore = defineStore('sharepoint', () => {
             items.value = items.value.filter(i => i.id !== itemId);
             searchResults.value = searchResults.value.filter(i => i.id !== itemId);
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
             throw err;
         }
     }
 
+    // ── Teto de upload (vem do painel, com fallback) ──────────────────────────
+    const uploadMaxMb = ref(null);
+
+    async function fetchUploadLimits() {
+        if (uploadMaxMb.value !== null) return uploadMaxMb.value;
+        try {
+            const data = await requestWithAuth(`${BASE}/upload-limits`);
+            uploadMaxMb.value = Number(data?.maxMb) || 250;
+        } catch {
+            uploadMaxMb.value = 250; // backend antigo/sem resposta: não bloqueia o envio
+        }
+        return uploadMaxMb.value;
+    }
+
     async function uploadFile(file, parentId) {
         if (!selectedDrive.value) return;
+
+        // Recusa aqui em vez de deixar a pessoa esperar a barra encher para
+        // receber o erro só no fim.
+        const maxMb = await fetchUploadLimits();
+        if (file.size > maxMb * 1024 * 1024) {
+            const err = new Error(
+                `"${file.name}" tem ${(file.size / 1024 / 1024).toFixed(1)} MB e o limite de envio é ${maxMb} MB.`
+            );
+            error.value = err.message;
+            throw err;
+        }
+
         uploading.value = true;
         uploadProgress.value = { filename: file.name, percent: 0 };
         error.value = null;
@@ -266,7 +310,7 @@ export const useSharepointStore = defineStore('sharepoint', () => {
             else items.value = [newItem, ...items.value];
             return newItem;
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
             throw err;
         } finally {
             uploading.value = false;
@@ -304,7 +348,7 @@ export const useSharepointStore = defineStore('sharepoint', () => {
             );
             return link;
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
             throw err;
         }
     }
@@ -337,7 +381,7 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         breadcrumb, searchQuery, searchResults, isSearching,
         uploadProgress, uploading,
         favorites, isFavorited, toggleFavorite,
-        loading, error,
+        loading, error, listTruncated, searchTruncated, uploadMaxMb, fetchUploadLimits,
         currentFolderId, isAtRoot,
         fetchSites, selectSite, selectDrive,
         defaultLocation, isCurrentDefault, setDefaultLocation, clearDefaultLocation, initWithDefault,

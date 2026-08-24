@@ -259,6 +259,13 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         fetchHistory({ keepPage: true });
     }
 
+    /* ── Rotear a ação pela FORMA ──────────────────────────────────────────
+       Os ids das duas tabelas se cruzam: mandar id de cartão para a rota do
+       boleto acerta o registro de OUTRA reserva. Toda ação passa por aqui.
+       Registro antigo vem sem `forma` (nasceu quando só existia boleto). */
+    const ehCartao = (item) => item?.forma === 'cartao';
+    const baseDe = (item) => (ehCartao(item) ? '/link-cartao' : '/boleto-caixa');
+
     async function retryHistoryItem(id) {
         try {
             await requestWithAuth(`/boleto-caixa/history/${id}/retry`, { method: 'POST' });
@@ -279,10 +286,14 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
-    async function markCancelled(id) {
+    async function markCancelled(id, item = null) {
         // Marca um boleto pendente como baixado manualmente (admin já baixou no Ecobrança).
         try {
-            await requestWithAuth(`/boleto-caixa/history/${id}/mark-cancelled`, { method: 'POST' });
+            // Boleto: marca como baixado (a baixa real foi feita no Ecobrança).
+            // Cartão: exclui o link no portal de verdade - lá dá para excluir
+            // enquanto está pendente, e é o que impede o cliente de pagar.
+            const rota = ehCartao(item) ? 'excluir' : 'mark-cancelled';
+            await requestWithAuth(`${baseDe(item)}/history/${id}/${rota}`, { method: 'POST' });
             await fetchHistory({ silent: true });
             return { ok: true };
         } catch (err) {
@@ -300,9 +311,9 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
-    async function resendHistoryItem(id) {
+    async function resendHistoryItem(id, item = null) {
         try {
-            const data = await requestWithAuth(`/boleto-caixa/history/${id}/resend`, { method: 'POST' });
+            const data = await requestWithAuth(`${baseDe(item)}/history/${id}/resend`, { method: 'POST' });
             await fetchHistory();
             return { ok: true, data };
         } catch (err) {
@@ -330,7 +341,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
      *   atual visível durante o fetch (sem limpar eventos nem ligar spinner).
      *   Só substitui os arrays quando a resposta chega. Usado pelo polling.
      */
-    async function fetchTimeline(historyId, opts = {}) {
+    async function fetchTimeline(historyId, opts = {}, idreserva = null) {
         const silent = !!opts.silent;
         if (!silent) {
             timelineLoading.value = true;
@@ -340,7 +351,9 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             timelineAttempts.value = [];
         }
         try {
-            const data = await requestWithAuth(`/boleto-caixa/history/${historyId}/reserva-timeline`);
+            // Timeline unificada: por RESERVA, não por registro - a história da
+            // cobrança do ato atravessa tentativas e até a troca de forma.
+            const data = await requestWithAuth(`/cobranca-ato/timeline/${idreserva}`);
             timelineEvents.value = Array.isArray(data?.events) ? data.events : [];
             timelineAttempts.value = Array.isArray(data?.attempts) ? data.attempts : [];
             timelineHistory.value = data?.history || null;
@@ -351,9 +364,9 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
-    async function triggerPaymentCheck(historyId) {
+    async function triggerPaymentCheck(historyId, item = null) {
         try {
-            await requestWithAuth(`/boleto-caixa/history/${historyId}/check-payment`, { method: 'POST' });
+            await requestWithAuth(`${baseDe(item)}/history/${historyId}/check-payment`, { method: 'POST' });
             return { ok: true };
         } catch (err) {
             // 409 = lock ocupado — sinaliza pro UI mostrar mensagem diferente

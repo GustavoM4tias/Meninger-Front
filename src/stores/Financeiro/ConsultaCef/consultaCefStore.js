@@ -115,6 +115,23 @@ export const useConsultaCefStore = defineStore('consultaCef', () => {
         searched.value = false;
     }
 
+    /* Ordenacao EXPLICITA (coluna e direcao de uma vez), que e o que o
+       DataTable manda. Ele avisa as duas em eventos separados no mesmo
+       clique, entao a busca e adiada para a proxima microtarefa: sem isso um
+       clique viraria DUAS consultas, e a segunda chegaria por cima. */
+    let buscaAgendada = null;
+    function applySort(col, direcao) {
+        sort.value = col || 'number';
+        dir.value = direcao === 'asc' ? 'asc' : 'desc';
+        page.value = 1;
+        if (buscaAgendada) return buscaAgendada;
+        buscaAgendada = Promise.resolve().then(() => {
+            buscaAgendada = null;
+            return search();
+        });
+        return buscaAgendada;
+    }
+
     function setSort(col) {
         if (sort.value === col) {
             dir.value = dir.value === 'asc' ? 'desc' : 'asc';
@@ -136,6 +153,6 @@ export const useConsultaCefStore = defineStore('consultaCef', () => {
         // estado
         loading, loadingEnterprises, error, searched,
         // ações
-        fetchEnterprises, search, applyFilters, goToPage, setSort, clear,
+        fetchEnterprises, search, applyFilters, goToPage, setSort, applySort, clear,
     };
 });

@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 
+import { noteGraphError } from '@/utils/Microsoft/noteGraphError';
 const BASE = `${API_URL}/microsoft/transcripts`;
 
 export const useTranscriptStore = defineStore('transcript', () => {
@@ -34,7 +35,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
         try {
             meetings.value = await requestWithAuth(`${BASE}/meetings?days=${days}`);
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
         } finally {
             loadingMeetings.value = false;
         }
@@ -57,11 +58,15 @@ export const useTranscriptStore = defineStore('transcript', () => {
         checkingTranscript.value = true;
         error.value = null;
         try {
+            // organizerEmail deixa o backend tentar o caminho de aplicação
+            // quando a pessoa apenas PARTICIPOU da reunião.
+            const organizerEmail = meeting?.organizer?.email || '';
             transcriptInfo.value = await requestWithAuth(
                 `${BASE}/check?joinUrl=${encodeURIComponent(meeting.joinUrl)}`
+                + (organizerEmail ? `&organizerEmail=${encodeURIComponent(organizerEmail)}` : '')
             );
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
             transcriptInfo.value = { available: false, transcripts: [] };
         } finally {
             checkingTranscript.value = false;
@@ -97,7 +102,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
             }
             return data;
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
             throw err;
         } finally {
             loadingTranscript.value = false;
@@ -121,7 +126,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
             if (saved) reportDbId.value = saved.id;
             return data.report;
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
             throw err;
         } finally {
             generatingReport.value = false;
@@ -136,7 +141,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
         try {
             reports.value = await requestWithAuth(`${BASE}/reports`);
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
         } finally {
             loadingReports.value = false;
         }
@@ -185,7 +190,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
                 transcripts: [{ id: full.transcriptId, reportReady: true }],
             };
         } catch (err) {
-            error.value = err.message;
+            error.value = err.message; noteGraphError(err);
         } finally {
             loadingTranscript.value = false;
         }

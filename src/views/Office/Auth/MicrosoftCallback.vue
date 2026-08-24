@@ -53,6 +53,28 @@ const ERROR_MESSAGES = {
   access_denied:  'Acesso negado. Você cancelou o login.',
 };
 
+// ── Modo VÍNCULO (?mode=link) ────────────────────────────────────────────────
+// Quem já está logado e clicou em "Conectar conta Microsoft" volta por aqui. A
+// sessão do Office NÃO é tocada: nenhum token novo é emitido, nenhum exchange é
+// feito. Antes esse botão caía no fluxo de login e trocava a sessão pela conta
+// escolhida na tela da Microsoft.
+const isLinkMode = ref(false);
+const linkError  = ref('');
+
+function describeLinkError(code, expected, got) {
+  if (code === 'email_mismatch') {
+    return `Você entrou na Microsoft com ${got || 'outra conta'}, mas sua conta do Office é ${expected || 'outra'}. `
+         + 'Escolha a conta certa ou peça ao administrador para ajustar seu cadastro.';
+  }
+  if (code === 'already_linked') return 'Essa conta Microsoft já está vinculada a outro usuário do Office.';
+  if (code === 'no_email')       return 'A Microsoft não devolveu um e-mail para essa conta.';
+  if (code === 'user_not_found') return 'Sua sessão não foi encontrada. Entre de novo e tente outra vez.';
+  if (code === 'access_denied')  return 'Você cancelou a conexão com a Microsoft.';
+  return ERROR_MESSAGES[code] || 'Não foi possível conectar sua conta Microsoft.';
+}
+
+function goToAccount() { router.push('/settings/account'); }
+
 async function loadSetupOptions() {
   try {
     const data = await getSignupOptions();
@@ -100,6 +122,19 @@ onMounted(async () => {
   const params = new URLSearchParams(window.location.search);
   const code   = params.get('code');
   const error  = params.get('error');
+
+  // ── Vínculo: o backend já gravou (ou recusou). Nada a trocar aqui. ─────────
+  if (params.get('mode') === 'link') {
+    isLinkMode.value = true;
+    if (params.get('linked') === '1') {
+      state.value = 'success';
+      setTimeout(() => router.push('/settings/account'), 1400);
+    } else {
+      linkError.value = describeLinkError(error, params.get('expected'), params.get('got'));
+      state.value = 'error';
+    }
+    return;
+  }
 
   if (error) {
     errorMessage.value = ERROR_MESSAGES[error] || 'Erro desconhecido. Tente novamente.';
@@ -244,7 +279,7 @@ function goToLogin() { router.push({ name: 'login' }); }
           <i class="fas fa-check text-lg" />
         </div>
         <h2 class="text-base font-semibold text-ink mb-1">
-          {{ isNew ? 'Conta criada com sucesso!' : 'Login realizado!' }}
+          {{ isLinkMode ? 'Conta Microsoft conectada!' : (isNew ? 'Conta criada com sucesso!' : 'Login realizado!') }}
         </h2>
         <p class="text-sm text-ink-muted">Redirecionando...</p>
       </div>
@@ -256,9 +291,14 @@ function goToLogin() { router.push({ name: 'login' }); }
         <div class="h-12 w-12 grid place-items-center mx-auto mb-3 rounded-full bg-red-500/15 text-red-600 dark:text-red-400">
           <i class="fas fa-xmark text-lg" />
         </div>
-        <h2 class="text-base font-semibold text-ink mb-2">Falha na autenticação</h2>
-        <p class="text-sm text-ink-muted mb-4">{{ errorMessage }}</p>
-        <Button @click="goToLogin">Voltar ao login</Button>
+        <h2 class="text-base font-semibold text-ink mb-2">
+          {{ isLinkMode ? 'Não foi possível conectar' : 'Falha na autenticação' }}
+        </h2>
+        <p class="text-sm text-ink-muted mb-4">{{ isLinkMode ? linkError : errorMessage }}</p>
+        <!-- No vinculo a sessao do Office continua de pe: devolver para o login
+             seria expulsar quem nunca saiu. -->
+        <Button v-if="isLinkMode" @click="goToAccount">Voltar para Minha conta</Button>
+        <Button v-else @click="goToLogin">Voltar ao login</Button>
       </div>
     </template>
 

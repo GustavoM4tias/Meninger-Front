@@ -108,97 +108,67 @@
           </span>
         </div>
 
-        <div class="relative">
-          <div v-if="store.loading" class="absolute inset-0 bg-surface/60 backdrop-blur-[1px] grid place-items-center z-10">
-            <i class="fas fa-circle-notch fa-spin text-accent text-xl"></i>
-          </div>
-
-          <!-- Mobile: cards -->
-          <div class="md:hidden divide-y divide-line">
-            <div v-for="r in store.rows" :key="r.id" class="p-4">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <div class="text-sm font-semibold text-ink truncate">{{ r.customer_name || 'Sem cliente' }}</div>
-                  <div class="text-xs text-ink-muted truncate mt-0.5">{{ r.enterprise_name }}</div>
-                  <div class="text-micro text-ink-subtle mt-0.5">
-                    Contrato <span class="font-mono">{{ r.number }}</span>
-                    <template v-if="r.unit_name"> · Unid. {{ r.unit_name }}</template>
-                  </div>
-                </div>
-                <Badge :variant="situacaoVariant(r.situation)" size="sm" class="shrink-0">{{ r.situation || '-' }}</Badge>
-              </div>
-
-              <div class="mt-3 flex items-center justify-between gap-2 rounded-xl border border-line bg-surface-sunken/50 px-3 py-2">
-                <div class="min-w-0">
-                  <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Nº CEF</div>
-                  <div class="text-sm font-mono tabular-nums truncate" :class="r.financial_institution_number ? 'text-ink font-semibold' : 'text-ink-subtle'">
-                    {{ r.financial_institution_number || 'Sem número' }}
-                  </div>
-                  <div v-if="r.financial_institution_date" class="text-micro text-ink-subtle font-mono mt-0.5">
-                    em {{ dataBR(r.financial_institution_date) }}
-                  </div>
-                </div>
-                <Button v-if="r.financial_institution_number" variant="ghost" size="sm"
-                  class="shrink-0 min-h-[40px]"
-                  :icon="copiedId === r.id ? 'fas fa-check' : 'fas fa-copy'"
-                  @click="copyCef(r)">
-                  {{ copiedId === r.id ? 'Copiado' : 'Copiar' }}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Desktop: tabela -->
-          <div class="hidden md:block overflow-x-auto">
-            <table class="min-w-full text-sm">
-              <thead class="bg-surface-sunken/60 border-b border-line">
-                <tr>
-                  <th v-for="col in columns" :key="col.key"
-                    @click="col.sortable && store.setSort(col.key)"
-                    class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap"
-                    :class="[col.align === 'center' ? 'text-center' : 'text-left',
-                             col.sortable ? 'cursor-pointer hover:text-ink transition-colors' : '']">
-                    <span class="inline-flex items-center gap-1.5">
-                      {{ col.label }}
-                      <i v-if="col.sortable" :class="sortIcon(col.key)"></i>
-                    </span>
-                  </th>
-                  <th class="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-line">
-                <tr v-for="r in store.rows" :key="r.id" class="hover:bg-surface-hover/40 transition-colors">
-                  <td class="px-4 py-2.5 whitespace-nowrap font-mono tabular-nums text-ink-muted">{{ r.number }}</td>
-                  <td class="px-4 py-2.5 text-ink max-w-[240px] truncate" :title="r.customer_name || ''">{{ r.customer_name || '-' }}</td>
-                  <td class="px-4 py-2.5 text-ink-muted max-w-[220px] truncate" :title="r.enterprise_name">{{ r.enterprise_name }}</td>
-                  <td class="px-4 py-2.5 whitespace-nowrap text-ink-muted max-w-[140px] truncate" :title="r.unit_name || ''">{{ r.unit_name || '-' }}</td>
-                  <td class="px-4 py-2.5 whitespace-nowrap font-mono tabular-nums"
-                    :class="r.financial_institution_number ? 'text-ink font-semibold' : 'text-ink-subtle'">
-                    {{ r.financial_institution_number || 'Sem número' }}
-                  </td>
-                  <td class="px-4 py-2.5 whitespace-nowrap text-ink-muted font-mono">{{ dataBR(r.financial_institution_date) }}</td>
-                  <td class="px-4 py-2.5 whitespace-nowrap text-center">
-                    <Badge :variant="situacaoVariant(r.situation)" size="sm">{{ r.situation || '-' }}</Badge>
-                  </td>
-                  <td class="px-4 py-2.5 whitespace-nowrap text-right">
-                    <Button v-if="r.financial_institution_number" variant="ghost" size="sm"
-                      :icon="copiedId === r.id ? 'fas fa-check' : 'fas fa-copy'"
-                      :title="'Copiar nº CEF'"
-                      @click="copyCef(r)">
-                      {{ copiedId === r.id ? 'Copiado' : 'Copiar' }}
-                    </Button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <EmptyState v-if="!store.loading && !store.rows.length"
-            icon="fas fa-hashtag"
-            :title="store.searched ? 'Nenhum contrato encontrado' : 'Faça uma consulta'"
-            :description="store.searched
+        <!-- A listagem é o primitivo. Eram duas listas escritas em paralelo -
+             tabela no monitor, cartões no celular - e elas divergiram: só o
+             cabeçalho da tabela ordenava, então no telefone não havia como
+             ordenar por data nem por cliente. -->
+        <div class="p-3 sm:p-4">
+          <DataTable
+            :columns="columns"
+            :rows="store.rows"
+            row-key="id"
+            :loading="store.loading"
+            manual-sort
+            v-model:sort-by="ordenarPor"
+            v-model:sort-dir="ordenarDir"
+            empty-icon="fas fa-hashtag"
+            :empty-title="store.searched ? 'Nenhum contrato encontrado' : 'Faça uma consulta'"
+            :empty-text="store.searched
               ? 'Nenhum contrato para os filtros selecionados. Ajuste o empreendimento ou a busca.'
-              : 'A tela traz só o que você buscar: escolha um empreendimento ou digite o cliente na busca geral e clique em Filtrar.'" />
+              : 'A tela traz só o que você buscar: escolha um empreendimento ou digite o cliente na busca geral e clique em Filtrar.'">
+
+            <template #cell-number="{ row }">
+              <span class="font-mono tabular-nums text-ink-muted">{{ row.number }}</span>
+            </template>
+
+            <template #cell-customer_name="{ row }">
+              <span class="text-ink">{{ row.customer_name || '-' }}</span>
+            </template>
+
+            <template #cell-enterprise_name="{ row }">
+              <span class="text-ink-muted">{{ row.enterprise_name }}</span>
+            </template>
+
+            <template #cell-unit_name="{ row }">
+              <span class="text-ink-muted">{{ row.unit_name || '-' }}</span>
+            </template>
+
+            <!-- É o dado que a tela existe para achar: quando falta, diz que
+                 falta em vez de mostrar um traço. -->
+            <template #cell-cef_number="{ row }">
+              <span class="font-mono tabular-nums"
+                :class="row.financial_institution_number ? 'text-ink font-semibold' : 'text-ink-subtle'">
+                {{ row.financial_institution_number || 'Sem número' }}
+              </span>
+            </template>
+
+            <template #cell-financial_institution_date="{ row }">
+              <span class="font-mono text-ink-muted">{{ dataBR(row.financial_institution_date) }}</span>
+            </template>
+
+            <template #cell-situation="{ row }">
+              <Badge :variant="situacaoVariant(row.situation)" size="sm">{{ row.situation || '-' }}</Badge>
+            </template>
+
+            <template #actions="{ row }">
+              <Button v-if="row.financial_institution_number" variant="ghost" size="sm"
+                :icon="copiedId === row.id ? 'fas fa-check' : 'fas fa-copy'"
+                title="Copiar nº CEF"
+                @click="copyCef(row)">
+                {{ copiedId === row.id ? 'Copiado' : 'Copiar' }}
+              </Button>
+            </template>
+          </DataTable>
         </div>
 
         <!-- Paginação -->
@@ -240,7 +210,7 @@ import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
+import DataTable from '@/components/UI/DataTable.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
 const store = useConsultaCefStore();
@@ -251,15 +221,27 @@ const CEF_OPTIONS = [
   { value: 'sem', label: 'Somente sem nº CEF' },
 ];
 
+/* `priority` decide a ORDEM no celular. Esta tela existe para achar UM numero,
+   entao o cliente e o proprio numero CEF abrem o cartao. */
 const columns = [
-  { key: 'number', label: 'Contrato', sortable: true },
-  { key: 'customer_name', label: 'Cliente', sortable: true },
-  { key: 'enterprise_name', label: 'Empreendimento', sortable: true },
-  { key: 'unit_name', label: 'Unidade', sortable: false },
-  { key: 'cef_number', label: 'Nº CEF', sortable: false },
-  { key: 'financial_institution_date', label: 'Data CEF', sortable: true },
-  { key: 'situation', label: 'Situação', sortable: false, align: 'center' },
+  { key: 'customer_name', label: 'Cliente', priority: 1, sortable: true },
+  { key: 'cef_number', label: 'Nº CEF', priority: 1 },
+  { key: 'enterprise_name', label: 'Empreendimento', priority: 2, sortable: true },
+  { key: 'number', label: 'Contrato', priority: 2, sortable: true },
+  { key: 'situation', label: 'Situação', priority: 2 },
+  { key: 'financial_institution_date', label: 'Data CEF', priority: 2, sortable: true, numeric: true },
+  { key: 'unit_name', label: 'Unidade', priority: 3 },
 ];
+
+/* Quem ordena e o servidor (a lista chega paginada), dai o `manual-sort`. */
+const ordenarPor = computed({
+  get: () => store.sort,
+  set: (v) => store.applySort(v, store.dir),
+});
+const ordenarDir = computed({
+  get: () => store.dir,
+  set: (v) => store.applySort(store.sort, v),
+});
 
 const helpSteps = [
   { title: 'Abra os Filtros', text: 'A tela só consulta o que você pedir: escolha um empreendimento ou digite o cliente na busca geral e clique em Filtrar.' },
@@ -287,10 +269,6 @@ function situacaoVariant(s) {
 }
 
 // ── Ordenação ──
-function sortIcon(key) {
-  if (store.sort !== key) return 'fas fa-sort text-ink-subtle/40';
-  return store.dir === 'asc' ? 'fas fa-sort-up text-accent' : 'fas fa-sort-down text-accent';
-}
 
 // ── Seletor de empreendimento (label ↔ id) ──
 const labelFor = (e) => `${(e.name || '').toString().trim() || '-'} · ${e.id}`;

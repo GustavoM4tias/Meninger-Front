@@ -98,6 +98,16 @@ export const useBillsStore = defineStore('bills', () => {
         }
     }
 
+    /* Ordenacao EXPLICITA, que e o que o DataTable manda: ele avisa coluna e
+       direcao, e quem ordena continua sendo daqui - os acessores de ordenacao
+       desta lista tem regra propria (nome fantasia do fornecedor com queda
+       para razao social, status normalizado pelo rotulo) que nao cabe numa
+       coluna generica. Chave vazia = ordem original. */
+    function applySort(key, dir) {
+        sortKey.value = key || '';
+        sortDir.value = dir === 'desc' ? 'desc' : 'asc';
+    }
+
     const visibleBills = computed(() => {
         let list = bills.value;
 
@@ -185,5 +195,6 @@ export const useBillsStore = defineStore('bills', () => {
         // actions
         fetchBills,
         setSort,
+        applySort,
     };
 });

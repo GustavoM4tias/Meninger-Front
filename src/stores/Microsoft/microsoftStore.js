@@ -14,7 +14,9 @@ import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 export const useMicrosoftStore = defineStore('microsoft', () => {
 
     // ── Estado ───────────────────────────────────────────────────────────────
-    const connected    = ref(false);
+    const connected    = ref(false);   // tem sessão utilizável (dá para chamar o Graph)
+    const linked       = ref(false);   // a conta Microsoft está amarrada a este usuário
+    const needsReconnect = ref(false); // vinculada, mas a sessão Microsoft caiu
     const tokenValid   = ref(false);
     const expiresAt    = ref(null);   // Unix ms
     const authProvider = ref(null);   // 'MICROSOFT' | 'INTERNAL' | null
@@ -47,10 +49,14 @@ export const useMicrosoftStore = defineStore('microsoft', () => {
 
         try {
             const data = await requestWithAuth(`${API_URL}/microsoft/auth/status`);
-            connected.value    = data.connected;
-            tokenValid.value   = data.tokenValid;
-            expiresAt.value    = data.expiresAt;
-            authProvider.value = data.authProvider;
+            connected.value      = data.connected;
+            // Backend antigo não mandava linked/needsReconnect: cai no valor de
+            // connected, que é como a tela se comportava antes.
+            linked.value         = data.linked ?? data.connected;
+            needsReconnect.value = data.needsReconnect ?? false;
+            tokenValid.value     = data.tokenValid;
+            expiresAt.value      = data.expiresAt;
+            authProvider.value   = data.authProvider;
         } catch (err) {
             console.error('[microsoftStore] fetchStatus error:', err);
             error.value = err.message;
@@ -72,9 +78,51 @@ export const useMicrosoftStore = defineStore('microsoft', () => {
         } catch (err) {
             console.warn('[microsoftStore] refreshToken failed:', err.message);
             // Se o servidor retornou requiresReauth, marca como desconectado
-            connected.value  = false;
-            tokenValid.value = false;
+            connected.value      = false;
+            tokenValid.value     = false;
+            needsReconnect.value = linked.value;
             return false;
+        }
+    }
+
+    /**
+     * Reage a um erro de sessão Microsoft vindo de QUALQUER módulo.
+     * Tenta renovar; se não der, marca a conexão como caída para a tela poder
+     * oferecer o botão de reconectar em vez de só mostrar o erro.
+     *
+     * Antes existia refreshToken() sem nenhum chamador — a sessão caía e a tela
+     * ficava presa num toast vermelho, sem caminho de volta.
+     *
+     * @returns {boolean} true se renovou e vale a pena repetir a chamada
+     */
+    async function handleAuthError(message) {
+        const text = String(message || '');
+        const isMicrosoftAuth = /Microsoft/i.test(text) && /(expirad|conectad|reconect)/i.test(text);
+        if (!isMicrosoftAuth) return false;
+
+        const ok = await refreshToken();
+        if (!ok) await fetchStatus(); // confirma o estado real (linked x connected)
+        return ok;
+    }
+
+    /**
+     * VINCULAR a conta Microsoft à sessão atual (dentro do app).
+     * Não confundir com redirectToLogin(), que é o fluxo de ENTRAR da tela de
+     * login: aquele emite sessão para a conta escolhida na tela da Microsoft, e
+     * por isso não serve para quem já está logado.
+     */
+    async function startLink() {
+        loading.value = true;
+        error.value   = null;
+        try {
+            const resp = await requestWithAuth(`${API_URL}/microsoft/auth/link/start`, { method: 'POST' });
+            const url = resp?.data?.authUrl;
+            if (!url) throw new Error('Não foi possível iniciar a conexão com a Microsoft.');
+            window.location.href = url;
+        } catch (err) {
+            error.value = err.message;
+            loading.value = false;
+            throw err;
         }
     }
 
@@ -88,10 +136,12 @@ export const useMicrosoftStore = defineStore('microsoft', () => {
 
         try {
             await requestWithAuth(`${API_URL}/microsoft/auth/unlink`, { method: 'DELETE' });
-            connected.value    = false;
-            tokenValid.value   = false;
-            expiresAt.value    = null;
-            authProvider.value = 'INTERNAL';
+            connected.value      = false;
+            linked.value         = false;
+            needsReconnect.value = false;
+            tokenValid.value     = false;
+            expiresAt.value      = null;
+            authProvider.value   = 'INTERNAL';
         } catch (err) {
             error.value = err.message;
             throw err;
@@ -102,11 +152,13 @@ export const useMicrosoftStore = defineStore('microsoft', () => {
 
     /** Limpa o estado local (chamar no logout da plataforma) */
     function clear() {
-        connected.value    = false;
-        tokenValid.value   = false;
-        expiresAt.value    = null;
-        authProvider.value = null;
-        error.value        = null;
+        connected.value      = false;
+        linked.value         = false;
+        needsReconnect.value = false;
+        tokenValid.value     = false;
+        expiresAt.value      = null;
+        authProvider.value   = null;
+        error.value          = null;
     }
 
     /** Redireciona para o login Microsoft (inicia o fluxo OAuth) */
@@ -117,6 +169,8 @@ export const useMicrosoftStore = defineStore('microsoft', () => {
     return {
         // state
         connected,
+        linked,
+        needsReconnect,
         tokenValid,
         expiresAt,
         authProvider,
@@ -131,6 +185,8 @@ export const useMicrosoftStore = defineStore('microsoft', () => {
         // actions
         fetchStatus,
         refreshToken,
+        handleAuthError,
+        startLink,
         unlink,
         clear,
         redirectToLogin,

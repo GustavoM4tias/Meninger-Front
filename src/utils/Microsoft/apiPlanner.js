@@ -5,6 +5,10 @@ const B = (body) => ({ method: 'POST',   body: JSON.stringify(body) });
 const P = (body) => ({ method: 'PATCH',  body: JSON.stringify(body) });
 const D = (body) => ({ method: 'DELETE', body: JSON.stringify(body) });
 
+// ── Pessoas (responsáveis) ────────────────────────────────────────────────────
+// Vem do próprio Office: quem tem conta Microsoft vinculada e está ativo.
+export const getPeople     = ()              => requestWithAuth('/microsoft/planner/people');
+
 // ── Groups ────────────────────────────────────────────────────────────────────
 export const getGroups     = ()              => requestWithAuth('/microsoft/planner/groups');
 export const getGroupPlans = (groupId)       => requestWithAuth(`/microsoft/planner/groups/${groupId}/plans`);

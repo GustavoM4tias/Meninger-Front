@@ -131,8 +131,12 @@
       </Surface>
 
       <!-- Table Card -->
+      <!-- A listagem é o primitivo. Era uma tabela com `overflow-x-auto` e
+           NENHUMA versão de celular: no telefone a pessoa arrastava a tela de
+           lado para ler uma linha, e o Fornecedor sumia da vista junto com o
+           Valor. Agora cada largura tem o seu arranjo, e ordenar existe nas
+           duas. -->
       <Surface variant="raised" padding="none" class="overflow-hidden surface-gradient">
-        <!-- Table Header -->
         <div class="px-5 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40">
           <h3 class="text-base font-semibold text-ink flex items-center gap-2">
             <i class="fas fa-table text-accent"></i>
@@ -140,104 +144,65 @@
           </h3>
         </div>
 
-        <!-- Table -->
-        <div class="overflow-x-auto">
-          <table class="min-w-full table-auto">
-            <thead class="bg-surface-sunken/60 border-b border-line">
-              <tr>
-                <th v-for="col in columns" :key="col.key"
-                  class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-subtle select-none cursor-pointer hover:text-ink transition-colors"
-                  :class="col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'"
-                  @click="store.setSort(col.key)">
-                  <span class="inline-flex items-center gap-1.5"
-                    :class="col.align === 'right' ? 'flex-row-reverse' : ''">
-                    {{ col.label }}
-                    <i class="text-[9px]" :class="sortIcon(col.key)"></i>
-                  </span>
-                </th>
-              </tr>
-            </thead>
+        <div class="p-3 sm:p-4">
+          <DataTable
+            :columns="columns"
+            :rows="store.visibleBills"
+            row-key="id"
+            :loading="store.isLoading"
+            manual-sort
+            v-model:sort-by="ordenarPor"
+            v-model:sort-dir="ordenarDir"
+            empty-icon="fas fa-inbox"
+            empty-title="Nenhum título encontrado"
+            empty-text="Ajuste os filtros e clique em 'Filtrar'.">
 
-            <tbody class="divide-y divide-line">
-              <tr v-for="bill in store.visibleBills" :key="bill.id"
-                class="hover:bg-surface-hover/40 transition-colors">
+            <template #cell-creditor="{ row }">
+              <span class="font-semibold text-ink">
+                {{ row.creditor_json ? (row.creditor_json.tradeName || row.creditor_json.name || 'Sem nome') : '-' }}
+              </span>
+              <span v-if="row.creditor_json?.cnpj" class="block text-micro text-ink-subtle font-mono font-normal">
+                CNPJ: {{ row.creditor_json.cnpj }}
+              </span>
+            </template>
 
-                <!-- Fornecedor -->
-                <td class="px-4 py-3 align-middle">
-                  <div class="space-y-0.5 max-w-56">
-                    <div class="text-sm font-semibold text-ink truncate">
-                      {{ bill.creditor_json ? (bill.creditor_json.tradeName || bill.creditor_json.name || 'Sem nome') : '—' }}
-                    </div>
-                    <div v-if="bill.creditor_json?.cnpj" class="text-micro text-ink-subtle truncate font-mono">
-                      CNPJ: {{ bill.creditor_json.cnpj }}
-                    </div>
-                  </div>
-                </td>
+            <template #cell-document="{ row }">
+              <span class="text-ink-muted">{{ row.document_identification_id }} {{ row.document_number }}</span>
+              <span class="block text-micro text-ink-subtle font-mono">#{{ row.id }}</span>
+              <span v-if="row.notes" class="block text-micro text-ink-subtle truncate max-w-56" :title="row.notes">
+                {{ row.notes }}
+              </span>
+            </template>
 
-                <!-- Documento -->
-                <td class="px-4 py-3 align-middle">
-                  <div class="space-y-0.5">
-                    <div class="text-xs font-medium text-ink-muted">
-                      {{ bill.document_identification_id }} {{ bill.document_number }}
-                    </div>
-                    <div class="text-micro text-ink-subtle font-mono">#{{ bill.id }}</div>
-                    <div v-if="bill.notes" class="text-micro text-ink-subtle truncate max-w-40" :title="bill.notes">
-                      {{ bill.notes }}
-                    </div>
-                  </div>
-                </td>
+            <template #cell-installments="{ row }">
+              <Badge v-if="row.installments_number && row.installments_number > 1"
+                variant="accent" size="sm" class="font-mono">{{ row.installments_number }}x</Badge>
+              <Badge v-else variant="neutral" size="sm" class="font-mono">1x</Badge>
+            </template>
 
-                <!-- Parcelas -->
-                <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
-                  <Badge v-if="bill.installments_number && bill.installments_number > 1"
-                    variant="accent" size="sm" class="font-mono">
-                    {{ bill.installments_number }}x
-                  </Badge>
-                  <Badge v-else variant="neutral" size="sm" class="font-mono">1x</Badge>
-                </td>
+            <template #cell-amount="{ row }">
+              <span class="font-bold text-accent font-mono tabular-nums">
+                {{ Number(row.total_invoice_amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+              </span>
+            </template>
 
-                <!-- Valor -->
-                <td class="px-4 py-3 whitespace-nowrap text-right align-middle">
-                  <div class="text-sm font-bold text-accent font-mono tabular-nums">
-                    {{ Number(bill.total_invoice_amount || 0).toLocaleString('pt-BR', {
-                      style: 'currency', currency: 'BRL'
-                    }) }}
-                  </div>
-                </td>
+            <template #cell-issue_date="{ row }">
+              <span class="font-mono tabular-nums">
+                {{ row.issue_date ? new Date(row.issue_date + 'T12:00:00').toLocaleDateString('pt-BR') : '-' }}
+              </span>
+            </template>
 
-                <!-- Emissão -->
-                <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
-                  <div class="text-sm text-ink-muted font-mono tabular-nums">
-                    {{ bill.issue_date ? new Date(bill.issue_date + 'T12:00:00').toLocaleDateString('pt-BR') : '—' }}
-                  </div>
-                </td>
+            <template #cell-department="{ row }">
+              <Badge v-if="row.main_department_name" variant="info" size="sm">{{ row.main_department_name }}</Badge>
+              <span v-else class="text-xs text-ink-subtle">-</span>
+            </template>
 
-                <!-- Departamento -->
-                <td class="px-4 py-3 text-center align-middle">
-                  <Badge v-if="bill.main_department_name" variant="info" size="sm">
-                    {{ bill.main_department_name }}
-                  </Badge>
-                  <span v-else class="text-xs text-ink-subtle">—</span>
-                </td>
-
-                <!-- Status -->
-                <td class="px-4 py-3 text-center align-middle">
-                  <Badge :variant="statusBadgeVariant(bill.current_status)" size="sm">
-                    {{ statusBadgeLabel(bill.current_status) }}
-                  </Badge>
-                </td>
-              </tr>
-
-              <tr v-if="!store.visibleBills.length && !store.isLoading">
-                <td colspan="7" class="px-6 py-12">
-                  <EmptyState
-                    icon="fas fa-inbox"
-                    title="Nenhum título encontrado"
-                    description="Ajuste os filtros e clique em 'Filtrar'." />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <template #cell-status="{ row }">
+              <Badge :variant="statusBadgeVariant(row.current_status)" size="sm">
+                {{ statusBadgeLabel(row.current_status) }}
+              </Badge>
+            </template>
+          </DataTable>
         </div>
       </Surface>
     </PageContainer>
@@ -258,7 +223,7 @@ import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
+import DataTable from '@/components/UI/DataTable.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
@@ -305,22 +270,29 @@ function handleCostCenterChange(v) {
 }
 
 // ── Colunas ordenáveis ────────────────────────────────────────────────────────
+/* `priority` decide a ORDEM no celular, nunca o que existe. Um titulo se
+   reconhece por QUEM cobra e QUANTO: esses dois abrem o cartao, o resto vem
+   no corpo e a contagem de parcelas fica a um toque. */
 const columns = [
-  { key: 'creditor',     label: 'Fornecedor',   align: 'left' },
-  { key: 'document',     label: 'Documento',    align: 'left' },
-  { key: 'installments', label: 'Parcelas',     align: 'center' },
-  { key: 'amount',       label: 'Valor Total',  align: 'right' },
-  { key: 'issue_date',   label: 'Emissão',      align: 'center' },
-  { key: 'department',   label: 'Departamento', align: 'center' },
-  { key: 'status',       label: 'Status',       align: 'center' },
+  { key: 'creditor',     label: 'Fornecedor',   priority: 1, sortable: true },
+  { key: 'amount',       label: 'Valor Total',  priority: 1, sortable: true, numeric: true },
+  { key: 'document',     label: 'Documento',    priority: 2, sortable: true },
+  { key: 'issue_date',   label: 'Emissão',      priority: 2, sortable: true, numeric: true },
+  { key: 'status',       label: 'Status',       priority: 2, sortable: true },
+  { key: 'department',   label: 'Departamento', priority: 2, sortable: true },
+  { key: 'installments', label: 'Parcelas',     priority: 3, sortable: true },
 ];
 
-function sortIcon(key) {
-  if (store.sortKey !== key) return 'fas fa-sort text-ink-subtle/40';
-  return store.sortDir === 'asc'
-    ? 'fas fa-sort-up text-accent'
-    : 'fas fa-sort-down text-accent';
-}
+/* Quem ordena e a store (ver applySort la): os acessores desta lista tem regra
+   propria. O DataTable so mostra os controles e avisa. */
+const ordenarPor = computed({
+  get: () => store.sortKey,
+  set: (v) => store.applySort(v, store.sortDir),
+});
+const ordenarDir = computed({
+  get: () => store.sortDir,
+  set: (v) => store.applySort(store.sortKey, v),
+});
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 function statusBadgeVariant(status) {

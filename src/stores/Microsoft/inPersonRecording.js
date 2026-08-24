@@ -27,10 +27,23 @@ export const useInPersonRecordingStore = defineStore('inPersonRecording', () => 
     const interimText  = ref('');
     const hasMicSupport = ref(true);
 
+    // ── Modo de captura ───────────────────────────────────────────────────────
+    // 'speech' = reconhecimento do navegador, ao vivo (Chrome no desktop)
+    // 'audio'  = grava o áudio e transcreve no servidor ao encerrar
+    //
+    // A Web Speech API era o único caminho e não existe no Safari do iPhone nem
+    // no Firefox: o recurso não funcionava justamente no celular, que é como a
+    // diretoria usa o Office. O MediaRecorder roda em todo lugar.
+    const captureMode  = ref('speech');
+    const transcribing = ref(false);   // enviando o áudio para transcrever
+
     // ── Internals (não reativas) ───────────────────────────────────────────────
     let recognition    = null;
     let timerInterval  = null;
     let autoSaveTimer  = null;
+    let mediaRecorder  = null;
+    let mediaStream    = null;
+    let audioChunks    = [];
 
     // ── Computed ──────────────────────────────────────────────────────────────
     const timerDisplay = computed(() => secToStr(elapsedSec.value));
@@ -89,6 +102,77 @@ export const useInPersonRecordingStore = defineStore('inPersonRecording', () => 
         };
     }
 
+    // ── Gravação de áudio (caminho que funciona em qualquer navegador) ────────
+
+    async function initAudioRecorder() {
+        if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+            hasMicSupport.value = false;
+            return false;
+        }
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch {
+            hasMicSupport.value = false;
+            return false;
+        }
+
+        // Deixa o navegador escolher o formato que sabe gravar: o Safari entrega
+        // mp4/aac, o Chrome entrega webm/opus. O servidor aceita os dois.
+        const preferred = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+        const mimeType = preferred.find(t => MediaRecorder.isTypeSupported?.(t)) || '';
+
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(
+            mediaStream,
+            mimeType ? { mimeType, audioBitsPerSecond: 32000 } : undefined
+        );
+        mediaRecorder.ondataavailable = (e) => { if (e.data?.size) audioChunks.push(e.data); };
+        mediaRecorder.start(5000); // fatia a cada 5s: um travamento não leva tudo
+        return true;
+    }
+
+    function releaseMic() {
+        try { mediaStream?.getTracks().forEach(t => t.stop()); } catch {}
+        mediaStream   = null;
+        mediaRecorder = null;
+    }
+
+    function stopAudioRecorder() {
+        return new Promise((resolve) => {
+            const build = () => (audioChunks.length
+                ? new Blob(audioChunks, { type: mediaRecorder?.mimeType || 'audio/webm' })
+                : null);
+
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                const blob = build();
+                releaseMic();
+                return resolve(blob);
+            }
+            mediaRecorder.onstop = () => {
+                const blob = build();
+                releaseMic();
+                resolve(blob);
+            };
+            try { mediaRecorder.stop(); } catch { releaseMic(); resolve(build()); }
+        });
+    }
+
+    /** Envia o áudio para o servidor transcrever e devolve as falas. */
+    async function uploadAudio(savedId, blob) {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/microsoft/inperson/meetings/${savedId}/audio`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': blob.type || 'audio/webm',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: blob,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || 'Não foi possível transcrever a gravação.');
+        return data.cues || [];
+    }
+
     // ── Auto-save ─────────────────────────────────────────────────────────────
     function startAutoSave() {
         clearInterval(autoSaveTimer);
@@ -127,7 +211,21 @@ export const useInPersonRecordingStore = defineStore('inPersonRecording', () => 
         isActive.value   = true;
         isPaused.value   = false;
 
+        // Reconhecimento ao vivo quando o navegador tem; senão grava o áudio e
+        // transcreve no servidor ao encerrar.
         initRecognition();
+        if (recognition) {
+            captureMode.value = 'speech';
+        } else {
+            captureMode.value = 'audio';
+            hasMicSupport.value = true; // initRecognition marcou false só por não ter a API
+            const ok = await initAudioRecorder();
+            if (!ok) {
+                isActive.value = false;
+                throw new Error('Não foi possível acessar o microfone. Autorize o microfone no navegador e tente de novo.');
+            }
+        }
+
         startTimer();
         startAutoSave();
 
@@ -145,6 +243,7 @@ export const useInPersonRecordingStore = defineStore('inPersonRecording', () => 
         isPaused.value    = true;
         interimText.value = '';
         if (recognition) { try { recognition.stop(); } catch {} }
+        if (mediaRecorder?.state === 'recording') { try { mediaRecorder.pause(); } catch {} }
     }
 
     function resume() {
@@ -152,6 +251,7 @@ export const useInPersonRecordingStore = defineStore('inPersonRecording', () => 
         isPaused.value    = false;
         isRecording.value = true;
         if (recognition) { try { recognition.start(); } catch {} }
+        if (mediaRecorder?.state === 'paused') { try { mediaRecorder.resume(); } catch {} }
     }
 
     /**
@@ -173,13 +273,40 @@ export const useInPersonRecordingStore = defineStore('inPersonRecording', () => 
 
         const savedId = meetingId.value;
 
-        if (savedId) {
+        if (captureMode.value === 'audio') {
+            // A transcrição acontece no servidor agora: sem esperar por ela a
+            // reunião seria encerrada vazia.
+            transcribing.value = true;
             try {
-                await requestWithAuth(`${API_URL}/microsoft/inperson/meetings/${savedId}`, {
-                    method: 'PUT',
-                    body:   JSON.stringify({ cues: cues.value, endedAt: new Date().toISOString() }),
-                });
-            } catch {}
+                const blob = await stopAudioRecorder();
+                if (blob && blob.size > 0 && savedId) {
+                    cues.value = await uploadAudio(savedId, blob);
+                } else if (savedId) {
+                    // Nada foi captado: fecha a reunião mesmo assim, para ela não
+                    // ficar presa em "gravando" na listagem.
+                    await requestWithAuth(`${API_URL}/microsoft/inperson/meetings/${savedId}`, {
+                        method: 'PUT',
+                        body:   JSON.stringify({ endedAt: new Date().toISOString() }),
+                    }).catch(() => {});
+                }
+            } catch (err) {
+                transcribing.value = false;
+                // A sessão fica salva: a pessoa não perde a reunião por causa
+                // de uma falha na transcrição.
+                throw err;
+            } finally {
+                transcribing.value = false;
+            }
+        } else {
+            releaseMic();
+            if (savedId) {
+                try {
+                    await requestWithAuth(`${API_URL}/microsoft/inperson/meetings/${savedId}`, {
+                        method: 'PUT',
+                        body:   JSON.stringify({ cues: cues.value, endedAt: new Date().toISOString() }),
+                    });
+                } catch {}
+            }
         }
 
         // Reset state
@@ -207,6 +334,9 @@ export const useInPersonRecordingStore = defineStore('inPersonRecording', () => 
             try { recognition.stop(); } catch {}
             recognition = null;
         }
+        try { mediaRecorder?.stop(); } catch {}
+        releaseMic();
+        audioChunks = [];
 
         if (meetingId.value) {
             requestWithAuth(`${API_URL}/microsoft/inperson/meetings/${meetingId.value}`, { method: 'DELETE' }).catch(() => {});
@@ -224,6 +354,7 @@ export const useInPersonRecordingStore = defineStore('inPersonRecording', () => 
         isActive, isRecording, isPaused, meetingId,
         title, location, attendees, startedAt,
         elapsedSec, cues, interimText, hasMicSupport,
+        captureMode, transcribing,
         // computed
         timerDisplay,
         // actions

@@ -12,6 +12,7 @@ import Surface from '@/components/UI/Surface.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
 
 import BackupFilters from './components/BackupFilters.vue'
+import DataTable from '@/components/UI/DataTable.vue'
 import RunningPipeline from './components/RunningPipeline.vue'
 import { pedirConfirmacao } from '@/composables/useConfirm';
 import {
@@ -173,22 +174,31 @@ function setSort(key) {
     else { sort.key = key; sort.dir = key === 'started_at' || key === 'id' ? 'desc' : 'asc' }
 }
 
-function sortIcon(key) {
-    if (sort.key !== key) return 'fas fa-sort text-ink-subtle/50'
-    return sort.dir === 'asc' ? 'fas fa-sort-up text-accent' : 'fas fa-sort-down text-accent'
-}
-
+/* `priority` decide a ORDEM no celular. Quem abre esta tela quer saber QUANDO
+   rodou e se DEU CERTO; o erro vem logo abaixo, porque e o motivo de abrir. */
 const HIST_COLUMNS = [
-    { key: 'id', label: '#' },
-    { key: 'started_at', label: 'Início' },
-    { key: 'triggered_by', label: 'Disparo' },
-    { key: 'stage', label: 'Etapa' },
-    { key: 'status', label: 'Status' },
-    { key: 'import_status', label: 'Restore' },
-    { key: 'duration_ms', label: 'Duração', align: 'right' },
-    { key: 'file_size_bytes', label: 'Tamanho', align: 'right' },
-    { key: null, label: 'Erro' },
+    { key: 'started_at', label: 'Início', priority: 1, sortable: true },
+    { key: 'status', label: 'Status', priority: 1, sortable: true },
+    { key: '_erro', label: 'Erro', priority: 2 },
+    { key: 'import_status', label: 'Restore', priority: 2, sortable: true },
+    { key: 'duration_ms', label: 'Duração', priority: 2, sortable: true, numeric: true },
+    { key: 'file_size_bytes', label: 'Tamanho', priority: 2, sortable: true, numeric: true },
+    { key: 'stage', label: 'Etapa', priority: 2, sortable: true },
+    { key: 'triggered_by', label: 'Disparo', priority: 3, sortable: true },
+    { key: 'id', label: '#', priority: 3, sortable: true },
 ]
+
+/* Quem ordena continua sendo o `sortedItems` daqui, que tem SORT_VALUES com
+   regra propria por coluna. O DataTable so mostra os controles e avisa - dai
+   o `manual-sort`. */
+const ordenarPor = computed({
+    get: () => sort.key,
+    set: (v) => { sort.key = v || 'started_at' },
+})
+const ordenarDir = computed({
+    get: () => sort.dir,
+    set: (v) => { sort.dir = v === 'asc' ? 'asc' : 'desc' },
+})
 
 const sortedItems = computed(() => {
     const get = SORT_VALUES[sort.key] || SORT_VALUES.started_at
@@ -229,6 +239,12 @@ function stopPolling() {
 // `store.loading` também fica true nos polls silenciosos - por isso o botão usa
 // um estado próprio, senão ele piscaria sozinho a cada atualização automática.
 const refreshing = ref(false)
+
+/* O esqueleto so aparece quando a LISTA esta sendo trocada (filtro, recarga
+   manual). `store.loading` tambem fica true nos polls silenciosos de 10s, e
+   liga-lo direto faria a lista inteira piscar sozinha a cada atualizacao
+   automatica - o mesmo motivo pelo qual o botao ja tinha estado proprio. */
+const carregandoLista = computed(() => (filtering.value || refreshing.value) && !sortedItems.value.length)
 async function refresh() {
     refreshing.value = true
     try {
@@ -394,124 +410,76 @@ onBeforeUnmount(stopPolling)
                         :applied-label="appliedLabel" :active-count="activeFiltersCount"
                         @apply="applyFilters" @reset="resetFilters" />
 
+                    <!-- A listagem é o primitivo. Eram duas listas escritas em
+                         paralelo, e elas divergiram: só o cabeçalho da tabela
+                         ordenava, então no celular não havia como ordenar por
+                         duração nem por tamanho - que é exatamente o que se
+                         procura quando um restore demora demais. -->
                     <Surface padding="none" class="overflow-hidden">
-                        <EmptyState v-if="!sortedItems.length" size="sm" icon="fas fa-filter-circle-xmark"
-                            :title="store.items.length ? 'Nenhuma execução com esses filtros' : 'Nenhuma execução no período'"
-                            :description="store.items.length ? 'Ajuste ou limpe os filtros da barra acima.' : 'Ajuste as datas e clique em Filtrar para consultar outro período.'" />
+                        <div class="p-3 sm:p-4">
+                            <DataTable
+                                :columns="HIST_COLUMNS"
+                                :rows="sortedItems"
+                                row-key="id"
+                                :loading="carregandoLista"
+                                manual-sort
+                                v-model:sort-by="ordenarPor"
+                                v-model:sort-dir="ordenarDir"
+                                empty-icon="fas fa-filter-circle-xmark"
+                                :empty-title="store.items.length ? 'Nenhuma execução com esses filtros' : 'Nenhuma execução no período'"
+                                :empty-text="store.items.length ? 'Ajuste ou limpe os filtros da barra acima.' : 'Ajuste as datas e clique em Filtrar para consultar outro período.'">
 
-                        <template v-else>
-                            <!-- Desktop: tabela (clique no cabeçalho ordena) -->
-                            <div class="hidden md:block overflow-x-auto">
-                                <table class="w-full text-sm">
-                                    <thead>
-                                        <tr class="text-left text-micro uppercase tracking-wider text-ink-subtle border-b border-line">
-                                            <th v-for="col in HIST_COLUMNS" :key="col.label" class="px-4 py-3 font-medium"
-                                                :class="[
-                                                    col.align === 'right' ? 'text-right' : 'text-left',
-                                                    col.key ? 'select-none cursor-pointer hover:text-ink transition-colors' : '',
-                                                ]"
-                                                :aria-sort="col.key && sort.key === col.key
-                                                    ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'"
-                                                @click="col.key && setSort(col.key)">
-                                                <span class="inline-flex items-center gap-1.5"
-                                                    :class="col.align === 'right' ? 'flex-row-reverse' : ''">
-                                                    {{ col.label }}
-                                                    <i v-if="col.key" class="text-[9px]" :class="sortIcon(col.key)"></i>
-                                                </span>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="row in sortedItems" :key="row.id"
-                                            class="border-b border-line last:border-0 hover:bg-surface-sunken/60 transition-colors">
-                                            <td class="px-4 py-3 align-top font-mono text-xs text-ink-subtle">{{ row.id }}</td>
-                                            <td class="px-4 py-3 align-top whitespace-nowrap">
-                                                <div class="text-ink">{{ formatDate(row.started_at) }}</div>
-                                                <div v-if="row.finished_at" class="text-xs text-ink-muted">
-                                                    até {{ formatTime(row.finished_at) }}
-                                                </div>
-                                            </td>
-                                            <td class="px-4 py-3 align-top text-xs text-ink-muted whitespace-nowrap">
-                                                {{ triggerLabel(row.triggered_by) }}
-                                            </td>
-                                            <td class="px-4 py-3 align-top text-xs text-ink-muted">
-                                                {{ stageLabel(row.stage) }}
-                                            </td>
-                                            <td class="px-4 py-3 align-top">
-                                                <Badge :variant="statusVariant(row.status)" size="sm">
-                                                    <i :class="statusIcon(row.status)"></i>{{ statusLabel(row.status) }}
-                                                </Badge>
-                                            </td>
-                                            <td class="px-4 py-3 align-top">
-                                                <Badge v-if="row.import_status" :variant="statusVariant(row.import_status)" size="sm">
-                                                    <i :class="statusIcon(row.import_status)"></i>{{ statusLabel(row.import_status) }}
-                                                </Badge>
-                                                <span v-else class="text-ink-subtle text-xs">-</span>
-                                            </td>
-                                            <td class="px-4 py-3 align-top text-right font-mono tabular-nums text-xs text-ink-muted">
-                                                {{ formatDuration(row.duration_ms) }}
-                                            </td>
-                                            <td class="px-4 py-3 align-top text-right font-mono tabular-nums text-xs text-ink-muted">
-                                                {{ formatBytes(row.file_size_bytes) }}
-                                            </td>
-                                            <td class="px-4 py-3 align-top text-xs max-w-xs">
-                                                <span v-if="row.error_message || row.import_error_message"
-                                                    class="text-data-neg break-words line-clamp-3"
-                                                    :title="row.error_message || row.import_error_message">
-                                                    {{ row.error_message || row.import_error_message }}
-                                                </span>
-                                                <span v-else class="text-ink-subtle">-</span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                                <template #cell-started_at="{ row }">
+                                    <span class="text-ink">{{ formatDate(row.started_at) }}</span>
+                                    <span v-if="row.finished_at" class="block text-xs text-ink-muted font-normal">
+                                        até {{ formatTime(row.finished_at) }}
+                                    </span>
+                                </template>
 
-                            <!-- Mobile: cards -->
-                            <ul class="md:hidden divide-y divide-line">
-                                <li v-for="row in sortedItems" :key="row.id" class="p-3.5 space-y-2">
-                                    <div class="flex items-start justify-between gap-2">
-                                        <div class="min-w-0">
-                                            <p class="text-sm font-medium text-ink">{{ formatDate(row.started_at) }}</p>
-                                            <p class="text-micro text-ink-muted">
-                                                #{{ row.id }} • {{ triggerLabel(row.triggered_by) }}
-                                            </p>
-                                        </div>
-                                        <Badge :variant="statusVariant(row.status)" size="sm">
-                                            <i :class="statusIcon(row.status)"></i>{{ statusLabel(row.status) }}
-                                        </Badge>
-                                    </div>
+                                <template #cell-status="{ row }">
+                                    <Badge :variant="statusVariant(row.status)" size="sm">
+                                        <i :class="statusIcon(row.status)"></i>{{ statusLabel(row.status) }}
+                                    </Badge>
+                                </template>
 
-                                    <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-micro">
-                                        <div class="flex gap-1.5">
-                                            <dt class="text-ink-subtle">Duração:</dt>
-                                            <dd class="font-mono tabular-nums text-ink-muted">{{ formatDuration(row.duration_ms) }}</dd>
-                                        </div>
-                                        <div class="flex gap-1.5">
-                                            <dt class="text-ink-subtle">Tamanho:</dt>
-                                            <dd class="font-mono tabular-nums text-ink-muted">{{ formatBytes(row.file_size_bytes) }}</dd>
-                                        </div>
-                                        <div class="flex gap-1.5 col-span-2">
-                                            <dt class="text-ink-subtle">Etapa:</dt>
-                                            <dd class="text-ink-muted truncate">{{ stageLabel(row.stage) }}</dd>
-                                        </div>
-                                        <div v-if="row.import_status" class="flex items-center gap-1.5 col-span-2">
-                                            <dt class="text-ink-subtle">Restore:</dt>
-                                            <dd>
-                                                <Badge :variant="statusVariant(row.import_status)" size="sm">
-                                                    {{ statusLabel(row.import_status) }}
-                                                </Badge>
-                                            </dd>
-                                        </div>
-                                    </dl>
+                                <template #cell-id="{ row }">
+                                    <span class="font-mono text-xs text-ink-subtle">{{ row.id }}</span>
+                                </template>
 
-                                    <p v-if="row.error_message || row.import_error_message"
-                                        class="text-micro text-data-neg break-words line-clamp-3">
+                                <template #cell-triggered_by="{ row }">
+                                    <span class="text-ink-muted">{{ triggerLabel(row.triggered_by) }}</span>
+                                </template>
+
+                                <template #cell-stage="{ row }">
+                                    <span class="text-ink-muted">{{ stageLabel(row.stage) }}</span>
+                                </template>
+
+                                <template #cell-import_status="{ row }">
+                                    <Badge v-if="row.import_status" :variant="statusVariant(row.import_status)" size="sm">
+                                        <i :class="statusIcon(row.import_status)"></i>{{ statusLabel(row.import_status) }}
+                                    </Badge>
+                                    <span v-else class="text-ink-subtle text-xs">-</span>
+                                </template>
+
+                                <template #cell-duration_ms="{ row }">
+                                    <span class="font-mono tabular-nums text-ink-muted">{{ formatDuration(row.duration_ms) }}</span>
+                                </template>
+
+                                <template #cell-file_size_bytes="{ row }">
+                                    <span class="font-mono tabular-nums text-ink-muted">{{ formatBytes(row.file_size_bytes) }}</span>
+                                </template>
+
+                                <!-- O erro é o motivo de alguém abrir esta tela: fica
+                                     inteiro, sem cortar em três linhas. -->
+                                <template #cell-_erro="{ row }">
+                                    <span v-if="row.error_message || row.import_error_message"
+                                        class="text-data-neg break-words">
                                         {{ row.error_message || row.import_error_message }}
-                                    </p>
-                                </li>
-                            </ul>
-                        </template>
+                                    </span>
+                                    <span v-else class="text-ink-subtle">-</span>
+                                </template>
+                            </DataTable>
+                        </div>
                     </Surface>
                 </section>
             </div>
