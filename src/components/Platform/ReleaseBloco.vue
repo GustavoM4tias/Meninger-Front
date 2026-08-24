@@ -41,9 +41,12 @@ const resumoDetalhes = computed(() => {
          precisa fazer amanhã. -->
     <div v-if="regras.length"
       class="rounded-lg border border-data-warn/30 bg-data-warn-soft px-3 py-2.5">
+      <!-- "Mudou uma regra" era o rótulo daqui e não dizia nada a quem não
+           escreveu o sistema. O que a pessoa precisa saber é que ALGO que ela
+           fazia passa a funcionar diferente. -->
       <p class="text-micro font-medium uppercase tracking-wide text-data-warn mb-1">
         <i class="fas fa-triangle-exclamation mr-1"></i>
-        {{ regras.length === 1 ? 'Mudou uma regra' : 'Mudaram regras' }}
+        {{ regras.length === 1 ? 'Passa a funcionar diferente' : 'Passam a funcionar diferente' }}
       </p>
       <p v-for="r in regras" :key="r.id" class="text-xs text-ink leading-relaxed">
         {{ r.description }}

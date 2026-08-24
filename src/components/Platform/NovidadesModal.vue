@@ -64,8 +64,11 @@ async function verHistorico() {
           <h2 class="text-base font-semibold text-ink tracking-tight leading-tight">
             Novidades do Office
           </h2>
+          <!-- O tema diz o ASSUNTO antes de a pessoa ler qualquer linha; a
+               versão sozinha não situa ninguém. -->
           <p v-if="principal" class="text-micro text-ink-muted">
-            {{ principal.version }} · {{ dataCurta(principal.date) }}
+            <span v-if="principal.theme" class="text-ink font-medium">{{ principal.theme }}</span>
+            <span v-if="principal.theme"> · </span>{{ dataCurta(principal.date) }}
             <span v-if="anteriores.length"> · mais {{ anteriores.length }} desde a sua última visita</span>
           </p>
         </div>
@@ -91,8 +94,11 @@ async function verHistorico() {
               @click="expandida = expandida === r.version ? null : r.version"
               class="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-surface-sunken
                      transition-colors duration-120">
-              <span class="text-micro font-mono text-ink-subtle shrink-0">{{ dataCurta(r.date) }}</span>
-              <span class="text-xs text-ink truncate flex-1">{{ r.description }}</span>
+              <span class="text-micro font-mono text-ink-subtle shrink-0 w-12">{{ dataCurta(r.date) }}</span>
+              <span class="text-xs truncate flex-1">
+                <span v-if="r.theme" class="font-medium text-ink">{{ r.theme }}: </span>
+                <span class="text-ink-muted">{{ r.description }}</span>
+              </span>
               <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200 shrink-0"
                  :class="{ 'rotate-180': expandida === r.version }"></i>
             </button>
