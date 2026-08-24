@@ -12,6 +12,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import { formatDateTime } from '../projectionUtils';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({ id: { type: Number, required: true } });
 
 const store = useProjectionsStore();
@@ -68,9 +69,7 @@ async function show() {
         </div>
       </template>
 
-      <div v-if="loading" class="py-16 grid place-items-center">
-        <Spinner />
-      </div>
+      <Skeleton v-if="loading" variant="row" :lines="4" />
 
       <EmptyState v-else-if="!store.logs?.length"
         icon="fas fa-clock-rotate-left"

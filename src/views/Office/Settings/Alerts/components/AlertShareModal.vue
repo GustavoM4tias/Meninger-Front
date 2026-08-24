@@ -11,6 +11,7 @@ import { useToast } from 'vue-toastification';
 import Modal from '@/components/UI/Modal.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({ rule: { type: Object, required: true } });
 const emit = defineEmits(['close', 'shared']);
 
@@ -94,7 +95,7 @@ const channelDefs = [
                    focus:outline-none focus:border-accent/50 transition" />
         </div>
 
-        <div v-if="loadingUsers" class="py-8 grid place-items-center"><Spinner size="sm" /></div>
+        <Skeleton v-if="loadingUsers" variant="row" :lines="3" />
 
         <div v-else-if="!filtered.length" class="py-6 text-center text-xs text-ink-muted">
           Nenhum usuário encontrado.

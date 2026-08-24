@@ -10,6 +10,7 @@ import Switch from '@/components/UI/Switch.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import { RouterLink } from 'vue-router';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useNotificationStore();
 const wpp = useWhatsappStore();
 const auth = useAuthStore();
@@ -95,9 +96,7 @@ const onToggle = (pref, key, value) => {
       </div>
     </div>
 
-    <div v-if="store.prefsLoading" class="py-16 grid place-items-center">
-      <Spinner />
-    </div>
+    <Skeleton v-if="store.prefsLoading" variant="row" :lines="5" />
 
     <div v-else-if="!store.preferences.length"
       class="py-12 text-center text-sm text-ink-muted">

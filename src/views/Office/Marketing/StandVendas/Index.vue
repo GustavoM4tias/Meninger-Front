@@ -124,7 +124,7 @@
                 <EmptyState v-if="!store.loading && !store.stands.length" icon="fas fa-store"
                     title="Nenhum stand cadastrado"
                     description="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo." />
-                <div v-if="store.loading" class="py-10 flex justify-center"><Spinner /></div>
+                <Skeleton v-if="store.loading" variant="card" :lines="3" />
             </Surface>
 
             <!-- ══ Aba Modelos ══ -->
@@ -221,6 +221,7 @@ import ModelFormModal from './ModelFormModal.vue';
 import StandFormModal from './StandFormModal.vue';
 import StandDetailModal from './StandDetailModal.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useSalesStandStore();
 const tab = ref('stands');
 

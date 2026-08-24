@@ -29,6 +29,7 @@ import Badge from '@/components/UI/Badge.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const toast = useToast();
 const router = useRouter();
 
@@ -221,7 +222,7 @@ onMounted(load);
             </template>
         </PageHeader>
 
-        <div v-if="loading" class="flex justify-center py-16"><Spinner /></div>
+        <Skeleton v-if="loading" variant="row" :lines="3" />
 
         <div v-else-if="settings" class="space-y-4">
             <!-- Perfis -->

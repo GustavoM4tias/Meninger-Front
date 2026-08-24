@@ -25,6 +25,7 @@ import ProjectionChartsModal from './components/ProjectionChartsModal.vue';
 import EnterpriseDetailModal from '@/views/Office/Comercial/Faturamento/components/EnterpriseDetailModal.vue';
 import LandSyncConfigModal from '@/views/Office/Comercial/Faturamento/components/LandSyncConfigModal.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 // `embedded` = renderizada como guia do Relatório Comercial: esconde só o
 // cabeçalho próprio. Nenhuma regra de cálculo muda.
 defineProps({ embedded: { type: Boolean, default: false } });
@@ -526,10 +527,7 @@ onMounted(async () => {
       </div>
 
       <!-- Loading -->
-      <div v-else-if="loading" class="py-16 flex flex-col items-center gap-3 text-ink-muted">
-        <Spinner size="lg" />
-        <p class="text-sm">Carregando relatório de vendas × projeção...</p>
-      </div>
+      <Skeleton v-else-if="loading" variant="stat" :lines="3" />
 
       <!-- Conteúdo -->
       <div v-else class="space-y-4">

@@ -98,11 +98,15 @@
         description="Escolha um grupo e um plano do Microsoft Planner para ver o quadro Kanban." />
     </div>
 
-    <!-- Loading do plano -->
-    <div v-else-if="store.loadingPlan" class="flex-1 flex items-center justify-center">
-      <div class="flex items-center gap-3 text-ink-muted">
-        <Spinner size="sm" />
-        <span class="text-sm">Carregando plano...</span>
+    <!-- Carga do plano: esqueleto na forma do QUADRO, tres colunas de
+         cartoes. A bolinha girando no meio da area vazia nao dizia que o que
+         vem e um Kanban, e o layout pulava inteiro quando ele chegava. -->
+    <div v-else-if="store.loadingPlan" class="flex-1 overflow-hidden p-4">
+      <div class="flex gap-4">
+        <div v-for="c in 3" :key="c" class="w-72 shrink-0 space-y-2">
+          <Skeleton variant="title" />
+          <Skeleton variant="card" :lines="3" />
+        </div>
       </div>
     </div>
 
@@ -345,6 +349,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = usePlannerStore();
 const toast = useToast();
 

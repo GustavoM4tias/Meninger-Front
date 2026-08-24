@@ -11,6 +11,7 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
 import { iconForStage } from '../stages.js';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({
   precadastro: { type: Object, default: null },
   visivel: { type: Boolean, default: false },
@@ -148,10 +149,7 @@ const financialCards = computed(() => [
 
       <!-- Content -->
       <div class="p-4 sm:p-5 max-h-[60vh] overflow-y-auto">
-        <div v-if="loading" class="py-12 flex flex-col items-center gap-3 text-ink-muted">
-          <Spinner size="lg" />
-          <p class="text-sm">Carregando detalhes...</p>
-        </div>
+        <Skeleton v-if="loading" variant="row" :lines="5" />
 
         <!-- TAB: GERAL -->
         <template v-else-if="tab === 'geral'">

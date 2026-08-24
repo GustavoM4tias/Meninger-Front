@@ -21,6 +21,7 @@ import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({
   open: { type: Boolean, default: false },
   // Contrato já conhecido (entrada pelo detalhe da venda)
@@ -303,7 +304,7 @@ const save = async () => {
         <Button variant="outline" size="sm" icon="fas fa-magnifying-glass" :disabled="searching"
           @click="runSearch">Buscar</Button>
 
-        <div v-if="searching" class="py-6 flex justify-center"><Spinner size="sm" /></div>
+        <Skeleton v-if="searching" variant="row" :lines="3" />
 
         <div v-else-if="searchResults.length" class="space-y-1.5 max-h-72 overflow-y-auto">
           <button v-for="row in searchResults" :key="row.contract_id" type="button"
@@ -325,7 +326,7 @@ const save = async () => {
           title="Nenhum contrato encontrado" description="Confira o número, o nome do cliente ou a unidade." />
       </div>
 
-      <div v-if="loadingContract" class="py-10 flex justify-center"><Spinner size="lg" /></div>
+      <Skeleton v-if="loadingContract" variant="row" :lines="3" />
 
       <p v-if="loadError" class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-xs text-data-neg">
         {{ loadError }}

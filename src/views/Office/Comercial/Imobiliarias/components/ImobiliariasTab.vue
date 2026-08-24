@@ -17,6 +17,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import ReportDetailModal from './ReportDetailModal.vue';
 import GerenteModal from './GerenteModal.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({
     // Deep-link (?q= na URL, ex.: card da Eme): prefiltra a busca e libera os
     // filtros de situação/vínculo — senão uma imobiliária inativa ou sem
@@ -201,9 +202,7 @@ onMounted(() => { if (!all.value.length) store.fetchReport(); });
             <span v-if="store.report?.last_sync">Última sincronização: {{ fmtDate(store.report.last_sync) }}</span>
         </div>
 
-        <div v-if="store.loadingReport && !all.length" class="flex justify-center py-16">
-            <Spinner />
-        </div>
+        <Skeleton v-if="store.loadingReport && !all.length" variant="row" :lines="4" />
 
         <EmptyState
             v-else-if="!rows.length"

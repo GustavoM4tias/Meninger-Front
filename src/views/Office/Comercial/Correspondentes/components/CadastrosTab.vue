@@ -12,6 +12,7 @@ import Select from '@/components/UI/Select.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useCorrespondentStore();
 const toast = useToast();
 
@@ -144,9 +145,7 @@ onMounted(() => {
             <Badge variant="neutral" outlined>{{ store.registros.length }} registros</Badge>
         </div>
 
-        <div v-if="store.loading && !store.registros.length" class="flex justify-center py-16">
-            <Spinner />
-        </div>
+        <Skeleton v-if="store.loading && !store.registros.length" variant="row" :lines="4" />
 
         <EmptyState
             v-else-if="!lotes.length"

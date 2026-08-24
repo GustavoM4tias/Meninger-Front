@@ -17,6 +17,7 @@ import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Collapsible from '@/components/UI/Collapsible.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useEventPlanStore();
 const router = useRouter();
 
@@ -62,7 +63,7 @@ onMounted(load);
             <Input v-model="month" type="month" label="Mês" />
         </div>
 
-        <div v-if="store.loading" class="flex justify-center py-16"><Spinner /></div>
+        <Skeleton v-if="store.loading" variant="row" :lines="4" />
 
         <EmptyState
             v-else-if="!data || !data.plans?.length"

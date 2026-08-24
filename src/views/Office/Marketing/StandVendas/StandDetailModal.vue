@@ -89,7 +89,7 @@
             </div>
 
             <!-- Detalhe do gasto -->
-            <div v-if="loadingSpend" class="py-6 flex justify-center"><Spinner /></div>
+            <Skeleton v-if="loadingSpend" variant="row" :lines="3" />
             <template v-else-if="spendDetail">
                 <div v-if="spendDetail.byConta.length">
                     <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">Por conta (2.02.07)</p>
@@ -140,6 +140,7 @@ import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({
     open: { type: Boolean, default: false },
     stand: { type: Object, default: null },

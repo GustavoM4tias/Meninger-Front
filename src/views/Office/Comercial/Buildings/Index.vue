@@ -16,6 +16,7 @@ import Badge from '@/components/UI/Badge.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const route = useRoute();
 const router = useRouter();
 const search = ref('');
@@ -158,10 +159,7 @@ const sectionMeta = (key) => ({
       </section>
 
       <!-- Loading -->
-      <div v-if="loading" class="py-16 flex flex-col items-center gap-3 text-ink-muted">
-        <Spinner size="lg" />
-        <p class="text-sm">Carregando empreendimentos...</p>
-      </div>
+      <Skeleton v-if="loading" variant="card" :lines="3" />
 
       <!-- Empty -->
       <EmptyState v-else-if="visibleSections.length === 0"

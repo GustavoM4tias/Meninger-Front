@@ -14,6 +14,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import DetailModal from './DetailModal.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const LP_HOST = 'https://lp.menin.com.br';
 
 const store = useRealEstateStore();
@@ -99,9 +100,7 @@ const summaryText = (r) => r.multi_use
 
 <template>
     <div>
-        <div v-if="store.loading && !rows.length" class="flex justify-center py-16">
-            <Spinner />
-        </div>
+        <Skeleton v-if="store.loading && !rows.length" variant="row" :lines="4" />
 
         <EmptyState
             v-else-if="!rows.length"

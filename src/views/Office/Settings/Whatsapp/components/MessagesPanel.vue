@@ -6,6 +6,7 @@ import Button from '@/components/UI/Button.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useWhatsappStore();
 
 const filters = ref({ status: '', direction: 'out', q: '' });
@@ -69,7 +70,7 @@ const formatDt = (d) => {
         @click="(offset = 0, load())">Aplicar</Button>
     </div>
 
-    <div v-if="store.loadingMessages && !store.messages.length" class="py-12 grid place-items-center"><Spinner /></div>
+    <Skeleton v-if="store.loadingMessages && !store.messages.length" variant="row" :lines="4" />
 
     <div v-else-if="!store.messages.length"
       class="py-12 text-center text-sm text-ink-muted rounded-xl border border-dashed border-line bg-surface-raised">

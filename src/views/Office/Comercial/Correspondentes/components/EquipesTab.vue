@@ -21,6 +21,7 @@ import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import CompanyDetailModal from './CompanyDetailModal.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({
     initialQuery: { type: String, default: '' },
 });
@@ -208,9 +209,7 @@ onMounted(() => { if (!store.empresas.length) store.fetchOverview(); });
             </a>
         </div>
 
-        <div v-if="store.loading && !store.empresas.length" class="flex justify-center py-16">
-            <Spinner />
-        </div>
+        <Skeleton v-if="store.loading && !store.empresas.length" variant="row" :lines="4" />
 
         <EmptyState
             v-else-if="!linhas.length"

@@ -19,6 +19,7 @@ import EnterprisesSalesTable from './components/EnterprisesSalesTable.vue';
 import LandSyncConfigModal from './components/LandSyncConfigModal.vue';
 import ClosingModal from './components/ClosingModal.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 // `embedded` = renderizada como guia do Relatório Comercial: esconde só o
 // cabeçalho próprio. Nenhuma regra de cálculo muda.
 defineProps({ embedded: { type: Boolean, default: false } });
@@ -115,10 +116,7 @@ onMounted(loadData);
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="py-16 flex flex-col items-center gap-3 text-ink-muted">
-        <Spinner size="lg" />
-        <p class="text-sm">Carregando dados de vendas...</p>
-      </div>
+      <Skeleton v-if="loading" variant="stat" :lines="3" />
 
       <!-- Conteúdo -->
       <div v-else class="space-y-4">

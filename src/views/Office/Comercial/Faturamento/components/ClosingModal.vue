@@ -26,6 +26,7 @@ import Button from '@/components/UI/Button.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({ open: { type: Boolean, default: false } });
 const emit = defineEmits(['close']);
 
@@ -449,10 +450,7 @@ const closeModal = () => emit('close');
         </p>
       </div>
 
-      <div v-if="loading" class="py-10 flex flex-col items-center gap-3 text-ink-muted">
-        <Spinner size="lg" />
-        <p class="text-sm">Carregando fechamentos...</p>
-      </div>
+      <Skeleton v-if="loading" variant="row" :lines="4" />
 
       <EmptyState v-else-if="!months.length"
         size="sm" icon="far fa-calendar"

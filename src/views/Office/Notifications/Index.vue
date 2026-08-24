@@ -9,6 +9,7 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Button from '@/components/UI/Button.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useNotificationStore();
 
 const tab = ref('all'); // all | unread
@@ -99,9 +100,7 @@ const handleRemove = (e, n) => { e.preventDefault(); e.stopPropagation(); store.
       <SegmentedControl v-model="tab" :options="tabs" size="sm" />
     </div>
 
-    <div v-if="store.loading && !items.length" class="py-16 grid place-items-center">
-      <Spinner />
-    </div>
+    <Skeleton v-if="store.loading && !items.length" variant="row" :lines="5" />
 
     <div v-else-if="!items.length" class="py-16 text-center">
       <div class="w-12 h-12 rounded-2xl bg-surface-sunken border border-line grid place-items-center mx-auto mb-3">

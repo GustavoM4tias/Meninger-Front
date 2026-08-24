@@ -29,6 +29,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import ConsolidatedTab from './components/ConsolidatedTab.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useEventPlanStore();
 const router = useRouter();
 const toast = useToast();
@@ -277,7 +278,7 @@ onMounted(async () => {
                 </div>
             </section>
 
-            <div v-if="store.loading" class="flex justify-center py-16"><Spinner /></div>
+            <Skeleton v-if="store.loading" variant="row" :lines="4" />
 
             <!-- Aba: aguardando decisão -->
             <template v-else-if="tab === 'decidir'">

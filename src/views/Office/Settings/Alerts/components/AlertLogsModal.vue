@@ -4,6 +4,7 @@ import { useAlertStore } from '@/stores/Alerts/alertStore';
 import Modal from '@/components/UI/Modal.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({ rule: { type: Object, required: true } });
 const emit = defineEmits(['close']);
 
@@ -23,7 +24,7 @@ const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR') : '—';
 
 <template>
   <Modal :open="true" @close="emit('close')" :title="`Histórico — ${rule.name}`" size="lg">
-    <div v-if="store.loadingLogs" class="py-12 grid place-items-center"><Spinner /></div>
+    <Skeleton v-if="store.loadingLogs" variant="row" :lines="4" />
 
     <div v-else-if="!store.logs.length" class="py-12 text-center text-sm text-ink-muted">
       Nenhum disparo registrado.

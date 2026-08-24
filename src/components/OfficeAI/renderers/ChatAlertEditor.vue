@@ -15,6 +15,7 @@ import Spinner from '@/components/UI/Spinner.vue';
 import ChatText from './ChatText.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({
   action: { type: Object, required: true },
 });
@@ -281,9 +282,7 @@ const MINUTES = [0, 15, 30, 45];
 <template>
   <div v-if="!dismissed" class="alert-editor-card group">
     <!-- ═══ Loading skeleton (modo edit, carregando regra) ═══════════════ -->
-    <div v-if="ruleLoading" class="py-10 grid place-items-center">
-      <Spinner size="md" />
-    </div>
+    <Skeleton v-if="ruleLoading" variant="row" :lines="3" />
 
     <!-- ═══ Estado: SAVED (colapsado / confirmação) ════════════════════════ -->
     <div v-else-if="lifecycle === 'saved'" class="saved-state">
@@ -453,9 +452,7 @@ const MINUTES = [0, 15, 30, 45];
             <span v-for="i in 24" :key="i" class="perf-dot"></span>
           </div>
           <div class="preview-body">
-            <div v-if="previewLoading" class="grid place-items-center py-8">
-              <Spinner size="sm" />
-            </div>
+            <Skeleton v-if="previewLoading" variant="row" :lines="3" />
             <ChatText v-else-if="previewText" :content="previewText" />
             <p v-else class="preview-empty">_sem preview disponível_</p>
           </div>

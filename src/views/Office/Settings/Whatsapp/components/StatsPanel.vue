@@ -8,6 +8,7 @@ import { useWhatsappStore } from '@/stores/Whatsapp/whatsappStore';
 import Spinner from '@/components/UI/Spinner.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useWhatsappStore();
 const days = ref(30);
 
@@ -73,7 +74,7 @@ const usdToBrl = computed(() => store.stats?.rates?.usdToBrl);
       <SegmentedControl v-model="days" :options="ranges" size="sm" />
     </div>
 
-    <div v-if="store.loadingStats" class="py-12 grid place-items-center"><Spinner /></div>
+    <Skeleton v-if="store.loadingStats" variant="stat" :lines="3" />
 
     <div v-else-if="!store.stats" class="py-12 text-center text-sm text-ink-muted">Sem dados.</div>
 

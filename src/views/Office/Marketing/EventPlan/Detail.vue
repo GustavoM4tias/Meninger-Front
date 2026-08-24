@@ -28,6 +28,7 @@ import RequiredItemChoiceModal from './components/RequiredItemChoiceModal.vue';
 import PlanTimeline from './components/PlanTimeline.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useEventPlanStore();
 const route = useRoute();
 const router = useRouter();
@@ -268,7 +269,7 @@ onMounted(async () => {
 
 <template>
     <PageContainer>
-        <div v-if="store.loading && !plan" class="flex justify-center py-20"><Spinner /></div>
+        <Skeleton v-if="store.loading && !plan" variant="row" :lines="4" />
 
         <EmptyState
             v-else-if="!plan"

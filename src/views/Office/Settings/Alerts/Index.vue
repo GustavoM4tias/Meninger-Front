@@ -17,6 +17,7 @@ import AlertLogsModal from './components/AlertLogsModal.vue';
 import AlertShareModal from './components/AlertShareModal.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useAlertStore();
 const toast = useToast();
 const router = useRouter();
@@ -150,7 +151,7 @@ const channelIcons = (ch = {}) => [
       </article>
     </div>
 
-    <div v-if="store.loading" class="py-16 grid place-items-center"><Spinner /></div>
+    <Skeleton v-if="store.loading" variant="row" :lines="4" />
 
     <EmptyState v-else-if="!store.items.length"
       icon="fas fa-bell-slash" title="Nenhum alerta configurado"

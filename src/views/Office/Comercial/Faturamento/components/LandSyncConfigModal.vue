@@ -42,6 +42,7 @@ import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({ open: { type: Boolean, default: false } });
 const emit = defineEmits(['close']);
 
@@ -1593,7 +1594,7 @@ const closeModal = () => emit('close');
             </div>
 
             <div class="rounded-lg border border-line bg-surface-sunken max-h-80 overflow-y-auto">
-              <div v-if="adjustmentsStore.loading" class="py-8 flex justify-center"><Spinner size="sm" /></div>
+              <Skeleton v-if="adjustmentsStore.loading" variant="row" :lines="3" />
 
               <EmptyState v-else-if="!adjustmentsStore.items.length"
                 size="sm" icon="fas fa-wand-magic-sparkles"

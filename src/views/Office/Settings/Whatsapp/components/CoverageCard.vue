@@ -8,6 +8,7 @@ import { onMounted, ref, computed } from 'vue';
 import { useWhatsappStore } from '@/stores/Whatsapp/whatsappStore';
 import Spinner from '@/components/UI/Spinner.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useWhatsappStore();
 const expanded = ref(false);
 
@@ -26,7 +27,7 @@ const barCls = computed(() => {
 
 <template>
   <section class="mb-4 rounded-xl border border-line bg-surface-raised p-4 shadow-soft">
-    <div v-if="store.loadingCoverage" class="py-4 grid place-items-center"><Spinner /></div>
+    <Skeleton v-if="store.loadingCoverage" variant="text" :lines="2" />
 
     <template v-else-if="cov">
       <div class="flex items-start justify-between gap-3 flex-wrap">

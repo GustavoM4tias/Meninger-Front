@@ -14,6 +14,7 @@ import TemplateCreateModal from './TemplateCreateModal.vue';
 import { useToast } from 'vue-toastification';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const toast = useToast();
 
 const store = useWhatsappStore();
@@ -117,7 +118,7 @@ const onDelete = async (t) => {
 
     <TemplateCreateModal v-model:open="showCreate" @created="onCreated" />
 
-    <div v-if="store.loadingTemplates" class="py-12 grid place-items-center"><Spinner /></div>
+    <Skeleton v-if="store.loadingTemplates" variant="row" :lines="4" />
 
     <template v-else>
       <!-- Fluxo quebrado: template obrigatório sem aprovação -->

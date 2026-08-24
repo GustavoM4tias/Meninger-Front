@@ -15,6 +15,7 @@ import DashboardFilters from '@/views/Office/Comercial/Faturamento/components/Da
 import Spinner from '@/components/UI/Spinner.vue';
 import Button from '@/components/UI/Button.vue';
 
+import Skeleton from '@/components/UI/Skeleton.vue';
 const contractsStore = useContractsStore();
 
 const carregando = ref(true);
@@ -66,14 +67,7 @@ defineExpose({ recarregar: carregar });
       <Button variant="outline" size="sm" icon="fas fa-rotate-right" @click="carregar">Tentar novamente</Button>
     </div>
 
-    <div v-else-if="carregando" class="py-16 flex flex-col items-center gap-3 text-ink-muted">
-      <Spinner size="lg" />
-      <p class="text-sm">Carregando o detalhamento das vendas...</p>
-      <p class="text-xs text-ink-subtle max-w-sm text-center">
-        Esta análise cruza contrato, reserva e lead. Períodos longos e muitos
-        empreendimentos demoram mais - filtre para acelerar.
-      </p>
-    </div>
+    <Skeleton v-else-if="carregando" variant="table" :lines="5" />
 
     <div v-else-if="semDetalhe"
       class="rounded-xl border border-data-warn/20 bg-data-warn/10 p-4 text-sm text-data-warn">
