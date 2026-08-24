@@ -18,6 +18,8 @@ import { useTeamsChatStore } from '@/stores/Microsoft/teamsChatStore';
 import { useTranscriptStore } from '@/stores/Microsoft/transcriptStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Button from '@/components/UI/Button.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
+import PessoaHover from './PessoaHover.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
 const emit = defineEmits(['ir', 'abrir-relatorio']);
@@ -190,7 +192,17 @@ const pendencias = computed(() => {
   return lista;
 });
 
+const carregandoAgenda = computed(() => ts.loading && !ts.events.length);
+const carregandoAtas   = computed(() => tr.loadingReports && !(tr.reports || []).length);
+
 const relatoriosRecentes = computed(() => (tr.reports || []).slice(0, 3));
+
+// Abrir conversa com alguém a partir do cartão da pessoa.
+function conversarCom(pessoa) {
+  if (!pessoa?.email) return;
+  emit('ir', 'mensagens');
+  cs.conversarCom(pessoa.email).catch(() => {});
+}
 
 function quandoRelatorio(r) {
   if (!r.meetingDate) return '';
@@ -223,7 +235,17 @@ function quandoRelatorio(r) {
     <!-- A seguir + números -->
     <div class="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
 
-      <section class="rounded-2xl border p-4 flex flex-col"
+      <section v-if="carregandoAgenda" class="rounded-2xl border border-line bg-surface-raised p-4 space-y-3">
+        <Skeleton class="h-3 w-24 rounded" />
+        <Skeleton class="h-6 w-2/3 rounded" />
+        <Skeleton class="h-3 w-1/2 rounded" />
+        <div class="flex gap-1 pt-2">
+          <Skeleton v-for="i in 4" :key="i" class="h-7 w-7 rounded-full" />
+        </div>
+        <Skeleton class="h-10 w-40 rounded-xl mt-auto" />
+      </section>
+
+      <section v-else class="rounded-2xl border p-4 flex flex-col transition-colors duration-300"
         :class="destaque ? 'border-accent/25 bg-accent-soft' : 'border-line bg-surface-raised'">
         <p class="text-micro font-semibold uppercase tracking-wide flex items-center gap-2"
           :class="destaque ? 'text-accent' : 'text-ink-subtle'">
@@ -241,12 +263,9 @@ function quandoRelatorio(r) {
 
           <!-- Quem vai estar: iniciais, que é o que cabe e o que basta -->
           <div v-if="destaque.attendees?.length" class="flex items-center mt-3">
-            <span v-for="(a, i) in destaque.attendees.slice(0, 6)" :key="a.email"
-              :title="a.name || a.email" :style="{ marginLeft: i ? '-0.4rem' : 0 }"
-              class="w-7 h-7 rounded-full bg-surface-raised border border-line grid place-items-center
-                     text-micro font-semibold text-ink-muted shrink-0">
-              {{ (a.name || a.email || '?').charAt(0).toUpperCase() }}
-            </span>
+            <PessoaHover v-for="(a, i) in destaque.attendees.slice(0, 6)" :key="a.email"
+              :pessoa="a" :style="{ marginLeft: i ? '-0.4rem' : 0 }"
+              class="shrink-0" @conversar="conversarCom" />
             <span v-if="destaque.attendees.length > 6" class="text-micro text-ink-subtle ml-2">
               +{{ destaque.attendees.length - 6 }}
             </span>
@@ -270,7 +289,10 @@ function quandoRelatorio(r) {
       </section>
 
       <div class="grid grid-rows-3 gap-2.5">
-        <div v-for="m in metricas" :key="m.rotulo"
+        <template v-if="carregandoAgenda">
+          <Skeleton v-for="i in 3" :key="i" class="h-full min-h-[4.25rem] rounded-2xl" />
+        </template>
+        <div v-else v-for="m in metricas" :key="m.rotulo"
           class="rounded-2xl border border-line bg-surface-raised px-3.5 py-3">
           <p class="text-micro font-semibold text-ink-subtle uppercase tracking-wide flex items-center gap-2">
             <i :class="m.icone" class="text-micro text-ink-subtle"></i> {{ m.rotulo }}
@@ -290,13 +312,15 @@ function quandoRelatorio(r) {
         <span class="text-micro text-ink-subtle">08h — 19h</span>
       </div>
 
-      <div class="relative h-12 rounded-xl bg-surface-sunken border border-line overflow-hidden">
+      <Skeleton v-if="carregandoAgenda" class="h-12 rounded-xl" />
+
+      <div v-else class="relative h-12 rounded-xl bg-surface-sunken border border-line overflow-hidden">
         <button v-for="b in blocosDoDia" :key="b.id" type="button"
           :title="`${b.subject} · ${hhmm(b.start)}–${hhmm(b.end)}`"
           :style="{ left: b.pos.left, width: b.pos.width }"
           @click="emit('ir', 'agenda')"
           class="absolute top-1.5 bottom-1.5 rounded-lg px-2 overflow-hidden text-left
-                 border transition-colors"
+                 border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft"
           :class="b.isOnlineMeeting
             ? 'bg-accent/15 border-accent/30 hover:bg-accent/25'
             : 'bg-surface-hover border-line hover:bg-surface-sunken'">
@@ -330,10 +354,14 @@ function quandoRelatorio(r) {
         <EmptyState v-if="!pendencias.length" icon="fas fa-check" size="sm"
           title="Nada pendente" description="Nenhuma conversa, convite ou ata esperando por você." />
 
-        <div v-else class="flex flex-col">
+        <TransitionGroup v-else tag="div" class="flex flex-col"
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="opacity-0 -translate-y-1"
+          leave-active-class="transition duration-150 ease-in absolute"
+          leave-to-class="opacity-0">
           <button v-for="p in pendencias" :key="p.id" type="button" @click="emit('ir', p.ir)"
             class="flex items-start gap-3 px-2 py-2.5 min-h-11 rounded-xl text-left
-                   hover:bg-surface-hover transition-colors">
+                   hover:bg-surface-hover hover:translate-x-0.5 transition-all duration-150">
             <i :class="p.icone" class="text-sm text-accent mt-0.5 w-4 text-center shrink-0"></i>
             <span class="flex-1 min-w-0">
               <span class="block text-sm font-medium text-ink">{{ p.titulo }}</span>
@@ -341,7 +369,7 @@ function quandoRelatorio(r) {
             </span>
             <span class="text-micro text-ink-subtle shrink-0 pt-0.5">{{ p.quando }}</span>
           </button>
-        </div>
+        </TransitionGroup>
       </section>
 
       <section class="rounded-2xl border border-line bg-surface-raised p-4">
@@ -350,7 +378,11 @@ function quandoRelatorio(r) {
           <button class="text-micro text-accent hover:underline" @click="emit('ir', 'reunioes')">Ver todas</button>
         </div>
 
-        <EmptyState v-if="!relatoriosRecentes.length" icon="fas fa-wand-magic-sparkles" size="sm"
+        <div v-if="carregandoAtas" class="flex flex-col gap-2">
+          <Skeleton v-for="i in 3" :key="i" class="h-14 rounded-xl" />
+        </div>
+
+        <EmptyState v-else-if="!relatoriosRecentes.length" icon="fas fa-wand-magic-sparkles" size="sm"
           title="Nenhuma ata ainda"
           description="Depois de uma reunião com transcrição, a ata aparece aqui sozinha." />
 
@@ -358,7 +390,7 @@ function quandoRelatorio(r) {
           <button v-for="r in relatoriosRecentes" :key="r.id" type="button"
             @click="emit('abrir-relatorio', r)"
             class="flex items-start gap-2.5 p-2.5 rounded-xl border border-line bg-surface-sunken
-                   hover:border-accent/30 transition-colors text-left">
+                   hover:border-accent/30 hover:-translate-y-0.5 transition-all duration-150 text-left">
             <i class="fas fa-wand-magic-sparkles text-accent text-xs mt-0.5 shrink-0"></i>
             <span class="flex-1 min-w-0">
               <span class="block text-sm font-medium text-ink truncate">{{ r.subject || 'Reunião' }}</span>

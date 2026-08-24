@@ -15,6 +15,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
 import { useTeamsChatStore } from '@/stores/Microsoft/teamsChatStore';
+import Skeleton from '@/components/UI/Skeleton.vue';
 
 const emit = defineEmits(['ir']);
 const ts = useTeamsStore();
@@ -56,7 +57,27 @@ const contagem = computed(() => {
   return m < 60 ? `em ${m} min` : `em ${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}`;
 });
 
+const carregando = computed(() => ts.loading && !ts.events.length);
+
 function passou(e) { return minutos(e.end) <= minutosAgora.value; }
+
+// A ordem do trilho responde "onde eu estou no dia": o que está acontecendo
+// agora fica no topo, embaixo vem o que ainda vai acontecer, e por último o que
+// já passou - da mais recente para a mais antiga, que é a ordem em que a pessoa
+// procura ("o que era mesmo a reunião de agora há pouco?").
+const grupos = computed(() => {
+  const atual = emAndamento.value ? [emAndamento.value] : [];
+  const proximas = doDia.value.filter(e => minutos(e.start) > minutosAgora.value);
+  const passadas = doDia.value
+    .filter(e => passou(e) && e.id !== emAndamento.value?.id)
+    .reverse();
+
+  return [
+    { chave: "agora",    rotulo: "Agora",     itens: atual },
+    { chave: "proximas", rotulo: "A seguir",  itens: proximas },
+    { chave: "passadas", rotulo: "Já passou", itens: passadas },
+  ].filter(g => g.itens.length);
+});
 </script>
 
 <template>
@@ -66,7 +87,14 @@ function passou(e) { return minutos(e.end) <= minutosAgora.value; }
     <section>
       <p class="text-micro font-semibold text-ink-subtle uppercase tracking-wide mb-2">Acompanhamento</p>
 
-      <div v-if="destaque" class="rounded-2xl border border-accent/25 bg-accent-soft p-3">
+      <div v-if="carregando" class="rounded-2xl border border-line bg-surface-raised p-3 space-y-2">
+        <Skeleton class="h-3 w-20 rounded" />
+        <Skeleton class="h-4 w-4/5 rounded" />
+        <Skeleton class="h-3 w-2/3 rounded" />
+        <Skeleton class="h-10 w-full rounded-xl mt-1" />
+      </div>
+
+      <div v-else-if="destaque" class="rounded-2xl border border-accent/25 bg-accent-soft p-3">
         <p class="text-micro font-semibold text-accent flex items-center gap-1.5">
           <span v-if="emAndamento" class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
           {{ emAndamento ? 'Acontecendo agora' : 'A seguir' }}
@@ -89,19 +117,38 @@ function passou(e) { return minutos(e.end) <= minutosAgora.value; }
     </section>
 
     <!-- O resto do dia -->
-    <section v-if="doDia.length">
+    <section v-if="carregando">
       <p class="text-micro font-semibold text-ink-subtle uppercase tracking-wide mb-2">Agenda de hoje</p>
-      <div class="flex flex-col">
-        <button v-for="e in doDia" :key="e.id" type="button" @click="emit('ir', 'agenda')"
-          class="flex items-center gap-2.5 px-2 py-2 min-h-10 rounded-lg text-left hover:bg-surface-hover transition-colors"
-          :class="passou(e) ? 'opacity-50' : ''">
-          <span class="w-1.5 h-1.5 rounded-full shrink-0"
-            :class="e.id === destaque?.id ? 'bg-accent' : 'bg-ink-subtle/40'"></span>
-          <span class="w-9 shrink-0 text-micro tabular-nums text-ink-subtle">{{ hhmm(e.start) }}</span>
-          <span class="flex-1 min-w-0 text-xs truncate"
-            :class="e.id === destaque?.id ? 'text-ink font-medium' : 'text-ink-muted'">{{ e.subject }}</span>
-          <i v-if="e.isOnlineMeeting" class="fas fa-video text-micro text-ink-subtle shrink-0"></i>
-        </button>
+      <div class="flex flex-col gap-1.5">
+        <Skeleton v-for="i in 4" :key="i" class="h-10 rounded-lg" />
+      </div>
+    </section>
+
+    <section v-else-if="doDia.length">
+      <p class="text-micro font-semibold text-ink-subtle uppercase tracking-wide mb-2">Agenda de hoje</p>
+      <div v-for="g in grupos" :key="g.chave" class="mb-1.5 last:mb-0">
+        <p class="text-micro text-ink-subtle px-2 pb-0.5 flex items-center gap-1.5">
+          <span v-if="g.chave === 'agora'" class="w-1 h-1 rounded-full bg-accent animate-pulse"></span>
+          {{ g.rotulo }}
+        </p>
+        <TransitionGroup
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="opacity-0 -translate-y-1"
+          leave-active-class="transition duration-150 ease-in absolute"
+          leave-to-class="opacity-0">
+          <button v-for="e in g.itens" :key="e.id" type="button" @click="emit('ir', 'agenda')"
+            class="w-full flex items-center gap-2.5 px-2 py-2 min-h-10 rounded-lg text-left
+                   hover:bg-surface-hover hover:translate-x-0.5 transition-all duration-150"
+            :class="g.chave === 'passadas' ? 'opacity-45 hover:opacity-70' : ''">
+            <span class="w-1.5 h-1.5 rounded-full shrink-0 transition-colors"
+              :class="g.chave === 'agora' ? 'bg-accent animate-pulse'
+                    : g.chave === 'proximas' ? 'bg-ink-subtle/50' : 'bg-ink-subtle/25'"></span>
+            <span class="w-9 shrink-0 text-micro tabular-nums text-ink-subtle">{{ hhmm(e.start) }}</span>
+            <span class="flex-1 min-w-0 text-xs truncate"
+              :class="g.chave === 'agora' ? 'text-ink font-medium' : 'text-ink-muted'">{{ e.subject }}</span>
+            <i v-if="e.isOnlineMeeting" class="fas fa-video text-micro text-ink-subtle shrink-0"></i>
+          </button>
+        </TransitionGroup>
       </div>
     </section>
 

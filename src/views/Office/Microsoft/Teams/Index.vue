@@ -51,10 +51,11 @@ const router = useRouter();
 const TABS = computed(() => [
   { value: 'hoje',      label: 'Hoje',      icon: 'fas fa-bolt' },
   { value: 'agenda',    label: 'Agenda',    icon: 'fas fa-calendar-days' },
-  { value: 'mensagens', label: 'Mensagens', icon: 'fas fa-comments', count: cs.naoLidos || undefined },
   { value: 'reunioes',  label: 'Reuniões',  icon: 'fas fa-wand-magic-sparkles' },
+  // Mensagens fica por último: é para onde se vai responder, não onde se começa.
+  { value: 'mensagens', label: 'Mensagens', icon: 'fas fa-comments', count: cs.naoLidos || undefined },
 ]);
-const VALID_TABS = ['hoje', 'agenda', 'mensagens', 'reunioes'];
+const VALID_TABS = ['hoje', 'agenda', 'reunioes', 'mensagens'];
 
 // A tela abre no Hoje: o mês inteiro é a informação mais fria da tela.
 const tab = ref(VALID_TABS.includes(route.query.tab) ? route.query.tab : 'hoje');
@@ -249,10 +250,18 @@ function showToast(message, type = 'success') {
              celular também, onde a coluna única já é tudo. -->
         <div class="grid gap-5" :class="mostrarTrilho ? 'xl:grid-cols-[minmax(0,1fr)_19rem]' : ''">
           <div class="min-w-0">
-            <KeepAlive>
-              <component :is="currentPanel" @toast="showToast"
-                @ir="tab = $event" @abrir-relatorio="abrirRelatorio" />
-            </KeepAlive>
+            <!-- Troca de aba com um leve movimento: sem isso o conteúdo salta,
+                 e num hub de quatro abas o salto parece recarregamento. -->
+            <Transition mode="out-in"
+              enter-active-class="transition duration-200 ease-out"
+              enter-from-class="opacity-0 translate-y-1"
+              leave-active-class="transition duration-100 ease-in"
+              leave-to-class="opacity-0">
+              <KeepAlive>
+                <component :is="currentPanel" :key="tab" @toast="showToast"
+                  @ir="tab = $event" @abrir-relatorio="abrirRelatorio" />
+              </KeepAlive>
+            </Transition>
           </div>
 
           <div v-if="mostrarTrilho" class="max-xl:hidden">
