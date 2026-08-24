@@ -94,12 +94,22 @@ const BY_PREFIX = [
     ['user.',       { label: 'Cadastro',   icon: 'fas fa-user',          tone: 'accent' }],
 ];
 
+// Alerta do usuário não tem tipo próprio no catálogo: o AlertEngine dispara como
+// `generic` e assina no data (`source: 'alert'`). Sem esta exceção, as 251
+// notificações de alerta medidas em 24/08/2026 - toda a saída das regras que as
+// pessoas criaram - apareciam como "Aviso" cinza, iguais a qualquer recado solto.
+const META_ALERTA = { label: 'Alerta', icon: 'fas fa-tower-broadcast', tone: 'accent' };
+
 /**
  * Aparência de um tipo de notificação.
  * @param {string} type chave do catálogo (ex.: 'checklist.task.overdue')
+ * @param {object} [data] o `data` do aviso, quando houver (identifica o alerta)
  * @returns {{ label:string, icon:string, tone:string, text:string, soft:string, ring:string }}
  */
-export function notificationMeta(type) {
+export function notificationMeta(type, data = null) {
+    if (data?.source === 'alert') {
+        return { ...META_ALERTA, ...(TONES[META_ALERTA.tone] || TONES.neutral) };
+    }
     const key = String(type || '').toLowerCase();
     let base = BY_TYPE[key];
     if (!base) base = (BY_PREFIX.find(([p]) => key.startsWith(p)) || [])[1];

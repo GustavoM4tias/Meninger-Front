@@ -12,11 +12,15 @@ const props = defineProps({
   notification: { type: Object, required: true },
   // 'md' = dentro do sino, 'lg' = caixa de entrada (mais respiro e corpo maior)
   size: { type: String, default: 'md' },
+  // Item que NÃO é uma linha da tabela de notificações (ex.: um comunicado do
+  // mural mostrado na mesma caixa). Sem id próprio, marcar como lido ou remover
+  // bateria numa API que não conhece esse id.
+  gerenciavel: { type: Boolean, default: true },
 });
 
 const store = useNotificationStore();
 
-const meta = computed(() => notificationMeta(props.notification?.type));
+const meta = computed(() => notificationMeta(props.notification?.type, props.notification?.data));
 const isUnread = computed(() => !props.notification?.read_at);
 const image = computed(() => props.notification?.data?.image || null);
 const target = computed(() => notificationTarget(props.notification));
@@ -33,7 +37,7 @@ const linkProps = computed(() => {
 });
 
 const handleClick = () => {
-  if (isUnread.value) store.markRead(props.notification.id);
+  if (props.gerenciavel && isUnread.value) store.markRead(props.notification.id);
 };
 
 const handleRemove = (e) => {
@@ -111,10 +115,17 @@ const handleRemove = (e) => {
           {{ target.external ? 'Abrir link' : 'Abrir' }}
         </span>
       </div>
+
+      <!-- Ação que pertence ao próprio aviso (hoje: o "Li e estou ciente" de um
+           comunicado lido dentro da caixa de entrada). Fica aqui para a pessoa
+           resolver sem sair da lista. -->
+      <div v-if="$slots.acoes" class="mt-1.5" @click.stop.prevent>
+        <slot name="acoes" />
+      </div>
     </div>
 
     <!-- Remover. No celular não existe hover: fica visível sempre abaixo de sm. -->
-    <button type="button" @click="handleRemove"
+    <button v-if="gerenciavel" type="button" @click="handleRemove"
       class="absolute top-1.5 right-1.5 h-7 w-7 grid place-items-center rounded-md
              text-ink-subtle opacity-60 sm:opacity-0 sm:group-hover:opacity-100
              hover:bg-surface-sunken hover:text-data-neg transition-all duration-120"

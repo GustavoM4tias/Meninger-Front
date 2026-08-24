@@ -16,7 +16,7 @@ const props = defineProps({
   restantes: { type: Number, default: 0 },
 });
 
-const meta = computed(() => notificationMeta(props.notification?.type));
+const meta = computed(() => notificationMeta(props.notification?.type, props.notification?.data));
 const target = computed(() => notificationTarget(props.notification));
 const image = computed(() => props.notification?.data?.image || null);
 </script>
