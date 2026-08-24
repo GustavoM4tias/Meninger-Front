@@ -154,6 +154,29 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         return data;
     }
 
+    // ── Crons de dados do CV ─────────────────────────────────────────────────
+    const cvJobs = ref([]);
+    const cvJobsLoading = ref(false);
+
+    async function fetchCvJobs() {
+        cvJobsLoading.value = true;
+        try {
+            const data = await requestWithAuth('/realestate/cv-jobs');
+            cvJobs.value = data?.jobs || [];
+        } finally {
+            cvJobsLoading.value = false;
+        }
+    }
+
+    async function saveCvJob(key, patch) {
+        const data = await requestWithAuth(`/realestate/cv-jobs/${key}`, {
+            method: 'PUT',
+            body: JSON.stringify(patch),
+        });
+        cvJobs.value = data?.jobs || cvJobs.value;
+        return data;
+    }
+
     // Mesma lista do menu Configurações > Usuários (admin), usada para escolher
     // quem é avisado quando a credencial cai.
     async function fetchOfficeUsers() {
@@ -204,5 +227,9 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         saveCvPanel,
         testCvPanel,
         fetchOfficeUsers,
+        cvJobs,
+        cvJobsLoading,
+        fetchCvJobs,
+        saveCvJob,
     };
 });

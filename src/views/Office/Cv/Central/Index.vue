@@ -19,6 +19,7 @@ import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import CvCredentialCard from '@/components/Cv/CvCredentialCard.vue';
+import CvJobsCard from '@/components/Cv/CvJobsCard.vue';
 
 const store = useRealEstateStore();
 const toast = useToast();
@@ -60,7 +61,8 @@ onMounted(() => {
                     :steps="[
                         { title: 'Credencial', text: 'É o login de um usuário do CV usado para ler dados que a chave de integração não alcança, como quais empreendimentos cada imobiliária atende. Use um usuário dedicado, não o login de uma pessoa.' },
                         { title: 'Quando o CV trocar a senha', text: 'O CV força troca de senha de tempos em tempos. Quando isso acontecer, quem estiver na lista de avisados recebe notificação e este painel mostra a falha - basta digitar a nova senha e salvar.' },
-                        { title: 'Sincronização', text: 'O espelho do CV atualiza sozinho de hora em hora. O botão Sincronizar agora serve para não esperar, depois de mexer em algo direto no CV.' },
+                        { title: 'Sincronização', text: 'O botão Sincronizar agora força a leitura das imobiliárias na hora, depois de mexer em algo direto no CV.' },
+                        { title: 'Sincronizações automáticas', text: 'Cada linha é um dado que o Office puxa do CV sozinho. O interruptor liga e desliga; o campo de horário usa formato cron e a tela traduz embaixo o que você digitou. Salvar reagenda na hora, sem reiniciar o sistema.' },
                     ]"
                     :tips="[
                         'Salvar já testa o login e diz na hora se funcionou.',
@@ -118,6 +120,10 @@ onMounted(() => {
                     </p>
                 </div>
             </Panel>
+
+            <div class="lg:col-span-2">
+                <CvJobsCard />
+            </div>
         </div>
     </PageContainer>
 </template>
