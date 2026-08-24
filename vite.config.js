@@ -34,12 +34,30 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
-          manualChunks: {
-            vue: ['vue'],
-            echarts: ['echarts', 'echarts/core'],
-            pdf: ['jspdf', 'html2canvas'],
-            toast: ['vue-toastification'],
-            excel: ['exceljs/dist/exceljs.min.js', 'file-saver'],
+          // Agrupamento de BIBLIOTECA, nunca de código nosso.
+          //
+          // Antes isto era um objeto ({ pdf: ['jspdf', ...] }). O efeito colateral
+          // medido: o Rollup encostava um módulo compartilhado nosso (o helper de
+          // export do Vue, 200 bytes) dentro do pacote 'pdf', e como o pacote de
+          // entrada precisava desse helper, ele passava a importar o pdf
+          // ESTATICAMENTE - 592 kB de jsPDF baixados na tela de login, sendo que
+          // todo uso de jsPDF no código já é await import().
+          //
+          // Como função, com o corte em node_modules, só entra aqui o que é de
+          // terceiro. O que é nosso volta a ser fatiado por rota.
+          manualChunks(id) {
+            // O ajudante de import dinâmico do próprio Vite (__vitePreload) é usado
+            // pelo pacote de entrada e por quase todos os outros. Deixado à
+            // sorte, o Rollup o encostava dentro do 'pdf' - e era ISSO que fazia
+            // a entrada importar 592 kB de jsPDF estaticamente. Ele vai junto do
+            // vue, que a entrada já carrega de qualquer forma.
+            if (id.includes('vite/preload-helper') || id.includes('plugin-vue:export-helper')) return 'vue';
+            if (!id.includes('node_modules')) return;
+            if (/node_modules[\/](echarts|zrender)[\/]/.test(id)) return 'echarts';
+            if (/node_modules[\/](jspdf|html2canvas)[\/]/.test(id)) return 'pdf';
+            if (/node_modules[\/](exceljs|file-saver)[\/]/.test(id)) return 'excel';
+            if (/node_modules[\/]vue-toastification[\/]/.test(id)) return 'toast';
+            if (/node_modules[\/](vue|@vue)[\/]/.test(id)) return 'vue';
           }
         },
       },

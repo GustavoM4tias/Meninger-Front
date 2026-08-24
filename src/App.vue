@@ -1,7 +1,12 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, defineAsyncComponent } from 'vue';
 import { useAuthStore } from './stores/Settings/Auth/authStore';
-import OfficeChatFloat from './components/OfficeAI/OfficeChatFloat.vue';
+// Assíncrona de propósito: a Eme arrasta a cadeia inteira do chat (23 renderers,
+// gráfico e planilha). Importada aqui no topo, ela entrava no pacote inicial do
+// app - ou seja, a TELA DE LOGIN baixava o assistente antes de existir usuário.
+// Ela é um painel flutuante: chegar um instante depois da primeira pintura não
+// muda nada para quem usa.
+const OfficeChatFloat = defineAsyncComponent(() => import('./components/OfficeAI/OfficeChatFloat.vue'));
 import { isAcademyContext } from '@/utils/appContext';
 import ConfirmHost from '@/components/UI/ConfirmHost.vue';
 import NotificationToaster from '@/components/Notifications/NotificationToaster.vue';

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick, computed, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
@@ -9,7 +9,9 @@ import Button from '@/components/UI/Button.vue';
 import Select from '@/components/UI/Select.vue';
 
 import ForgotPasswordModal from './ForgotPasswordModal.vue';
-import FaceLoginModal from './FaceLoginModal.vue';
+// Assíncrono: o modal puxa a cadeia do reconhecimento facial, e ela não pode
+// entrar na conta de quem só quer digitar a senha.
+const FaceLoginModal = defineAsyncComponent(() => import('./FaceLoginModal.vue'));
 import RequestAccessModal from './RequestAccessModal.vue';
 import { sanitizeEmail } from './composables/useForgotPassword';
 import { usePersistedRef, clearPersisted } from '@/utils/usePersistedRef';

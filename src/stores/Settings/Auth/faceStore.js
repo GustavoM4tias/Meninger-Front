@@ -1,9 +1,35 @@
 // src/stores/Auth/faceStore.js
+//
+// POR QUE face-api E tensorflow SÃO CARREGADOS SOB DEMANDA:
+// juntos eles dão 2,9 MB de JavaScript. Importados no topo, entravam na cadeia
+// estática de quem abre a tela de LOGIN (o modal do rosto é filho dela), então
+// todo mundo baixava três megabytes antes de conseguir digitar a senha -
+// inclusive quem nunca usou o login por rosto. Agora eles só chegam quando a
+// pessoa vai de fato usar a câmera.
 import { defineStore } from 'pinia';
-import * as faceapi from '@vladmandic/face-api';
-import * as tf from '@tensorflow/tfjs';
-import '@tensorflow/tfjs-backend-webgl'; // backend WebGL
 import { enrollFaceApi, identifyFaceApi } from '@/utils/Auth/apiFace';
+
+// Uma carga só, compartilhada: abrir o modal e clicar rápido não pode baixar
+// as bibliotecas duas vezes.
+let carregando = null;
+let faceapi = null;
+let tf = null;
+
+async function carregarBiblioteca() {
+    if (faceapi && tf) return;
+    if (!carregando) {
+        carregando = (async () => {
+            const [fa, tfjs] = await Promise.all([
+                import('@vladmandic/face-api'),
+                import('@tensorflow/tfjs'),
+            ]);
+            await import('@tensorflow/tfjs-backend-webgl');
+            faceapi = fa;
+            tf = tfjs;
+        })();
+    }
+    await carregando;
+}
 
 export const useFaceStore = defineStore('face', {
     state: () => ({
@@ -14,6 +40,7 @@ export const useFaceStore = defineStore('face', {
     }),
     actions: {
         async loadModelsOnce() {
+            await carregarBiblioteca();
             if (this.modelsLoaded) return;
             this.loading = true;
             try {
@@ -51,11 +78,13 @@ export const useFaceStore = defineStore('face', {
         },
 
         async enroll(embeddings) {
+            await carregarBiblioteca();
             return await enrollFaceApi(embeddings);
         },
 
         // por este método novo (sem email):
         async identify(embedding) {
+            await carregarBiblioteca();
             const r = await identifyFaceApi(embedding);
             if (r.success) this.lastDistance = r?.data?.meta?.dist ?? null;
             return r;
@@ -66,6 +95,7 @@ export const useFaceStore = defineStore('face', {
          * scoreThreshold elevado para 0.65 — exige detecção confiante antes de extrair.
          */
         async getOneGoodEmbedding(videoEl, opts = { inputSize: 416, scoreThreshold: 0.65 }) {
+            await carregarBiblioteca();
             await this.loadModelsOnce();
             const options = new faceapi.TinyFaceDetectorOptions(opts);
 
@@ -92,6 +122,7 @@ export const useFaceStore = defineStore('face', {
          * Usado exclusivamente no fluxo de LOGIN para maior segurança.
          */
         async getAveragedEmbedding(videoEl, frameCount = 5, opts = { inputSize: 416, scoreThreshold: 0.65 }) {
+            await carregarBiblioteca();
             await this.loadModelsOnce();
             const collected = [];
             const maxAttempts = frameCount * 6; // nunca trava infinitamente
@@ -121,6 +152,7 @@ export const useFaceStore = defineStore('face', {
 
         // util para debug: retorna detecção sem descriptor (mais leve)
         async pingDetect(videoEl, opts = { inputSize: 416, scoreThreshold: 0.5 }) {
+            await carregarBiblioteca();
             await this.loadModelsOnce();
             const options = new faceapi.TinyFaceDetectorOptions(opts);
             const det = await faceapi.detectSingleFace(videoEl, options);
@@ -133,6 +165,7 @@ export const useFaceStore = defineStore('face', {
          * define a acurácia de todos os logins futuros.
          */
         async collectEmbeddings(videoEl, total = 15, opts = { inputSize: 416, scoreThreshold: 0.65 }) {
+            await carregarBiblioteca();
             await this.loadModelsOnce();
             const options = new faceapi.TinyFaceDetectorOptions(opts);
             const list = [];

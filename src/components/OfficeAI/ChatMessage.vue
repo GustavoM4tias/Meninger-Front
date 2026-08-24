@@ -3,12 +3,15 @@
 // (Home.vue e OfficeChatSession.vue via prop `compact`). Antes cada uma tinha
 // sua cópia da cadeia de renderers e elas divergiam (warning e action.source
 // só funcionavam no flutuante).
-import { computed, ref } from 'vue';
+import { computed, ref, defineAsyncComponent } from 'vue';
 
 import { ehEscrita } from '@/utils/OfficeAI/toolKind';
 import ChatText from './renderers/ChatText.vue';
-import ChatTable from './renderers/ChatTable.vue';
-import ChatChart from './renderers/ChatChart.vue';
+// Estes dois são os pesados da casa: ChatChart traz o echarts e ChatTable traz o
+// exceljs (1,5 MB somados). A maioria das respostas da Eme é texto. Assíncronos,
+// eles só são baixados na primeira resposta que realmente tem gráfico ou tabela.
+const ChatTable = defineAsyncComponent(() => import('./renderers/ChatTable.vue'));
+const ChatChart = defineAsyncComponent(() => import('./renderers/ChatChart.vue'));
 import ChatNavAction from './renderers/ChatNavAction.vue';
 import ChatLeadsActions from './renderers/ChatLeadsActions.vue';
 import ChatEventsActions from './renderers/ChatEventsActions.vue';
