@@ -20,6 +20,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useTeamsStore } from '@/stores/Microsoft/teamsStore';
 import { useTeamsChatStore } from '@/stores/Microsoft/teamsChatStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
+import { useTranscriptStore } from '@/stores/Microsoft/transcriptStore';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -35,10 +36,12 @@ const toast = useToast();
 const AgendaTab   = defineAsyncComponent(() => import('./components/AgendaTab.vue'));
 const ReunioesTab  = defineAsyncComponent(() => import('@/views/Office/Microsoft/Transcripts/Index.vue'));
 const MensagensTab = defineAsyncComponent(() => import('./components/MensagensTab.vue'));
+const HojeTab      = defineAsyncComponent(() => import('./components/HojeTab.vue'));
 
 const ts = useTeamsStore();
 const cs = useTeamsChatStore();
 const ms = useMicrosoftStore();
+const trStore = useTranscriptStore();
 const route = useRoute();
 const router = useRouter();
 
@@ -46,13 +49,18 @@ const router = useRouter();
 // O contador de não lidas mora na aba: é o que faz a pessoa perceber que tem
 // mensagem sem precisar entrar nela.
 const TABS = computed(() => [
+  { value: 'hoje',      label: 'Hoje',      icon: 'fas fa-bolt' },
   { value: 'agenda',    label: 'Agenda',    icon: 'fas fa-calendar-days' },
   { value: 'mensagens', label: 'Mensagens', icon: 'fas fa-comments', count: cs.naoLidos || undefined },
   { value: 'reunioes',  label: 'Reuniões',  icon: 'fas fa-wand-magic-sparkles' },
 ]);
-const VALID_TABS = ['agenda', 'mensagens', 'reunioes'];
+const VALID_TABS = ['hoje', 'agenda', 'mensagens', 'reunioes'];
 
-const tab = ref(VALID_TABS.includes(route.query.tab) ? route.query.tab : 'agenda');
+// A tela abre no Hoje: o mês inteiro é a informação mais fria da tela.
+const tab = ref(VALID_TABS.includes(route.query.tab) ? route.query.tab : 'hoje');
+
+// O trilho repete o que a aba Hoje já mostra em tamanho grande - lá ele some.
+const mostrarTrilho = computed(() => tab.value !== 'hoje');
 
 // Aba ↔ URL nos dois sentidos: trocar aba reflete em ?tab= e navegação interna
 // (redirect de rota antiga, link de notificação) troca a aba.
@@ -66,10 +74,11 @@ watch(() => route.query.tab, (v) => {
 // Painéis internos (TodayPanel) podem trocar de aba sem conhecer o router
 provide('msSetTab', (v) => { if (VALID_TABS.includes(v)) tab.value = v; });
 
-const PANELS = { agenda: AgendaTab, mensagens: MensagensTab, reunioes: ReunioesTab };
-const currentPanel = computed(() => PANELS[tab.value] || AgendaTab);
+const PANELS = { hoje: HojeTab, agenda: AgendaTab, mensagens: MensagensTab, reunioes: ReunioesTab };
+const currentPanel = computed(() => PANELS[tab.value] || HojeTab);
 
 const SUBTITLES = {
+  hoje:      'O que vem agora, como está o seu dia e o que está esperando resposta.',
   agenda:    'Calendário e reuniões do Teams: agende, entre com um clique e gerencie séries recorrentes.',
   mensagens: 'Suas conversas do Teams. O que você responder daqui sai no seu nome, e aparece lá também.',
   reunioes:  'Transcrições das reuniões (Teams e presenciais) com relatório de IA por e-mail.',
@@ -133,6 +142,14 @@ watch(() => ts.error, (msg) => {
 /* Era um balao proprio no canto - mesmo canto, mesma duracao e mesmo par
    verde/vermelho do toast do app, mas com fila propria: a segunda mensagem
    apagava a primeira antes do tempo. */
+// Abrir uma ata a partir da aba Hoje: o pedido fica na store e a aba Reuniões
+// consome ao montar - a Hoje não precisa conhecer a outra tela.
+function abrirRelatorio(r) {
+  if (!r?.id) return;
+  trStore.pendenteRelatorio = r.id;
+  tab.value = 'reunioes';
+}
+
 function showToast(message, type = 'success') {
   if (type === 'success') toast.success(message);
   else toast.error(message);
@@ -152,6 +169,7 @@ function showToast(message, type = 'success') {
           <PageHelp storage-key="central-microsoft" title="Como usar o Teams no Office"
             intro="Sua agenda, suas conversas e o registro das reuniões do Teams, dentro do Office."
             :steps="[
+              { title: 'Hoje', text: 'A tela abre aqui: o que está acontecendo agora ou vem a seguir, a faixa do seu dia das 8h às 19h, e o que está esperando resposta - conversa, convite e ata nova.' },
               { title: 'Agenda', text: 'Seu calendário do Teams. Toque num horário vazio para agendar, ou num evento para ver detalhes, entrar na reunião, editar ou cancelar.' },
               { title: 'Mensagens', text: 'Suas conversas do Teams. Responder daqui é o mesmo que responder no Teams: sai no seu nome e aparece lá. O número na aba é o de conversas com mensagem nova.' },
               { title: 'Do calendário para a transcrição', text: 'Clique num evento que já aconteceu e use o botão de transcrição e relatório: abre direto aquela reunião, sem procurar de novo na lista.' },
@@ -163,6 +181,7 @@ function showToast(message, type = 'success') {
             :tips="[
               'No celular, a visão Lista é a mais confortável; a visão Dia mostra os horários lado a lado.',
               'O aviso de reunião começando aparece em qualquer aba.',
+              'No monitor largo, o trilho da direita mantém a próxima reunião e o resto do dia à vista enquanto você lê uma conversa ou uma ata.',
               'Pergunte à Eme sobre suas reuniões: ela lê o relatório e a transcrição das que você participou e cita quem falou o quê.',
             ]" />
         </template>
@@ -218,18 +237,30 @@ function showToast(message, type = 'success') {
           </div>
         </Transition>
 
-        <!-- Acompanhamento: o que vem agora, como está o dia e o que espera
-             resposta. Fica ACIMA das abas porque vale para as três. -->
-        <AcompanhamentoTeams @ir="tab = $event" />
-
         <!-- Abas (o SegmentedControl é scrollável no mobile) -->
         <div class="mb-4">
           <SegmentedControl v-model="tab" :options="TABS" size="sm" />
         </div>
 
-        <KeepAlive>
-          <component :is="currentPanel" @toast="showToast" />
-        </KeepAlive>
+        <!-- Conteúdo + trilho de acompanhamento.
+             O trilho fica ao LADO, não em cima: o que vem agora e o resto do dia
+             é o contexto que a pessoa quer ter à mão enquanto lê uma conversa ou
+             uma ata. Na aba Hoje ele some, porque lá esse conteúdo é a tela; no
+             celular também, onde a coluna única já é tudo. -->
+        <div class="grid gap-5" :class="mostrarTrilho ? 'xl:grid-cols-[minmax(0,1fr)_19rem]' : ''">
+          <div class="min-w-0">
+            <KeepAlive>
+              <component :is="currentPanel" @toast="showToast"
+                @ir="tab = $event" @abrir-relatorio="abrirRelatorio" />
+            </KeepAlive>
+          </div>
+
+          <div v-if="mostrarTrilho" class="max-xl:hidden">
+            <div class="sticky top-4">
+              <AcompanhamentoTeams @ir="tab = $event" />
+            </div>
+          </div>
+        </div>
       </template>
 
     </PageContainer>

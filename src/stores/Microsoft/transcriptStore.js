@@ -34,6 +34,8 @@ export const useTranscriptStore = defineStore('transcript', () => {
     // ainda nem está montada quando o pedido acontece, então ele fica aqui e é
     // consumido no mount - em vez de a agenda ter que conhecer a outra tela.
     const pendente            = ref(null);
+    // Mesma ideia, para uma ATA já salva (a aba Hoje lista as recentes).
+    const pendenteRelatorio   = ref(null);
 
     // ── Reuniões recentes ─────────────────────────────────────────────────────
 
@@ -221,7 +223,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
     return {
         meetings, reports, loadingMeetings, loadingReports, error,
         selectedMeeting, transcriptInfo, cues, report, reportDbId,
-        checkingTranscript, loadingTranscript, generatingReport, sharedFrom, pendente,
+        checkingTranscript, loadingTranscript, generatingReport, sharedFrom, pendente, pendenteRelatorio,
         fetchMeetings, checkTranscript, loadTranscript,
         generateReport, fetchReports, loadReport, openSavedReport, reset,
     };

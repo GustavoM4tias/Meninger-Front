@@ -674,6 +674,14 @@ onMounted(async () => {
 
   // Veio de um clique no evento do calendário: abre direto aquela reunião, em
   // vez de largar a pessoa na lista para procurar de novo o que ela já achou.
+  if (ts.pendenteRelatorio) {
+    const id = ts.pendenteRelatorio;
+    ts.pendenteRelatorio = null;
+    onTabChange("reports");
+    ts.openSavedReport(id);
+    return;
+  }
+
   if (ts.pendente) {
     const pedida = ts.pendente;
     ts.pendente = null;
