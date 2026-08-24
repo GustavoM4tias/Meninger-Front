@@ -153,17 +153,6 @@ export const navRegistry = [
                 ],
             },
             {
-                key: 'registers',
-                name: 'Cadastros',
-                icon: 'fas fa-address-book',
-                pages: [
-                    // Tela única com abas internas (Geral/Lançamentos/Em Obras/…) → um só item.
-                    { route: '/comercial/buildings', name: 'Empreendimentos', icon: 'fas fa-building' },
-                    { route: '/comercial/imobiliarias', section: 'Imobiliárias', name: 'Imobiliárias', icon: 'fas fa-house-flag' },
-                    { route: '/comercial/correspondentes', section: 'Correspondentes', name: 'Correspondentes', icon: 'fas fa-people-group' },
-                ],
-            },
-            {
                 key: 'terminations',
                 name: 'Cancelamentos',
                 icon: 'fas fa-handshake-slash',
@@ -297,6 +286,26 @@ export const navRegistry = [
             { route: '/meta', name: 'Central Meta', icon: 'fab fa-meta', iconColor: '#0866FF', adminOnly: true },
             // WhatsApp segue em tela própria (Configuração · Templates · Automações · Gastos · Mensagens).
             { route: '/settings/whatsapp', section: 'WhatsApp', name: 'WhatsApp', icon: 'fab fa-whatsapp', iconColor: '#25D366', adminOnly: true },
+        ],
+    },
+
+    // ── CV CRM — os cadastros que vivem no CV + a configuração da integração ──
+    // Os três cadastros abaixo estavam em Comercial > Cadastros. Foram
+    // reagrupados aqui porque todos são o MESMO assunto (o que existe no CV) e
+    // porque agora existe uma configuração de integração que vale para os três.
+    // As ROTAS não mudaram, só o lugar no menu — então nenhuma alçada muda e
+    // não há renome para registrar em ensurePermissionRouteRenames.js.
+    {
+        key: 'cvcrm',
+        label: 'CV CRM',
+        icon: 'fas fa-plug',
+        group: 'RECURSOS',
+        pages: [
+            { route: '/comercial/imobiliarias', section: 'Imobiliárias', name: 'Imobiliárias', icon: 'fas fa-house-flag' },
+            { route: '/comercial/correspondentes', section: 'Correspondentes', name: 'Correspondentes', icon: 'fas fa-people-group' },
+            // Tela única com abas internas (Geral/Lançamentos/Em Obras/…) → um só item.
+            { route: '/comercial/buildings', name: 'Empreendimentos', icon: 'fas fa-building' },
+            { route: '/cv', section: 'Configurações', name: 'Configurações', icon: 'fas fa-sliders', adminOnly: true },
         ],
     },
 

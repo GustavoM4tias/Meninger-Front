@@ -1,28 +1,26 @@
 <script setup>
 // Credencial do painel do CV (APIs v3) e quem é avisado quando ela cai.
 //
-// Por que esta tela existe: a associação imobiliária x empreendimento só é
-// legível pela v3, que exige e-mail e senha de um usuário do CV - e o CV força
-// troca de senha de tempos em tempos. Com a credencial presa no servidor, cada
-// rotação derrubava a leitura até alguém fazer deploy, e em silêncio. Aqui a
-// rotação vira um formulário de trinta segundos.
+// Por que isto existe como tela: a associação imobiliária x empreendimento só
+// é legível pela v3, que exige e-mail e senha de um usuário do CV - e o CV
+// força troca de senha de tempos em tempos. Com a credencial presa no
+// servidor, cada rotação derrubava a leitura até alguém fazer deploy, e em
+// silêncio. Aqui a rotação vira um formulário de trinta segundos.
 //
-// A senha nunca volta do servidor: o formulário só sabe se existe uma gravada.
-// Campo em branco ao salvar significa "não mexi nela", nunca "apague".
+// A senha nunca volta do servidor: o formulário só sabe se existe uma
+// gravada. Campo em branco ao salvar significa "não mexi nela", nunca
+// "apague".
 
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useRealEstateStore } from '@/stores/Comercial/RealEstate/realEstateStore';
 
-import Modal from '@/components/UI/Modal.vue';
+import Panel from '@/components/UI/Panel.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import Badge from '@/components/UI/Badge.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
-
-const props = defineProps({ open: { type: Boolean, default: false } });
-const emit = defineEmits(['close']);
 
 const store = useRealEstateStore();
 const toast = useToast();
@@ -33,6 +31,7 @@ const painel = ref('gestor');
 const avisados = ref([]);      // nomes escolhidos no MultiSelector
 const salvando = ref(false);
 const testando = ref(false);
+const pronto = ref(false);
 
 const PAINEL_OPTIONS = [
     { value: 'gestor', label: 'Gestor (administrativo)' },
@@ -43,21 +42,22 @@ const PAINEL_OPTIONS = [
 const cfg = computed(() => store.cvPanel);
 const userNames = computed(() => store.officeUsers.map(u => u.username));
 
-const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
+const fmt = (d) => d
+    ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+    : '-';
 
-watch(() => props.open, async (open) => {
-    if (!open) return;
+async function carregar() {
     senha.value = '';
-    try {
-        await Promise.all([store.fetchCvPanel(), store.fetchOfficeUsers()]);
-        email.value = cfg.value?.email || '';
-        painel.value = cfg.value?.painel || 'gestor';
-        const ids = cfg.value?.notify_user_ids || [];
-        avisados.value = store.officeUsers.filter(u => ids.includes(u.id)).map(u => u.username);
-    } catch (err) {
-        toast.error(err?.message || 'Não foi possível carregar a credencial.');
-    }
-});
+    await Promise.all([
+        store.cvPanel ? Promise.resolve() : store.fetchCvPanel(),
+        store.fetchOfficeUsers(),
+    ]);
+    email.value = cfg.value?.email || '';
+    painel.value = cfg.value?.painel || 'gestor';
+    const ids = cfg.value?.notify_user_ids || [];
+    avisados.value = store.officeUsers.filter(u => ids.includes(u.id)).map(u => u.username);
+    pronto.value = true;
+}
 
 async function salvar() {
     salvando.value = true;
@@ -89,21 +89,20 @@ async function testar() {
         testando.value = false;
     }
 }
+
+onMounted(() => {
+    carregar().catch(err => toast.error(err?.message || 'Não foi possível carregar a credencial.'));
+});
 </script>
 
 <template>
-    <Modal
-        :open="open"
-        title="Credencial do CV"
-        subtitle="Usada para ler quais empreendimentos cada imobiliária atende"
-        size="md"
-        scrollable
-        @close="emit('close')"
-    >
+    <Panel title="Credencial do CV" icon="fas fa-key"
+        subtitle="Login usado para ler o que a chave de integração não alcança"
+        :loading="!pronto" loading-variant="text">
         <div class="space-y-4">
             <!-- Estado atual -->
             <div class="rounded-xl border border-line bg-surface-sunken p-3.5 space-y-1.5">
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <Badge v-if="cfg?.saudavel" variant="success" size="sm">Funcionando</Badge>
                     <Badge v-else-if="cfg?.configurado" variant="danger" size="sm">Com falha</Badge>
                     <Badge v-else variant="neutral" size="sm">Não configurada</Badge>
@@ -135,24 +134,18 @@ async function testar() {
                     :options="userNames"
                     label="Avisar quem, se a credencial cair"
                     placeholder="Selecione as pessoas"
-                    overlay
                 />
                 <p class="mt-1 text-xs text-ink-muted">
                     Deixando vazio, o aviso vai para todos os administradores. O aviso sai uma vez por
                     episódio, não a cada tentativa.
                 </p>
             </div>
-        </div>
 
-        <template #footer>
-            <div class="flex justify-between gap-2">
+            <div class="flex flex-wrap justify-end gap-2 pt-1">
                 <Button variant="ghost" icon="fas fa-plug-circle-check" :loading="testando"
                     :disabled="!cfg?.configurado" @click="testar">Testar agora</Button>
-                <div class="flex gap-2">
-                    <Button variant="ghost" @click="emit('close')">Fechar</Button>
-                    <Button variant="primary" icon="fas fa-check" :loading="salvando" @click="salvar">Salvar</Button>
-                </div>
+                <Button variant="primary" icon="fas fa-check" :loading="salvando" @click="salvar">Salvar</Button>
             </div>
-        </template>
-    </Modal>
+        </div>
+    </Panel>
 </template>

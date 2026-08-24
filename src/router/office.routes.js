@@ -147,6 +147,16 @@ export default [
                 component: () => import('@/views/Office/Meta/Central/Index.vue'),
                 meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Central Meta: captação de leads, campanhas Meta, vínculos com o CV CRM, formulários de captação, credenciais do App e configurações' },
             },
+            // Painel do CV CRM: credencial da integração e estado das
+            // sincronizações. Os CADASTROS do CV (imobiliárias, correspondentes,
+            // empreendimentos) seguem nas rotas /comercial/* de sempre — só o
+            // menu passou a agrupá-los sob CV CRM, então nenhuma alçada muda.
+            {
+                path: 'cv',
+                name: 'CV CRM',
+                component: () => import('@/views/Office/Cv/Central/Index.vue'),
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Painel do CV CRM: credencial da integração, quem é avisado quando ela cai e estado do espelho de imobiliárias e vínculos' },
+            },
             {
                 path: 'marketing',
                 name: 'marketing',
