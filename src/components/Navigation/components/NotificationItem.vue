@@ -3,7 +3,7 @@
 // este componente com `size="lg"`), então corrigir aqui corrige nos dois lugares
 // — antes eram duas cópias com mapas de ícone diferentes e uma delas usava cor
 // crua (emerald/sky/red) em vez de token.
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useNotificationStore } from '@/stores/Config/notificationStore';
 import { notificationMeta, notificationTarget, formatNotificationDate } from '@/utils/Config/notificationMeta';
@@ -12,6 +12,10 @@ const props = defineProps({
   notification: { type: Object, required: true },
   // 'md' = dentro do sino, 'lg' = caixa de entrada (mais respiro e corpo maior)
   size: { type: String, default: 'md' },
+  // Corpo longo ganha "Ler tudo" em vez de ficar cortado em duas linhas. É o que
+  // permite LER um comunicado inteiro sem sair da caixa - antes isso obrigava a
+  // ir até a tela do mural.
+  expansivel: { type: Boolean, default: false },
   // Item que NÃO é uma linha da tabela de notificações (ex.: um comunicado do
   // mural mostrado na mesma caixa). Sem id próprio, marcar como lido ou remover
   // bateria numa API que não conhece esse id.
@@ -35,6 +39,10 @@ const linkProps = computed(() => {
     ? { href: target.value.to, target: '_blank', rel: 'noopener' }
     : { to: target.value.to };
 });
+
+const aberto = ref(false);
+const corpoLongo = computed(() => props.expansivel && String(props.notification?.body || '').length > 180);
+const alternarCorpo = (e) => { e.preventDefault(); e.stopPropagation(); aberto.value = !aberto.value; };
 
 const handleClick = () => {
   if (props.gerenciavel && isUnread.value) store.markRead(props.notification.id);
@@ -99,9 +107,20 @@ const handleRemove = (e) => {
       </h4>
 
       <p v-if="notification.body"
-        :class="['text-xs text-ink-muted', big ? 'line-clamp-2' : 'truncate']">
+        :class="[
+          'text-xs text-ink-muted',
+          expansivel ? 'whitespace-pre-line leading-relaxed' : '',
+          aberto ? '' : (big ? 'line-clamp-2' : 'truncate'),
+        ]">
         {{ notification.body }}
       </p>
+
+      <button v-if="corpoLongo" type="button" @click="alternarCorpo"
+        class="self-start text-micro text-accent hover:underline inline-flex items-center gap-1">
+        <i class="fas fa-chevron-down text-[9px] transition-transform duration-200"
+           :class="{ 'rotate-180': aberto }"></i>
+        {{ aberto ? 'Recolher' : 'Ler tudo' }}
+      </button>
 
       <div class="flex items-center gap-2 flex-wrap">
         <span class="text-micro text-ink-subtle">{{ formatNotificationDate(notification.created_at) }}</span>

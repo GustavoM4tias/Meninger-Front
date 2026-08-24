@@ -11,9 +11,11 @@
 // trilha de ciência, alerta continua sendo cron + consulta. O que muda é que a
 // pessoa lê os três no mesmo lugar, e dá a ciência sem sair da lista.
 import { onMounted, ref, computed, watch } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { useNotificationStore } from '@/stores/Config/notificationStore';
 import { useMuralStore } from '@/stores/Mural/muralStore';
+import { useCan } from '@/composables/useCan';
+import MuralGestao from '@/views/Office/Mural/components/MuralGestao.vue';
 import NotificationItem from '@/components/Navigation/components/NotificationItem.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
@@ -24,9 +26,34 @@ import Skeleton from '@/components/UI/Skeleton.vue';
 
 const store = useNotificationStore();
 const mural = useMuralStore();
+const route = useRoute();
+const router = useRouter();
+const can = useCan('/mural/admin');
 
 const tab = ref('all'); // all | unread
-const origem = ref('todas');
+// A origem também é PORTA DE ENTRADA: /mural cai aqui já recortado no mural, e
+// é assim que o item "Mural de Avisos" do menu continua levando ao mural sem
+// existir uma segunda tela desenhando o mesmo dado.
+const origem = ref(route.path.startsWith('/mural') ? 'mural' : (String(route.query.origem || 'todas')));
+
+// A gestão de comunicados é a segunda aba, para quem tem a capacidade da tela
+// /mural/admin. Esconder é COSMÉTICO: quem barra é o requireCapability na API.
+const podeGerir = computed(() => can('view') || can('manage'));
+const secao = ref(route.path.startsWith('/mural/admin') ? 'gestao' : 'caixa');
+
+const secoes = computed(() => [
+  { value: 'caixa', label: 'Caixa de entrada', icon: 'fas fa-inbox' },
+  { value: 'gestao', label: 'Comunicados', icon: 'fas fa-bullhorn' },
+]);
+
+// URL limpa: as três portas (/notifications, /mural, /mural/admin) chegam na
+// mesma tela e passam a se chamar do mesmo jeito.
+watch([secao, origem], ([sec, org]) => {
+  const query = {};
+  if (sec === 'gestao') query.tab = 'gestao';
+  else if (org && org !== 'todas') query.origem = org;
+  router.replace({ path: '/notifications', query });
+});
 const limit = 30;
 const offset = ref(0);
 
@@ -102,6 +129,10 @@ const contagemOrigem = computed(() => {
   for (const n of porEstado.value) { c.todas++; c[origemDe(n)]++; }
   return c;
 });
+
+// Comunicado que espera confirmação é a única coisa nesta tela que DEPENDE da
+// pessoa. Ganha um chip próprio, à frente das origens.
+const cienciaPendente = computed(() => mural.ackPendingCount || 0);
 
 const origens = computed(() => [
   { value: 'todas',   label: 'Tudo',     icon: 'fas fa-inbox' },
@@ -185,9 +216,11 @@ onMounted(() => {
   <PageContainer size="lg">
     <PageHeader
       icon="fas fa-bell"
-      title="Notificações"
-      subtitle="Avisos do sistema, comunicados do mural e seus alertas, do mais recente para o mais antigo."
-      eyebrow="Caixa de entrada">
+      :title="secao === 'gestao' ? 'Comunicados' : 'Notificações'"
+      :subtitle="secao === 'gestao'
+        ? 'Escrever, publicar e acompanhar a leitura dos comunicados do mural.'
+        : 'Avisos do sistema, comunicados do mural e seus alertas, do mais recente para o mais antigo.'"
+      :eyebrow="secao === 'gestao' ? 'Mural · Gestão' : 'Caixa de entrada'">
       <template #actions>
         <PageHelp
           storage-key="caixa-notificacoes"
@@ -212,6 +245,15 @@ onMounted(() => {
       </template>
     </PageHeader>
 
+    <!-- Seção: a caixa e a gestão do mural na mesma tela. Só aparece para quem
+         tem a alçada de gestão; para o resto, a tela é a caixa e ponto. -->
+    <div v-if="podeGerir" class="mb-3">
+      <SegmentedControl v-model="secao" :options="secoes" size="sm" />
+    </div>
+
+    <MuralGestao v-if="secao === 'gestao'" />
+
+    <template v-else>
     <div class="mb-3">
       <SegmentedControl v-model="tab" :options="tabs" size="sm" />
     </div>
@@ -219,6 +261,14 @@ onMounted(() => {
     <!-- Origem: um filtro, não uma aba. A pessoa quase sempre quer "tudo", e
          recorta quando procura algo específico. -->
     <div class="mb-4 flex flex-wrap items-center gap-1.5">
+      <!-- O que depende de você vem antes do que é só leitura. -->
+      <button v-if="cienciaPendente" type="button" @click="origem = 'mural'"
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-micro font-medium
+               border-data-warn/40 bg-data-warn-soft text-data-warn hover:border-data-warn transition-colors duration-120">
+        <i class="fas fa-hand text-[10px]"></i>
+        {{ cienciaPendente }} {{ cienciaPendente === 1 ? 'aguarda' : 'aguardam' }} sua confirmação
+      </button>
+
       <button v-for="o in origens" :key="o.value" type="button"
         @click="origem = o.value"
         :class="[
@@ -253,7 +303,7 @@ onMounted(() => {
         </h2>
         <div class="space-y-2">
           <NotificationItem v-for="n in grupo.items" :key="n.id"
-            :notification="n" size="lg" :gerenciavel="!n.sintetico">
+            :notification="n" size="lg" :gerenciavel="!n.sintetico" :expansivel="!!n.comunicado">
             <template v-if="precisaCiencia(n)" #acoes>
               <Button size="sm" variant="secondary" icon="fas fa-check"
                 :loading="confirmando === n.comunicado.id"
@@ -271,5 +321,6 @@ onMounted(() => {
         </Button>
       </div>
     </div>
+    </template>
   </PageContainer>
 </template>

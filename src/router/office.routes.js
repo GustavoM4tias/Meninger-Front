@@ -66,9 +66,13 @@ export default [
 
             // Mural de Avisos / Comunicados — módulo próprio do Office (interno).
             {
+                // O mural É a caixa de entrada, recortada na origem "mural": as duas
+                // telas desenhavam o mesmo dado. A rota fica porque é o nome que a
+                // empresa conhece, é o item do menu e é o alvo dos links do card
+                // flutuante e das notificações.
                 path: 'mural',
                 name: 'Mural de Avisos',
-                component: () => import('@/views/Office/Mural/Index.vue'),
+                component: () => import('@/views/Office/Notifications/Index.vue'),
                 meta: { requiresAuth: true, searchable: true, content: 'Mural de avisos e comunicados internos' },
             },
             {
@@ -80,7 +84,7 @@ export default [
                 // a URL para /mural?tab=gestao ao montar.
                 path: 'mural/admin',
                 name: 'Gestão de Comunicados',
-                component: () => import('@/views/Office/Mural/Index.vue'),
+                component: () => import('@/views/Office/Notifications/Index.vue'),
                 // Sem requiresAdmin: a tela é delegável por alçada e as ações
                 // de dentro seguem lib/screenCapabilities.js (excluir = admin).
                 meta: { requiresAuth: true, searchable: true, content: 'Gestão do mural de avisos e comunicados: redigir, definir público-alvo, publicar e acompanhar a leitura' },

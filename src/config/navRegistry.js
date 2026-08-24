@@ -298,6 +298,9 @@ export const navRegistry = [
     {
         key: 'cvcrm',
         label: 'CV CRM',
+        // Logo do CV, a mesma já usada nas telas que apontam para lá. O `icon`
+        // fica como reserva, para o caso de a imagem não carregar.
+        iconImg: '/CVLogo.png',
         icon: 'fas fa-plug',
         group: 'RECURSOS',
         pages: [
@@ -366,6 +369,11 @@ export const navRegistry = [
                 pages: [
                     // Mural do usuário: broadcast interno — visível a todos (o gate é
                     // a audiência de cada comunicado, não alçada de tela).
+                    //
+                    // Desde 2026-08-24 a rota abre a CAIXA DE ENTRADA já recortada na
+                    // origem "mural": as duas telas desenhavam o mesmo dado. O item
+                    // mantém o nome porque é assim que a empresa chama a coisa, e é
+                    // por ele que se chega ao mural — /notifications não está no menu.
                     { route: '/mural', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', permissionManaged: false },
                     // Delegável desde 2026-08-20: redigir, definir público e
                     // publicar vão por alçada; EXCLUIR comunicado segue admin
