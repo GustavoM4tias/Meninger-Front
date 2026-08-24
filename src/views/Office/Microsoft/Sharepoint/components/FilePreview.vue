@@ -86,6 +86,61 @@
           </template>
 
           <!-- Office files: embed via Office Online Viewer -->
+          <!-- Planilha: lida da nuvem pela Workbook API do Graph.
+               Vem antes do ramo Office porque o iframe do view.officeapps.live.com
+               precisa de arquivo publicamente alcançável, e arquivo de biblioteca
+               interna nunca é. Aqui a tabela é de verdade, com os valores. -->
+          <template v-else-if="isSpreadsheet">
+            <div class="w-full h-full flex flex-col rounded-lg overflow-hidden bg-surface-raised">
+              <div v-if="sheetError" class="p-6 text-center text-sm text-ink-muted">
+                <i class="fas fa-triangle-exclamation text-data-warn mb-2 block text-lg"></i>
+                {{ sheetError }}
+              </div>
+
+              <template v-else>
+                <!-- Abas da planilha -->
+                <div v-if="sheets.length > 1" class="flex gap-1 px-3 py-2 border-b border-line overflow-x-auto shrink-0">
+                  <button v-for="s in sheets" :key="s.id" type="button"
+                    @click="carregarAba(s.name)"
+                    class="px-2.5 py-1.5 min-h-9 rounded-lg text-micro font-medium whitespace-nowrap transition-colors"
+                    :class="abaAtiva === s.name
+                      ? 'bg-accent-soft text-accent'
+                      : 'text-ink-muted hover:bg-surface-hover'">
+                    {{ s.name }}
+                  </button>
+                </div>
+
+                <div v-if="sheetLoading" class="flex-1 grid place-items-center text-ink-subtle text-sm">
+                  <span><i class="fas fa-circle-notch animate-spin text-accent mr-2"></i>Lendo a planilha...</span>
+                </div>
+
+                <div v-else class="flex-1 overflow-auto">
+                  <table class="text-xs border-collapse">
+                    <tbody>
+                      <tr v-for="(linha, li) in celulas" :key="li"
+                        :class="li === 0 ? 'sticky top-0 bg-surface-sunken' : ''">
+                        <td class="px-2 py-1 text-ink-subtle font-mono text-right border border-line/60 bg-surface-sunken sticky left-0 tabular-nums">
+                          {{ li + 1 }}
+                        </td>
+                        <td v-for="(cel, ci) in linha" :key="ci"
+                          class="px-2 py-1 border border-line/60 whitespace-nowrap max-w-[16rem] truncate"
+                          :class="li === 0 ? 'font-semibold text-ink' : 'text-ink-muted'"
+                          :title="String(cel ?? '')">
+                          {{ cel }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="px-3 py-2 border-t border-line text-micro text-ink-subtle shrink-0">
+                  {{ celulas.length }} linha(s) · {{ celulas[0]?.length || 0 }} coluna(s)
+                  <span v-if="truncadaEm"> · mostrando as primeiras {{ truncadaEm }} linhas</span>
+                </div>
+              </template>
+            </div>
+          </template>
+
           <template v-else-if="isOffice">
             <div class="w-full h-full rounded-lg overflow-hidden bg-surface-raised">
               <iframe
@@ -107,6 +162,7 @@
 <script setup>
 import { ref, computed, watch, defineComponent, h, onMounted, onUnmounted } from 'vue';
 import API_URL from '@/config/apiUrl';
+import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import Modal from '@/components/UI/Modal.vue';
 
 const props = defineProps({ item: { type: Object, default: null } });
@@ -143,6 +199,69 @@ const isVideo  = computed(() => VIDEOS.includes(ext.value));
 const isAudio  = computed(() => AUDIOS.includes(ext.value));
 const isText   = computed(() => TEXTS.includes(ext.value));
 const isOffice = computed(() => OFFICE.includes(ext.value));
+
+// ── Planilha (Workbook API) ───────────────────────────────────────────────────
+// Só .xlsx: a Microsoft não abre .xls nem .csv na nuvem. Fora disso o arquivo
+// cai no ramo Office, como antes.
+const isSpreadsheet = computed(() => ext.value === 'xlsx');
+
+const MAX_LINHAS = 300; // planilha de 20 mil linhas travaria a tela
+
+const sheets       = ref([]);
+const abaAtiva     = ref('');
+const celulas      = ref([]);
+const truncadaEm   = ref(0);
+const sheetLoading = ref(false);
+const sheetError   = ref('');
+
+async function carregarAbas() {
+  const it = props.item;
+  if (!it?.driveId || !it?.id) return;
+
+  sheetLoading.value = true;
+  sheetError.value = '';
+  celulas.value = [];
+  truncadaEm.value = 0;
+
+  try {
+    const base = `${API_URL}/microsoft/sharepoint/drives/${it.driveId}/items/${it.id}/worksheets`;
+    const lista = await requestWithAuth(base);
+    sheets.value = (lista || []).filter(s => s.visible);
+    if (!sheets.value.length) {
+      sheetError.value = 'A planilha não tem nenhuma aba visível.';
+      return;
+    }
+    await carregarAba(sheets.value[0].name);
+  } catch (err) {
+    sheetError.value = err?.message || 'Não foi possível abrir a planilha.';
+  } finally {
+    sheetLoading.value = false;
+  }
+}
+
+async function carregarAba(nome) {
+  const it = props.item;
+  if (!it?.driveId || !it?.id) return;
+
+  abaAtiva.value = nome;
+  sheetLoading.value = true;
+  sheetError.value = '';
+
+  try {
+    const url = `${API_URL}/microsoft/sharepoint/drives/${it.driveId}/items/${it.id}`
+              + `/worksheets/${encodeURIComponent(nome)}`;
+    const data = await requestWithAuth(url);
+    // `text` é o que aparece na tela do Excel (data formatada, moeda, fórmula
+    // já resolvida). `values` traz o número cru — não serve para exibir.
+    const linhas = (data.text?.length ? data.text : data.values) || [];
+    truncadaEm.value = linhas.length > MAX_LINHAS ? MAX_LINHAS : 0;
+    celulas.value = linhas.slice(0, MAX_LINHAS);
+  } catch (err) {
+    sheetError.value = err?.message || 'Não foi possível ler esta aba.';
+  } finally {
+    sheetLoading.value = false;
+  }
+}
 
 // ── Content state ─────────────────────────────────────────────────────────────
 const blobSrc        = ref(null);  // object URL para imagem / PDF
