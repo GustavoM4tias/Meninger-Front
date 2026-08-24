@@ -31,6 +31,9 @@ const rota   = ref('');
 const tela   = ref('');
 const secao  = ref('');
 const referencias = ref([]);   // [{ id, texto, rotulo }]
+// Id da última marcada: a etiqueta correspondente pisca no chat, senão a pessoa
+// não vê que o clique virou alguma coisa.
+const ultimaMarcada = ref(null);
 
 let proximoId = 1;
 
@@ -85,6 +88,24 @@ function textoDoElemento(el) {
     return limpo(el?.getAttribute?.('aria-label') || el?.getAttribute?.('title') || el?.alt);
 }
 
+/**
+ * Pisca o que foi marcado, na própria página.
+ *
+ * Sem isso a pessoa não sabe QUAL pedaço o Ctrl+clique pegou - clicar num cartão
+ * pode marcar o cartão inteiro ou só a linha. O contorno some sozinho e o estilo
+ * anterior volta; nada fica grudado no elemento.
+ */
+function piscar(el) {
+    if (!el?.style) return;
+    const antes = { outline: el.style.outline, offset: el.style.outlineOffset, radius: el.style.borderRadius };
+    el.style.outline = '2px solid rgb(var(--accent))';
+    el.style.outlineOffset = '2px';
+    setTimeout(() => {
+        el.style.outline = antes.outline;
+        el.style.outlineOffset = antes.offset;
+    }, 900);
+}
+
 export function marcarElemento(el) {
     const texto = textoDoElemento(el);
     if (!texto) return null;
@@ -98,6 +119,8 @@ export function marcarElemento(el) {
     // Teto: entra a nova, sai a mais antiga. Sem isso, uma sequência de cliques
     // enche o prompt com a tela inteira.
     referencias.value = [...referencias.value, ref].slice(-MAX_REFS);
+    ultimaMarcada.value = ref.id;
+    piscar(el);
     return ref;
 }
 
@@ -163,6 +186,7 @@ export function useEmeScreenContext() {
         tela: computed(() => tela.value),
         secao: computed(() => secao.value),
         referencias: computed(() => referencias.value),
+        ultimaMarcada: computed(() => ultimaMarcada.value),
         removerReferencia,
         limparReferencias,
     };
