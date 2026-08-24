@@ -319,6 +319,20 @@ async function saveFlow(f) {
     flowOpen.value = null
   } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
 }
+// Excluir de verdade quando ninguém depende; o back decide e devolve qual foi.
+async function excluirFluxo(f) {
+  if (!await pedirConfirmacao({
+    title: `Excluir o fluxo "${f.name}"?`,
+    consequence: 'Se já houver conversa ou lead nele, o fluxo é apenas desativado - o histórico precisa saber quem atendeu. Sem nada apontando, ele é apagado junto das regras de segmentação.',
+    confirmLabel: 'Excluir fluxo',
+  })) return
+  try {
+    const r = await api.deleteFlow(f.id)
+    await loadFlows()
+    flowOpen.value = null
+    notify(r?.aviso || 'Fluxo removido.')
+  } catch (e) { notify(e.message, 'err') }
+}
 async function toggleFlow(f, active) {
   const prev = f.active; f.active = active
   try { await api.updateFlow(f.id, { active }) }
@@ -691,7 +705,7 @@ onMounted(loadConversations)
                 <textarea v-model="flowEdit.triggersJson" :class="TA + ' font-mono'" rows="4" placeholder='[{ "value": "quero visitar", "action": "reply", "reply_text": "Que ótimo!" }]'></textarea>
               </div>
               <div class="flex items-center justify-between">
-                <Button variant="danger" size="sm" icon="fas fa-ban" @click="api.deleteFlow(f.id).then(() => { f.active = false; notify('Fluxo desativado.') }).catch(e => notify(e.message, 'err'))">Desativar</Button>
+                <Button variant="danger" size="sm" icon="fas fa-trash" @click="excluirFluxo(f)">Excluir</Button>
                 <Button variant="primary" size="sm" :loading="busy" @click="saveFlow(f)">Salvar</Button>
               </div>
             </div>
