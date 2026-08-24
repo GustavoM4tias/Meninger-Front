@@ -74,3 +74,7 @@ export const previewSiteSource = (data) => req('/site/preview', { method: 'POST'
 // Gestão de lead: vocabulário (rótulos e motivos) e panorama do funil.
 export const getLeadVocabulario = () => req('/leads/vocabulario')
 export const getLeadPanorama = () => req('/leads/panorama')
+
+// Empreendimentos do CADASTRO do Office (cv_enterprises) - a identidade que
+// campanhas e formulários usam. Não confundir com a lista do site, que é conteúdo.
+export const listEnterprises = () => req('/enterprises')

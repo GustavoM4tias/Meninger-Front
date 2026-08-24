@@ -89,6 +89,8 @@ const templates = ref([])
 const flowOpen = ref(null)
 const flowEdit = reactive({ openerVars: '', triggersJson: '' })
 // Empreendimentos publicados no site - fonte do contexto do fluxo.
+// Empreendimentos do CADASTRO do Office: é o que identifica o lead e a campanha.
+const cadastroEmpreendimentos = ref([])
 const siteEnterprises = ref([])
 // Histórico das leituras do site (o conteúdo muda sozinho de madrugada).
 const siteSyncs = ref([])
@@ -105,7 +107,7 @@ const sourceTest = reactive({ running: false, error: '', total: 0, campos: [], c
 const siteSyncsOpen = ref(false)
 const siteState = reactive({ loading: false, error: '', syncing: 0 })
 const newFlowName = ref('')
-const newRule = reactive({ field: 'site_slug', operator: 'equals', value: '', flow_id: null, priority: 100 })
+const newRule = reactive({ field: 'cv_enterprise_id', operator: 'equals', value: '', flow_id: null, priority: 100 })
 
 // ── Regras por empreendimento ────────────────────────────────────────────────
 // Override PARCIAL: '' = herda o geral, então o valor vazio é apagado do objeto
@@ -146,7 +148,7 @@ async function previewRules(f) {
 
 const fieldOpts = [
   // Vínculo por IDENTIDADE: o valor é o empreendimento do site, não texto solto.
-  { value: 'site_slug', label: 'Empreendimento (do site)' },
+  { value: 'cv_enterprise_id', label: 'Empreendimento (cadastro)' },
   { value: 'source', label: 'Origem (source)' },
   { value: 'campaign', label: 'Campanha' },
   { value: 'empreendimento', label: 'Empreendimento' },
@@ -171,7 +173,7 @@ const empreendimentoOpts = computed(() => [
 ])
 const empreendimentoNome = (slug) => siteEnterprises.value.find(e => e.slug === slug)?.nome || slug
 const regraValorTexto = (r) =>
-  r.field === 'site_slug' ? empreendimentoNome(r.value) : `"${r.value}"`
+  r.field === 'cv_enterprise_id' ? cadastroNome(r.value) : `"${r.value}"`
 const flowName = (id) => flows.value.find(f => f.id === id)?.name || `#${id}`
 
 async function loadFlows() {
@@ -184,6 +186,7 @@ async function loadFlows() {
       try { templates.value = await api.listTemplates('APPROVED') } catch { /* canal sem sync ainda */ }
     }
     if (!siteEnterprises.value.length) loadSiteEnterprises()
+    if (!cadastroEmpreendimentos.value.length) loadCadastro()
   } catch (e) { notify(e.message, 'err') } finally { flowsLoading.value = false }
 }
 // Configuração efetiva da leitura (banco mesclado com o padrão do código).
@@ -246,6 +249,21 @@ function resumoMudanca(c) {
 
 // Lista do site: erro aqui não trava a tela, mas aparece no editor - fluxo
 // sem Select é sintoma de site fora do ar ou formato mudado, não de bug local.
+async function loadCadastro() {
+  try { cadastroEmpreendimentos.value = await api.listEnterprises() }
+  catch (e) { notify(e.message, 'err') }
+}
+const cadastroOpts = computed(() => [
+  { value: '', label: 'Sem vínculo com o cadastro' },
+  ...cadastroEmpreendimentos.value.map(e => ({
+    value: e.idempreendimento,
+    label: `${e.nome}${e.cidade ? ` - ${e.cidade}` : ''}`,
+  })),
+])
+// Na regra não existe "sem vínculo": ou aponta pra um empreendimento, ou não é regra.
+const cadastroOptsRegra = computed(() => cadastroOpts.value.filter(o => o.value !== ''))
+const cadastroNome = (id) => cadastroEmpreendimentos.value.find(e => e.idempreendimento === Number(id))?.nome || `#${id}`
+
 async function loadSiteEnterprises() {
   siteState.loading = true; siteState.error = ''
   try { siteEnterprises.value = await api.listSiteEnterprises() }
@@ -287,6 +305,8 @@ async function saveFlow(f) {
       // regras de atendimento deste empreendimento + override parcial dos padrões
       attendance_rules: f.attendance_rules || null,
       standards: f.standards || {},
+      // duas pontas distintas: identidade (roteia o lead) e conteúdo (o que fala)
+      cv_enterprise_id: f.cv_enterprise_id || null,
       // vínculo com o site: o back re-sincroniza sozinho quando isto muda
       site_slug: f.site_slug || null,
       opener_template: f.opener_template || null, opener_language: f.opener_language || 'pt_BR',
@@ -317,9 +337,9 @@ async function addRule() {
   if (!newRule.value.trim() || !newRule.flow_id) return
   busy.value = true
   try {
-    const payload = newRule.field === 'site_slug'
-      ? { ...newRule, operator: 'equals', value: newRule.value }
-      : { ...newRule, value: newRule.value.trim() }
+    const payload = newRule.field === 'cv_enterprise_id'
+      ? { ...newRule, operator: 'equals', value: String(newRule.value) }
+      : { ...newRule, value: String(newRule.value).trim() }
     await api.createRule(payload)
     newRule.value = ''
     rules.value = await api.listRules()
@@ -582,8 +602,15 @@ onMounted(loadConversations)
               <!-- Empreendimento do SITE: fonte do contexto. O conteúdo não é lido
                    ao vivo na conversa - um sync diário grava o snapshot no fluxo. -->
               <div class="rounded-lg border border-line bg-surface-sunken px-3 py-3 space-y-3">
+                <Select :model-value="f.cv_enterprise_id || ''" :options="cadastroOpts"
+                  label="Empreendimento no cadastro (identidade do lead)"
+                  @change="(v) => f.cv_enterprise_id = v ? Number(v) : null" />
+                <p class="text-[11px] text-ink-subtle -mt-1">
+                  É por aqui que o lead da campanha chega neste fluxo: o mesmo id que
+                  os formulários gravam. O de baixo é de onde vem o que ela FALA.
+                </p>
                 <Select :model-value="f.site_slug || ''" :options="siteOpts"
-                  label="Empreendimento no site (fonte do contexto)"
+                  label="Conteúdo no site (o que ela fala do empreendimento)"
                   @change="(v) => f.site_slug = v || null" />
 
                 <p v-if="siteState.loading" class="text-micro text-ink-subtle">Lendo o site…</p>
@@ -676,14 +703,14 @@ onMounted(loadConversations)
         <Surface variant="raised" padding="md">
           <h2 class="text-base font-semibold text-ink mb-1">Segmentação da base</h2>
           <p class="text-xs text-ink-muted mb-4">A primeira regra que casar decide o fluxo do lead novo. Sem match, cai no fluxo default.</p>
-          <p v-if="!siteEnterprises.length" class="text-xs text-amber-600 dark:text-amber-400 mb-4">
-            Não consegui ler os empreendimentos do site, então a lista de escolha está vazia. Confira em Config › Fonte do site.
+          <p v-if="!cadastroEmpreendimentos.length" class="text-xs text-amber-600 dark:text-amber-400 mb-4">
+            O cadastro de empreendimentos não carregou, então a lista de escolha está vazia.
           </p>
           <div class="space-y-2 mb-4">
             <div v-for="r in rules" :key="r.id" class="flex items-center gap-2 flex-wrap text-sm rounded-lg border border-line bg-surface-sunken px-3 py-2">
               <Badge variant="neutral" size="sm">#{{ r.priority }}</Badge>
               <span class="text-ink-muted">{{ fieldOpts.find(o => o.value === r.field)?.label || r.field }}</span>
-              <span v-if="r.field !== 'site_slug'" class="text-ink-subtle">{{ operatorOpts.find(o => o.value === r.operator)?.label }}</span>
+              <span v-if="r.field !== 'cv_enterprise_id'" class="text-ink-subtle">{{ operatorOpts.find(o => o.value === r.operator)?.label }}</span>
               <span v-else class="text-ink-subtle">é</span>
               <code class="font-mono text-xs text-ink">{{ regraValorTexto(r) }}</code>
               <i class="fas fa-arrow-right text-ink-subtle text-xs"></i>
@@ -695,10 +722,10 @@ onMounted(loadConversations)
           <div class="grid sm:grid-cols-5 gap-2 items-end">
             <Select :model-value="newRule.field" :options="fieldOpts" label="Campo"
               @change="(v) => { newRule.field = v; newRule.value = '' }" />
-            <!-- Empreendimento é escolhido, não digitado: o matcher não ignora acento,
-                 e "orquideas" digitado nunca casaria com "Orquídeas" da campanha. -->
-            <Select v-if="newRule.field === 'site_slug'" :model-value="newRule.value"
-              :options="empreendimentoOpts" label="Empreendimento"
+            <!-- Escolhido do CADASTRO, não digitado: é o mesmo id que a campanha grava
+                 em bound_empreendimentos, e existem dois "TRES MARIAS" no CV. -->
+            <Select v-if="newRule.field === 'cv_enterprise_id'" :model-value="newRule.value"
+              :options="cadastroOptsRegra" label="Empreendimento"
               @change="(v) => newRule.value = v" />
             <template v-else>
               <Select :model-value="newRule.operator" :options="operatorOpts" label="Condição" @change="(v) => newRule.operator = v" />
