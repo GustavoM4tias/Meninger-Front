@@ -14,12 +14,24 @@ export const useRealEstateStore = defineStore('realEstate', () => {
     const enterprises = ref([]);      // [{ id, nome }]
     const loading = ref(false);
     const loadingEnterprises = ref(false);
+    // Falha de carga tem que virar ERRO na tela. Antes o catch não existia:
+    // a lista ficava vazia e o usuário lia "Nenhuma imobiliária encontrada",
+    // ou seja, uma API fora do ar era apresentada como ausência de dado.
+    const errorRegistrations = ref('');
+    const registrationsTotal = ref(0);
+    const registrationsTruncated = ref(false);
 
     async function fetchRegistrations() {
         loading.value = true;
+        errorRegistrations.value = '';
         try {
             const data = await requestWithAuth('/realestate/registrations');
             registrations.value = data?.registrations || [];
+            registrationsTotal.value = Number(data?.total ?? registrations.value.length);
+            registrationsTruncated.value = !!data?.truncated;
+        } catch (err) {
+            errorRegistrations.value = err?.message || 'Não foi possível carregar os cadastros.';
+            throw err;
         } finally {
             loading.value = false;
         }
@@ -84,11 +96,16 @@ export const useRealEstateStore = defineStore('realEstate', () => {
     const report = ref({ imobiliarias: [], total: 0, last_sync: null });
     const loadingReport = ref(false);
     const syncing = ref(false);
+    const errorReport = ref('');
 
     async function fetchReport() {
         loadingReport.value = true;
+        errorReport.value = '';
         try {
             report.value = await requestWithAuth('/realestate/report');
+        } catch (err) {
+            errorReport.value = err?.message || 'Não foi possível carregar as imobiliárias.';
+            throw err;
         } finally {
             loadingReport.value = false;
         }
@@ -119,9 +136,13 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         enterprises,
         loading,
         loadingEnterprises,
+        errorRegistrations,
+        registrationsTotal,
+        registrationsTruncated,
         report,
         loadingReport,
         syncing,
+        errorReport,
         fetchRegistrations,
         fetchEnterprises,
         fetchReport,

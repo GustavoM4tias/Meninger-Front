@@ -6,6 +6,7 @@
 import { computed, ref, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useRealEstateStore } from '@/stores/Comercial/RealEstate/realEstateStore';
+import { useCan } from '@/composables/useCan';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -19,6 +20,7 @@ const emit = defineEmits(['close', 'retry', 'copy']);
 
 const store = useRealEstateStore();
 const toast = useToast();
+const can = useCan('/comercial/imobiliarias');
 
 const r = computed(() => props.registration);
 
@@ -67,7 +69,7 @@ const windowBadge = computed(() => WINDOW[r.value?.window_state] || WINDOW.open)
 const SUB_STATUS = { completed: 'Concluída', error: 'Pendente' };
 
 // ── Edição do período do link multi-uso ──────────────────────────────────────
-const canEditWindow = computed(() => !!r.value?.multi_use && r.value?.status !== 'revoked');
+const canEditWindow = computed(() => can('register') && !!r.value?.multi_use && r.value?.status !== 'revoked');
 const editingWindow = ref(false);
 const wStarts = ref('');
 const wEnds = ref('');
@@ -157,7 +159,7 @@ async function saveWindow() {
                 <div class="flex items-center gap-2 rounded-lg border border-line bg-surface-sunken p-2">
                     <code
                         class="flex-1 text-xs text-ink-muted break-all">https://lp.menin.com.br/imobiliaria/{{ r.token }}</code>
-                    <Button variant="outline" size="sm" icon="fas fa-copy" @click="emit('copy', r)">Copiar</Button>
+                    <Button v-if="can('register')" variant="outline" size="sm" icon="fas fa-copy" @click="emit('copy', r)">Copiar</Button>
                 </div>
             </div>
 
@@ -296,7 +298,7 @@ async function saveWindow() {
         <template #footer>
             <div class="flex flex-wrap justify-end gap-2">
                 <Button variant="ghost" @click="emit('close')">Fechar</Button>
-                <Button v-if="r?.status === 'error'" variant="primary" icon="fas fa-rotate-right" :loading="retrying"
+                <Button v-if="can('register') && r?.status === 'error'" variant="primary" icon="fas fa-rotate-right" :loading="retrying"
                     @click="emit('retry', r)">
                     Reprocessar
                 </Button>

@@ -1,8 +1,16 @@
 <script setup>
-// Aba "Imobiliárias" da tela unificada: listagem do backup do CV com filtros
-// (por padrão só ativas e com empreendimento vinculado), atalhos de contato
-// (WhatsApp/e-mail), cartão do gerente e modal de detalhe. Filtragem no
-// cliente: a lista completa chega escopada por cidade do usuário no backend.
+// Aba "Imobiliárias" da tela unificada: listagem do backup do CV com filtros,
+// atalhos de contato (WhatsApp/e-mail), cartão do gerente e modal de detalhe.
+// Filtragem no cliente: a lista completa chega escopada por cidade do usuário
+// no backend.
+//
+// O padrão do filtro de vínculo era "só com empreendimento", e isso escondia
+// 270 das 556 imobiliárias (medido em 2026-08-24) — incluindo TODA imobiliária
+// recém-cadastrada no CV, que ainda não tem reserva nem cadastro do Office para
+// gerar vínculo. Quem cadastrava no CV não achava a imobiliária e concluía que
+// a tela estava quebrada. Agora o padrão mostra tudo, e nenhum filtro esconde
+// linha em silêncio: sempre que algum recorta a lista, a tela diz quantas ficaram
+// de fora e oferece o "Limpar".
 
 import { computed, onMounted, ref } from 'vue';
 import { useRealEstateStore } from '@/stores/Comercial/RealEstate/realEstateStore';
@@ -12,16 +20,13 @@ import Badge from '@/components/UI/Badge.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
-import Spinner from '@/components/UI/Spinner.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import ReportDetailModal from './ReportDetailModal.vue';
 import GerenteModal from './GerenteModal.vue';
 
 import Skeleton from '@/components/UI/Skeleton.vue';
 const props = defineProps({
-    // Deep-link (?q= na URL, ex.: card da Eme): prefiltra a busca e libera os
-    // filtros de situação/vínculo — senão uma imobiliária inativa ou sem
-    // empreendimento ficaria oculta pelos padrões e o link "não acharia" nada.
+    // Deep-link (?q= na URL, ex.: card da Eme): prefiltra a busca.
     initialQuery: { type: String, default: '' },
 });
 
@@ -31,18 +36,18 @@ const store = useRealEstateStore();
 const q = ref(props.initialQuery);
 const cidade = ref('');
 const empreendimento = ref('');
-const situacao = ref(props.initialQuery ? '' : 'S');       // S | N | '' (todas)
-const vinculo = ref(props.initialQuery ? '' : 'com');      // com | sem | '' (todos)
+const situacao = ref('');       // S | N | '' (todas)
+const vinculo = ref('');        // com | sem | '' (todos)
 
 const SITUACAO_OPTIONS = [
+    { value: '', label: 'Todas as situações' },
     { value: 'S', label: 'Ativas' },
     { value: 'N', label: 'Inativas' },
-    { value: '', label: 'Todas as situações' },
 ];
 const VINCULO_OPTIONS = [
+    { value: '', label: 'Com e sem empreendimento' },
     { value: 'com', label: 'Com empreendimento' },
     { value: 'sem', label: 'Sem empreendimento' },
-    { value: '', label: 'Com e sem empreendimento' },
 ];
 
 // Ordenação é adição pura: os filtros e seus padrões seguem os mesmos.
@@ -61,20 +66,19 @@ const isExpanded = ref(false);
 const activeFiltersCount = computed(() => {
     let n = 0;
     if (q.value.trim()) n++;
-    if (situacao.value !== 'S') n++;
-    if (vinculo.value !== 'com') n++;
+    if (situacao.value) n++;
+    if (vinculo.value) n++;
     if (cidade.value) n++;
     if (empreendimento.value) n++;
     if (ordem.value !== 'nome') n++;
     return n;
 });
 
-// Limpar devolve aos PADRÕES da tela (ativas + com empreendimento), não a
-// "tudo vazio" - senão a lista mudaria de significado no clique.
+// Limpar devolve ao padrão da tela, que agora é a lista COMPLETA.
 function limparFiltros() {
     q.value = '';
-    situacao.value = 'S';
-    vinculo.value = 'com';
+    situacao.value = '';
+    vinculo.value = '';
     cidade.value = '';
     empreendimento.value = '';
     ordem.value = 'nome';
@@ -116,6 +120,10 @@ const filtradas = computed(() => all.value.filter(i => {
     }
     return true;
 }));
+
+// Quantas o filtro está escondendo. Existe para que nenhum recorte seja
+// silencioso: a tela mostra o número e o caminho de volta.
+const ocultas = computed(() => all.value.length - filtradas.value.length);
 
 const rows = computed(() => {
     const lista = [...filtradas.value];
@@ -199,16 +207,47 @@ onMounted(() => { if (!all.value.length) store.fetchReport(); });
         <!-- Resumo -->
         <div class="flex flex-wrap items-center gap-2 mb-4 text-xs text-ink-muted">
             <Badge variant="accent" outlined>{{ rows.length }} imobiliárias</Badge>
+            <button v-if="ocultas" type="button"
+                class="inline-flex items-center gap-1.5 rounded-full border border-line px-2 py-0.5 hover:text-accent hover:border-accent/60 transition-colors"
+                @click="limparFiltros">
+                <i class="fas fa-eye-slash text-ink-subtle"></i>
+                {{ ocultas }} oculta{{ ocultas > 1 ? 's' : '' }} pelos filtros - mostrar todas
+            </button>
             <span v-if="store.report?.last_sync">Última sincronização: {{ fmtDate(store.report.last_sync) }}</span>
         </div>
 
         <Skeleton v-if="store.loadingReport && !all.length" variant="row" :lines="4" />
 
+        <!-- Falha de carga é ERRO, nunca "lista vazia": a saída daqui é tentar
+             de novo, não mexer no filtro. -->
+        <EmptyState
+            v-else-if="store.errorReport && !all.length"
+            icon="fas fa-triangle-exclamation"
+            title="Não foi possível carregar as imobiliárias"
+            :description="store.errorReport"
+        >
+            <template #actions>
+                <Button variant="outline" icon="fas fa-rotate-right" :loading="store.loadingReport"
+                    @click="store.fetchReport().catch(() => {})">Tentar de novo</Button>
+            </template>
+        </EmptyState>
+
+        <EmptyState
+            v-else-if="!rows.length && all.length"
+            icon="fas fa-filter-circle-xmark"
+            :title="`Nenhuma das ${all.length} imobiliárias passa nos filtros`"
+            description="Limpe os filtros para ver a lista completa."
+        >
+            <template #actions>
+                <Button variant="outline" icon="fas fa-eraser" @click="limparFiltros">Limpar filtros</Button>
+            </template>
+        </EmptyState>
+
         <EmptyState
             v-else-if="!rows.length"
             icon="fas fa-house-flag"
-            title="Nenhuma imobiliária encontrada"
-            description="Ajuste os filtros (situação e vínculo) ou sincronize com o CV."
+            title="Nenhuma imobiliária no espelho do CV"
+            description="O espelho sincroniza sozinho de hora em hora. Se acabou de subir, aguarde alguns minutos."
         />
 
         <template v-else>

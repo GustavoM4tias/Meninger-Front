@@ -19,7 +19,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['close']);
 
-const LP_HOST = 'https://lp.menin.com.br';
+const LP_BASE = import.meta.env.VITE_LP_URL || 'https://lp.menin.com.br';
 
 const store = useRealEstateStore();
 const toast = useToast();
@@ -74,7 +74,7 @@ async function create() {
             starts_at: multiUse.value ? (startsAt.value || todayStr()) : undefined,
             ends_at: multiUse.value ? endsAt.value : undefined,
         });
-        createdUrl.value = `${LP_HOST}/imobiliaria/${reg.token}`;
+        createdUrl.value = `${LP_BASE}/imobiliaria/${reg.token}`;
         createdMulti.value = !!reg.multi_use;
     } catch (err) {
         error.value = err?.message || 'Erro ao gerar o link.';
