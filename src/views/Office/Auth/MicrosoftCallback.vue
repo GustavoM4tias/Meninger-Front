@@ -74,7 +74,7 @@ function describeLinkError(code, expected, got) {
   return ERROR_MESSAGES[code] || 'Não foi possível conectar sua conta Microsoft.';
 }
 
-function goToAccount() { router.push(isMailMode.value ? '/settings/outlook-lab' : '/settings/account'); }
+function goToAccount() { router.push('/settings/account'); }
 
 async function loadSetupOptions() {
   try {
@@ -130,7 +130,7 @@ onMounted(async () => {
   if (mode === 'link' || mode === 'mail') {
     isLinkMode.value = true;
     isMailMode.value = mode === 'mail';
-    const back = isMailMode.value ? '/settings/outlook-lab' : '/settings/account';
+    const back = '/settings/account';
     if (params.get('linked') === '1') {
       state.value = 'success';
       setTimeout(() => router.push(back), 1400);

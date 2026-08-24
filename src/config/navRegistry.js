@@ -335,8 +335,6 @@ export const navRegistry = [
                     { route: '/tools/bucket-upload', section: 'Looqbox', name: 'Looqbox', icon: 'fas fa-cloud-arrow-up', iconImg: '/icons/looqbox.png' },
                     { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
                     { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.png', adminOnly: true },
-                    { route: '/settings/integracao-microsoft', section: 'Microsoft 365', name: 'Microsoft 365', icon: 'fab fa-microsoft', adminOnly: true },
-                    { route: '/settings/outlook-lab', section: 'Laboratório do Outlook', name: 'Laboratório do Outlook', icon: 'fas fa-envelope-open-text', adminOnly: true },
                 ],
             },
             {
