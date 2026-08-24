@@ -30,7 +30,11 @@ const diag = ref(null);
 const loadingDiag = ref(true);
 
 const settings = ref(null);
-const form = ref({ list_page_cap: 5000, upload_max_mb: 250, upload_chunk_mb: 8, transcript_app_fallback: true });
+const form = ref({
+  list_page_cap: 5000, upload_max_mb: 250, upload_chunk_mb: 8, transcript_app_fallback: true,
+  outlook_enabled: true, outlook_send_enabled: true, outlook_page_size: 25,
+  meeting_reminder_enabled: true, meeting_reminder_minutes: 15,
+});
 const saving = ref(false);
 
 // ── Carga ─────────────────────────────────────────────────────────────────────
@@ -54,6 +58,11 @@ async function loadSettings() {
       upload_max_mb: settings.value.upload_max_mb,
       upload_chunk_mb: settings.value.upload_chunk_mb,
       transcript_app_fallback: !!settings.value.transcript_app_fallback,
+      outlook_enabled: settings.value.outlook_enabled !== false,
+      outlook_send_enabled: settings.value.outlook_send_enabled !== false,
+      outlook_page_size: settings.value.outlook_page_size ?? 25,
+      meeting_reminder_enabled: settings.value.meeting_reminder_enabled !== false,
+      meeting_reminder_minutes: settings.value.meeting_reminder_minutes ?? 15,
     };
   } catch (err) {
     toast.error(err?.message || 'Não foi possível ler as configurações.');
@@ -70,6 +79,11 @@ async function save() {
         upload_max_mb: Number(form.value.upload_max_mb),
         upload_chunk_mb: Number(form.value.upload_chunk_mb),
         transcript_app_fallback: !!form.value.transcript_app_fallback,
+        outlook_enabled: !!form.value.outlook_enabled,
+        outlook_send_enabled: !!form.value.outlook_send_enabled,
+        outlook_page_size: Number(form.value.outlook_page_size),
+        meeting_reminder_enabled: !!form.value.meeting_reminder_enabled,
+        meeting_reminder_minutes: Number(form.value.meeting_reminder_minutes),
       }),
     });
     toast.success('Configurações salvas.');
@@ -218,6 +232,38 @@ const tokenExpires = computed(() => {
           <Switch v-model="form.transcript_app_fallback"
             label="Buscar transcrição de reunião que a pessoa apenas participou"
             description="Usa a permissão de aplicação quando a conta da pessoa não alcança a reunião. Sem o consentimento no portal, a tentativa falha em silêncio e o comportamento continua o de sempre." />
+        </div>
+
+        <!-- E-mail -->
+        <div class="mt-5 pt-4 border-t border-line space-y-4">
+          <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide">E-mail (Outlook)</p>
+
+          <Switch v-model="form.outlook_enabled"
+            label="Módulo de e-mail ligado"
+            description="Desligado, a tela de e-mail para de responder e a API devolve 503." />
+
+          <Switch v-model="form.outlook_send_enabled"
+            label="Permitir enviar e-mail pelo Office"
+            description="Separado da leitura de propósito: dá para liberar a caixa e manter o envio desligado enquanto a operação se acostuma. E-mail enviado não tem desfazer." />
+
+          <div class="sm:max-w-[16rem]">
+            <Input v-model="form.outlook_page_size" type="number" label="Mensagens por página"
+              hint="Quantas a lista traz por vez (5 a 100)." />
+          </div>
+        </div>
+
+        <!-- Lembrete de reunião -->
+        <div class="mt-5 pt-4 border-t border-line space-y-4">
+          <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide">Aviso de reunião</p>
+
+          <Switch v-model="form.meeting_reminder_enabled"
+            label="Avisar antes da reunião começar"
+            description="Chega pelos canais que cada pessoa escolheu nas preferências de notificação. O push toca no celular mesmo com o Office fechado." />
+
+          <div class="sm:max-w-[16rem]">
+            <Input v-model="form.meeting_reminder_minutes" type="number" label="Minutos antes"
+              hint="Entre 5 e 120. O verificador roda a cada 5 minutos." />
+          </div>
         </div>
 
         <div class="mt-5 flex justify-end">
