@@ -223,7 +223,9 @@ const stepsOpen = ref(false);
             <li v-for="(s, i) in steps" :key="i" class="flex items-center gap-1.5">
               <i class="shrink-0 text-[10px]"
                 :class="s.status === 'error' ? 'fas fa-circle-exclamation text-data-warn' : 'fas fa-check text-data-pos'"></i>
-              <span class="truncate">{{ s.label }}</span>
+              <span class="truncate">
+                {{ s.label }}<span v-if="s.detalhe" class="opacity-70"> · {{ s.detalhe }}</span>
+              </span>
               <span v-if="s.ms != null" class="shrink-0 font-mono text-micro opacity-70">{{ (s.ms / 1000).toFixed(1) }}s</span>
             </li>
           </ul>

@@ -29,7 +29,11 @@ const finishedSteps = computed(() => aiStore.agentSteps.filter(s => s.status !==
 
 const currentLabel = computed(() => {
   const s = runningStep.value
-  if (s) return s.verbatim ? s.label : `${verboDoPasso(s.name)} ${s.label}…`
+  if (s) {
+    if (s.verbatim) return s.label
+    // "Executando editar reunião · Sinop → 08:50" em vez de só a ferramenta.
+    return `${verboDoPasso(s.name)} ${s.label}${s.detalhe ? ` · ${s.detalhe}` : ''}…`
+  }
   if (aiStore.streamingText) return 'Escrevendo a resposta…'
   if (finishedSteps.value.length) return 'Analisando os dados…'
   return 'Pensando…'
@@ -48,7 +52,7 @@ const showCancel = computed(() => elapsed.value >= 8)
         :class="s.status === 'error'
           ? 'fas fa-circle-exclamation text-data-warn'
           : ehEscrita(s.name) ? 'fas fa-bolt text-accent' : 'fas fa-circle-check text-data-pos'" />
-      <span class="truncate">{{ s.label }}</span>
+      <span class="truncate">{{ s.label }}<span v-if="s.detalhe" class="opacity-70"> · {{ s.detalhe }}</span></span>
       <span v-if="s.ms != null" class="shrink-0 font-mono text-micro opacity-70">
         {{ (s.ms / 1000).toFixed(1) }}s
       </span>

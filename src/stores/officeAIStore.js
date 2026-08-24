@@ -119,9 +119,14 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     // 45s sem bytes → avisa o usuário; 90s → encerra com mensagem clara em vez
     // de deixar o "..." pulsando para sempre com o composer travado.
     let lastByteAt = Date.now()
+    let lastStepAt = Date.now()   // último sinal de PROGRESSO (tool começou/terminou)
     const watchdog = setInterval(() => {
       const idle = Date.now() - lastByteAt
-      if (idle > 90_000) {
+      const semProgresso = Date.now() - lastStepAt
+      // Enquanto as ferramentas avançam, o turno continua: um lote de dez
+      // reuniões passa de 90s com folga. O corte só vale quando NADA acontece.
+      const limite = semProgresso < 120_000 ? 240_000 : 90_000
+      if (idle > limite) {
         cancelReason = 'timeout'
         abortCtrl?.abort()
       } else if (idle > 45_000) {
@@ -189,6 +194,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
           if (!raw) continue
           let evt
           try { evt = JSON.parse(raw) } catch { continue }
+          if (evt.type === 'tool_start' || evt.type === 'tool_result') lastStepAt = Date.now()
           handleSSEEvent(evt)
         }
       }
@@ -279,6 +285,9 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         agentSteps.value.push({
           name: evt.name,
           label: evt.label || evt.name,
+          // "editar reunião · Sinop → 08:50" diz o que está acontecendo;
+          // "editar reunião" sozinho não diz nada.
+          detalhe: evt.detalhe || '',
           status: 'running',
         })
         break
