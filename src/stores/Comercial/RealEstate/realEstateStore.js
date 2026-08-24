@@ -177,6 +177,12 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         return data;
     }
 
+    async function runCvJob(key) {
+        const data = await requestWithAuth(`/realestate/cv-jobs/${key}/run`, { method: 'POST' });
+        cvJobs.value = data?.jobs || cvJobs.value;
+        return data;
+    }
+
     // Mesma lista do menu Configurações > Usuários (admin), usada para escolher
     // quem é avisado quando a credencial cai.
     async function fetchOfficeUsers() {
@@ -231,5 +237,6 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         cvJobsLoading,
         fetchCvJobs,
         saveCvJob,
+        runCvJob,
     };
 });
