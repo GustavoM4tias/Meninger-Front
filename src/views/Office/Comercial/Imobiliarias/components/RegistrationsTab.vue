@@ -28,7 +28,7 @@ const LP_BASE = import.meta.env.VITE_LP_URL || 'https://lp.menin.com.br';
 
 const store = useRealEstateStore();
 const toast = useToast();
-const can = useCan('/comercial/imobiliarias');
+const can = useCan('/crm/imobiliarias');
 
 const STATUS = {
     invite:     { label: 'Aguardando preenchimento', variant: 'info' },

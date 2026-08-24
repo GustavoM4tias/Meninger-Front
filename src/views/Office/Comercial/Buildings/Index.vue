@@ -85,7 +85,7 @@ const closeBuildingModal = () => {
   if (route.query.open) router.replace({ query: { ...route.query, open: undefined } });
 };
 
-// Deep-link: /comercial/buildings?open=<idempreendimento> abre o modal do
+// Deep-link: /crm/buildings?open=<idempreendimento> abre o modal do
 // empreendimento direto (usado pelo relatório de imobiliárias, entre outros).
 watch(() => route.query.open, (id) => {
   const num = Number(id);
@@ -122,7 +122,7 @@ const sectionMeta = (key) => ({
         icon="fas fa-building">
         <template #title>
           <span>Empreendimentos</span>
-          <Favorite :router="'/comercial/buildings'" :section="currentSection" />
+          <Favorite :router="'/crm/buildings'" :section="currentSection" />
         </template>
         <template #actions>
           <PageHelp

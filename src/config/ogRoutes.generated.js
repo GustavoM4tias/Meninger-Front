@@ -102,24 +102,6 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": "Condições & Regras"
   },
-  "/comercial/buildings": {
-    "name": "Empreendimentos",
-    "category": "Comercial",
-    "group": "OPERAÇÃO",
-    "subcategory": "Cadastros"
-  },
-  "/comercial/imobiliarias": {
-    "name": "Imobiliárias",
-    "category": "Comercial",
-    "group": "OPERAÇÃO",
-    "subcategory": "Cadastros"
-  },
-  "/comercial/correspondentes": {
-    "name": "Correspondentes",
-    "category": "Comercial",
-    "group": "OPERAÇÃO",
-    "subcategory": "Cadastros"
-  },
   "/comercial/cancelamento-reservas": {
     "name": "Cancelamentos",
     "category": "Comercial",
@@ -144,11 +126,11 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": "Contas a Receber"
   },
-  "/financeiro/boleto-caixa": {
-    "name": "Boleto Caixa",
+  "/financeiro/cobranca/ato": {
+    "name": "Ato",
     "category": "Financeiro",
     "group": "OPERAÇÃO",
-    "subcategory": "Contas a Receber"
+    "subcategory": "Cobrança"
   },
   "/financeiro/paymentflow": {
     "name": "Fluxo de Pagamento",
@@ -198,8 +180,14 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": null
   },
+  "/microsoft/outlook": {
+    "name": "Outlook",
+    "category": "Microsoft",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
   "/microsoft/teams": {
-    "name": "Central Microsoft",
+    "name": "Teams",
     "category": "Microsoft",
     "group": "RECURSOS",
     "subcategory": null
@@ -225,6 +213,30 @@ export const OG_ROUTES = {
   "/settings/whatsapp": {
     "name": "WhatsApp",
     "category": "Meta",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
+  "/crm/imobiliarias": {
+    "name": "Imobiliárias",
+    "category": "CV CRM",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
+  "/crm/correspondentes": {
+    "name": "Correspondentes",
+    "category": "CV CRM",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
+  "/crm/buildings": {
+    "name": "Empreendimentos",
+    "category": "CV CRM",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
+  "/crm/configuracoes": {
+    "name": "Configurações",
+    "category": "CV CRM",
     "group": "RECURSOS",
     "subcategory": null
   },

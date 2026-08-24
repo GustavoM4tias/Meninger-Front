@@ -6,7 +6,7 @@ import SidebarGroup from './SidebarGroup.vue';
 import SidebarItem from './SidebarItem.vue';
 
 const props = defineProps({
-  category: { type: Object, required: true },         // { key, label, icon, requiresMicrosoft, ... }
+  category: { type: Object, required: true },         // { key, label, icon, iconImg, requiresMicrosoft, ... }
   catKey: { type: String, required: true },
   open: { type: Boolean, default: false },
   collapsed: { type: Boolean, default: false },
@@ -56,6 +56,7 @@ function onLeave() {
     v-if="directItem"
     :to="{ path: directItem.route, query: directItem.section ? { section: directItem.section } : undefined }"
     :icon="category.icon || directItem.icon || 'far fa-file'"
+    :icon-img="category.iconImg"
     :icon-color="category.iconColor"
     :label="category.label"
     :collapsed="collapsed"
@@ -65,9 +66,9 @@ function onLeave() {
   <SidebarGroup
     v-else
     :label="category.label"
-    :icon="category.requiresMicrosoft ? '' : (category.icon || 'far fa-folder')"
+    :icon="(category.requiresMicrosoft || category.iconImg) ? '' : (category.icon || 'far fa-folder')"
     :icon-color="category.iconColor"
-    :icon-slot="!!category.requiresMicrosoft"
+    :icon-slot="!!category.requiresMicrosoft || !!category.iconImg"
     :open="open"
     :collapsed="collapsed"
     :active="isActive"
@@ -75,7 +76,13 @@ function onLeave() {
     @mouseenter="onEnter"
     @mouseleave="onLeave"
   >
-    <template #icon v-if="category.requiresMicrosoft">
+    <!-- Logo própria da categoria (ex.: CV CRM). Mesmo caminho que o item já
+         usava com iconImg, agora disponível no cabeçalho da categoria. -->
+    <template #icon v-if="category.iconImg">
+      <img :src="category.iconImg" :alt="category.label" class="w-5 h-5 shrink-0 object-contain" />
+    </template>
+
+    <template #icon v-else-if="category.requiresMicrosoft">
       <svg width="20" height="20" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 shrink-0">
         <rect x="0" y="0" width="10" height="10" fill="#F25022" />
         <rect x="11" y="0" width="10" height="10" fill="#7FBA00" />

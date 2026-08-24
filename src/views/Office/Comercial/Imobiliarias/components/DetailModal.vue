@@ -20,7 +20,7 @@ const emit = defineEmits(['close', 'retry', 'copy']);
 
 const store = useRealEstateStore();
 const toast = useToast();
-const can = useCan('/comercial/imobiliarias');
+const can = useCan('/crm/imobiliarias');
 
 const r = computed(() => props.registration);
 

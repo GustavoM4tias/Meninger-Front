@@ -62,10 +62,10 @@ const SUGGESTION_POOL = [
   { label: 'Relatório de eventos',   sublabel: 'Gerar para o mês atual',        icon: 'fas fa-calendar-days',       route: '/marketing/events',       prompt: 'Gere o relatório de eventos para o mês atual' },
   // Comercial
   { label: 'Faixas MCMV',            sublabel: 'Teto na sua cidade',            icon: 'fas fa-house-circle-check',  route: '/comercial/mcmv',         prompt: 'Qual o teto do Minha Casa Minha Vida na minha cidade?' },
-  { label: 'Empreendimentos ativos', sublabel: 'Portfólio em vendas',           icon: 'fas fa-building',            route: '/comercial/buildings',    prompt: 'Quais empreendimentos estão ativos em vendas?' },
+  { label: 'Empreendimentos ativos', sublabel: 'Portfólio em vendas',           icon: 'fas fa-building',            route: '/crm/buildings',    prompt: 'Quais empreendimentos estão ativos em vendas?' },
   { label: 'Pré-cadastros',          sublabel: 'Análises de crédito do mês',    icon: 'fas fa-folder-open',         route: '/comercial/precadastros', prompt: 'Como estão os pré-cadastros deste mês?' },
   { label: 'Reservas',               sublabel: 'Funil da reserva à venda',      icon: 'fas fa-file-signature',      route: '/comercial/reservas-report', prompt: 'Como está o funil de reservas?' },
-  { label: 'Imobiliárias parceiras', sublabel: 'Quem atua na sua região',       icon: 'fas fa-house-flag',          route: '/comercial/imobiliarias', prompt: 'Quais imobiliárias parceiras atuam na minha região?' },
+  { label: 'Imobiliárias parceiras', sublabel: 'Quem atua na sua região',       icon: 'fas fa-house-flag',          route: '/crm/imobiliarias', prompt: 'Quais imobiliárias parceiras atuam na minha região?' },
   { label: 'Fichas comerciais',      sublabel: 'Condições por empreendimento',  icon: 'fas fa-clipboard-list',      route: '/comercial/conditions',   prompt: 'Quais fichas comerciais temos disponíveis?' },
   // Financeiro (gated por alçada)
   { label: 'Custos do mês',          sublabel: 'Pago por empreendimento',       icon: 'fas fa-coins',               route: '/financeiro/custos',      prompt: 'Quais os custos deste mês por empreendimento?' },

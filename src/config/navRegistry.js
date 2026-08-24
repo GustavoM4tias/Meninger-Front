@@ -304,11 +304,11 @@ export const navRegistry = [
         icon: 'fas fa-plug',
         group: 'RECURSOS',
         pages: [
-            { route: '/comercial/imobiliarias', section: 'Imobiliárias', name: 'Imobiliárias', icon: 'fas fa-house-flag' },
-            { route: '/comercial/correspondentes', section: 'Correspondentes', name: 'Correspondentes', icon: 'fas fa-people-group' },
+            { route: '/crm/imobiliarias', section: 'Imobiliárias', name: 'Imobiliárias', icon: 'fas fa-house-flag' },
+            { route: '/crm/correspondentes', section: 'Correspondentes', name: 'Correspondentes', icon: 'fas fa-people-group' },
             // Tela única com abas internas (Geral/Lançamentos/Em Obras/…) → um só item.
-            { route: '/comercial/buildings', name: 'Empreendimentos', icon: 'fas fa-building' },
-            { route: '/cv', section: 'Configurações', name: 'Configurações', icon: 'fas fa-sliders', adminOnly: true },
+            { route: '/crm/buildings', name: 'Empreendimentos', icon: 'fas fa-building' },
+            { route: '/crm/configuracoes', section: 'Configurações', name: 'Configurações', icon: 'fas fa-sliders', adminOnly: true },
         ],
     },
 
@@ -461,7 +461,7 @@ export const managedRegistry = navRegistry.filter(cat => cat.permissionManaged !
  * Exclui:
  *   - adminOnly:true          → sempre admin, não pode ser delegado
  *   - permissionManaged:false → sempre visível para todos, não precisa de alçada
- * Remove duplicatas de rota (ex: /comercial/buildings com 6 sections vira 1 entrada).
+ * Remove duplicatas de rota (ex: /crm/buildings com 6 sections vira 1 entrada).
  */
 export function getDeptManagedPages(cat) {
     const seen = new Set();

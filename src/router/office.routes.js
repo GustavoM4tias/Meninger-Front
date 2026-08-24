@@ -151,16 +151,47 @@ export default [
                 component: () => import('@/views/Office/Meta/Central/Index.vue'),
                 meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Central Meta: captação de leads, campanhas Meta, vínculos com o CV CRM, formulários de captação, credenciais do App e configurações' },
             },
-            // Painel do CV CRM: credencial da integração e estado das
-            // sincronizações. Os CADASTROS do CV (imobiliárias, correspondentes,
-            // empreendimentos) seguem nas rotas /comercial/* de sempre — só o
-            // menu passou a agrupá-los sob CV CRM, então nenhuma alçada muda.
+            // CV CRM: os cadastros que vivem no CV, agora sob /crm em vez de
+            // espalhados em /comercial. As rotas antigas seguem vivas como
+            // REDIRECT preservando a query, porque notificacao, favorito, card
+            // da Eme e link colado em conversa apontam para elas. As alcadas ja
+            // gravadas migram no boot, em lib/ensurePermissionRouteRenames.js —
+            // sem isso todo mundo perderia o acesso a estas telas.
             {
-                path: 'cv',
-                name: 'CV CRM',
-                component: () => import('@/views/Office/Cv/Central/Index.vue'),
-                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Painel do CV CRM: credencial da integração, quem é avisado quando ela cai e estado do espelho de imobiliárias e vínculos' },
+                path: 'crm',
+                name: 'crm',
+                meta: { requiresAuth: true },
+                children: [
+                    { path: '', redirect: '/crm/configuracoes' },
+                    {
+                        path: 'configuracoes',
+                        name: 'CV CRM',
+                        component: () => import('@/views/Office/Cv/Central/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Painel do CV CRM: credencial da integração, quem é avisado quando ela cai e estado do espelho de imobiliárias e vínculos' },
+                    },
+                    {
+                        path: 'imobiliarias',
+                        name: 'Imobiliárias',
+                        component: () => import('@/views/Office/Comercial/Imobiliarias/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Cadastro de imobiliárias no CV — direto na tela ou via link público enviado ao responsável' },
+                    },
+                    {
+                        path: 'correspondentes',
+                        name: 'Correspondentes',
+                        component: () => import('@/views/Office/Comercial/Correspondentes/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Empresas correspondentes e suas equipes no CV — cadastro em lote por colagem e conferência do resultado' },
+                    },
+                    {
+                        path: 'buildings',
+                        name: 'Empreendimentos',
+                        component: () => import('@/views/Office/Comercial/Buildings/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
+                    },
+                ],
             },
+            // Rota da primeira versao deste painel, viva por algumas horas.
+            // Redirect para nao deixar link morto de quem ja tinha aberto.
+            { path: 'cv', redirect: '/crm/configuracoes' },
             {
                 path: 'marketing',
                 name: 'marketing',
@@ -275,12 +306,10 @@ export default [
                         component: () => import('@/views/Office/Comercial/CancelamentoReservas/Index.vue'),
                         meta: { requiresAuth: true, searchable: false, content: 'Automação de exclusão no Sienge de contratos de reservas canceladas no CV' },
                     },
-                    {
-                        path: 'buildings',
-                        name: 'Empreendimentos',
-                        component: () => import('@/views/Office/Comercial/Buildings/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
-                    },
+                    // Foi para /crm/buildings (2026-08-24). O redirect preserva a
+                    // query: o deep-link ?open=<id> e usado pela tela de
+                    // Imobiliarias e pelos cards da Eme.
+                    { path: 'buildings', redirect: to => ({ path: '/crm/buildings', query: to.query }) },
                     {
                         path: 'projections',
                         name: 'Projeção',
@@ -311,20 +340,13 @@ export default [
                         component: () => import('@/views/Office/Comercial/Conditions/Detail.vue'),
                         meta: { requiresAuth: true, searchable: false, content: 'Detalhe da Ficha Comercial' },
                     },
-                    {
-                        path: 'imobiliarias',
-                        name: 'Imobiliárias',
-                        component: () => import('@/views/Office/Comercial/Imobiliarias/Index.vue'),
-                        meta: { requiresAuth: true, searchable: true, content: 'Cadastro de imobiliárias no CV — direto na tela ou via link público enviado ao responsável' },
-                    },
-                    // Tela unificada: o antigo relatório virou aba da tela de Imobiliárias.
-                    { path: 'imobiliarias-report', redirect: '/comercial/imobiliarias' },
-                    {
-                        path: 'correspondentes',
-                        name: 'Correspondentes',
-                        component: () => import('@/views/Office/Comercial/Correspondentes/Index.vue'),
-                        meta: { requiresAuth: true, searchable: true, content: 'Empresas correspondentes e suas equipes no CV — cadastro em lote por colagem e conferência do resultado' },
-                    },
+                    // Foi para /crm/imobiliarias (2026-08-24). O redirect preserva a
+                    // query: ?tab=cadastros e ?q= vem dos cards da Eme.
+                    { path: 'imobiliarias', redirect: to => ({ path: '/crm/imobiliarias', query: to.query }) },
+                    // Tela unificada: o antigo relatorio virou aba da tela de Imobiliarias.
+                    { path: 'imobiliarias-report', redirect: '/crm/imobiliarias' },
+                    // Foi para /crm/correspondentes (2026-08-24).
+                    { path: 'correspondentes', redirect: to => ({ path: '/crm/correspondentes', query: to.query }) },
                     {
                         path: 'mcmv',
                         name: 'MCMV — Limites por Cidade',

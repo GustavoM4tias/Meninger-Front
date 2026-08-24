@@ -26,7 +26,7 @@ const buttons = computed(() => {
     label: 'Abrir Dashboard',
     color: 'indigo',
     action: () => window.dispatchEvent(new CustomEvent('eme:navigate', {
-      detail: { route: '/comercial/buildings', filters: dashQuery, message: 'Abrindo empreendimentos...' },
+      detail: { route: '/crm/buildings', filters: dashQuery, message: 'Abrindo empreendimentos...' },
     })),
   })
 

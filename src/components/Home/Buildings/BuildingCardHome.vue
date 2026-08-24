@@ -52,7 +52,7 @@ const showBuildingDetails = () => {
                     {{ building.cidade }}/{{ building.estado }}
                 </p>
                 <RouterLink :to="{
-                    path: '/comercial/buildings',
+                    path: '/crm/buildings',
                     query: { search: building.nome, section: 'Geral' }
                 }" class="border rounded-md md:rounded-lg text-white text-md md:text-lg text-wrap hover:bg-surface-sunken hover:text-ink duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
                     Ver Mais

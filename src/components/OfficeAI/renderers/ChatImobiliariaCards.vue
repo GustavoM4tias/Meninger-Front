@@ -152,7 +152,7 @@ async function copyInvite(url, i) {
                     </p>
                     <div class="mt-1 flex flex-wrap gap-1">
                         <button v-for="e in card.empreendimentos" :key="e.id || e.nome" type="button"
-                            :disabled="!e.id" @click="e.id && open(`/comercial/buildings?open=${e.id}`)"
+                            :disabled="!e.id" @click="e.id && open(`/crm/buildings?open=${e.id}`)"
                             class="rounded-md border border-line bg-surface-sunken px-1.5 py-0.5 text-micro font-medium text-ink-muted
                                    transition enabled:hover:border-accent/40 enabled:hover:text-accent">
                             {{ e.nome }}

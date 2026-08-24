@@ -114,7 +114,7 @@ const cvLink = computed(() =>
 
 // ── Sync de tabelas de preço (CV → Office) — somente admin ──
 // Acao da tela (lib/screenCapabilities.js no back). Ver composables/useCan.js.
-const can = useCan('/comercial/buildings');
+const can = useCan('/crm/buildings');
 const syncingTables = ref(false);
 const syncResult = ref(null); // { ok, synced } | { ok: false, error }
 

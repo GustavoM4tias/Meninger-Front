@@ -27,7 +27,7 @@ const route = useRoute();
 // Permissão DENTRO da tela (lib/screenCapabilities.js): consultar é `view`,
 // cadastrar/gerar link é `register`, forçar a varredura do CV é `sync`.
 // Esconder o botão é cosmético — quem barra de verdade é o requireCapability.
-const can = useCan('/comercial/imobiliarias');
+const can = useCan('/crm/imobiliarias');
 
 // Deep-link (usado pela Eme e por atalhos): ?tab=cadastros abre direto a aba
 // de cadastros; ?q=<termo> é repassado à aba de imobiliárias (prefiltra).
@@ -104,7 +104,7 @@ onMounted(() => {
 
         <!-- A configuração mora no painel do CV CRM; aqui só o aviso, para quem
              está olhando a lista descobrir POR QUE ela parou de atualizar. -->
-        <RouterLink v-if="credencialCaida" to="/cv"
+        <RouterLink v-if="credencialCaida" to="/crm/configuracoes"
             class="mb-4 w-full flex items-start gap-3 rounded-xl border border-data-neg/30 bg-data-neg/10 p-3.5 text-left">
             <i class="fas fa-triangle-exclamation text-data-neg mt-0.5"></i>
             <span class="min-w-0">

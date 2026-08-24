@@ -56,7 +56,7 @@ const fmt = (v) => v || '-';
 function goToBuilding(e) {
     if (!e?.id) return;
     // Nova guia: o usuário continua no relatório com o modal aberto.
-    const { href } = router.resolve({ path: '/comercial/buildings', query: { open: e.id } });
+    const { href } = router.resolve({ path: '/crm/buildings', query: { open: e.id } });
     window.open(href, '_blank', 'noopener');
 }
 </script>
