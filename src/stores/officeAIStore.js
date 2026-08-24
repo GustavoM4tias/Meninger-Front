@@ -10,6 +10,7 @@ import {
   submitFeedback,
 } from '@/utils/OfficeAI/apiOfficeChat'
 import API_URL from '@/config/apiUrl'
+import { emeScreenSnapshot, limparReferencias } from '@/composables/useEmeScreenContext'
 
 export const useOfficeAIStore = defineStore('officeAI', () => {
   // ── Estado ────────────────────────────────────────────────────────────────
@@ -128,6 +129,12 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
       }
     }, 5_000)
 
+    // Onde a pessoa está e o que ela marcou com Ctrl+clique. Tirado ANTES do
+    // envio e limpo em seguida: a marcação vale para a pergunta que ela acabou
+    // de fazer, não para o resto da conversa.
+    const contextoTela = emeScreenSnapshot()
+    limparReferencias()
+
     const t0 = performance.now()
     try {
       const response = await fetch(`${API_URL}/office-chat/stream`, {
@@ -140,6 +147,9 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
           message: text,
           session_id: currentSessionId.value,
           via_voice: viaVoice,
+          // O backend trata isto como DADO, com teto de tamanho, nunca como
+          // instrução: texto de tela pode conter qualquer coisa.
+          screen: contextoTela,
         }),
         signal: abortCtrl.signal,
       })

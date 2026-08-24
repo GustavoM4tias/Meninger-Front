@@ -8,6 +8,7 @@ import OfficeChatSession from './OfficeChatSession.vue';
 import OfficeChatHistory from './OfficeChatHistory.vue';
 import ChatTitleEditor from './ChatTitleEditor.vue';
 import IconButton from '@/components/UI/IconButton.vue';
+import { setEmeScreen, instalarCapturaCtrlClique } from '@/composables/useEmeScreenContext';
 
 const aiStore = useOfficeAIStore();
 const permStore = usePermissionStore();
@@ -304,7 +305,16 @@ function onResize() {
   pos.value = clampPos(pos.value);
 }
 
+// ── Contexto de tela ────────────────────────────────────────────────────────
+// Duas coisas: a rota atual segue a Eme sozinha (para "explica esta tela" ter
+// resposta), e o Ctrl+clique marca um trecho da página como referência da
+// próxima pergunta - abrindo o painel para a pessoa VER o que foi marcado.
+watch(() => route.path, (p) => setEmeScreen(p, route.meta?.content || ''), { immediate: true });
+
+let desinstalarCaptura = null;
+
 onMounted(() => {
+  desinstalarCaptura = instalarCapturaCtrlClique(() => { expanded.value = true; });
   loadPos();
   window.addEventListener('eme:navigate', onEmeNavigate);
   window.addEventListener('eme:open',     onEmeOpen);
@@ -314,6 +324,7 @@ onMounted(() => {
   aiStore.loadStorageUsage();
 });
 onUnmounted(() => {
+  desinstalarCaptura?.();
   window.removeEventListener('eme:navigate', onEmeNavigate);
   window.removeEventListener('eme:open',     onEmeOpen);
   window.removeEventListener('resize',       onResize);
@@ -334,6 +345,7 @@ function rename(title) { aiStore.renameSession(title); }
     <Transition name="float-slide">
       <div
         v-if="showFloat"
+        data-eme-float
         class="fixed z-50 flex flex-col"
         :style="fabStyle"
         :class="expanded

@@ -2,6 +2,7 @@
 import { ref, nextTick, computed } from 'vue';
 import { useEmeVoice } from '@/composables/useEmeVoice';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
+import { useEmeScreenContext } from '@/composables/useEmeScreenContext';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -16,6 +17,11 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'send', 'history']);
 
 const textareaEl = ref(null);
+
+// Trechos que a pessoa marcou com Ctrl+clique na tela. Ficam visíveis aqui em
+// cima porque ela precisa poder tirar antes de mandar: o que a Eme vai ler não
+// pode ser surpresa.
+const { referencias, removerReferencia, tela } = useEmeScreenContext();
 
 // ── Voz ───────────────────────────────────────────────────────────────────────
 const permStore = usePermissionStore();
@@ -116,6 +122,20 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
           : 'hover:shadow-elevated focus-within:border-accent/40 focus-within:shadow-glow-accent',
         containerStateClass,
       ]">
+    <!-- Referências da tela (Ctrl+clique) -->
+    <div v-if="referencias.length" class="flex flex-wrap gap-1.5 px-4 pt-3">
+      <span v-for="r in referencias" :key="r.id"
+        class="inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg
+               bg-accent-soft border border-accent/25 text-accent text-micro">
+        <i class="fas fa-crosshairs text-micro shrink-0"></i>
+        <span class="truncate max-w-[14rem]">{{ r.rotulo ? `${r.rotulo}: ${r.texto}` : r.texto }}</span>
+        <button type="button" @click="removerReferencia(r.id)"
+          class="shrink-0 opacity-60 hover:opacity-100" :title="`Tirar esta referência`">
+          <i class="fas fa-xmark text-micro"></i>
+        </button>
+      </span>
+    </div>
+
     <textarea
       ref="textareaEl"
       :value="modelValue"
