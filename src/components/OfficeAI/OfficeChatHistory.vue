@@ -81,10 +81,10 @@ const storageColor = computed(() =>
             :class="s.id === aiStore.currentSessionId
               ? 'bg-accent-soft/60 ring-2 ring-accent-ring/50'
               : ''">
-            <div class="flex-1 min-w-0" @click="open(s.id)">
+            <button type="button" class="flex-1 min-w-0 text-left focus-ring rounded-md" @click="open(s.id)">
               <p class="text-sm text-ink truncate">{{ s.title || 'Chat sem título' }}</p>
               <p class="text-micro text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</p>
-            </div>
+            </button>
             <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button @click.stop="aiStore.favoriteSession(s.id)"
                 class="h-7 w-7 grid place-items-center rounded-md text-data-warn hover:bg-data-warn/10 transition-colors">
@@ -112,10 +112,10 @@ const storageColor = computed(() =>
             :class="s.id === aiStore.currentSessionId
               ? 'bg-accent-soft/60 ring-2 ring-accent-ring/50'
               : ''">
-            <div class="flex-1 min-w-0" @click="open(s.id)">
+            <button type="button" class="flex-1 min-w-0 text-left focus-ring rounded-md" @click="open(s.id)">
               <p class="text-sm text-ink truncate">{{ s.title || 'Chat sem título' }}</p>
               <p class="text-micro text-ink-subtle font-mono">{{ fromNow(s.updated_at) }}</p>
-            </div>
+            </button>
             <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button @click.stop="aiStore.favoriteSession(s.id)"
                 class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-data-warn hover:bg-data-warn/10 transition-colors">

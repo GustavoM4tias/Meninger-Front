@@ -50,7 +50,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Viabilidade** `/viabilidade` · ` 99`
       <sub>views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue · 984L (+2 comp.) · 2 cor fixa, 1 tabela</sub>
 - [ ] **Checklists** `/checklists` · `100`
-      <sub>views/Office/Checklist/Index.vue · 3103L (+14 comp.) · 1 tabela</sub>
+      <sub>views/Office/Checklist/Index.vue · 3104L (+14 comp.) · 1 tabela</sub>
 - [ ] **Cobrança do Checklist** `/checklists/cobranca` · `100`
       <sub>views/Office/Checklist/Cobranca.vue · 2900L (+14 comp.) · 1 tabela</sub>
 - [ ] **Checklist** `/checklists/:id` · `100`

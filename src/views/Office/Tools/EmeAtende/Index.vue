@@ -498,13 +498,13 @@ onMounted(loadConversations)
         <div v-if="convLoading && !conversations.length" class="py-16 text-center text-ink-subtle"><i class="fas fa-spinner animate-spin text-2xl mb-3 block"></i>Carregando…</div>
         <div v-else class="space-y-2.5">
           <Surface v-for="c in conversations" :key="c.id" variant="raised" padding="sm">
-            <div class="flex items-center gap-3 flex-wrap cursor-pointer" @click="openConv(c)">
+            <button type="button" class="w-full text-left focus-ring flex items-center gap-3 flex-wrap cursor-pointer" @click="openConv(c)">
               <Badge :variant="stateVariant(c.state)" size="sm">{{ stateLabel(c.state) }}</Badge>
               <span class="text-sm font-semibold text-ink">{{ c.lead?.name || 'Sem nome' }}</span>
               <code class="text-xs font-mono text-ink-muted">{{ c.phone }}</code>
               <Badge v-if="c.lead?.status" :variant="leadVariant(c.lead.status)" size="sm">{{ c.lead.status }}</Badge>
               <span class="ml-auto text-xs text-ink-subtle">últ. msg do lead: {{ fmt(c.last_inbound_at) }}</span>
-            </div>
+            </button>
 
             <div v-if="convOpen === c.id" class="mt-4">
               <div v-if="!convDetail" class="py-6 text-center text-ink-subtle"><i class="fas fa-spinner animate-spin"></i></div>
@@ -748,7 +748,7 @@ onMounted(loadConversations)
         <div v-if="leadsLoading && !leads.length" class="py-16 text-center text-ink-subtle"><i class="fas fa-spinner animate-spin text-2xl mb-3 block"></i>Carregando…</div>
         <div v-else class="space-y-2.5">
           <Surface v-for="l in leads" :key="l.id" variant="raised" padding="sm">
-            <div class="flex items-center gap-3 flex-wrap cursor-pointer" @click="openLead(l)">
+            <button type="button" class="w-full text-left focus-ring flex items-center gap-3 flex-wrap cursor-pointer" @click="openLead(l)">
               <Badge v-if="l.temperatura" :variant="TEMP_VARIANT[l.temperatura] || 'neutral'" size="sm">
                 <i class="fas mr-1" :class="TEMP_ICON[l.temperatura]"></i>{{ l.temperatura }}
               </Badge>
@@ -759,7 +759,7 @@ onMounted(loadConversations)
               <code class="text-xs font-mono text-ink-muted">{{ l.phone }}</code>
               <span v-if="l.empreendimento" class="text-xs text-ink-muted">{{ l.empreendimento }}</span>
               <span class="ml-auto text-xs text-ink-subtle">{{ l.source }} · {{ fmt(l.created_at || l.createdAt) }}</span>
-            </div>
+            </button>
             <div v-if="leadOpen === l.id" class="mt-4">
               <div v-if="!leadDetail" class="py-6 text-center text-ink-subtle"><i class="fas fa-spinner animate-spin"></i></div>
               <template v-else>

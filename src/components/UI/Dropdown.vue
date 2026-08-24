@@ -59,7 +59,11 @@ defineExpose({ open: show, close, toggle });
 
 <template>
   <div class="relative inline-block">
-    <div ref="triggerRef" @click="toggle">
+    <!-- O `div` NAO precisa ser focavel: quem recebe o foco e o `<button>`
+         que o chamador poe no slot. Enter dispara o clique nele, o clique
+         sobe ate aqui e o menu abre. Focar os dois criaria duas paradas de
+         tabulacao para uma acao so. -->
+    <div ref="triggerRef" aria-haspopup="menu" :aria-expanded="open" @click="toggle">
       <slot name="trigger" :open="open" :toggle="toggle" />
     </div>
 

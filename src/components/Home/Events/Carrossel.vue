@@ -76,7 +76,9 @@ onUnmounted(() => {
     </button>
     <!-- Marcadores de Páginas -->
     <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-      <div v-for="(event, index) in props.eventos" :key="event.id" @click="goToSlide(index)" :class="{
+      <button v-for="(event, index) in props.eventos" :key="event.id" type="button"
+        :aria-label="`Ir para ${event.nome || event.titulo || 'evento'}`" :aria-current="currentIndex === index"
+        @click="goToSlide(index)" :class="{
         'w-7 h-1 rounded-full': true,
         'bg-surface-sunken': currentIndex !== index,
         'bg-gray-400': currentIndex === index,

@@ -464,8 +464,9 @@ async function submitNew() {
                 <div v-if="!filteredChecklists.length" class="text-center text-ink-subtle py-12 text-sm">Nenhum
                     checklist com esse termo.</div>
                 <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div v-for="c in filteredChecklists" :key="c.id" @click="router.push(`/checklists/${c.id}`)"
-                        class="surface-card p-4 cursor-pointer group animate-fade-in hover:-translate-y-0.5 hover:shadow-elevated hover:border-accent/40 transition-all duration-200">
+                    <button v-for="c in filteredChecklists" :key="c.id" type="button"
+                        @click="router.push(`/checklists/${c.id}`)"
+                        class="surface-card p-4 w-full text-left focus-ring group animate-fade-in hover:-translate-y-0.5 hover:shadow-elevated hover:border-accent/40 transition-all duration-200">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="flex items-center gap-1.5 min-w-0">
@@ -491,7 +492,7 @@ async function submitNew() {
                                 <span class="truncate max-w-[9rem]">{{ nextKeyDate(c).label }}: <span class="font-medium text-ink">{{ fmt(nextKeyDate(c).date) }}</span></span>
                             </span>
                         </div>
-                    </div>
+                    </button>
                 </div>
             </template>
         </div>

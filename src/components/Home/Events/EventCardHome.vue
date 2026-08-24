@@ -19,7 +19,7 @@ const formatDate = (dateString) => {
 </script>
 
 <template>
-    <div class="relative rounded-xl overflow-hidden h-full" @click="showEventDetails">
+    <button type="button" class="w-full text-left focus-ring relative rounded-xl overflow-hidden h-full" @click="showEventDetails">
         <!-- Define altura do Card -->
 
         <img :src="(event.images && event.images.length > 0) ? event.images[0] : '/noimg.jpg'"
@@ -56,5 +56,5 @@ const formatDate = (dateString) => {
                 </RouterLink>
             </div>
         </div>
-    </div>
+    </button>
 </template>

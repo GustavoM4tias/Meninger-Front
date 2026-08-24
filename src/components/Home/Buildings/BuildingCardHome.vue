@@ -16,7 +16,7 @@ const showBuildingDetails = () => {
 </script>
 
 <template>
-    <div class="relative rounded-xl overflow-hidden h-[30vh] max-h-[100%]" @click="showBuildingDetails">
+    <button type="button" class="w-full text-left focus-ring relative rounded-xl overflow-hidden h-[30vh] max-h-[100%]" @click="showBuildingDetails">
         <!-- Define altura do Card -->
 
         <img :src="building.foto" class="w-full h-full object-cover bg-center absolute z-0" /> <!-- Ajuste imagem -->
@@ -59,7 +59,7 @@ const showBuildingDetails = () => {
                 </RouterLink>
             </div>
         </div>
-    </div>
+    </button>
 </template>
 
 <style scoped>

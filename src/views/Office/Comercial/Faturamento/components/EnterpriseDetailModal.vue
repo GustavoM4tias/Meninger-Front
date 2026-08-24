@@ -1219,7 +1219,13 @@ const closeModal = () => emit('close');
                 : 'border-line surface-gradient'">
 
               <!-- Linha principal -->
-              <div class="px-3 sm:px-4 py-3 cursor-pointer" @click="toggleDetails(sale)">
+              <!-- Continua `div` porque tem <a> dentro, e link dentro de botao e
+                   HTML invalido. O teclado entra pelo tabindex + role. -->
+              <div class="px-3 sm:px-4 py-3 cursor-pointer focus-ring rounded-lg" role="button" tabindex="0"
+                :aria-expanded="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
+                @click="toggleDetails(sale)"
+                @keydown.enter.prevent="toggleDetails(sale)"
+                @keydown.space.prevent="toggleDetails(sale)">
                 <div class="flex items-start gap-3">
                   <!-- Avatar/ícone -->
                   <div class="h-9 w-9 shrink-0 rounded-lg grid place-items-center text-sm border"

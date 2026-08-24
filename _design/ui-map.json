@@ -1106,7 +1106,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 658,
+      "lines": 659,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -1123,7 +1123,7 @@
       "spinner": false,
       "skeleton": false,
       "breakpoints": 19,
-      "divClick": 1,
+      "divClick": 0,
       "kids": [
         {
           "file": "views/Office/Checklist/components/AttachmentViewerModal.vue",
@@ -1336,7 +1336,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 3103,
+      "totalLines": 3104,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4782,7 +4782,7 @@
       "spinner": false,
       "skeleton": false,
       "breakpoints": 13,
-      "divClick": 2,
+      "divClick": 0,
       "kids": [],
       "totalLines": 1091,
       "totalHardcoded": 0,

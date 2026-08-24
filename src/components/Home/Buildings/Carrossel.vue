@@ -76,12 +76,13 @@ onUnmounted(() => {
     </button>
     <!-- Marcadores de Páginas -->
     <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-      <div v-for="(building, index) in props.buildings" :key="building.id" @click="goToSlide(index)" :class="{
-        'w-5 h-1 rounded-full': true,
+      <button v-for="(building, index) in props.buildings" :key="building.id" type="button"
+        :aria-label="`Ir para ${building.nome}`" :aria-current="currentIndex === index"
+        @click="goToSlide(index)" :class="{
+        'w-5 h-1 rounded-full focus-ring': true,
         'bg-surface-sunken': currentIndex !== index,
-        'bg-gray-400': currentIndex === index,
-        'cursor-pointer': true
-      }"></div>
+        'bg-ink-subtle': currentIndex === index,
+      }"></button>
     </div>
 
   </div>
