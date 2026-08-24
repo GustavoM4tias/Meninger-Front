@@ -342,6 +342,43 @@ Hífen, nunca travessão.
 
 ---
 
+## Carga: `Skeleton`, não `Spinner`
+
+A bolinha girando no meio da área vazia não diz **o que** vem, e o layout pula
+inteiro quando o conteúdo chega - quem já começou a ler perde a linha. O
+`Skeleton` ocupa o espaço com a forma certa desde o primeiro quadro.
+
+A variante segue o que vem depois: `row` para lista, `card` para grade, `stat`
+para faixa de números, `table` para tabela, `text` para parágrafo, `chart` para
+gráfico. No Kanban do Planner o esqueleto é o próprio quadro - três colunas de
+cartões - porque a bolinha no centro não dizia que o que vinha era um Kanban.
+
+**O `Spinner` continua certo onde indica OCUPADO, não carga de conteúdo:**
+
+- dentro de botão (salvar, enviar);
+- dentro de campo (busca de CEP, autocomplete);
+- no rodapé de "carregando mais N de M" do scroll incremental, onde o conteúdo
+  já está na tela e o que gira é a continuação;
+- numa ação sem forma para o esqueleto imitar ("Autenticando...", "Abrindo...").
+
+---
+
+## Alvo clicável tem foco
+
+`<div @click>` responde ao mouse e a mais nada: não recebe foco, não dispara com
+Enter nem espaço, e o leitor de tela não anuncia que ali há uma ação. Cartão que
+é o único caminho para o detalhe vira uma tela inalcançável por teclado.
+
+**Se é ação, é `<button type="button">`.** Quando já existe `<a>` ou `<button>`
+dentro (aninhar interativo é HTML inválido), fica o `div` com `tabindex="0"`,
+`role="button"` e o mesmo gatilho em `@keydown.enter` e `@keydown.space`.
+
+`@click.stop` e `@click.self` **não** entram nessa regra: não são ação, são
+controle de propagação - o fundo que fecha, a área que impede o clique de subir.
+Não existe "clicar" neles, então não levam foco.
+
+---
+
 ## Aviso e confirmação
 
 São duas peças, e só duas.
