@@ -31,7 +31,6 @@ import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useNotificationStore();
 const mural = useMuralStore();
 const route = useRoute();
-const can = useCan('/mural/admin');
 
 const tab = ref('all'); // all | unread
 // A origem também é PORTA DE ENTRADA: /mural cai aqui já recortado no mural, e
