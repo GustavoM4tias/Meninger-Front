@@ -1,7 +1,11 @@
 <script setup>
 // Painel flutuante do mural. Montado no OfficeShell; visibilidade controlada pelo
-// muralStore (panelOpen). Flutua sozinho quando chega algo novo que exige ciência,
-// e também abre/fecha ao clicar no ícone do mural na nav (MuralBell).
+// muralStore (panelOpen). Flutua sozinho quando chega comunicado novo que exige
+// ciência, e é a cobrança que segue a pessoa por qualquer tela.
+//
+// Desde 2026-08-24 não há mais o ícone do mural na nav para reabri-lo: fechou,
+// só volta com algo novo. Quem quiser ver a pendência de novo tem a faixa no
+// sino de notificações e a própria caixa (/mural recorta a caixa no mural).
 //
 // Mostra os comunicados ativos do usuário (pendentes de ciência primeiro), com
 // "Li e estou ciente" onde aplicável. Sempre dá feedback ao abrir: se não houver
@@ -90,7 +94,12 @@ function onResize() { applyClamp(); }
 watch(open, (v) => { if (v) requestAnimationFrame(applyClamp); });
 
 onMounted(() => {
+    // O fetch e o polling do mural eram do MuralBell, o segundo sino da barra de
+    // cima. Ele saiu (comunicado agora chega pelo sino de notificações, que é um
+    // só), e a busca veio para cá - este card é quem fica montado o tempo todo e
+    // é ele que precisa saber quando chega comunicado obrigatório novo.
     if (!store.items.length) store.fetchMine();
+    store.startPolling(60000);
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(POS_KEY) || 'null'); } catch { /* noop */ }
     pos.value = (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) ? saved : defaultPos();
@@ -98,6 +107,7 @@ onMounted(() => {
     window.addEventListener('resize', onResize);
 });
 onBeforeUnmount(() => {
+    store.stopPolling();
     window.removeEventListener('resize', onResize);
     window.removeEventListener('pointermove', onDragMove);
     window.removeEventListener('pointerup', onDragEnd);

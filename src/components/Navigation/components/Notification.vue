@@ -12,9 +12,16 @@ import { onMounted, onBeforeUnmount, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import NotificationItem from './NotificationItem.vue';
 import { useNotificationStore } from '@/stores/Config/notificationStore';
+import { useMuralStore } from '@/stores/Mural/muralStore';
 import Dropdown from '@/components/UI/Dropdown.vue';
 
 const notificationStore = useNotificationStore();
+// O sino é UM só desde 2026-08-24: o megafone do mural saiu da barra. Comunicado
+// chega aqui como aviso, mas a CIÊNCIA pendente é a única coisa que cobra ação,
+// então ela ganha uma faixa própria no topo - contar junto com as não lidas
+// dobraria o número (o comunicado publicado já gera uma notificação).
+const mural = useMuralStore();
+const cienciaPendente = computed(() => mural.ackPendingCount || 0);
 
 const unreadCount = computed(() => notificationStore.unread);
 // O sino mostra o topo da caixa: as mais recentes, lidas ou não.
@@ -82,6 +89,18 @@ const onItemClick = (e, close) => {
             <span class="hidden sm:inline">Marcar tudo</span>
           </button>
         </div>
+
+        <!-- Pendência de ciência: a única coisa aqui que cobra ação. -->
+        <RouterLink v-if="cienciaPendente" to="/mural" @click="close()"
+          class="flex items-center gap-2 px-3 sm:px-4 py-2.5 border-b border-line
+                 bg-data-warn-soft hover:bg-data-warn-soft/70 transition-colors duration-120">
+          <i class="fas fa-hand text-data-warn text-sm shrink-0"></i>
+          <span class="text-xs text-ink flex-1 min-w-0">
+            <strong class="font-semibold">{{ cienciaPendente }}</strong>
+            {{ cienciaPendente === 1 ? 'comunicado aguarda' : 'comunicados aguardam' }} sua confirmação
+          </span>
+          <i class="fas fa-arrow-right text-data-warn text-[10px] shrink-0"></i>
+        </RouterLink>
 
         <!-- Lista -->
         <div v-if="items.length > 0" class="flex-1 overflow-y-auto overscroll-contain p-2 space-y-1.5">

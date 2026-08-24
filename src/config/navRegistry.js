@@ -374,7 +374,13 @@ export const navRegistry = [
                     // origem "mural": as duas telas desenhavam o mesmo dado. O item
                     // mantém o nome porque é assim que a empresa chama a coisa, e é
                     // por ele que se chega ao mural — /notifications não está no menu.
-                    { route: '/mural', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', permissionManaged: false },
+                    // UM item para a caixa. "Mural de Avisos" e o sino apontavam para
+                    // a mesma tela por caminhos diferentes, e na barra de cima ainda
+                    // havia dois ícones. Agora o menu tem um nome só, e /mural segue
+                    // vivo como atalho (recorta a caixa na origem mural) para os links
+                    // já espalhados - só não aparece mais como item próprio.
+                    { route: '/notifications', name: 'Avisos e notificações', icon: 'fas fa-bell', permissionManaged: false },
+                    { route: '/mural', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', permissionManaged: false, hiddenInNav: true },
                     // Delegável desde 2026-08-20: redigir, definir público e
                     // publicar vão por alçada; EXCLUIR comunicado segue admin
                     // (some com a trilha de leitura) — ver screenCapabilities.
