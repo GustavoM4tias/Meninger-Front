@@ -139,6 +139,20 @@ export const useTeamsStore = defineStore('teams', () => {
         await fetchRange(weekStart.value, weekEnd.value);
     }
 
+    /**
+     * Quem esta livre no intervalo. Devolve, por pessoa, os blocos ocupados -
+     * sem o assunto do compromisso alheio, que o Graph nao entrega e nem
+     * deveria. Erro por pessoa vem no campo `erro`, para a tela nao chamar de
+     * livre quem ela apenas nao conseguiu consultar.
+     */
+    async function checkSchedule(emails, start, end) {
+        const data = await requestWithAuth(`${BASE}/schedule`, {
+            method: 'POST',
+            body: JSON.stringify({ emails, start, end }),
+        });
+        return Array.isArray(data) ? data : [];
+    }
+
     async function fetchCurrent() {
         if (currentView.value === 'week' || currentView.value === 'list') {
             await fetchRange(weekStart.value, weekEnd.value);
@@ -266,7 +280,7 @@ export const useTeamsStore = defineStore('teams', () => {
         weekStart, weekDays, weekEnd, dayDays, monthDays,
         isCurrentWeek, isCurrentPeriod, eventsByDay, upcomingEvents,
         nextWeek, prevWeek, nextPeriod, prevPeriod, goToToday, switchView,
-        fetchWeek, fetchCurrent, fetchRange, getEvent,
+        fetchWeek, fetchCurrent, fetchRange, getEvent, checkSchedule,
         createScheduledMeeting, createInstantMeeting,
         cancelEvent, deleteEvent, updateEvent,
     };

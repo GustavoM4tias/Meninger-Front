@@ -212,13 +212,38 @@
                 </div>
                 <div v-if="form.attendees.length" class="flex flex-wrap gap-1.5">
                   <span v-for="(a, i) in form.attendees" :key="i"
-                    class="flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium border border-accent/25 ">
-                    <i class="fas fa-user text-[9px] opacity-60"></i>
+                    class="flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-xs font-medium border transition-colors"
+                    :class="ocupacao[a] === true
+                      ? 'bg-data-neg/10 text-data-neg border-data-neg/30'
+                      : (ocupacao[a] === false
+                          ? 'bg-data-pos/10 text-data-pos border-data-pos/30'
+                          : 'bg-accent/10 text-accent border-accent/25')"
+                    :title="ocupacao[a] === true ? 'Ocupado neste horário' : (ocupacao[a] === false ? 'Livre neste horário' : '')">
+                    <i class="text-[9px] opacity-70"
+                      :class="ocupacao[a] === true ? 'fas fa-circle-exclamation'
+                            : (ocupacao[a] === false ? 'fas fa-circle-check' : 'fas fa-user')"></i>
                     {{ a }}
                     <button @click="form.attendees.splice(i, 1)"
                       class="w-4 h-4 rounded-full flex items-center justify-center hover:bg-data-neg/10  hover:text-data-neg transition-colors">
                       <i class="fas fa-xmark text-[9px]"></i>
                     </button>
+                  </span>
+                </div>
+
+                <!-- Disponibilidade: antes o horário era escolhido no escuro e o
+                     conflito aparecia remarcando. O Graph diz quem está ocupado
+                     sem revelar o assunto do compromisso alheio. -->
+                <div v-if="form.attendees.length && !form.isAllDay" class="mt-2 flex items-center gap-2 flex-wrap">
+                  <button type="button" @click="verificarDisponibilidade" :disabled="checandoAgenda"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-9 rounded-lg border border-line
+                           text-micro font-medium text-ink-muted hover:text-accent hover:border-accent/40
+                           disabled:opacity-50 transition-colors">
+                    <i :class="checandoAgenda ? 'fas fa-spinner fa-spin' : 'fas fa-calendar-check'" class="text-micro"></i>
+                    {{ checandoAgenda ? 'Consultando agendas...' : 'Quem está livre neste horário?' }}
+                  </button>
+                  <span v-if="resumoAgenda" class="text-micro"
+                    :class="conflitos.length ? 'text-data-neg' : 'text-data-pos'">
+                    {{ resumoAgenda }}
                   </span>
                 </div>
                 <p v-else class="text-xs text-ink-subtle mt-1.5 flex items-center gap-1">
@@ -324,6 +349,54 @@ function defaultForm() {
 }
 
 const form = ref(defaultForm());
+
+// ── Disponibilidade dos convidados ────────────────────────────────────────────
+// `ocupacao` é e-mail → true (ocupado) | false (livre) | undefined (não sei).
+// Undefined é estado legítimo: enquanto ninguém consultou, a etiqueta não finge
+// saber. Trocar o horário zera tudo, porque a resposta era daquele horário.
+const ocupacao = ref({});
+const checandoAgenda = ref(false);
+const resumoAgenda = ref('');
+
+const conflitos = computed(() =>
+  Object.entries(ocupacao.value).filter(([, ocupado]) => ocupado).map(([email]) => email)
+);
+
+function limparDisponibilidade() {
+  ocupacao.value = {};
+  resumoAgenda.value = '';
+}
+
+watch(() => [form.value.date, form.value.startTime, form.value.endTime], limparDisponibilidade);
+
+async function verificarDisponibilidade() {
+  if (!form.value.attendees.length) return;
+  checandoAgenda.value = true;
+  resumoAgenda.value = '';
+  try {
+    const inicio = `${form.value.date}T${form.value.startTime}:00`;
+    const fim    = `${form.value.date}T${form.value.endTime}:00`;
+    const agendas = await ts.checkSchedule(form.value.attendees, inicio, fim);
+
+    const mapa = {};
+    for (const p of agendas) {
+      // Quem o Graph não conseguiu consultar fica sem etiqueta, em vez de
+      // aparecer como livre — dizer "livre" sem saber é pior que não dizer.
+      mapa[p.email] = p.erro ? undefined : !p.livre;
+    }
+    ocupacao.value = mapa;
+
+    const ocupados = Object.entries(mapa).filter(([, v]) => v).map(([e]) => e);
+    const semResposta = agendas.filter(p => p.erro).length;
+    resumoAgenda.value = ocupados.length
+      ? `${ocupados.length} ocupado(s) neste horário.`
+      : `Todos livres${semResposta ? ` (${semResposta} agenda(s) sem resposta)` : ''}.`;
+  } catch (err) {
+    resumoAgenda.value = err?.message || 'Não foi possível consultar as agendas.';
+  } finally {
+    checandoAgenda.value = false;
+  }
+}
 
 // ── Edição: alcance (ocorrência × série) e recorrência ────────────────────────
 // Ao editar só a ocorrência, a seção de recorrência fica oculta e a chave

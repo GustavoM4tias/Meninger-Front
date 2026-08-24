@@ -59,8 +59,62 @@
 
       <div class="space-y-5">
 
+        <!-- ── Atalhos pessoais ── -->
+        <!-- Só as bibliotecas de time estavam expostas. A pasta pessoal e o que
+             os outros compartilharam são metade de onde o documento realmente
+             está, principalmente o que ainda é rascunho. -->
+        <div class="flex flex-wrap gap-2">
+          <Button size="sm"
+            :variant="sp.selectedSite?.id === '__me__' ? 'primary' : 'outline'"
+            icon="fas fa-user" @click="sp.openMyDrive()">
+            Meus arquivos
+          </Button>
+          <Button size="sm"
+            :variant="sp.viewMode === 'shared' ? 'primary' : 'outline'"
+            icon="fas fa-user-group" @click="sp.openSharedWithMe()">
+            Compartilhados comigo
+          </Button>
+        </div>
+
+        <!-- ── Compartilhados comigo: lista plana ── -->
+        <!-- Cada item vive na biblioteca de quem compartilhou, então isto não é
+             uma pasta navegável: é uma lista de atalhos. -->
+        <section v-if="sp.viewMode === 'shared'"
+          class="rounded-2xl border border-line bg-surface-raised overflow-hidden">
+          <div class="px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/50">
+            <p class="text-xs font-semibold text-ink-muted uppercase tracking-wide">
+              {{ sp.sharedItems.length }} item(ns) compartilhado(s) com você
+            </p>
+          </div>
+
+          <EmptyState v-if="!sp.loading && !sp.sharedItems.length"
+            icon="fas fa-user-group"
+            title="Nada compartilhado com você"
+            description="Quando alguém compartilhar um arquivo ou pasta, ele aparece aqui." />
+
+          <ul v-else class="divide-y divide-line">
+            <li v-for="it in sp.sharedItems" :key="it.id">
+              <button type="button"
+                @click="it.isFolder ? sp.enterSharedFolder(it) : openSharedFile(it)"
+                class="w-full text-left px-4 sm:px-5 py-3 min-h-[3rem] flex items-center gap-3 hover:bg-surface-hover transition-colors">
+                <i :class="it.isFolder ? 'fas fa-folder text-accent' : 'far fa-file text-ink-subtle'"
+                  class="text-sm w-4 shrink-0"></i>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-sm text-ink truncate">{{ it.name }}</span>
+                  <span class="block text-micro text-ink-subtle truncate">
+                    <template v-if="it.compartilhadoPor">de {{ it.compartilhadoPor }} · </template>
+                    <template v-if="!it.isFolder">{{ Math.round((it.size || 0) / 1024) }} KB</template>
+                    <template v-else>pasta</template>
+                  </span>
+                </span>
+                <i class="fas fa-chevron-right text-micro text-ink-subtle shrink-0"></i>
+              </button>
+            </li>
+          </ul>
+        </section>
+
         <!-- ── Selectors ── -->
-        <Surface variant="raised" padding="md" class="surface-gradient">
+        <Surface v-if="sp.viewMode !== 'shared'" variant="raised" padding="md" class="surface-gradient">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
@@ -461,6 +515,20 @@ function openInNativeApp(item) {
 
 // ── Action handler (from FileGrid) ────────────────────────────────────────────
 const previewItem = ref(null);
+
+/**
+ * Abre um arquivo vindo de "compartilhados comigo".
+ * Ele mora na biblioteca de quem compartilhou, então a prévia depende do driveId
+ * de origem que veio no item - não do drive selecionado na tela.
+ */
+async function openSharedFile(item) {
+  let previewable = item;
+  if (!item.downloadUrl && item.driveId) {
+    const detail = await sp.fetchItemDetail(item.driveId, item.id);
+    if (detail) previewable = { ...item, ...detail, driveId: item.driveId };
+  }
+  previewItem.value = previewable;
+}
 
 async function handleAction(type, item) {
   switch (type) {

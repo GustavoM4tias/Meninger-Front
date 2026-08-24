@@ -92,6 +92,59 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         return Array.isArray(data) ? data : [];
     }
 
+    // ── Atalhos pessoais: OneDrive e compartilhados comigo ────────────────────
+    //
+    // Só os sites da empresa estavam expostos, e é no OneDrive que mora o
+    // documento em rascunho — o que a pessoa ainda não publicou em biblioteca de
+    // time. "Compartilhados comigo" é uma lista PLANA: cada item vive na
+    // biblioteca de quem compartilhou, então abrir depende do driveId de origem
+    // que vem no próprio item, não do drive selecionado.
+    const sharedItems = ref([]);
+    const viewMode = ref('library'); // library | shared
+
+    async function openMyDrive() {
+        loading.value = true; error.value = null;
+        viewMode.value = 'library';
+        try {
+            const drive = await requestWithAuth(`${BASE}/my-drive`);
+            selectedSite.value = { id: '__me__', name: 'Meus arquivos' };
+            drives.value = [drive];
+            searchQuery.value = ''; searchResults.value = [];
+            await selectDrive(drive);
+        } catch (err) { error.value = err.message; noteGraphError(err); }
+        finally { loading.value = false; }
+    }
+
+    async function openSharedWithMe() {
+        loading.value = true; error.value = null;
+        viewMode.value = 'shared';
+        selectedSite.value = { id: '__shared__', name: 'Compartilhados comigo' };
+        selectedDrive.value = null;
+        drives.value = []; items.value = []; breadcrumb.value = [];
+        searchQuery.value = ''; searchResults.value = [];
+        try {
+            sharedItems.value = await _getList(`${BASE}/shared-with-me`);
+        } catch (err) { error.value = err.message; noteGraphError(err); sharedItems.value = []; }
+        finally { loading.value = false; }
+    }
+
+    /**
+     * Entra numa pasta que veio de "compartilhados comigo".
+     * O item traz o driveId de quem compartilhou; daí em diante a navegação é
+     * normal, dentro daquela biblioteca.
+     */
+    async function enterSharedFolder(item) {
+        if (!item?.driveId) return;
+        viewMode.value = 'library';
+        selectedDrive.value = { id: item.driveId, name: item.name || 'Compartilhado' };
+        breadcrumb.value = [{ id: item.id, name: item.name }];
+        loading.value = true; error.value = null;
+        try {
+            items.value = await _getList(`${BASE}/drives/${item.driveId}/items/${item.id}/children`);
+        } catch (err) { error.value = err.message; noteGraphError(err); }
+        finally { loading.value = false; }
+    }
+
     // ── Computed ──────────────────────────────────────────────────────────────
     const currentFolderId = computed(() =>
         breadcrumb.value.length ? breadcrumb.value[breadcrumb.value.length - 1].id : null
@@ -384,6 +437,7 @@ export const useSharepointStore = defineStore('sharepoint', () => {
         loading, error, listTruncated, searchTruncated, uploadMaxMb, fetchUploadLimits,
         currentFolderId, isAtRoot,
         fetchSites, selectSite, selectDrive,
+        sharedItems, viewMode, openMyDrive, openSharedWithMe, enterSharedFolder,
         defaultLocation, isCurrentDefault, setDefaultLocation, clearDefaultLocation, initWithDefault,
         openFolder, navigateToBreadcrumb,
         doSearch, clearSearch,
