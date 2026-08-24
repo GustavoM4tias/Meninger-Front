@@ -237,7 +237,7 @@ onMounted(() => { if (!all.value.length) store.fetchReport(); });
                         <p class="text-xs text-ink-subtle truncate">{{ fmtCnpj(i.cnpj) }}</p>
                     </div>
                     <div class="shrink-0 flex flex-col items-end gap-1.5">
-                        <span class="h-2 w-2 rounded-full" :class="i.ativo === 'S' ? 'bg-data-pos' : 'bg-slate-400'"></span>
+                        <span class="h-2 w-2 rounded-full" :class="i.ativo === 'S' ? 'bg-data-pos' : 'bg-data-neutral'"></span>
                         <i class="fas fa-chevron-right text-ink-subtle text-xs"></i>
                     </div>
                 </button>

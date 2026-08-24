@@ -75,11 +75,11 @@ const isVendida = computed(() => props.reserva?.vendida === 'S' || /vendid/i.tes
 const isCancelada = computed(() => /cancelad|distrato/i.test(etapaCrm.value) || /cancelad|distrato/i.test(props.reserva?.status_repasse || ''));
 
 const bannerGradient = computed(() => {
-  if (isVendida.value)   return 'from-data-pos via-emerald-600 to-teal-600';
-  if (isCancelada.value) return 'from-data-neg via-red-600 to-data-neg';
-  if (props.reserva?.status_repasse) return 'from-accent via-sky-600 to-accent';
-  if (/contrato/i.test(etapaCrm.value)) return 'from-accent via-violet-600 to-accent';
-  return 'from-data-warn via-orange-600 to-data-warn';
+  if (isVendida.value)   return 'from-data-pos to-data-pos/60';
+  if (isCancelada.value) return 'from-data-neg to-data-neg/60';
+  if (props.reserva?.status_repasse) return 'from-accent to-accent/60';
+  if (/contrato/i.test(etapaCrm.value)) return 'from-accent to-accent/60';
+  return 'from-data-warn to-data-warn/60';
 });
 </script>
 

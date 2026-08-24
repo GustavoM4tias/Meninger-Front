@@ -200,7 +200,7 @@ async function confirmFeedback({ comment }) {
               </div>
 
               <div v-if="aiStore.isAtStorageLimit"
-                class="relative z-10 flex items-center gap-2 mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-700 dark:text-amber-300">
+                class="relative z-10 flex items-center gap-2 mt-3 p-3 rounded-xl bg-data-warn/10 border border-data-warn/25 text-sm text-data-warn">
                 <i class="fas fa-database"></i>
                 Limite de 20 MB atingido.
                 <button class="underline ml-1" @click="aiStore.historyOpen = true">Exclua alguns chats</button> para continuar.

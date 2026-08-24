@@ -289,7 +289,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
       </div>
 
       <template v-else>
-        <p v-if="erroExport" class="mx-auto mb-4 max-w-3xl rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-600 dark:text-rose-400">
+        <p v-if="erroExport" class="mx-auto mb-4 max-w-3xl rounded-lg border border-data-neg/30 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
           {{ erroExport }}
         </p>
         <div ref="reportEl">
@@ -339,14 +339,14 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : null)
                    está com o número da última publicação, não em branco -->
               <div
                 v-if="live.datasetErrors.value.length"
-                class="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+                class="mt-2 rounded-lg border border-data-warn/40 bg-data-warn/10 px-3 py-2 text-xs text-data-warn"
               >
                 <i class="fas fa-triangle-exclamation mr-1.5" />
                 <span v-for="(d, i) in live.datasetErrors.value" :key="d.id">
                   <template v-if="i">; </template>{{ d.label }}: {{ d.error }}
                 </span>
               </div>
-              <p v-if="live.error.value" class="mt-2 text-xs text-rose-600 dark:text-rose-400">
+              <p v-if="live.error.value" class="mt-2 text-xs text-data-neg">
                 {{ live.error.value }}
               </p>
             </template>

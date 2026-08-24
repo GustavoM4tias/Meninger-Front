@@ -214,7 +214,7 @@ function ringColorForLevel(level) {
     'ring-accent/60',     // root
     'ring-accent/50',   // level 1
     'ring-accent/45',   // level 2
-    'ring-pink-500/40',     // level 3
+    'ring-series-5/40',     // level 3
     'ring-data-warn/40',    // level 4
     'ring-data-pos/40',  // level 5+
   ];
@@ -226,7 +226,7 @@ function avatarBgForLevel(level) {
     'bg-accent/10',
     'bg-accent/10',
     'bg-accent/10',
-    'bg-pink-500/10',
+    'bg-series-5/10',
     'bg-data-warn/10',
     'bg-data-pos/10',
   ];

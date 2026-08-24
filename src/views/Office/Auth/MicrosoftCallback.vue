@@ -59,6 +59,7 @@ const ERROR_MESSAGES = {
 // feito. Antes esse botão caía no fluxo de login e trocava a sessão pela conta
 // escolhida na tela da Microsoft.
 const isLinkMode = ref(false);
+const isMailMode = ref(false);
 const linkError  = ref('');
 
 function describeLinkError(code, expected, got) {
@@ -73,7 +74,7 @@ function describeLinkError(code, expected, got) {
   return ERROR_MESSAGES[code] || 'Não foi possível conectar sua conta Microsoft.';
 }
 
-function goToAccount() { router.push('/settings/account'); }
+function goToAccount() { router.push(isMailMode.value ? '/settings/outlook-lab' : '/settings/account'); }
 
 async function loadSetupOptions() {
   try {
@@ -123,12 +124,16 @@ onMounted(async () => {
   const code   = params.get('code');
   const error  = params.get('error');
 
-  // ── Vínculo: o backend já gravou (ou recusou). Nada a trocar aqui. ─────────
-  if (params.get('mode') === 'link') {
+  // ── Vínculo e autorização de e-mail: o backend já gravou (ou recusou).
+  //    Nada a trocar aqui, e a sessão do Office não é tocada. ────────────────
+  const mode = params.get('mode');
+  if (mode === 'link' || mode === 'mail') {
     isLinkMode.value = true;
+    isMailMode.value = mode === 'mail';
+    const back = isMailMode.value ? '/settings/outlook-lab' : '/settings/account';
     if (params.get('linked') === '1') {
       state.value = 'success';
-      setTimeout(() => router.push('/settings/account'), 1400);
+      setTimeout(() => router.push(back), 1400);
     } else {
       linkError.value = describeLinkError(error, params.get('expected'), params.get('got'));
       state.value = 'error';
@@ -229,7 +234,7 @@ function goToLogin() { router.push({ name: 'login' }); }
 
           <div>
             <label class="block text-xs font-medium text-ink-muted mb-1.5">
-              Cidade <span class="text-red-500">*</span>
+              Cidade <span class="text-data-neg">*</span>
             </label>
             <MultiSelector :model-value="citySelection"
               @update:modelValue="citySelection = $event"
@@ -244,7 +249,7 @@ function goToLogin() { router.push({ name: 'login' }); }
           </p>
 
           <Transition name="fade">
-            <p v-if="setupError" class="text-xs text-red-500 flex items-center gap-1">
+            <p v-if="setupError" class="text-xs text-data-neg flex items-center gap-1">
               <i class="fas fa-circle-exclamation"></i>{{ setupError }}
             </p>
           </Transition>
@@ -259,7 +264,7 @@ function goToLogin() { router.push({ name: 'login' }); }
     <!-- Pendente de aprovação -->
     <template v-else-if="state === 'pending'">
       <div class="text-center max-w-sm px-6">
-        <div class="h-12 w-12 grid place-items-center mx-auto mb-3 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+        <div class="h-12 w-12 grid place-items-center mx-auto mb-3 rounded-full bg-data-warn/15 text-data-warn">
           <i class="fas fa-user-clock text-lg" />
         </div>
         <h2 class="text-base font-semibold text-ink mb-2">Cadastro em aprovação</h2>
@@ -275,11 +280,11 @@ function goToLogin() { router.push({ name: 'login' }); }
     <!-- Sucesso -->
     <template v-else-if="state === 'success'">
       <div class="text-center max-w-sm px-6">
-        <div class="h-12 w-12 grid place-items-center mx-auto mb-3 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+        <div class="h-12 w-12 grid place-items-center mx-auto mb-3 rounded-full bg-data-pos/15 text-data-pos">
           <i class="fas fa-check text-lg" />
         </div>
         <h2 class="text-base font-semibold text-ink mb-1">
-          {{ isLinkMode ? 'Conta Microsoft conectada!' : (isNew ? 'Conta criada com sucesso!' : 'Login realizado!') }}
+          {{ isMailMode ? 'Acesso ao e-mail autorizado!' : (isLinkMode ? 'Conta Microsoft conectada!' : (isNew ? 'Conta criada com sucesso!' : 'Login realizado!')) }}
         </h2>
         <p class="text-sm text-ink-muted">Redirecionando...</p>
       </div>
@@ -288,7 +293,7 @@ function goToLogin() { router.push({ name: 'login' }); }
     <!-- Erro -->
     <template v-else-if="state === 'error'">
       <div class="text-center max-w-sm px-6">
-        <div class="h-12 w-12 grid place-items-center mx-auto mb-3 rounded-full bg-red-500/15 text-red-600 dark:text-red-400">
+        <div class="h-12 w-12 grid place-items-center mx-auto mb-3 rounded-full bg-data-neg/15 text-data-neg">
           <i class="fas fa-xmark text-lg" />
         </div>
         <h2 class="text-base font-semibold text-ink mb-2">
@@ -297,7 +302,7 @@ function goToLogin() { router.push({ name: 'login' }); }
         <p class="text-sm text-ink-muted mb-4">{{ isLinkMode ? linkError : errorMessage }}</p>
         <!-- No vinculo a sessao do Office continua de pe: devolver para o login
              seria expulsar quem nunca saiu. -->
-        <Button v-if="isLinkMode" @click="goToAccount">Voltar para Minha conta</Button>
+        <Button v-if="isLinkMode" @click="goToAccount">{{ isMailMode ? 'Voltar para o laboratório' : 'Voltar para Minha conta' }}</Button>
         <Button v-else @click="goToLogin">Voltar ao login</Button>
       </div>
     </template>

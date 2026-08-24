@@ -17,10 +17,10 @@ const limit = 30;
 const offset = ref(0);
 
 const TYPE_META = {
-  'event.created':   { icon: 'fas fa-calendar-plus',   accent: 'text-emerald-500',  label: 'Evento' },
-  'event.reminder':  { icon: 'fas fa-bell',            accent: 'text-amber-500',    label: 'Lembrete' },
-  'support.opened':  { icon: 'fas fa-life-ring',       accent: 'text-sky-500',      label: 'Suporte' },
-  'support.updated': { icon: 'fas fa-comments',        accent: 'text-sky-500',      label: 'Suporte' },
+  'event.created':   { icon: 'fas fa-calendar-plus',   accent: 'text-data-pos',  label: 'Evento' },
+  'event.reminder':  { icon: 'fas fa-bell',            accent: 'text-data-warn',    label: 'Lembrete' },
+  'support.opened':  { icon: 'fas fa-life-ring',       accent: 'text-accent',      label: 'Suporte' },
+  'support.updated': { icon: 'fas fa-comments',        accent: 'text-accent',      label: 'Suporte' },
   'generic':         { icon: 'fas fa-circle-info',     accent: 'text-ink-muted',    label: 'Aviso' },
 };
 const metaOf = (t) => TYPE_META[t] || TYPE_META.generic;
@@ -144,7 +144,7 @@ const handleRemove = (e, n) => { e.preventDefault(); e.stopPropagation(); store.
         <button type="button" @click="(e) => handleRemove(e, n)"
           class="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-md
                  text-ink-subtle opacity-0 group-hover:opacity-100
-                 hover:bg-surface-sunken hover:text-red-500 transition-all"
+                 hover:bg-surface-sunken hover:text-data-neg transition-all"
           title="Remover">
           <i class="fas fa-xmark text-[11px]"></i>
         </button>

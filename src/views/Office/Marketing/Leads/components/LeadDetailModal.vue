@@ -56,9 +56,9 @@ const bannerGradient = computed(() => {
   const s = props.lead?.situacao_nome || '';
   if (['Vendido', 'Venda Realizada'].includes(s))   return 'from-data-pos via-data-pos to-series-3';
   if (['Cancelado', 'Descartado'].includes(s))      return 'from-ink-muted via-ink-subtle to-ink-muted';
-  if (['Em Negociação', 'Reservado', 'Com Reserva'].includes(s)) return 'from-data-warn via-orange-600 to-data-warn';
-  if (['Em Análise de Crédito'].includes(s))        return 'from-accent via-violet-600 to-accent';
-  return 'from-accent via-blue-600 to-accent';
+  if (['Em Negociação', 'Reservado', 'Com Reserva'].includes(s)) return 'from-data-warn to-data-warn/60';
+  if (['Em Análise de Crédito'].includes(s))        return 'from-accent to-accent/60';
+  return 'from-accent to-accent/60';
 });
 
 const statusVariant = computed(() => {

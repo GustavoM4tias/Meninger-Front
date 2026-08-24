@@ -64,11 +64,11 @@ const fmtMoney = (v) => {
 // Banner gradient by status
 const bannerGradient = computed(() => {
   const s = props.precadastro?.situacao_nome || '';
-  if (/aprovad/i.test(s) && !/restri/i.test(s)) return 'from-data-pos via-emerald-600 to-teal-600';
-  if (/reserva/i.test(s))                       return 'from-data-warn via-orange-600 to-data-warn';
-  if (/reprovad|negad|cancelad|distrat/i.test(s)) return 'from-data-neg via-red-600 to-data-neg';
-  if (/análise|analise|aguardando/i.test(s))    return 'from-accent via-violet-600 to-accent';
-  return 'from-accent via-blue-600 to-accent';
+  if (/aprovad/i.test(s) && !/restri/i.test(s)) return 'from-data-pos to-data-pos/60';
+  if (/reserva/i.test(s))                       return 'from-data-warn to-data-warn/60';
+  if (/reprovad|negad|cancelad|distrat/i.test(s)) return 'from-data-neg to-data-neg/60';
+  if (/análise|analise|aguardando/i.test(s))    return 'from-accent to-accent/60';
+  return 'from-accent to-accent/60';
 });
 
 const statusVariant = computed(() => {

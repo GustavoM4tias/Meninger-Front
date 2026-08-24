@@ -304,7 +304,7 @@ function pickLink(e) {
             v-tippy="`Vendidos: ${stock.sold} · Reservados: ${stock.reserved} · Disponíveis: ${stock.available} · Bloqueados: ${stock.blocked}`">
             <div class="h-full bg-data-neg transition-all duration-700" :style="{ width: stockPct(stock.sold) + '%' }" />
             <div class="h-full bg-data-warn transition-all duration-700" :style="{ width: stockPct(stock.reserved) + '%' }" />
-            <div class="h-full bg-slate-400 transition-all duration-700" :style="{ width: stockPct(stock.blocked) + '%' }" />
+            <div class="h-full bg-data-neutral transition-all duration-700" :style="{ width: stockPct(stock.blocked) + '%' }" />
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-3">
             <div class="text-center px-1 py-1.5 rounded-lg bg-data-neg/10  border border-data-neg/25 ">

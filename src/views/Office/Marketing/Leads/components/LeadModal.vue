@@ -567,7 +567,7 @@ const onLimpar = () => {
                   <i class="fas fa-user-tie text-[10px] text-data-warn"></i>{{ l.corretor?.nome || '—' }}
                 </span>
                 <span v-if="l.midia_principal" class="inline-flex items-center gap-1.5 max-w-[160px] truncate">
-                  <i class="fas fa-bullhorn text-[10px] text-pink-500"></i>{{ l.midia_principal }}
+                  <i class="fas fa-bullhorn text-[10px] text-series-5"></i>{{ l.midia_principal }}
                 </span>
                 <template v-if="Array.isArray(l.empreendimento) && l.empreendimento.length">
                   <Badge v-for="(emp, idx) in l.empreendimento" :key="idx" variant="accent" size="sm">

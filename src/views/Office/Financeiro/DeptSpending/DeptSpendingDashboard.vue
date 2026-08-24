@@ -528,7 +528,7 @@ const cards = computed(() => {
         { key: 'spent', label: `Acumulado até ${monthLabel.value}`, value: fmtBRL(spent), sub: `${fmtPct(pctInvested)} do orçamento`, icon: 'fas fa-clock-rotate-left', accent: 'text-data-warn bg-data-warn/10' },
         { key: 'saldo', label: 'Saldo a investir', value: fmtBRL(saldo), sub: 'orçamento − acumulado', icon: 'fas fa-piggy-bank', accent: 'text-data-pos bg-data-pos/10', valueClass: saldo < 0 ? 'text-data-neg' : 'text-data-pos' },
         { key: 'future', label: 'A comercializar', value: `${futureUnits} un`, sub: 'unidades pela frente', icon: 'fas fa-key', accent: 'text-accent bg-accent/10' },
-        { key: 'rec', label: 'Recomendado / unid', value: fmtBRL(recPerUnit), sub: 'saldo ÷ a comercializar', icon: 'fas fa-bullseye', accent: 'text-teal-500 bg-teal-500/10' },
+        { key: 'rec', label: 'Recomendado / unid', value: fmtBRL(recPerUnit), sub: 'saldo ÷ a comercializar', icon: 'fas fa-bullseye', accent: 'text-series-3 bg-series-3/10' },
     ];
 });
 

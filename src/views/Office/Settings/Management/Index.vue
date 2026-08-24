@@ -222,7 +222,7 @@ onMounted(async () => {
 
       <!-- Erro -->
       <div v-if="store.error"
-        class="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+        class="mb-4 rounded-lg border border-data-neg/25 bg-data-neg/10 px-3 py-2.5 text-sm text-data-neg flex items-center gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ store.error }}
       </div>
 
@@ -260,7 +260,7 @@ onMounted(async () => {
               <div class="flex items-center gap-1 pt-2 border-t border-line/50">
                 <Button size="sm" variant="ghost" icon="fas fa-pen" @click="openModal(d)">Editar</Button>
                 <Button v-if="d.active" size="sm" variant="ghost" icon="fas fa-ban"
-                  class="text-red-500" @click="deactivateItem(d)">Desativar</Button>
+                  class="text-data-neg" @click="deactivateItem(d)">Desativar</Button>
               </div>
             </div>
           </Surface>
@@ -297,7 +297,7 @@ onMounted(async () => {
               <div class="flex items-center gap-1 pt-2 border-t border-line/50">
                 <Button size="sm" variant="ghost" icon="fas fa-pen" @click="openModal(p)">Editar</Button>
                 <Button v-if="p.active" size="sm" variant="ghost" icon="fas fa-ban"
-                  class="text-red-500" @click="deactivateItem(p)">Desativar</Button>
+                  class="text-data-neg" @click="deactivateItem(p)">Desativar</Button>
               </div>
             </div>
           </Surface>

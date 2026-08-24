@@ -38,7 +38,7 @@
             </div>
         </div>
 
-        <p v-if="err" class="text-sm text-red-600 dark:text-red-400">
+        <p v-if="err" class="text-sm text-data-neg">
             <i class="fas fa-circle-exclamation mr-1"></i>{{ err }}
         </p>
 

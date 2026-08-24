@@ -1742,7 +1742,7 @@ function getCategoryClass(category) {
     frontend: 'bg-accent/10 text-accent border-accent/20',
     backend:  'bg-data-pos/10 text-data-pos border-data-pos/20',
     api:      'bg-accent/10 text-accent border-accent/20',
-    mobile:   'bg-pink-500/10 text-pink-700 dark:text-pink-300 border-pink-500/20',
+    mobile:   'bg-series-5/10 text-series-5 border-series-5/25',
     security: 'bg-data-neg/10 text-data-neg border-data-neg/20',
   };
   return classes[category] || 'bg-surface-sunken text-ink-muted border-line';

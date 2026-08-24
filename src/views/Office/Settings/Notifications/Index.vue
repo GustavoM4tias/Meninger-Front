@@ -71,15 +71,15 @@ const onToggle = (pref, key, value) => {
 
     <!-- Aviso WhatsApp -->
     <div v-if="!systemReady"
-      class="mb-6 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 flex items-start gap-3">
-      <i class="fa-brands fa-whatsapp text-amber-600 dark:text-amber-400 text-lg mt-0.5"></i>
+      class="mb-6 rounded-xl border border-data-warn/25 bg-data-warn/10 px-4 py-3 flex items-start gap-3">
+      <i class="fa-brands fa-whatsapp text-data-warn text-lg mt-0.5"></i>
       <div class="text-xs text-ink">
         O administrador ainda não configurou o WhatsApp do sistema. O canal por WhatsApp ficará disponível assim que isso for feito.
       </div>
     </div>
     <div v-else-if="!hasPhone"
-      class="mb-6 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 flex items-start gap-3">
-      <i class="fa-brands fa-whatsapp text-amber-600 dark:text-amber-400 text-lg mt-0.5"></i>
+      class="mb-6 rounded-xl border border-data-warn/25 bg-data-warn/10 px-4 py-3 flex items-start gap-3">
+      <i class="fa-brands fa-whatsapp text-data-warn text-lg mt-0.5"></i>
       <div class="text-xs text-ink">
         Você ainda não tem telefone no perfil, então nada sai por WhatsApp. Cadastre o número na sua
         <RouterLink to="/settings/Account" class="text-accent hover:underline">conta</RouterLink>
@@ -88,7 +88,7 @@ const onToggle = (pref, key, value) => {
     </div>
     <div v-else-if="wpp.systemInfo?.display_phone"
       class="mb-6 rounded-xl border border-line bg-surface-raised px-4 py-3 flex items-start gap-3">
-      <i class="fa-brands fa-whatsapp text-emerald-500 text-lg mt-0.5"></i>
+      <i class="fa-brands fa-whatsapp text-data-pos text-lg mt-0.5"></i>
       <div class="text-xs text-ink-muted">
         As mensagens chegam de <strong class="text-ink">{{ wpp.systemInfo.display_phone }}</strong>
         no telefone do seu perfil. Para trocar o número, edite na sua

@@ -23,10 +23,10 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 
 ### Painel · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
 
-- [ ] **Leads** `/leads` · ` 98`
-      <sub>views/Office/Marketing/Leads/Index.vue · 2989L (+16 comp.) · 4 cor fixa, 3 gráfico, 2 tabela</sub>
 - [ ] **Relatório de Investimento** `/viabilidade/:key` · `100`
       <sub>views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue · 819L (+2 comp.) · 1 gráfico</sub>
+- [ ] **Leads** `/leads` · `100`
+      <sub>views/Office/Marketing/Leads/Index.vue · 2989L (+16 comp.) · 3 gráfico, 2 tabela</sub>
 
 ### Detalhe · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
 
@@ -43,12 +43,6 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 
 ### Operação · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
-- [ ] **Pré-Cadastros** `/precadastros` · ` 98`
-      <sub>views/Office/Comercial/Precadastros/Index.vue · 993L (+2 comp.) · 6 cor fixa, 1 tabela</sub>
-- [ ] **Reservas** `/reservas-report` · ` 98`
-      <sub>views/Office/Comercial/Reservas/Index.vue · 983L (+1 comp.) · 6 cor fixa, 1 tabela</sub>
-- [ ] **Viabilidade** `/viabilidade` · ` 99`
-      <sub>views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue · 984L (+2 comp.) · 2 cor fixa, 1 tabela</sub>
 - [ ] **Checklists** `/checklists` · `100`
       <sub>views/Office/Checklist/Index.vue · 3104L (+14 comp.) · 1 tabela</sub>
 - [ ] **Cobrança do Checklist** `/checklists/cobranca` · `100`
@@ -57,14 +51,20 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Checklist/Detail.vue · 2684L (+14 comp.) · 1 tabela</sub>
 - [ ] **Stand de Vendas** `/stand-vendas` · `100`
       <sub>views/Office/Marketing/StandVendas/Index.vue · 732L (+3 comp.) · 1 tabela</sub>
+- [ ] **Viabilidade** `/viabilidade` · `100`
+      <sub>views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue · 984L (+2 comp.) · 1 tabela</sub>
+- [ ] **Pré-Cadastros** `/precadastros` · `100`
+      <sub>views/Office/Comercial/Precadastros/Index.vue · 993L (+2 comp.) · 1 tabela</sub>
+- [ ] **Reservas** `/reservas-report` · `100`
+      <sub>views/Office/Comercial/Reservas/Index.vue · 983L (+1 comp.) · 1 tabela</sub>
 - [ ] **Relatorios** `/relatorios [Comercial/Relatorios]` · `100`
       <sub>views/Office/Comercial/Relatorios/Shell.vue · 434L (+4 comp.) · 1 tabela</sub>
 - [ ] **Projeção** `/projections` · `100`
-      <sub>views/Office/Comercial/Projections/Index.vue · 963L (+3 comp.) · 1 cor fixa, 1 tabela</sub>
+      <sub>views/Office/Comercial/Projections/Index.vue · 963L (+3 comp.) · 1 tabela</sub>
 - [ ] **Projeção Detalhes** `/projections/:id` · `100`
-      <sub>views/Office/Comercial/Projections/ProjectionDetail.vue · 1373L (+3 comp.) · 1 cor fixa, 1 tabela</sub>
+      <sub>views/Office/Comercial/Projections/ProjectionDetail.vue · 1373L (+3 comp.) · 1 tabela</sub>
 - [ ] **Imobiliárias** `/imobiliarias` · `100`
-      <sub>views/Office/Comercial/Imobiliarias/Index.vue · 1461L (+7 comp.) · 1 cor fixa, 2 tabela</sub>
+      <sub>views/Office/Comercial/Imobiliarias/Index.vue · 1461L (+7 comp.) · 2 tabela</sub>
 - [ ] **Custos** `/custos` · `100`
       <sub>views/Office/Financeiro/Custos/Index.vue · 1232L (+1 comp.) · 1 tabela</sub>
 - [ ] **Ato** `/cobranca/ato` · `100`
@@ -76,14 +76,6 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 
 ### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
 
-- [ ] **Notificações** `/notifications [Settings/Notifications]` · ` 96`
-      <sub>views/Office/Settings/Notifications/Index.vue · 156L · 9 cor fixa</sub>
-- [ ] **Cargos** `/management` · ` 98`
-      <sub>views/Office/Settings/Management/Index.vue · 371L · 6 cor fixa</sub>
-- [ ] **Organograma** `/organograma` · ` 99`
-      <sub>views/Office/Settings/Organogram/Index.vue · 1237L (+1 comp.) · 2 cor fixa</sub>
-- [ ] **Alçadas** `/permissions` · ` 99`
-      <sub>views/Office/Settings/Permissions/Index.vue · 2098L (+4 comp.) · 2 cor fixa</sub>
 - [ ] **Gestão de Comunicados** `/mural/admin` · `100`
       <sub>views/Office/Mural/Admin.vue · 583L (+3 comp.) · ok</sub>
 - [ ] **Plano de Eventos Configurações** `/plano-eventos/settings` · `100`
@@ -96,10 +88,18 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Settings/Users/Index.vue · 1352L (+2 comp.) · ok</sub>
 - [ ] **Minha Conta** `/account` · `100`
       <sub>views/Office/Settings/Account/Index.vue · 931L (+6 comp.) · ok</sub>
+- [ ] **Organograma** `/organograma` · `100`
+      <sub>views/Office/Settings/Organogram/Index.vue · 1237L (+1 comp.) · ok</sub>
 - [ ] **Sincronização de empresas** `/empresas` · `100`
       <sub>views/Office/Settings/OrgSync/Index.vue · 747L · 1 tabela</sub>
+- [ ] **Cargos** `/management` · `100`
+      <sub>views/Office/Settings/Management/Index.vue · 371L · ok</sub>
 - [ ] **Integridade** `/integrity` · `100`
       <sub>views/Office/Settings/Integrity/Index.vue · 228L · ok</sub>
+- [ ] **Alçadas** `/permissions` · `100`
+      <sub>views/Office/Settings/Permissions/Index.vue · 2098L (+4 comp.) · ok</sub>
+- [ ] **Notificações** `/notifications [Settings/Notifications]` · `100`
+      <sub>views/Office/Settings/Notifications/Index.vue · 156L · ok</sub>
 - [ ] **WhatsApp** `/whatsapp` · `100`
       <sub>views/Office/Settings/Whatsapp/Index.vue · 1859L (+8 comp.) · 1 tabela</sub>
 - [ ] **Laboratório do Outlook** `/outlook-lab` · `100`
@@ -117,12 +117,6 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
-- [ ] **Títulos** `/titulos` · ` 97`
-      <sub>views/Office/Financeiro/Titulos/Index.vue · 340L · 8 cor fixa</sub>
-- [ ] **Caixa de Notificações** `/notifications [Office/Notifications]` · ` 98`
-      <sub>views/Office/Notifications/Index.vue · 161L · 5 cor fixa</sub>
-- [ ] **Documentação** `/docs` · ` 98`
-      <sub>views/Office/Docs/Docs.vue · 1770L · 4 cor fixa</sub>
 - [ ] **Mural de Avisos** `/mural` · `100`
       <sub>views/Office/Mural/Index.vue · 508L (+3 comp.) · ok</sub>
 - [ ] **Relatórios** `/relatorios [Office/Relatorios]` · `100`
@@ -147,6 +141,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Comercial/Correspondentes/Index.vue · 1532L (+6 comp.) · ok</sub>
 - [ ] **MCMV — Limites por Cidade** `/mcmv` · `100`
       <sub>views/Office/Comercial/Mcmv/Index.vue · 222L · ok</sub>
+- [ ] **Títulos** `/titulos` · `100`
+      <sub>views/Office/Financeiro/Titulos/Index.vue · 340L · ok</sub>
 - [ ] **Consulta de nº CEF** `/consulta-cef` · `100`
       <sub>views/Office/Financeiro/ConsultaCef/Index.vue · 330L · ok</sub>
 - [ ] **Fluxo de Pagamento** `/paymentflow` · `100`
@@ -165,8 +161,12 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Tools/EmeBrain/Index.vue · 810L · ok</sub>
 - [ ] **Eme Atende** `/eme-atende` · `100`
       <sub>views/Office/Tools/EmeAtende/Index.vue · 1091L · ok</sub>
+- [ ] **Caixa de Notificações** `/notifications [Office/Notifications]` · `100`
+      <sub>views/Office/Notifications/Index.vue · 161L · ok</sub>
 - [ ] **Suporte** `/support` · `100`
       <sub>views/Office/Support/Support.vue · 201L · ok</sub>
+- [ ] **Documentação** `/docs` · `100`
+      <sub>views/Office/Docs/Docs.vue · 1770L · ok</sub>
 - [ ] **Mapa do Sistema** `/sobre` · `100`
       <sub>views/Office/Sobre/Mapa.vue · 159L · ok</sub>
 
@@ -179,13 +179,13 @@ Não seguem o esqueleto de página por natureza (login, shell, home da Eme, inst
 - [ ] **login** `/login` · `--`
       <sub>views/Office/Auth/Index.vue · 37L · sem container, sem header, sem help</sub>
 - [ ] **MicrosoftCallback** `/microsoft/callback` · `--`
-      <sub>views/Office/Auth/MicrosoftCallback.vue · 317L · sem container, sem header, sem help, 11 cor fixa</sub>
+      <sub>views/Office/Auth/MicrosoftCallback.vue · 317L · sem container, sem header, sem help</sub>
 - [ ] **Relatório Público** `/r/:token` · `--`
-      <sub>views/Public/ReportPublic.vue · 397L · sem container, sem header, sem help, 10 cor fixa</sub>
+      <sub>views/Public/ReportPublic.vue · 397L · sem container, sem header, sem help</sub>
 - [ ] **Config** `/` · `--`
       <sub>views/Office/Config/OfficeShell.vue · 114L (+1 comp.) · sem container, sem header, sem help</sub>
 - [ ] **Home**  · `--`
-      <sub>views/Office/Home.vue · 324L · sem container, sem header, sem help, 4 cor fixa</sub>
+      <sub>views/Office/Home.vue · 324L · sem container, sem header, sem help</sub>
 - [ ] **layouts** `/academy` · `--`
       <sub>views/Academy/layouts/AcademyOfficeArea.vue · 483L (+3 comp.) · sem container, sem header, sem help, 136 cor fixa</sub>
 

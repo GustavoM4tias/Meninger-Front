@@ -98,16 +98,16 @@
 
         <!-- Aviso de range excessivo -->
         <Surface v-if="store.dateRangeWarning" variant="raised" padding="sm"
-          class="mt-3 border-amber-500/30 bg-amber-500/10">
-          <div class="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+          class="mt-3 border-data-warn/30 bg-data-warn/10">
+          <div class="text-sm text-data-warn flex items-center gap-2">
             <i class="fas fa-triangle-exclamation"></i>
             {{ store.dateRangeWarning }}
           </div>
         </Surface>
 
         <Surface v-if="store.error" variant="raised" padding="sm"
-          class="mt-3 border-red-500/30 bg-red-500/10">
-          <div class="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+          class="mt-3 border-data-neg/30 bg-data-neg/10">
+          <div class="text-sm text-data-neg flex items-center gap-2">
             <i class="fas fa-circle-exclamation"></i>{{ store.error }}
           </div>
         </Surface>
