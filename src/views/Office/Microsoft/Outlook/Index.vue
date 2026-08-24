@@ -51,11 +51,40 @@ const pastasPrincipais = computed(() =>
        .map(f => ({ ...f, icon: ICONES[f.wellKnownName] || 'far fa-folder' }))
 );
 
-const pastasProprias = computed(() =>
-  store.folders
-    .filter(f => !ORDEM.includes(f.wellKnownName) && f.total > 0)
-    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
-);
+// Pastas de serviço que o Outlook também não mostra na barra lateral. Sem esta
+// lista, tirar o filtro de "pasta vazia" traria Histórico de Conversas,
+// Problemas de Sincronização e companhia.
+const OCULTAS = new Set([
+  ...ORDEM, 'outbox', 'conversationhistory', 'syncissues', 'serverfailures',
+  'localfailures', 'conflicts', 'recoverableitemsdeletions', 'scheduled',
+  'clutter', 'searchfolders', 'msgfolderroot', 'archivemsgfolderroot',
+]);
+
+// A caixa é uma ÁRVORE: quase toda pasta de trabalho mora dentro da Caixa de
+// Entrada. Antes daqui só o primeiro nível aparecia (e só se tivesse mensagem),
+// então a pessoa via as pastas do sistema e mais nada. O backend devolve a
+// árvore achatada, em ordem de exibição; aqui só se calcula a indentação
+// relativa ao primeiro ancestral visível - pasta vazia inclusive, porque é
+// destino de "mover".
+const pastasProprias = computed(() => {
+  const porId = Object.fromEntries(store.folders.map(f => [f.id, f]));
+  const visivel = f => !!f && !OCULTAS.has(f.wellKnownName);
+
+  const nivel = (f) => {
+    let d = 0;
+    let p = porId[f.parentId];
+    while (p) { if (visivel(p)) d++; p = porId[p.parentId]; }
+    return d;
+  };
+
+  return store.folders.filter(visivel).map(f => ({ ...f, nivel: nivel(f) }));
+});
+
+// Destinos de "mover": as do sistema que fazem sentido, mais as da pessoa.
+const pastasDestino = computed(() => [
+  ...pastasPrincipais.value.filter(f => f.wellKnownName !== 'drafts').map(f => ({ ...f, nivel: 0 })),
+  ...pastasProprias.value,
+]);
 
 const pastaAtual = computed(() => store.currentFolder?.name || 'Caixa de Entrada');
 
@@ -122,6 +151,23 @@ async function sinalizar(m) {
   catch (err) { toast.error(err?.message || 'Não foi possível sinalizar.'); }
 }
 
+// Mover não pede confirmação: a consequência é pequena e reversível (a mensagem
+// continua na caixa, em outra pasta), e o toast diz para onde ela foi.
+async function mover({ message, folder }) {
+  if (!message || !folder) return;
+  try {
+    await store.moveMessage(message.id, folder.id);
+    toast.success(`Movido para ${folder.name}.`);
+  } catch (err) {
+    // Mover é escrita na caixa: enquanto o tenant não conceder Mail.ReadWrite,
+    // o Graph responde 403. Dizer isso é melhor do que "erro de permissão".
+    const msg = /permiss|forbidden|accessdenied/i.test(err?.message || '')
+      ? 'Mover ainda não está liberado: falta a permissão Mail.ReadWrite no Azure. Fale com quem administra o tenant.'
+      : (err?.message || 'Não foi possível mover a mensagem.');
+    toast.error(msg);
+  }
+}
+
 async function excluir(m) {
   const naLixeira = store.currentFolder?.wellKnownName === 'deleteditems';
   const ok = await pedirConfirmacao({
@@ -170,6 +216,7 @@ onUnmounted(() => clearInterval(contadorTimer));
           :steps="[
             { title: 'Ler e organizar', text: 'Abrir marca como lida, igual ao Outlook. Sinalizar e excluir estão na própria linha da lista, sem precisar abrir.' },
             { title: 'Buscar', text: 'A busca procura no assunto e no corpo de toda a pasta. Enquanto ela está ativa os filtros ficam de lado: a Microsoft não aceita os dois juntos.' },
+            { title: 'Pastas', text: 'A barra da esquerda mostra a árvore inteira da caixa, inclusive as pastas que você criou dentro da Caixa de Entrada. Para mover uma mensagem, abra ela e use o botão de pasta, ao lado do sinalizador.' },
             { title: 'Responder', text: 'Responder e encaminhar são montados pelo próprio Outlook, com o histórico da conversa junto. Você escreve em cima.' },
             { title: 'Anexo', text: 'Para anexar arquivo, salve o rascunho primeiro. O rascunho fica visível também no Outlook, para você revisar antes de mandar.' },
           ]"
@@ -217,7 +264,8 @@ onUnmounted(() => clearInterval(contadorTimer));
             :class="store.folder === f.id
               ? 'bg-accent-soft text-accent font-semibold'
               : 'text-ink-muted hover:bg-surface-hover hover:text-ink'">
-            <i class="far fa-folder text-xs w-4 shrink-0"></i>
+            <i class="far fa-folder text-xs w-4 shrink-0"
+              :style="{ marginLeft: `${(f.nivel || 0) * 0.85}rem` }"></i>
             <span class="truncate flex-1">{{ f.name }}</span>
             <span v-if="f.unread" class="text-micro font-mono tabular-nums shrink-0">{{ f.unread }}</span>
           </button>
@@ -245,7 +293,9 @@ onUnmounted(() => clearInterval(contadorTimer));
             <select :value="store.folder" @change="store.openFolder($event.target.value)"
               class="lg:hidden px-2 py-2 text-xs rounded-lg border border-line bg-surface-sunken text-ink outline-none max-w-[9rem]">
               <option v-for="f in pastasPrincipais" :key="f.id" :value="f.wellKnownName">{{ f.name }}</option>
-              <option v-for="f in pastasProprias" :key="f.id" :value="f.id">{{ f.name }}</option>
+              <option v-for="f in pastasProprias" :key="f.id" :value="f.id">
+                {{ '· '.repeat(f.nivel || 0) }}{{ f.name }}
+              </option>
             </select>
 
             <Input v-model="busca" placeholder="Buscar no e-mail..." size="sm"
@@ -301,7 +351,9 @@ onUnmounted(() => clearInterval(contadorTimer));
           :loading="store.loadingMessage"
           :can-organize="podeOrganizar"
           :can-send="podeEnviar"
+          :folders="pastasDestino"
           @close="store.closeMessage()"
+          @move="mover"
           @reply="responder($event, 'reply')"
           @replyAll="responder($event, 'replyAll')"
           @forward="responder($event, 'forward')"

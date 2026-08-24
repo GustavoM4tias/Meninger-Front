@@ -26,6 +26,10 @@ export const useTranscriptStore = defineStore('transcript', () => {
     const loadingTranscript   = ref(false);
     const generatingReport    = ref(false);
     const reportDbId          = ref(null);  // ID do banco do relatório atual (para e-mail)
+    // Quem já tinha baixado esta transcrição/gerado o relatório. A transcrição é
+    // a mesma para todo mundo que esteve na reunião: quando ela vem de outro
+    // participante, a tela diz de quem veio em vez de fingir que baixou agora.
+    const sharedFrom          = ref(null);
 
     // ── Reuniões recentes ─────────────────────────────────────────────────────
 
@@ -49,6 +53,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
         cues.value = [];
         report.value = null;
         reportDbId.value = null;
+        sharedFrom.value = null;
 
         if (!meeting.joinUrl) {
             transcriptInfo.value = { available: false, transcripts: [] };
@@ -96,6 +101,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
                 `${BASE}/${meetingId}/${transcriptId}?${params}`
             );
             cues.value = data.cues || [];
+            sharedFrom.value = data.sharedFrom || null;
             // Se já tem relatório gerado, carrega também
             if (data.reportReady) {
                 await loadReport(transcriptId);
@@ -120,6 +126,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
                 { method: 'POST', body: JSON.stringify({ force }) }
             );
             report.value = data.report;
+            if (data.sharedFrom) sharedFrom.value = data.sharedFrom;
             // Atualiza lista e captura o ID do banco
             if (!data.cached) await fetchReports();
             const saved = reports.value.find(r => r.transcriptId === transcriptId);
@@ -171,6 +178,7 @@ export const useTranscriptStore = defineStore('transcript', () => {
         cues.value = [];
         report.value = null;
         reportDbId.value = null;
+        sharedFrom.value = null;
         error.value = null;
         try {
             const full = await requestWithAuth(`${BASE}/reports/${reportId}`);
@@ -202,13 +210,14 @@ export const useTranscriptStore = defineStore('transcript', () => {
         cues.value = [];
         report.value = null;
         reportDbId.value = null;
+        sharedFrom.value = null;
         error.value = null;
     }
 
     return {
         meetings, reports, loadingMeetings, loadingReports, error,
         selectedMeeting, transcriptInfo, cues, report, reportDbId,
-        checkingTranscript, loadingTranscript, generatingReport,
+        checkingTranscript, loadingTranscript, generatingReport, sharedFrom,
         fetchMeetings, checkTranscript, loadTranscript,
         generateReport, fetchReports, loadReport, openSavedReport, reset,
     };

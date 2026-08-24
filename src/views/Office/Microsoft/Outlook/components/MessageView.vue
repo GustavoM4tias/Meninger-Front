@@ -26,12 +26,24 @@ const props = defineProps({
   loading:     { type: Boolean, default: false },
   canOrganize: { type: Boolean, default: false },
   canSend:     { type: Boolean, default: false },
+  // Destinos de "Mover para": a árvore de pastas da caixa, já com o nível de
+  // indentação calculado pela tela.
+  folders:     { type: Array,   default: () => [] },
 });
 
 const emit = defineEmits(['close', 'reply', 'replyAll', 'forward', 'flag', 'delete', 'move']);
 
 const mostrarImagens = ref(false);
-watch(() => props.message?.id, () => { mostrarImagens.value = false; });
+// Painel de "Mover para": abre em cima da mensagem, sem modal, e fecha ao trocar
+// de e-mail. Mover exige Mail.ReadWrite no tenant; sem a permissão o Graph
+// responde 403 e o erro chega em toast, não em silêncio.
+const escolhendoPasta = ref(false);
+watch(() => props.message?.id, () => { mostrarImagens.value = false; escolhendoPasta.value = false; });
+
+function mover(pasta) {
+  escolhendoPasta.value = false;
+  emit('move', { message: props.message, folder: pasta });
+}
 
 // Guarda se havia imagem remota, para a tela poder oferecer o botão.
 const tinhaImagemRemota = ref(false);
@@ -141,6 +153,10 @@ function quandoCompleto(iso) {
           </div>
 
           <div class="flex items-center gap-1 shrink-0">
+            <IconButton v-if="canOrganize && folders.length"
+              icon="fas fa-folder-open" label="Mover para outra pasta"
+              :class="escolhendoPasta ? 'text-accent' : ''"
+              @click="escolhendoPasta = !escolhendoPasta" />
             <IconButton v-if="canOrganize"
               icon="fas fa-flag" :label="message.flagged ? 'Tirar o sinalizador' : 'Sinalizar'"
               :class="message.flagged ? 'text-data-warn' : ''"
@@ -152,6 +168,20 @@ function quandoCompleto(iso) {
               title="Abrir no Outlook">
               <i class="fas fa-arrow-up-right-from-square text-xs"></i>
             </a>
+          </div>
+        </div>
+
+        <!-- Mover para outra pasta -->
+        <div v-if="escolhendoPasta" class="mt-3 rounded-xl border border-line bg-surface-sunken p-2">
+          <p class="text-micro font-semibold text-ink-subtle uppercase tracking-wide px-1 pb-1">Mover para</p>
+          <div class="max-h-56 overflow-y-auto">
+            <button v-for="f in folders" :key="f.id" type="button"
+              @click="mover(f)"
+              class="w-full flex items-center gap-2 px-2 py-2 min-h-10 rounded-lg text-sm text-ink-muted hover:bg-surface-hover hover:text-ink transition-colors text-left"
+              :style="{ paddingLeft: `${0.5 + (f.nivel || 0) * 0.9}rem` }">
+              <i :class="f.icon || 'far fa-folder'" class="text-xs w-4 shrink-0 text-ink-subtle"></i>
+              <span class="truncate">{{ f.name }}</span>
+            </button>
           </div>
         </div>
 

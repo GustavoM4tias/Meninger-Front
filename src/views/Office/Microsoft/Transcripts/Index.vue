@@ -258,11 +258,31 @@
                 variant="raised" padding="lg" class="text-center text-ink-muted">
                 <i class="fas fa-microphone-slash text-3xl mb-3 block text-ink-subtle"></i>
                 <p class="text-sm font-medium mb-1">Sem transcrição disponível</p>
-                <p class="text-xs text-ink-subtle max-w-xs mx-auto">A transcrição precisa ser iniciada durante a reunião no Microsoft Teams para que fique disponível aqui.</p>
+                <!-- O backend diz POR QUE não achou (transcrição nunca ligada,
+                     reunião que a pessoa só participou e ninguém carregou
+                     ainda). Antes essa explicação existia e não chegava na tela. -->
+                <p class="text-xs text-ink-subtle max-w-sm mx-auto">
+                  {{ ts.transcriptInfo.hint || 'A transcrição precisa ser iniciada durante a reunião no Microsoft Teams para que fique disponível aqui.' }}
+                </p>
               </Surface>
 
               <!-- Has transcripts -->
               <div v-else-if="ts.transcriptInfo?.available" class="space-y-4">
+
+                <!-- Veio de outro participante: a transcrição é a mesma para
+                     todo mundo que esteve na sala, e o relatório também. Dizer
+                     de quem veio evita a impressão de que o Office baixou de
+                     novo (e de que alguém pagou outro relatório de IA). -->
+                <div v-if="ts.transcriptInfo.viaShared || ts.sharedFrom"
+                  class="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-accent/10 border border-accent/25">
+                  <i class="fas fa-user-group text-accent text-xs mt-0.5 shrink-0"></i>
+                  <p class="text-xs text-accent">
+                    Você participou desta reunião.
+                    {{ ts.sharedFrom ? `Transcrição e relatório carregados por ${ts.sharedFrom}.` : 'A transcrição já estava carregada no Office.' }}
+                    Abrir aqui não baixa nada de novo nem gera outro relatório.
+                  </p>
+                </div>
+
 
                 <!-- Transcript picker (se houver mais de uma) -->
                 <div v-if="ts.transcriptInfo.transcripts.length > 1" class="flex gap-2 flex-wrap">

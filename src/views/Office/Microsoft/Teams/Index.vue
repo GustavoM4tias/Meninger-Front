@@ -145,10 +145,12 @@ function showToast(message, type = 'success') {
               { title: 'Reuniões recorrentes', text: 'Ao editar ou cancelar uma reunião que se repete, o sistema pergunta se a ação vale só para aquele dia ou para a série toda.' },
               { title: 'Instantânea', text: 'Cria uma reunião Teams na hora, com link pronto para copiar ou enviar por e-mail.' },
               { title: 'Reuniões (transcrições)', text: 'Transcrições das reuniões do Teams e das presenciais (gravadas pelo navegador), com relatório de IA que pode ser enviado por e-mail.' },
+              { title: 'Basta ter participado', text: 'Você não precisa ter organizado a reunião. Se alguém que estava na sala já carregou a transcrição aqui, ela abre para todos os participantes - e o relatório é o mesmo, não é gerado de novo.' },
             ]"
             :tips="[
               'No celular, a visão Lista é a mais confortável; a visão Dia mostra os horários lado a lado.',
               'O aviso de reunião começando aparece nas duas abas.',
+              'Pergunte à Eme sobre suas reuniões: ela lê o relatório e a transcrição das que você participou e cita quem falou o quê.',
             ]" />
         </template>
       </PageHeader>
