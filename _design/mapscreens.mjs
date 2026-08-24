@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { dialogosNativos, overlaysAMao } from './regras-dialogo.mjs';
 
 /* Ancorado no PROPRIO arquivo, nao no diretorio de onde se chama. Antes era
    `process.argv[2]`, entao rodar da raiz do front em vez de dentro de
@@ -73,10 +74,11 @@ const ICONE = /<i[ >][^>]*>|<i>/gs;
 const semIcone = (s) => s.replace(ICONE, '');
 /* Dialogo nativo do navegador. `window.confirm` nao diz consequencia, nao
    se estiliza e bloqueia a pagina; o sistema tem ConfirmDialog para isso. */
-const NATIVO = /window\.(?:confirm|alert)\(/g;
 const BADSHADOW = /\bshadow-(sm|md|lg|xl|2xl)\b/g;
 
 function count(s, re) { return (s.match(re) || []).length; }
+
+
 
 function metrics(file) {
   const abs = path.join(SRC, file);
@@ -98,8 +100,11 @@ function metrics(file) {
     hardcoded: count(s, HARD),
     tinyText: count(semIcone(s), TINY),
     badShadow: count(s, BADSHADOW),
-    nativo: count(s, NATIVO),
-    handModal: count(s, /fixed inset-0 z-/g),
+    /* A regra mora em regras-dialogo.mjs, junto com a do dialogos-a-mao.
+       Duas copias de uma regra sao duas regras - foi assim que este mapa
+       jurou "zero dialogo nativo" com 71 espalhados pelo sistema. */
+    nativo: dialogosNativos(s).length,
+    handModal: overlaysAMao(s).length,
     table: /<table/.test(s),
     /* Plano mobile de tabela = vira card no estreito OU tem scroll preso ao
        container. Tabela de 3 colunas curtas não precisa virar card, precisa
@@ -156,7 +161,7 @@ for (const r of routes) {
       lines: s.split('\n').length,
       hardcoded: count(s, HARD),
       tinyText: count(semIcone(s), TINY),
-      nativo: count(s, NATIVO),
+      nativo: dialogosNativos(s).length,
       chart: /echarts/.test(s),
       table: /<table/.test(s),
       tableMobile: /<table/.test(s) && (/(md|lg|sm):hidden/.test(s) || /overflow-x-auto/.test(s)),

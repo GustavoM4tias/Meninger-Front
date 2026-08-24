@@ -3,7 +3,7 @@
 Gerado por `_design/mapscreens.mjs` em 2026-08-24. Para atualizar os números depois de
 mexer nas telas, rode de novo e o checklist se refaz.
 
-- **66** telas pontuadas (+ 6 especiais fora do score)
+- **67** telas pontuadas (+ 6 especiais fora do score)
 - **Score médio: 100/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
@@ -17,7 +17,7 @@ carga com `Skeleton`, alvo de toque >= 40px e PageHelp escrito.
 
 ---
 
-## Onda 4 - Manutenção  `66 telas`
+## Onda 4 - Manutenção  `67 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
 
@@ -102,6 +102,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Settings/Integrity/Index.vue · 228L · ok</sub>
 - [ ] **WhatsApp** `/whatsapp` · `100`
       <sub>views/Office/Settings/Whatsapp/Index.vue · 1855L (+8 comp.) · 1 tabela</sub>
+- [ ] **Laboratório do Outlook** `/outlook-lab` · `100`
+      <sub>views/Office/Settings/OutlookLab/Index.vue · 216L · ok</sub>
 - [ ] **Integração Microsoft** `/integracao-microsoft` · `100`
       <sub>views/Office/Settings/MicrosoftIntegration/Index.vue · 231L · ok</sub>
 - [ ] **Configurações DocuSign** `/docusign` · `100`
@@ -115,8 +117,6 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
-- [ ] **SharePoint** `/sharepoint` · ` 95`
-      <sub>views/Office/Microsoft/Sharepoint/Index.vue · 1380L (+3 comp.) · 1 modal na mão</sub>
 - [ ] **Títulos** `/titulos` · ` 97`
       <sub>views/Office/Financeiro/Titulos/Index.vue · 340L · 8 cor fixa</sub>
 - [ ] **Caixa de Notificações** `/notifications [Office/Notifications]` · ` 98`
@@ -151,6 +151,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Financeiro/ConsultaCef/Index.vue · 330L · ok</sub>
 - [ ] **Fluxo de Pagamento** `/paymentflow` · `100`
       <sub>views/Office/Tools/PaymentoFlow/Index.vue · 3474L (+5 comp.) · ok</sub>
+- [ ] **SharePoint** `/sharepoint` · `100`
+      <sub>views/Office/Microsoft/Sharepoint/Index.vue · 1380L (+3 comp.) · ok</sub>
 - [ ] **Teams** `/teams` · `100`
       <sub>views/Office/Microsoft/Teams/Index.vue · 2322L (+7 comp.) · ok</sub>
 - [ ] **Planner** `/planner` · `100`
@@ -177,11 +179,11 @@ Não seguem o esqueleto de página por natureza (login, shell, home da Eme, inst
 - [ ] **login** `/login` · `--`
       <sub>views/Office/Auth/Index.vue · 37L · sem container, sem header, sem help</sub>
 - [ ] **MicrosoftCallback** `/microsoft/callback` · `--`
-      <sub>views/Office/Auth/MicrosoftCallback.vue · 312L · sem container, sem header, sem help, 11 cor fixa</sub>
+      <sub>views/Office/Auth/MicrosoftCallback.vue · 317L · sem container, sem header, sem help, 11 cor fixa</sub>
 - [ ] **Relatório Público** `/r/:token` · `--`
       <sub>views/Public/ReportPublic.vue · 397L · sem container, sem header, sem help, 10 cor fixa</sub>
 - [ ] **Config** `/` · `--`
-      <sub>views/Office/Config/OfficeShell.vue · 212L (+2 comp.) · sem container, sem header, sem help, 1 gráfico</sub>
+      <sub>views/Office/Config/OfficeShell.vue · 114L (+1 comp.) · sem container, sem header, sem help</sub>
 - [ ] **Home**  · `--`
       <sub>views/Office/Home.vue · 324L · sem container, sem header, sem help, 4 cor fixa</sub>
 - [ ] **layouts** `/academy` · `--`
