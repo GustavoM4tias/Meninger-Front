@@ -17,15 +17,23 @@
 // quem precisar reagir ao dock sem importar o composable (CSS de terceiros,
 // impressão, teste).
 //
-// A largura é arrastável e persistida: quem usa a Eme o dia todo quer ela
-// larga; quem usa de vez em quando quer ela estreita.
+// O QUE PERSISTE E O QUE NÃO PERSISTE (a regra que evita o resto dos bugs):
+//
+//   TAMANHO persiste     - largura do dock e caixa do flutuante são preferência,
+//                          e não mudam nada enquanto ela está fechada.
+//   ESTADO não persiste  - a Eme SEMPRE começa fechada e flutuante.
+//
+// Guardar "aberta" e "docada" parecia conveniente e era a fonte da bagunça:
+// recarregar trazia a página com um pedaço da largura reservado antes de a Eme
+// existir, o shell e a barra do topo recuavam por causa de um painel que ainda
+// não tinha montado, e qualquer recarga no meio de um ajuste deixava a tela num
+// estado que a pessoa não pediu. Colar é gesto: vale para a sessão em que foi
+// feito, e recomeça limpo.
 
 import { ref, computed, watch } from 'vue';
 
-const MODO_KEY    = 'eme:dock:modo';
 const LARGURA_KEY = 'eme:dock:largura';
 const CAIXA_KEY   = 'eme:flutuante:caixa';
-const ABERTA_KEY  = 'eme:aberta';
 
 const MIN = 320;
 const MAX = 720;
@@ -49,7 +57,8 @@ function lerLargura() {
 }
 
 // Estado único para o app inteiro: a bolinha e o shell precisam concordar.
-const modo    = ref(localStorage.getItem(MODO_KEY) === 'docada' ? 'docada' : 'flutuante');
+// Começa SEMPRE flutuante e fechada - ver a regra no topo do arquivo.
+const modo    = ref('flutuante');
 const largura = ref(lerLargura());
 const caixa   = ref(lerCaixa());
 // Durante o arrasto da largura, shell e nav NÃO podem animar: a transição de
@@ -60,11 +69,18 @@ const ajustando = ref(false);
 // Recarregar a página fechava o painel (o estado era local do componente) mas o
 // espaço continuava reservado: ficava uma faixa vazia à direita e a bolinha no
 // canto. Agora o "aberta" mora aqui, junto do modo, e é ele quem manda no recuo.
-const aberta = ref(localStorage.getItem(ABERTA_KEY) === '1');
+const aberta = ref(false);
 
 const docada = computed(() => modo.value === 'docada');
 /** Docada E aberta: é isto que empurra o Office. */
 const ocupando = computed(() => docada.value && aberta.value);
+
+// Versões anteriores gravavam modo e aberto: sem esta limpeza, quem já usou a
+// Eme continuaria abrindo o Office com o espaço reservado até trocar de máquina.
+try {
+    localStorage.removeItem('eme:dock:modo');
+    localStorage.removeItem('eme:aberta');
+} catch { /* navegador sem storage: nada a limpar */ }
 
 function aplicar() {
     if (typeof document === 'undefined') return;
@@ -73,9 +89,9 @@ function aplicar() {
 }
 
 watch([modo, largura, aberta], () => {
-    localStorage.setItem(MODO_KEY, modo.value);
+    // Só o tamanho é lembrado. Modo e aberto/fechado morrem com a aba, de
+    // propósito.
     localStorage.setItem(LARGURA_KEY, String(largura.value));
-    localStorage.setItem(ABERTA_KEY, aberta.value ? '1' : '0');
     aplicar();
 }, { immediate: true });
 

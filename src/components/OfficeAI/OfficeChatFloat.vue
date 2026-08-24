@@ -482,8 +482,6 @@ watch(() => route.path, (p) => setEmeScreen(p, route.meta?.content || ''), { imm
 let desinstalarCaptura = null;
 
 onMounted(() => {
-  // Já abre aberta (o estado sobreviveu à recarga): retoma a conversa também.
-  if (expanded.value) retomarUltimaConversa();
   desinstalarCaptura = instalarCapturaCtrlClique(() => { expanded.value = true; });
   loadPos();
   window.addEventListener('eme:navigate', onEmeNavigate);
@@ -519,7 +517,7 @@ function rename(title) { aiStore.renameSession(title); }
       enter-from-class="opacity-0"
       leave-active-class="transition duration-150 ease-in"
       leave-to-class="opacity-0">
-      <div v-if="propondoDock"
+      <div v-show="propondoDock"
         :style="{ width: dock.largura.value + 'px' }"
         class="fixed right-0 top-0 bottom-0 z-40 pointer-events-none p-2">
         <div class="h-full w-full rounded-2xl border-2 border-dashed border-accent/50
