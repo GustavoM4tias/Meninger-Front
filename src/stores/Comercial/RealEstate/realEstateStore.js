@@ -177,6 +177,12 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         return data;
     }
 
+    async function testCvApi() {
+        const data = await requestWithAuth('/realestate/cv-panel/test-api', { method: 'POST' });
+        if (cvPanel.value && data?.api) cvPanel.value = { ...cvPanel.value, api: data.api };
+        return data;
+    }
+
     async function runCvJob(key) {
         const data = await requestWithAuth(`/realestate/cv-jobs/${key}/run`, { method: 'POST' });
         cvJobs.value = data?.jobs || cvJobs.value;
@@ -232,6 +238,7 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         fetchCvPanel,
         saveCvPanel,
         testCvPanel,
+        testCvApi,
         fetchOfficeUsers,
         cvJobs,
         cvJobsLoading,

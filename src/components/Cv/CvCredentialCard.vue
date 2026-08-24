@@ -27,10 +27,14 @@ const toast = useToast();
 
 const email = ref('');
 const senha = ref('');
+const apiEmail = ref('');
+const apiToken = ref('');
 const painel = ref('gestor');
 const avisados = ref([]);      // nomes escolhidos no MultiSelector
 const salvando = ref(false);
 const testando = ref(false);
+const salvandoApi = ref(false);
+const testandoApi = ref(false);
 const pronto = ref(false);
 
 const PAINEL_OPTIONS = [
@@ -53,6 +57,8 @@ async function carregar() {
         store.fetchOfficeUsers(),
     ]);
     email.value = cfg.value?.email || '';
+    apiEmail.value = cfg.value?.api?.email || '';
+    apiToken.value = '';
     painel.value = cfg.value?.painel || 'gestor';
     const ids = cfg.value?.notify_user_ids || [];
     avisados.value = store.officeUsers.filter(u => ids.includes(u.id)).map(u => u.username);
@@ -74,6 +80,36 @@ async function salvar() {
         toast.error(err?.message || 'Erro ao salvar a credencial.');
     } finally {
         salvando.value = false;
+    }
+}
+
+// ── Chave de integração (v1/v2) ──────────────────────────────────────────────
+// É outra credencial, e é ela que responde pela maior parte das chamadas ao CV.
+// Deixar as duas na mesma tela evita a pergunta "qual delas quebrou?".
+async function salvarApi() {
+    salvandoApi.value = true;
+    try {
+        const data = await store.saveCvPanel({ api_email: apiEmail.value, api_token: apiToken.value });
+        apiToken.value = '';
+        if (data?.teste?.ok) toast.success(data.teste.mensagem || 'Chave salva e testada.');
+        else toast.error(data?.teste?.mensagem || 'Salvou, mas a conexão com o CV falhou.');
+    } catch (err) {
+        toast.error(err?.message || 'Erro ao salvar a chave.');
+    } finally {
+        salvandoApi.value = false;
+    }
+}
+
+async function testarApi() {
+    testandoApi.value = true;
+    try {
+        const data = await store.testCvApi();
+        if (data?.teste?.ok) toast.success(data.teste.mensagem);
+        else toast.error(data?.teste?.mensagem || 'A conexão com o CV falhou.');
+    } catch (err) {
+        toast.error(err?.message || 'Erro ao testar.');
+    } finally {
+        testandoApi.value = false;
     }
 }
 
@@ -143,8 +179,39 @@ onMounted(() => {
 
             <div class="flex flex-wrap justify-end gap-2 pt-1">
                 <Button variant="ghost" icon="fas fa-plug-circle-check" :loading="testando"
-                    :disabled="!cfg?.configurado" @click="testar">Testar agora</Button>
-                <Button variant="primary" icon="fas fa-check" :loading="salvando" @click="salvar">Salvar</Button>
+                    :disabled="!cfg?.configurado" @click="testar">Testar login</Button>
+                <Button variant="primary" icon="fas fa-check" :loading="salvando" @click="salvar">Salvar login</Button>
+            </div>
+
+            <!-- Chave de integração: a outra credencial, e a mais usada -->
+            <div class="pt-4 border-t border-line-subtle space-y-3">
+                <div>
+                    <p class="text-sm font-medium text-ink">Chave de integração (API v1/v2)</p>
+                    <p class="text-xs text-ink-muted">
+                        É esta que responde pela maior parte das chamadas ao CV - reservas, leads, empreendimentos.
+                        O login acima só serve para o que a v1 não sabe ler.
+                    </p>
+                </div>
+
+                <p class="text-xs text-ink-muted">
+                    <i class="fas fa-server mr-1 text-ink-subtle"></i>{{ cfg?.api?.base_url || '-' }}
+                    <span class="mx-1">·</span>
+                    valendo o valor
+                    <strong class="text-ink">{{ cfg?.api?.origem === 'tela' ? 'desta tela' : 'do ambiente' }}</strong>
+                </p>
+
+                <Input v-model="apiEmail" label="E-mail da chave"
+                    :placeholder="cfg?.api?.email || 'integracao@empresa.com.br'"
+                    hint="Em branco nos dois campos, volta a valer o que está no ambiente." />
+                <Input v-model="apiToken" type="password" label="Token"
+                    :placeholder="cfg?.api?.token_definido ? 'Deixe em branco para manter o atual' : 'Token de integração'" />
+
+                <div class="flex flex-wrap justify-end gap-2">
+                    <Button variant="ghost" icon="fas fa-plug-circle-check" :loading="testandoApi"
+                        @click="testarApi">Testar conexão</Button>
+                    <Button variant="primary" icon="fas fa-check" :loading="salvandoApi"
+                        @click="salvarApi">Salvar chave</Button>
+                </div>
             </div>
         </div>
     </Panel>
