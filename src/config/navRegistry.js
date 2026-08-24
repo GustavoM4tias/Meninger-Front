@@ -273,6 +273,7 @@ export const navRegistry = [
         pages: [
             // Central Microsoft (2026-07-27): Agenda · Tarefas (To Do) · Reuniões
             // (Transcrições & IA). Rotas antigas viram redirect p/ ?tab=.
+            { route: '/microsoft/outlook', section: 'E-mail', name: 'E-mail', icon: 'fas fa-envelope', iconImg: '/icons/ms-outlook.svg' },
             { route: '/microsoft/teams', section: 'Central Microsoft', name: 'Central Microsoft', icon: 'fas fa-people-group', iconImg: '/icons/ms-teams.svg' },
             { route: '/microsoft/sharepoint', section: 'SharePoint', name: 'SharePoint', icon: 'fas fa-folder-open', iconImg: '/icons/ms-sharepoint.svg' },
             { route: '/microsoft/planner', section: 'Planner', name: 'Planner', icon: 'fas fa-table-columns', iconImg: '/icons/ms-planner.svg' },
@@ -335,6 +336,7 @@ export const navRegistry = [
                     { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
                     { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.png', adminOnly: true },
                     { route: '/settings/integracao-microsoft', section: 'Microsoft 365', name: 'Microsoft 365', icon: 'fab fa-microsoft', adminOnly: true },
+                    { route: '/settings/outlook-lab', section: 'Laboratório do Outlook', name: 'Laboratório do Outlook', icon: 'fas fa-envelope-open-text', adminOnly: true },
                 ],
             },
             {

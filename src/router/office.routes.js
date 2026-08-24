@@ -383,6 +383,15 @@ export default [
                 meta: { requiresAuth: true },
                 children: [
                     {
+                        // Caixa de e-mail da própria pessoa. A alçada das AÇÕES
+                        // dentro da tela (ver/organizar/enviar) vem das
+                        // capacidades em lib/screenCapabilities.js.
+                        path: 'outlook',
+                        name: 'E-mail',
+                        component: () => import('@/views/Office/Microsoft/Outlook/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Caixa de e-mail do Outlook dentro do Office: ler, buscar, anexos, responder, encaminhar e enviar' },
+                    },
+                    {
                         path: 'sharepoint',
                         name: 'SharePoint',
                         component: () => import('@/views/Office/Microsoft/Sharepoint/Index.vue'),
@@ -520,6 +529,14 @@ export default [
                         // mantém links antigos (notificações, WhatsApp) vivos.
                         path: 'meta',
                         redirect: to => ({ path: '/meta', query: { ...to.query, tab: 'credenciais' } }),
+                    },
+                    {
+                        // Laboratório: descobre o alcance do Office no Outlook antes
+                        // de o módulo de e-mail existir. Admin nos três níveis.
+                        path: 'outlook-lab',
+                        name: 'Laboratório do Outlook',
+                        component: () => import('@/views/Office/Settings/OutlookLab/Index.vue'),
+                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Laboratório do Outlook: sondagem dos endpoints de e-mail do Microsoft Graph, autorização separada do login' },
                     },
                     {
                         // Administração do próprio sistema: trava de CÓDIGO nos três
