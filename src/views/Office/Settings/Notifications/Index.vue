@@ -1,155 +1,110 @@
 <script setup>
-import { onMounted, computed } from 'vue';
-import { useNotificationStore } from '@/stores/Config/notificationStore';
-import { useWhatsappStore } from '@/stores/Whatsapp/whatsappStore';
-import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+// Notificações: UMA tela para "como quero ser avisado".
+//
+// Eram três itens diferentes no menu para a mesma pergunta: as preferências de
+// canal, os alertas que a pessoa mandou a Eme vigiar e o painel de uso dos
+// alertas. Alerta é notificação que ela mesma programou - separar isso da tela
+// onde ela liga e desliga canal era pedir para ninguém achar nenhum dos dois.
+// Medido em 24/08/2026: 1 pessoa em 30 tinha mexido nas preferências, e as 7
+// regras de alerta eram de 4 donos.
+//
+// O painel é a aba de administrador, DENTRO da tela - mesmo padrão do mural.
+// Aqui a fonte é `permissionStore.isAdmin` (confirmada pelo servidor) e não o
+// authStore: alerta não tem linha em screenCapabilities, é tela livre com um
+// extra de admin. Ver o CLAUDE.md do backend.
+import { computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
+import { useAlertStore } from '@/stores/Alerts/alertStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
-import Switch from '@/components/UI/Switch.vue';
-import Spinner from '@/components/UI/Spinner.vue';
-import { RouterLink } from 'vue-router';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import PreferenciasCanais from './components/PreferenciasCanais.vue';
+import MeusAlertas from '@/views/Office/Settings/Alerts/MeusAlertas.vue';
+import PainelAlertas from '@/views/Office/Settings/Alerts/Admin/PainelAlertas.vue';
 
-import Skeleton from '@/components/UI/Skeleton.vue';
-const store = useNotificationStore();
-const wpp = useWhatsappStore();
-const auth = useAuthStore();
+const route = useRoute();
+const router = useRouter();
+const perm = usePermissionStore();
+const alertas = useAlertStore();
 
-onMounted(() => {
-  store.fetchPreferences();
-  wpp.fetchSystemInfo();
-  if (!auth.user) auth.fetchUserInfo();
+const isAdmin = computed(() => perm.isAdmin);
+
+// A aba vive na URL. É o que mantém de pé os links antigos: /settings/alerts e
+// /settings/alerts/admin apontam para esta tela e trocam a URL ao montar.
+const aba = computed({
+  get() {
+    const q = String(route.query.tab || '').toLowerCase();
+    if (route.path.startsWith('/settings/alerts/admin')) return isAdmin.value ? 'painel' : 'alertas';
+    if (route.path.startsWith('/settings/alerts')) return 'alertas';
+    if (q === 'painel') return isAdmin.value ? 'painel' : 'preferencias';
+    if (q === 'alertas') return 'alertas';
+    return 'preferencias';
+  },
+  set(v) {
+    router.replace({
+      path: '/settings/notifications',
+      query: v === 'preferencias' ? {} : { tab: v },
+    });
+  },
 });
 
-const grouped = computed(() => {
-  const map = new Map();
-  for (const p of store.preferences) {
-    const g = p.group || 'Outros';
-    if (!map.has(g)) map.set(g, []);
-    map.get(g).push(p);
+watch(() => route.path, (p) => {
+  if (!p.startsWith('/settings/alerts')) return;
+  const destino = p.startsWith('/settings/alerts/admin') ? 'painel' : 'alertas';
+  router.replace({ path: '/settings/notifications', query: { tab: destino } });
+}, { immediate: true });
+
+const abas = computed(() => {
+  const lista = [
+    { value: 'preferencias', label: 'Preferências', icon: 'fas fa-sliders' },
+    { value: 'alertas', label: 'Meus alertas', icon: 'fas fa-tower-broadcast',
+      count: alertas.items?.length || undefined },
+  ];
+  if (isAdmin.value) {
+    lista.push({ value: 'painel', label: 'Painel', icon: 'fas fa-chart-line' });
   }
-  return Array.from(map.entries()).map(([group, items]) => ({ group, items }));
+  return lista;
 });
 
-// Não existe opt-in: estar no Office já autoriza o canal (igual e-mail e sino).
-// O switch de WhatsApp só depende do sistema estar configurado E do usuário ter
-// telefone no perfil — é por ele que a mensagem sai.
-const systemReady   = computed(() => !!wpp.systemInfo?.ready);
-const hasPhone      = computed(() => !!String(auth.user?.phone || '').trim());
-const whatsappReady = computed(() => systemReady.value && hasPhone.value);
-
-const onToggle = (pref, key, value) => {
-  pref[key] = value;
-  store.setPreference(pref.type, {
-    inapp: pref.inapp, email: pref.email, whatsapp: pref.whatsapp,
-  });
+const SUBTITULO = {
+  preferencias: 'Escolha por onde cada tipo de aviso chega até você.',
+  alertas: 'O que você mandou a Eme vigiar, e o horário de cada consulta.',
+  painel: 'Visão geral dos alertas do sistema e do uso por pessoa.',
 };
 </script>
 
 <template>
-  <PageContainer size="lg">
+  <PageContainer size="xl">
     <PageHeader
       icon="fas fa-bell"
-      title="Preferências de notificação"
-      subtitle="Escolha como quer ser avisado de cada tipo de evento."
-      eyebrow="Notificações" >
+      title="Notificações"
+      :subtitle="SUBTITULO[aba]"
+      :eyebrow="aba === 'painel' ? 'Notificações · Admin' : 'Suas preferências'">
       <template #actions>
         <PageHelp
           storage-key="prefs-notificacao"
           title="Como escolher seus avisos"
-          intro="Estas preferências são suas: elas decidem por onde cada tipo de evento chega até você. Não mudam nada para os outros."
+          intro="Esta tela é sua: ela decide por onde cada aviso chega até você e o que o sistema vigia no seu lugar. Nada aqui muda o de outra pessoa."
           :steps="[
-            { title: 'Escolha por tipo', text: 'Cada linha é um tipo de evento. Você liga e desliga canal por canal: no app, e-mail e WhatsApp.' },
+            { title: 'Preferências', text: 'Cada linha é um tipo de aviso; você liga e desliga canal por canal, no app, e-mail e WhatsApp.' },
+            { title: 'Meus alertas', text: 'Alerta é uma pergunta que a Eme repete sozinha no horário marcado e te avisa do resultado. Cria-se pela conversa com ela.' },
             { title: 'Pese o silêncio', text: 'Desligar tudo de um tipo significa não ser avisado nem quando algo depende de você.' },
           ]"
           :tips="[
             'Alguns avisos críticos ignoram a preferência de propósito, para não passarem em branco.',
-            'WhatsApp só chega se o número estiver confirmado no seu cadastro.',
+            'O alerta roda com a SUA alçada: quem recebe uma cópia compartilhada pode ver número diferente do seu.',
           ]" />
       </template>
     </PageHeader>
 
-    <!-- Aviso WhatsApp -->
-    <div v-if="!systemReady"
-      class="mb-6 rounded-xl border border-data-warn/25 bg-data-warn/10 px-4 py-3 flex items-start gap-3">
-      <i class="fa-brands fa-whatsapp text-data-warn text-lg mt-0.5"></i>
-      <div class="text-xs text-ink">
-        O administrador ainda não configurou o WhatsApp do sistema. O canal por WhatsApp ficará disponível assim que isso for feito.
-      </div>
-    </div>
-    <div v-else-if="!hasPhone"
-      class="mb-6 rounded-xl border border-data-warn/25 bg-data-warn/10 px-4 py-3 flex items-start gap-3">
-      <i class="fa-brands fa-whatsapp text-data-warn text-lg mt-0.5"></i>
-      <div class="text-xs text-ink">
-        Você ainda não tem telefone no perfil, então nada sai por WhatsApp. Cadastre o número na sua
-        <RouterLink to="/settings/Account" class="text-accent hover:underline">conta</RouterLink>
-        para receber por lá.
-      </div>
-    </div>
-    <div v-else-if="wpp.systemInfo?.display_phone"
-      class="mb-6 rounded-xl border border-line bg-surface-raised px-4 py-3 flex items-start gap-3">
-      <i class="fa-brands fa-whatsapp text-data-pos text-lg mt-0.5"></i>
-      <div class="text-xs text-ink-muted">
-        As mensagens chegam de <strong class="text-ink">{{ wpp.systemInfo.display_phone }}</strong>
-        no telefone do seu perfil. Para trocar o número, edite na sua
-        <RouterLink to="/settings/Account" class="text-accent hover:underline">conta</RouterLink>.
-      </div>
+    <div class="mb-4">
+      <SegmentedControl v-model="aba" :options="abas" size="sm" />
     </div>
 
-    <Skeleton v-if="store.prefsLoading" variant="row" :lines="5" />
-
-    <div v-else-if="!store.preferences.length"
-      class="py-12 text-center text-sm text-ink-muted">
-      Nenhuma preferência disponível.
-    </div>
-
-    <div v-else class="space-y-8">
-      <section v-for="block in grouped" :key="block.group">
-        <h2 class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2">
-          {{ block.group }}
-        </h2>
-
-        <div class="rounded-xl border border-line bg-surface-raised shadow-soft overflow-hidden">
-          <div class="hidden sm:grid grid-cols-[1fr_110px_110px_110px] px-4 py-2.5 border-b border-line
-                      text-micro font-mono uppercase tracking-wider text-ink-subtle bg-surface-sunken/40">
-            <span>Tipo</span>
-            <span class="text-center">Sistema</span>
-            <span class="text-center">E-mail</span>
-            <span class="text-center">WhatsApp</span>
-          </div>
-
-          <div class="divide-y divide-line">
-            <div v-for="pref in block.items" :key="pref.type"
-              class="grid grid-cols-1 sm:grid-cols-[1fr_110px_110px_110px] gap-3 px-4 py-3.5 items-center">
-              <div class="min-w-0">
-                <p class="text-sm font-medium text-ink">{{ pref.label }}</p>
-                <p v-if="pref.description" class="text-xs text-ink-muted mt-0.5">{{ pref.description }}</p>
-              </div>
-
-              <div class="flex sm:justify-center items-center gap-2">
-                <span class="sm:hidden text-xs text-ink-muted w-20">Sistema</span>
-                <Switch :model-value="pref.inapp" size="sm"
-                  @update:model-value="(v) => onToggle(pref, 'inapp', v)" />
-              </div>
-              <div class="flex sm:justify-center items-center gap-2">
-                <span class="sm:hidden text-xs text-ink-muted w-20">E-mail</span>
-                <Switch :model-value="pref.email" size="sm" :disabled="!pref.hasEmail"
-                  @update:model-value="(v) => onToggle(pref, 'email', v)" />
-              </div>
-              <div class="flex sm:justify-center items-center gap-2">
-                <span class="sm:hidden text-xs text-ink-muted w-20">WhatsApp</span>
-                <Switch :model-value="pref.whatsapp" size="sm"
-                  :disabled="!pref.hasWhatsapp || !whatsappReady"
-                  @update:model-value="(v) => onToggle(pref, 'whatsapp', v)" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <p class="text-micro text-ink-subtle">
-        As alterações são salvas automaticamente.
-      </p>
-    </div>
+    <PainelAlertas v-if="aba === 'painel' && isAdmin" />
+    <MeusAlertas v-else-if="aba === 'alertas'" />
+    <PreferenciasCanais v-else />
   </PageContainer>
 </template>

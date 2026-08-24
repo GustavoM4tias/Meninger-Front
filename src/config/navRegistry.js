@@ -369,7 +369,10 @@ export const navRegistry = [
                     { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack', hiddenInNav: true },
                     // Preferências do próprio usuário — permissionManaged:false → visíveis a todos.
                     { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
-                    { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false },
+                    // hiddenInNav desde 2026-08-24: virou a aba "Meus alertas" da tela
+                    // de Notificações. Alerta é notificação que a própria pessoa
+                    // programou, então ficava estranho em dois lugares do menu.
+                    { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false, hiddenInNav: true },
                     { route: '/report', name: 'Reportar Problema', icon: 'fas fa-bug', permissionManaged: false },
                 ],
             },

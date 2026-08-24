@@ -543,15 +543,20 @@ export default [
                         meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Integração DocuSign: credenciais JWT, consentimento e teste da assinatura digital das fichas comerciais' },
                     },
                     {
+                        // Virou a aba "Meus alertas" de /settings/notifications. A
+                        // rota fica: é o que a busca indexa e o alvo dos links
+                        // antigos. Aponta para a casca, que troca a URL ao montar.
                         path: 'alerts',
                         name: 'Alertas',
-                        component: () => import('@/views/Office/Settings/Alerts/Index.vue'),
+                        component: () => import('@/views/Office/Settings/Notifications/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gestão de alertas recorrentes criados via Eme' },
                     },
                     {
+                        // Idem: virou a aba "Painel", visível só para admin. O
+                        // allowedRole abaixo continua guardando esta URL.
                         path: 'alerts/admin',
                         name: 'Painel de Alertas',
-                        component: () => import('@/views/Office/Settings/Alerts/Admin/Index.vue'),
+                        component: () => import('@/views/Office/Settings/Notifications/Index.vue'),
                         meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Painel admin de alertas: visão geral e uso por usuário' },
                     },
                     {
