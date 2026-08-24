@@ -692,7 +692,13 @@ Uma tela só está pronta quando passa nos treze:
 12. Aviso pelo `useToast()`, confirmação pelo `pedirConfirmacao()` com a
     consequência escrita, diálogo pelo primitivo `Modal` - nenhum `confirm()`
     do navegador, nenhum balão próprio, nenhum `fixed inset-0` à mão
-13. `vite build` passa
+13. `vite build` passa **e** `node _design/imports-pendurados.mjs` passa
+
+O 13 tem duas metades de propósito. `vite build` compila o que está no SEU
+disco; `imports-pendurados` confere o que está no REPOSITÓRIO. A diferença
+entre os dois é o defeito que já derrubou a produção três vezes: um commit
+leva o arquivo que importa, deixa para trás o arquivo importado, e quebra
+para todo mundo que não tem a pasta local igual à sua.
 
 Depois de passar, marque a linha da tela em `ui-checklist.md` e rode
 `node _design/mapscreens.mjs .. && node _design/gen-checklist.mjs ..` para o

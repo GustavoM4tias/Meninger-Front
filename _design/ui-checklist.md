@@ -1,9 +1,9 @@
 # Checklist de padronização visual - Menin Office
 
-Gerado por `_design/mapscreens.mjs` em 2026-08-23. Para atualizar os números depois de
+Gerado por `_design/mapscreens.mjs` em 2026-08-24. Para atualizar os números depois de
 mexer nas telas, rode de novo e o checklist se refaz.
 
-- **65** telas pontuadas (+ 6 especiais fora do score)
+- **66** telas pontuadas (+ 6 especiais fora do score)
 - **Score médio: 100/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
@@ -17,7 +17,7 @@ carga com `Skeleton`, alvo de toque >= 40px e PageHelp escrito.
 
 ---
 
-## Onda 4 - Manutenção  `65 telas`
+## Onda 4 - Manutenção  `66 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
 
@@ -43,8 +43,6 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 
 ### Operação · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
-- [ ] **Títulos** `/titulos` · ` 97`
-      <sub>views/Office/Financeiro/Titulos/Index.vue · 368L · 8 cor fixa, 1 tabela</sub>
 - [ ] **Pré-Cadastros** `/precadastros` · ` 98`
       <sub>views/Office/Comercial/Precadastros/Index.vue · 995L (+2 comp.) · 6 cor fixa, 1 tabela</sub>
 - [ ] **Reservas** `/reservas-report` · ` 98`
@@ -69,8 +67,6 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Comercial/Imobiliarias/Index.vue · 1463L (+7 comp.) · 1 cor fixa, 2 tabela</sub>
 - [ ] **Custos** `/custos` · `100`
       <sub>views/Office/Financeiro/Custos/Index.vue · 1232L (+1 comp.) · 1 tabela</sub>
-- [ ] **Consulta de nº CEF** `/consulta-cef` · `100`
-      <sub>views/Office/Financeiro/ConsultaCef/Index.vue · 352L · 1 tabela</sub>
 - [ ] **Ato** `/cobranca/ato` · `100`
       <sub>views/Office/Financeiro/CobrancaAto/Index.vue · 3092L (+3 comp.) · 2 tabela</sub>
 - [ ] **BucketUpload** `/bucket-upload` · `100`
@@ -99,13 +95,15 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Usuários** `/users` · `100`
       <sub>views/Office/Settings/Users/Index.vue · 1352L (+2 comp.) · ok</sub>
 - [ ] **Minha Conta** `/account` · `100`
-      <sub>views/Office/Settings/Account/Index.vue · 910L (+6 comp.) · ok</sub>
+      <sub>views/Office/Settings/Account/Index.vue · 931L (+6 comp.) · ok</sub>
 - [ ] **Sincronização de empresas** `/empresas` · `100`
       <sub>views/Office/Settings/OrgSync/Index.vue · 747L · 1 tabela</sub>
 - [ ] **Integridade** `/integrity` · `100`
       <sub>views/Office/Settings/Integrity/Index.vue · 228L · ok</sub>
 - [ ] **WhatsApp** `/whatsapp` · `100`
       <sub>views/Office/Settings/Whatsapp/Index.vue · 1855L (+8 comp.) · 1 tabela</sub>
+- [ ] **Integração Microsoft** `/integracao-microsoft` · `100`
+      <sub>views/Office/Settings/MicrosoftIntegration/Index.vue · 231L · ok</sub>
 - [ ] **Configurações DocuSign** `/docusign` · `100`
       <sub>views/Office/Settings/Docusign/Index.vue · 313L · ok</sub>
 - [ ] **Alertas** `/alerts` · `100`
@@ -113,12 +111,14 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Painel de Alertas** `/alerts/admin` · `100`
       <sub>views/Office/Settings/Alerts/Admin/Index.vue · 169L · 1 tabela</sub>
 - [ ] **Backup Sienge** `/backup-sienge` · `100`
-      <sub>views/Office/Settings/BackupSienge/Index.vue · 1010L (+2 comp.) · 1 tabela</sub>
+      <sub>views/Office/Settings/BackupSienge/Index.vue · 978L (+2 comp.) · ok</sub>
 
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
 - [ ] **SharePoint** `/sharepoint` · ` 95`
-      <sub>views/Office/Microsoft/Sharepoint/Index.vue · 1363L (+3 comp.) · 1 modal na mão</sub>
+      <sub>views/Office/Microsoft/Sharepoint/Index.vue · 1380L (+3 comp.) · 1 modal na mão</sub>
+- [ ] **Títulos** `/titulos` · ` 97`
+      <sub>views/Office/Financeiro/Titulos/Index.vue · 340L · 8 cor fixa</sub>
 - [ ] **Caixa de Notificações** `/notifications [Office/Notifications]` · ` 98`
       <sub>views/Office/Notifications/Index.vue · 162L · 5 cor fixa</sub>
 - [ ] **Documentação** `/docs` · ` 98`
@@ -147,14 +147,16 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Comercial/Correspondentes/Index.vue · 1534L (+6 comp.) · ok</sub>
 - [ ] **MCMV — Limites por Cidade** `/mcmv` · `100`
       <sub>views/Office/Comercial/Mcmv/Index.vue · 222L · ok</sub>
+- [ ] **Consulta de nº CEF** `/consulta-cef` · `100`
+      <sub>views/Office/Financeiro/ConsultaCef/Index.vue · 330L · ok</sub>
 - [ ] **Fluxo de Pagamento** `/paymentflow` · `100`
       <sub>views/Office/Tools/PaymentoFlow/Index.vue · 3474L (+5 comp.) · ok</sub>
 - [ ] **Teams** `/teams` · `100`
-      <sub>views/Office/Microsoft/Teams/Index.vue · 2320L (+7 comp.) · ok</sub>
+      <sub>views/Office/Microsoft/Teams/Index.vue · 2322L (+7 comp.) · ok</sub>
 - [ ] **Planner** `/planner` · `100`
-      <sub>views/Office/Microsoft/Planner/Index.vue · 895L (+1 comp.) · sem container, sem header</sub>
+      <sub>views/Office/Microsoft/Planner/Index.vue · 983L (+1 comp.) · sem container, sem header</sub>
 - [ ] **InPersonRecording** `/inperson/recording` · `100`
-      <sub>views/Office/Microsoft/Transcripts/InPerson/Recording.vue · 390L · sem container, sem header</sub>
+      <sub>views/Office/Microsoft/Transcripts/InPerson/Recording.vue · 423L · sem container, sem header</sub>
 - [ ] **Validador** `/validator` · `100`
       <sub>views/Office/Tools/Validator/Index.vue · 484L (+3 comp.) · ok</sub>
 - [ ] **Cérebro da Eme** `/eme-brain` · `100`
@@ -175,7 +177,7 @@ Não seguem o esqueleto de página por natureza (login, shell, home da Eme, inst
 - [ ] **login** `/login` · `--`
       <sub>views/Office/Auth/Index.vue · 37L · sem container, sem header, sem help</sub>
 - [ ] **MicrosoftCallback** `/microsoft/callback` · `--`
-      <sub>views/Office/Auth/MicrosoftCallback.vue · 272L · sem container, sem header, sem help, 11 cor fixa</sub>
+      <sub>views/Office/Auth/MicrosoftCallback.vue · 312L · sem container, sem header, sem help, 11 cor fixa</sub>
 - [ ] **Relatório Público** `/r/:token` · `--`
       <sub>views/Public/ReportPublic.vue · 397L · sem container, sem header, sem help, 10 cor fixa</sub>
 - [ ] **Config** `/` · `--`
