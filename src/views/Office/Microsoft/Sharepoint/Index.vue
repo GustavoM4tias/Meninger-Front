@@ -140,16 +140,33 @@
                 @update:model-value="onSelectDrive" />
             </div>
 
-            <div v-if="sp.selectedDrive">
+            <div>
               <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1 block">
                 Buscar
               </label>
               <Input
                 v-model="sp.searchQuery"
-                placeholder="Nome do arquivo ou pasta..."
+                :placeholder="sp.searchScope === 'tudo' ? 'Nome ou conteúdo do arquivo...' : 'Nome do arquivo ou pasta...'"
                 icon-left="fas fa-magnifying-glass"
                 @keydown.enter="sp.doSearch()"
                 @input="sp.searchQuery ? null : sp.clearSearch()" />
+
+              <!-- Onde procurar. "Em tudo" usa o índice do SharePoint: uma
+                   chamada, cobre todos os sites e o OneDrive, e acha o termo
+                   DENTRO do arquivo. "Nesta biblioteca" é a varredura de
+                   sempre, para quem já sabe onde procurar. -->
+              <div class="flex items-center gap-1 mt-1.5">
+                <button v-for="opt in [{ v: 'tudo', t: 'Em tudo' }, { v: 'biblioteca', t: 'Nesta biblioteca' }]"
+                  :key="opt.v" type="button"
+                  :disabled="opt.v === 'biblioteca' && !sp.selectedDrive"
+                  @click="sp.searchScope = opt.v; sp.searchQuery && sp.doSearch()"
+                  :class="sp.searchScope === opt.v
+                    ? 'bg-accent-soft text-accent border-accent/30'
+                    : 'text-ink-subtle border-line hover:text-ink-muted disabled:opacity-40'"
+                  class="px-2 py-1 rounded-lg border text-micro transition-colors">
+                  {{ opt.t }}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -230,7 +247,11 @@
           <!-- Search results banner -->
           <template v-if="sp.searchResults.length || sp.isSearching">
             <div class="px-4 sm:px-5 py-2 bg-accent-soft border-b border-accent/20 flex items-center justify-between text-xs text-accent">
-              <span><i class="fas fa-magnifying-glass mr-1.5"></i>{{ sp.searchResults.length }} resultado(s) para "{{ sp.searchQuery }}"</span>
+              <span>
+                <i class="fas fa-magnifying-glass mr-1.5"></i>{{ sp.searchResults.length }} resultado(s) para "{{ sp.searchQuery }}"
+                <span v-if="sp.searchTotal > sp.searchResults.length" class="opacity-70">de {{ sp.searchTotal }}</span>
+                <span class="opacity-70">· {{ sp.searchScope === "tudo" ? "em tudo que você alcança" : "nesta biblioteca" }}</span>
+              </span>
               <button @click="sp.clearSearch()" class="hover:underline font-medium">Limpar busca</button>
             </div>
             <!-- A busca tem teto próprio, baixo de propósito: dizer isso evita

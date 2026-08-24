@@ -84,6 +84,11 @@ export const useSharepointStore = defineStore('sharepoint', () => {
     // que está cortada em vez de fingir que a pasta acabou.
     const listTruncated = ref(false);
     const searchTruncated = ref(false);
+    // Onde procurar: "tudo" usa o índice do SharePoint numa chamada só e cobre
+    // OneDrive junto; "biblioteca" é a varredura de sempre, restrita à pasta
+    // aberta. Quem sabe onde o arquivo está prefere a segunda.
+    const searchScope     = ref("tudo");        // tudo | biblioteca
+    const searchTotal     = ref(0);
 
     /** GET que devolve o array e registra se a listagem veio cortada. */
     async function _getList(url) {
@@ -255,20 +260,35 @@ export const useSharepointStore = defineStore('sharepoint', () => {
     }
 
     async function doSearch() {
-        if (!selectedDrive.value || !searchQuery.value.trim()) return;
+        const termo = searchQuery.value.trim();
+        if (!termo) return;
+
+        // Sem biblioteca aberta só existe um caminho possível: o índice.
+        const global = searchScope.value === 'tudo' || !selectedDrive.value;
+
         isSearching.value = true; error.value = null;
         try {
-            const { data, headers } = await requestWithAuth(
-                `${BASE}/drives/${selectedDrive.value.id}/search?q=${encodeURIComponent(searchQuery.value.trim())}`,
-                { withMeta: true }
-            );
-            searchResults.value = Array.isArray(data) ? data : [];
-            searchTruncated.value = headers?.get?.('X-Graph-Truncated') === '1';
+            if (global) {
+                // Uma chamada no índice do SharePoint: cobre todos os sites e o
+                // OneDrive, e procura DENTRO do arquivo, não só no nome.
+                const data = await requestWithAuth(`${BASE}/search?q=${encodeURIComponent(termo)}&size=50`);
+                searchResults.value = data.items || [];
+                searchTotal.value = data.total || searchResults.value.length;
+                searchTruncated.value = !!data.truncated;
+            } else {
+                const { data, headers } = await requestWithAuth(
+                    `${BASE}/drives/${selectedDrive.value.id}/search?q=${encodeURIComponent(termo)}`,
+                    { withMeta: true }
+                );
+                searchResults.value = Array.isArray(data) ? data : [];
+                searchTotal.value = searchResults.value.length;
+                searchTruncated.value = headers?.get?.('X-Graph-Truncated') === '1';
+            }
         } catch (err) { error.value = err.message; noteGraphError(err); }
         finally { isSearching.value = false; }
     }
 
-    function clearSearch() { searchQuery.value = ''; searchResults.value = []; searchTruncated.value = false; }
+    function clearSearch() { searchQuery.value = ''; searchResults.value = []; searchTruncated.value = false; searchTotal.value = 0; }
 
     // ── Actions: mutações ─────────────────────────────────────────────────────
 
@@ -431,7 +451,7 @@ export const useSharepointStore = defineStore('sharepoint', () => {
 
     return {
         sites, drives, items, selectedSite, selectedDrive,
-        breadcrumb, searchQuery, searchResults, isSearching,
+        breadcrumb, searchQuery, searchResults, isSearching, searchScope, searchTotal,
         uploadProgress, uploading,
         favorites, isFavorited, toggleFavorite,
         loading, error, listTruncated, searchTruncated, uploadMaxMb, fetchUploadLimits,
