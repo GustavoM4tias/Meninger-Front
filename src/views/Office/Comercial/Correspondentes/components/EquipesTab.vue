@@ -235,6 +235,17 @@ onMounted(() => { if (!store.empresas.length) store.fetchOverview(); });
                         <p class="text-xs text-ink-muted truncate">
                             <template v-if="e.cidade">
                                 <i class="fas fa-location-dot mr-1"></i>{{ e.cidade }}<template v-if="e.estado">/{{ e.estado }}</template>
+                                <!-- Cadastro de correspondente quase nunca tem cidade (31 de 33),
+                                     e o acesso é recortado por ela. Quando falta, a cidade vem do
+                                     empreendimento onde a empresa atua - dizer isso evita a
+                                     pergunta "de onde saiu essa cidade, se o cadastro está vazio?" -->
+                                <span v-if="e.cidade_origem === 'atuacao'"
+                                    v-tippy="`Deduzida do empreendimento onde atua${(e.cidades || []).length > 1 ? `: ${e.cidades.join(', ')}` : ''}`">
+                                    <i class="fas fa-building ml-1 text-ink-subtle"></i>
+                                    <template v-if="(e.cidades || []).length > 1">
+                                        <span class="text-ink-subtle"> +{{ e.cidades.length - 1 }}</span>
+                                    </template>
+                                </span>
                             </template>
                             <template v-else-if="e.nome_inferido">Cadastro não completado no Office</template>
                             <template v-else>Sem cidade informada</template>
