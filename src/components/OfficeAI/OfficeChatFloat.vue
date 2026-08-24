@@ -258,9 +258,14 @@ const emDock = computed(() => dock.docada.value && expanded.value && podeDocar.v
 const fabStyle = computed(() => {
   // Docada: coluna colada na direita, do topo ao rodapé.
   if (emDock.value) return { right: '0px', top: '0px', bottom: '0px', width: `${dock.largura.value}px` };
-  return expanded.value && isMobileViewport.value
-    ? {}
-    : { right: `${pos.value.right}px`, bottom: `${pos.value.bottom}px` };
+  // Celular expandido: o bottom-sheet manda, as classes cuidam.
+  if (expanded.value && isMobileViewport.value) return {};
+
+  const base = { right: `${pos.value.right}px`, bottom: `${pos.value.bottom}px` };
+  // Aberto no desktop: o tamanho é o que a pessoa deixou, não um valor fixo.
+  return expanded.value
+    ? { ...base, width: `${dock.caixa.value.w}px`, height: `${dock.caixa.value.h}px` }
+    : base;
 });
 
 // ── Redimensionar o painel docado ────────────────────────────────────────────
@@ -283,6 +288,35 @@ function pararResize() {
   window.removeEventListener('pointermove', aoRedimensionar);
 }
 
+// ── Redimensionar o painel FLUTUANTE ─────────────────────────────────────────
+// Ele fica ancorado no canto inferior direito, então quem cresce é a borda
+// ESQUERDA (largura) e a borda de CIMA (altura) - e o canto puxa as duas.
+// Antes era 384x512 cravado: quem lia uma ata inteira dentro dele sofria.
+const eixoResize = ref(null);   // 'w' | 'h' | 'wh'
+
+function iniciarResizeCaixa(eixo, e) {
+  if (!expanded.value || emDock.value || isMobileViewport.value) return;
+  eixoResize.value = eixo;
+  e.preventDefault();
+  e.stopPropagation();
+  window.addEventListener('pointermove', aoRedimensionarCaixa);
+  window.addEventListener('pointerup', pararResizeCaixa, { once: true });
+}
+
+function aoRedimensionarCaixa(e) {
+  const eixo = eixoResize.value;
+  if (!eixo) return;
+  // A âncora é o canto inferior direito: a distância até o ponteiro É o tamanho.
+  const w = eixo === 'h' ? dock.caixa.value.w : window.innerWidth  - e.clientX - pos.value.right;
+  const h = eixo === 'w' ? dock.caixa.value.h : window.innerHeight - e.clientY - pos.value.bottom;
+  dock.redimensionarCaixa(w, h);
+}
+
+function pararResizeCaixa() {
+  eixoResize.value = null;
+  window.removeEventListener('pointermove', aoRedimensionarCaixa);
+}
+
 // Tela estreita não comporta o dock: 400px a menos não deixa Office nenhum.
 watch(() => viewportW.value, (w) => { if (w < 1024 && dock.docada.value) dock.soltar(); });
 
@@ -298,6 +332,10 @@ const streamLabel = computed(() => {
 
 // ── Drag-to-move ────────────────────────────────────────────────────────────
 const DRAG_THRESHOLD = 5; // px — abaixo disso é click, acima é drag
+// Faixa da direita que, ao soltar, cola a Eme na lateral. Mesma ideia do
+// encaixe de janela do sistema: levar até a borda é o gesto que a pessoa já tem.
+const ZONA_DOCK = 56;
+const propondoDock = ref(false);
 const isPointerDown = ref(false);
 const isDragging    = ref(false);
 
@@ -327,13 +365,20 @@ function onPointerMove(e) {
       right:  startPos.right  - dx,
       bottom: startPos.bottom - dy,
     });
+    // Encostou na borda direita: propõe colar, como janela do sistema.
+    propondoDock.value = podeDocar.value && e.clientX >= window.innerWidth - ZONA_DOCK;
   }
 }
 
 function onPointerUp() {
   window.removeEventListener('pointermove', onPointerMove);
   window.removeEventListener('pointerup',   onPointerUp);
-  if (isDragging.value) {
+  if (isDragging.value && propondoDock.value) {
+    // Soltou na zona: cola e abre, que é o que a pessoa queria ao levar até lá.
+    propondoDock.value = false;
+    dock.docar();
+    expanded.value = true;
+  } else if (isDragging.value) {
     savePos(pos.value);
   } else {
     expanded.value = true; // tap puro → abre
@@ -397,6 +442,23 @@ function rename(title) { aiStore.renameSession(title); }
 
 <template>
   <Teleport to="body">
+    <!-- Encaixe: levar a bolinha até a borda direita propõe colar, como janela
+         do sistema. A faixa aparece só durante o arrasto. -->
+    <Transition
+      enter-active-class="transition duration-150 ease-out"
+      enter-from-class="opacity-0"
+      leave-active-class="transition duration-150 ease-in"
+      leave-to-class="opacity-0">
+      <div v-if="propondoDock"
+        :style="{ width: dock.largura.value + 'px' }"
+        class="fixed right-0 top-0 bottom-0 z-40 pointer-events-none
+               border-l-2 border-accent bg-accent-soft/60 grid place-items-center">
+        <span class="px-3 py-1.5 rounded-lg bg-surface-overlay border border-accent/30
+                     text-xs font-medium text-accent shadow-soft">
+          Soltar para encostar na lateral
+        </span>
+      </div>
+    </Transition>
     <Transition name="float-slide">
       <div
         v-if="showFloat"
@@ -406,7 +468,7 @@ function rename(title) { aiStore.renameSession(title); }
         :class="emDock
           ? 'h-dvh'
           : expanded
-            ? 'max-sm:inset-x-2 max-sm:bottom-2 max-sm:w-auto max-sm:h-[min(calc(100dvh-4rem),34rem)] sm:w-96 sm:h-[32rem]'
+            ? 'max-sm:inset-x-2 max-sm:bottom-2 max-sm:w-auto max-sm:h-[min(calc(100dvh-4rem),34rem)]'
             : 'w-auto h-auto'"
       >
         <!-- ── Modo expandido ───────────────────────────────────────── -->
@@ -420,10 +482,31 @@ function rename(title) { aiStore.renameSession(title); }
             class="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize z-10 transition-colors"
             title="Arraste para ajustar a largura"></div>
 
+          <!-- Flutuante: ancorado no canto de baixo à direita, então cresce pela
+               esquerda (largura), por cima (altura) e pelo canto (as duas). -->
+          <template v-if="!emDock && !isMobileViewport">
+            <div @pointerdown="iniciarResizeCaixa('w', $event)"
+              :class="eixoResize === 'w' ? 'bg-accent/40' : 'hover:bg-accent/25'"
+              class="absolute left-0 top-3 bottom-3 w-1.5 cursor-col-resize z-10 transition-colors"
+              title="Arraste para a largura"></div>
+            <div @pointerdown="iniciarResizeCaixa('h', $event)"
+              :class="eixoResize === 'h' ? 'bg-accent/40' : 'hover:bg-accent/25'"
+              class="absolute top-0 left-3 right-3 h-1.5 cursor-row-resize z-10 transition-colors"
+              title="Arraste para a altura"></div>
+            <div @pointerdown="iniciarResizeCaixa('wh', $event)"
+              class="absolute left-0 top-0 w-4 h-4 cursor-nwse-resize z-10 group"
+              title="Arraste para o tamanho">
+              <span class="absolute left-1 top-1 w-2 h-2 border-l-2 border-t-2 rounded-tl
+                           border-ink-subtle/40 group-hover:border-accent transition-colors"></span>
+            </div>
+          </template>
+
           <div class="flex items-center gap-1.5 px-3 py-2 border-b border-line bg-surface-raised">
             <img src="/Mlogo.png" class="h-4 flex-shrink-0 invert dark:invert-0" alt="Eme" />
-            <div class="flex-1 min-w-0">
+            <!-- min-w-0 + truncate: título longo cortava em cima dos botões. -->
+            <div class="flex-1 min-w-0 overflow-hidden">
               <ChatTitleEditor v-if="aiStore.currentSessionId"
+                class="block truncate"
                 :title="aiStore.currentSessionTitle" @rename="rename" />
               <span v-else class="text-xs text-ink-muted">Eme</span>
             </div>

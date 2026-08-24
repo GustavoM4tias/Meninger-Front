@@ -5,13 +5,13 @@ import { RouterLink, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useFavoritesStore } from '@/stores/Config/favoriteStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
+import { useEmeDock } from '@/composables/useEmeDock';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { navRegistry, allManagedRoutes, isItemActive } from '@/config/navRegistry';
 import { academyUrl } from '@/utils/appContext';
 
 import Search from '@/components/Navigation/components/Search.vue';
 import Notification from '@/components/Navigation/components/Notification.vue';
-import MuralBell from '@/components/Navigation/components/MuralBell.vue';
 import ThemeToggle from '@/components/Navigation/components/ThemeToggle.vue';
 import Profile from '@/components/Navigation/components/Profile.vue';
 
@@ -22,6 +22,11 @@ import SidebarCategory from './components/sidebar/SidebarCategory.vue';
 import SidebarFlyout from './components/sidebar/SidebarFlyout.vue';
 
 const route = useRoute();
+
+// A barra do topo é fixa e ocupa a largura toda: com a Eme encostada na direita
+// ela passaria POR BAIXO do painel. Aqui ela termina onde o painel começa.
+const dockEme = useEmeDock();
+const recuoTopo = computed(() => (dockEme.docada.value ? { right: `${dockEme.largura.value}px`, width: 'auto' } : null));
 
 // ─── Stores ──────────────────────────────────────────
 const authStore       = useAuthStore();
@@ -375,7 +380,8 @@ watch(() => route.fullPath, closeMobile);
   <div :class="['transition-[width] duration-200 ease-out-expo', sidebarWidthClass]">
 
     <!-- ─── Top Bar ─── -->
-    <nav ref="topbarEl" class="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-xl border-b border-line">
+    <nav ref="topbarEl" :style="recuoTopo"
+      class="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-xl border-b border-line transition-[right] duration-200">
       <div class="px-3 py-2 lg:px-5 lg:pl-3 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <IconButton
@@ -393,7 +399,6 @@ watch(() => route.fullPath, closeMobile);
         <div class="flex items-center gap-1.5">
           <div class="hidden md:block mr-1"><Search /></div>
           <ThemeToggle />
-          <MuralBell />
           <Notification />
           <Profile />
         </div>

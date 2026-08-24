@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Button from '@/components/UI/Button.vue';
+import { useEmeDock } from '@/composables/useEmeDock';
 
 import Nav from '@/components/Navigation/Nav.vue'; 
 import Carregamento from '@/components/Loading/Carregamento.vue';
@@ -12,6 +13,13 @@ import MuralFloatingCard from '@/components/Mural/MuralFloatingCard.vue';
 import MuralHost from '@/components/Platform/MuralHost.vue';
 
 const authStore = useAuthStore();
+
+// A Eme encostada na direita empurra o Office em vez de cobrir. Isto era uma
+// regra global no CSS e quebrava o layout: o padding no #app não alcançava os
+// elementos FIXOS do Nav (barra do topo e menu lateral), que continuavam
+// passando por baixo do painel. Agora quem empurra é o próprio shell.
+const dock = useEmeDock();
+const recuo = computed(() => (dock.docada.value ? { paddingRight: `${dock.largura.value}px` } : null));
 const route = useRoute();
 const router = useRouter();
 
@@ -47,7 +55,7 @@ function dispensar() {
     </div>
 
     <!-- Office: autenticado -->
-    <div v-else class="flex w-full">
+    <div v-else class="flex w-full transition-[padding] duration-200" :style="recuo">
         <main class="flex flex-col h-dvh w-full md:overflow-hidden">
             <div class="flex">
                 <Nav />
