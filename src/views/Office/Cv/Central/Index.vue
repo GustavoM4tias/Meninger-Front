@@ -51,7 +51,7 @@ onMounted(() => {
         <PageHeader
             title="CV CRM"
             subtitle="Credencial, sincronização e estado da integração com o CV"
-            icon="fas fa-plug"
+            icon-img="/CVLogo.png"
         >
             <template #actions>
                 <PageHelp
@@ -61,7 +61,7 @@ onMounted(() => {
                     :steps="[
                         { title: 'Credencial', text: 'É o login de um usuário do CV usado para ler dados que a chave de integração não alcança, como quais empreendimentos cada imobiliária atende. Use um usuário dedicado, não o login de uma pessoa.' },
                         { title: 'Quando o CV trocar a senha', text: 'O CV força troca de senha de tempos em tempos. Quando isso acontecer, quem estiver na lista de avisados recebe notificação e este painel mostra a falha - basta digitar a nova senha e salvar.' },
-                        { title: 'Sincronização', text: 'O botão Sincronizar agora força a leitura das imobiliárias na hora, depois de mexer em algo direto no CV.' },
+                        { title: 'Sincronização', text: 'O botão do cabeçalho força a leitura das imobiliárias na hora, depois de mexer em algo direto no CV. Os demais dados seguem o horário da lista abaixo.' },
                         { title: 'Sincronizações automáticas', text: 'Cada linha é um dado que o Office puxa do CV sozinho. O interruptor liga e desliga; o campo de horário usa formato cron e a tela traduz embaixo o que você digitou. Salvar reagenda na hora, sem reiniciar o sistema.' },
                     ]"
                     :tips="[
@@ -70,8 +70,10 @@ onMounted(() => {
                         'Os cadastros em si (imobiliárias, correspondentes, empreendimentos) ficam nos itens ao lado, no menu CV CRM.',
                     ]"
                 />
-                <Button variant="secondary" icon="fas fa-rotate" :loading="store.syncing" @click="sincronizar">
-                    Sincronizar agora
+                <Button variant="secondary" icon="fas fa-rotate" :loading="store.syncing"
+                    v-tippy="'Puxa o cadastro de imobiliárias e os vínculos com empreendimento na hora'"
+                    @click="sincronizar">
+                    Sincronizar imobiliárias
                 </Button>
             </template>
         </PageHeader>
