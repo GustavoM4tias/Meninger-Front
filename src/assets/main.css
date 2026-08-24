@@ -684,6 +684,119 @@ html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }
 .Vue-Toastification__container { z-index: 100000 !important; }
 
 /* ───────────────────────────────────────────────
+   O toast começa ABAIXO da barra de navegação
+   O container da lib encosta no topo da janela e, com z-index 100000, o balão
+   cobria a topbar — logo, sino e perfil sumiam atrás do aviso. Pior no celular,
+   onde a lib usa 100vw e o balão tapa a barra inteira. A nav publica a própria
+   altura em `--nav-topbar-h` (ver Nav.vue); onde não há nav (login, LP) a var
+   vale 0px e o comportamento é o de antes.
+   ─────────────────────────────────────────────── */
+.Vue-Toastification__container.top-left,
+.Vue-Toastification__container.top-right,
+.Vue-Toastification__container.top-center {
+  top: calc(var(--nav-topbar-h, 0px) + 0.75rem) !important;
+}
+
+/* ───────────────────────────────────────────────
+   Movimento do toast (entrada e saída)
+   A lib entrega um "bounce" datado. Aqui ele entra deslizando da direita e sai
+   pelo mesmo caminho, na curva única do sistema (out-expo). Vale para TODOS os
+   toasts — o "salvo com sucesso" das telas e o aviso do sino usam a mesma fila,
+   então precisam se mover igual. Registrado em main.js (opção `transition`).
+   ─────────────────────────────────────────────── */
+@keyframes menin-toast-in {
+  from { opacity: 0; transform: translateX(28px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes menin-toast-out {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(28px) scale(0.97); }
+}
+.menin-toast-in   { animation: menin-toast-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.menin-toast-out  { animation: menin-toast-out 220ms cubic-bezier(0.4, 0, 1, 1) both; }
+/* Os que ficam acomodam o lugar do que saiu, em vez de pular. */
+.menin-toast-move { transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ───────────────────────────────────────────────
+   Toast de NOTIFICAÇÃO (o sino falando sozinho)
+   O tema da lib pinta o balão inteiro de azul e escreve em branco: serve para
+   "salvo com sucesso", não para um aviso com ícone, título, corpo e destino.
+   Aqui o balão vira superfície do design system e quem desenha o conteúdo é o
+   NotificationToastBody. A pausa no hover e a barra de progresso continuam
+   sendo da lib.
+   ─────────────────────────────────────────────── */
+.Vue-Toastification__toast.menin-toast-notif {
+  background-color: rgb(var(--surface-overlay));
+  color: rgb(var(--ink));
+  border: 1px solid rgb(var(--line));
+  border-radius: 0.75rem;
+  box-shadow: 0 16px 40px -10px rgb(15 23 42 / 0.22), 0 6px 14px -4px rgb(15 23 42 / 0.10);
+  padding: 0.75rem;
+  min-height: 0;
+  min-width: 0;
+  width: min(24rem, calc(100vw - 2rem));
+  align-items: flex-start;
+  font-family: inherit;
+  /* O balão inteiro leva para a tela do aviso: a mão do cursor é o que promete
+     isso antes do clique. O movimento fica PRESO ao balão (ele sobe um fio e a
+     borda acende) - nada de camada translúcida por trás. */
+  cursor: pointer;
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 120ms ease,
+              box-shadow 120ms ease;
+}
+.Vue-Toastification__toast.menin-toast-notif:hover {
+  transform: translateY(-1px);
+  border-color: rgb(var(--accent) / 0.45);
+  box-shadow: 0 18px 44px -10px rgb(15 23 42 / 0.26), 0 8px 16px -4px rgb(15 23 42 / 0.12);
+}
+.Vue-Toastification__toast.menin-toast-notif:active {
+  transform: translateY(0);
+}
+.Vue-Toastification__toast.menin-toast-notif .Vue-Toastification__toast-component-body {
+  flex: 1;
+  min-width: 0;
+}
+.Vue-Toastification__toast.menin-toast-notif .Vue-Toastification__close-button {
+  color: rgb(var(--ink-subtle));
+  font-size: 18px;
+  line-height: 18px;
+  opacity: 0.55;
+  align-self: flex-start;
+}
+.Vue-Toastification__toast.menin-toast-notif .Vue-Toastification__close-button:hover,
+.Vue-Toastification__toast.menin-toast-notif .Vue-Toastification__close-button:focus {
+  color: rgb(var(--ink));
+  opacity: 1;
+}
+.Vue-Toastification__toast.menin-toast-notif .Vue-Toastification__progress-bar {
+  height: 3px;
+  background-color: rgb(var(--accent));
+  opacity: 0.55;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+/* Cursor sobre QUALQUER aviso segura a contagem de TODOS.
+   A lib pausa só o balão sob o cursor (`animation-play-state` inline por toast),
+   e quem fecha o toast é o `animationend` desta barra — então congelar a
+   animação congela o fechamento. O `!important` é o que vence o estilo inline
+   da lib. A classe é posta no container pelo NotificationToaster. */
+.Vue-Toastification__container.menin-toast-hold
+  .Vue-Toastification__toast.menin-toast-notif
+  .Vue-Toastification__progress-bar {
+  animation-play-state: paused !important;
+}
+
+/* No celular a lib encosta o balão nas duas bordas e tira o arredondamento.
+   Um aviso que chega sozinho fica melhor como cartão, com folga lateral. */
+@media only screen and (max-width: 600px) {
+  .Vue-Toastification__container .Vue-Toastification__toast.menin-toast-notif {
+    width: calc(100vw - 1.5rem);
+    margin: 0 0.75rem 0.5rem;
+    border-radius: 0.75rem;
+  }
+}
+
+/* ───────────────────────────────────────────────
    Tooltip (tippy.js) — tema 'menin'
    Segue os tokens semânticos, então acompanha claro/escuro sozinho.
    Aplicado globalmente pelo diretivo v-tippy (main.js).

@@ -24,6 +24,16 @@ app.use(pinia);
 
 app.use(Toast, {
   position: "top-right",
+  // Entrada e saida deslizando pela direita, na curva unica do sistema.
+  // As classes vivem em assets/main.css (a lib so aplica enter/leave/move).
+  transition: {
+    enter: "menin-toast-in",
+    leave: "menin-toast-out",
+    move: "menin-toast-move",
+  },
+  // Aviso do sino e aviso de tela dividem a fila; quatro na tela ja e demais.
+  maxToasts: 4,
+  newestOnTop: true,
   timeout: 4000,
   closeOnClick: true,
   pauseOnFocusLoss: true,

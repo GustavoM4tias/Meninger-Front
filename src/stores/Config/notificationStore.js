@@ -10,15 +10,23 @@ import {
     saveNotificationPreference,
 } from '@/utils/Config/apiNotification';
 
-// Ordena: não-lidas primeiro, depois da mais recente para a mais antiga.
+// Ordena CRONOLOGICAMENTE: a mais recente primeiro, lida ou não.
+//
+// Antes as não-lidas subiam para o topo aqui no front. Como o back paginava por
+// outro critério, a página que chegava já vinha das mais antigas e este sort só
+// reembaralhava as 30 velhas: quem tinha aviso pendente de junho via junho para
+// sempre. A marca de não lida continua no card, e quem quer só o pendente usa o
+// filtro "Não lidas" — que é uma consulta, não uma reordenação.
 function sortNotifications(list) {
     const ts = (n) => new Date(n?.created_at || n?.createdAt || 0).getTime() || 0;
-    return [...(list || [])].sort((a, b) => {
-        const aUnread = a?.read_at ? 0 : 1;
-        const bUnread = b?.read_at ? 0 : 1;
-        if (aUnread !== bUnread) return bUnread - aUnread; // não-lidas no topo
-        return ts(b) - ts(a);                              // recente → antigo
-    });
+    return [...(list || [])].sort((a, b) => (ts(b) - ts(a)) || ((b?.id || 0) - (a?.id || 0)));
+}
+
+// Junta itens novos na lista sem duplicar (o polling relê o topo).
+function mergeById(atual, novos) {
+    const map = new Map((atual || []).map(n => [n.id, n]));
+    for (const n of (novos || [])) map.set(n.id, { ...(map.get(n.id) || {}), ...n });
+    return sortNotifications(Array.from(map.values()));
 }
 
 export const useNotificationStore = defineStore('notificationStore', {
@@ -30,6 +38,9 @@ export const useNotificationStore = defineStore('notificationStore', {
         // preferências
         preferences: [],
         prefsLoading: false,
+        // O que chegou no último syncLatest — o toaster observa isto. Fica AQUI e
+        // não na tela porque quem descobre a novidade é o polling da store.
+        lastArrivals: [],
         // polling
         _pollHandle: null,
     }),
@@ -161,10 +172,36 @@ export const useNotificationStore = defineStore('notificationStore', {
         },
 
         // ─── Polling simples (60s) ──────────────────────────
+        // Relê as mais recentes e MESCLA no que já está em memória, sem descartar as
+        // páginas que o usuário já carregou. Devolve o que chegou de novo — é daqui
+        // que sai o toast. Antes o polling atualizava só o número do badge, então o
+        // sino seguia mostrando a lista do login enquanto o contador subia.
+        async syncLatest({ limit = 20 } = {}) {
+            try {
+                // Na primeira leitura TUDO é novidade, e não é: seria o histórico
+                // inteiro virando toast no login. Quem cuida da abertura é o
+                // toaster, com regra própria.
+                const primeiraCarga = this.notifications.length === 0;
+                const result = await fetchNotifications({ limit, offset: 0 });
+                const items = Array.isArray(result?.items) ? result.items : [];
+                const conhecidos = new Set(this.notifications.map(n => n.id));
+                const chegaram = primeiraCarga ? [] : items.filter(n => !conhecidos.has(n.id));
+
+                this.notifications = mergeById(this.notifications, items);
+                this.total = Number(result?.total ?? this.total);
+                if (typeof result?.unread === 'number') this.unread = result.unread;
+                this.lastArrivals = chegaram;
+                return chegaram;
+            } catch (err) {
+                console.error('[notificationStore] syncLatest', err);
+                return [];
+            }
+        },
+
         startPolling(intervalMs = 60_000) {
             this.stopPolling();
-            this.refreshUnreadCount();
-            this._pollHandle = setInterval(() => this.refreshUnreadCount(), intervalMs);
+            this.syncLatest();
+            this._pollHandle = setInterval(() => this.syncLatest(), intervalMs);
         },
 
         stopPolling() {

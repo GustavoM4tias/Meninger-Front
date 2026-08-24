@@ -1,37 +1,66 @@
 <script setup>
+// Caixa de entrada. A tela É a listagem (mesma receita do Pré-Cadastros).
+//
+// O card de cada aviso é o MESMO do sino (NotificationItem), só que em `lg`:
+// enquanto eram dois arquivos, o ícone e o rótulo do tipo divergiam e 42 dos 47
+// tipos apareciam como "Aviso" cinza aqui.
 import { onMounted, ref, computed, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useNotificationStore } from '@/stores/Config/notificationStore';
+import NotificationItem from '@/components/Navigation/components/NotificationItem.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Button from '@/components/UI/Button.vue';
-import Spinner from '@/components/UI/Spinner.vue';
-
 import Skeleton from '@/components/UI/Skeleton.vue';
+
 const store = useNotificationStore();
 
 const tab = ref('all'); // all | unread
 const limit = 30;
 const offset = ref(0);
 
-const TYPE_META = {
-  'event.created':   { icon: 'fas fa-calendar-plus',   accent: 'text-data-pos',  label: 'Evento' },
-  'event.reminder':  { icon: 'fas fa-bell',            accent: 'text-data-warn',    label: 'Lembrete' },
-  'support.opened':  { icon: 'fas fa-life-ring',       accent: 'text-accent',      label: 'Suporte' },
-  'support.updated': { icon: 'fas fa-comments',        accent: 'text-accent',      label: 'Suporte' },
-  'generic':         { icon: 'fas fa-circle-info',     accent: 'text-ink-muted',    label: 'Aviso' },
-};
-const metaOf = (t) => TYPE_META[t] || TYPE_META.generic;
+// O total da store é o da CONSULTA atual (na aba "Não lidas" ele vira o total de
+// não lidas). Guardar o total geral à parte evita o chip de "Todas" encolher
+// quando a pessoa alterna de aba.
+const totalAll = ref(0);
+watch(() => store.total, (v) => { if (tab.value === 'all') totalAll.value = v; });
 
 const tabs = computed(() => [
-  { value: 'all',    label: 'Todas',     icon: 'fas fa-list',          count: store.total },
-  { value: 'unread', label: 'Não lidas', icon: 'fas fa-circle-dot',    count: store.unread },
+  { value: 'all',    label: 'Todas',     icon: 'fas fa-list',       count: totalAll.value },
+  { value: 'unread', label: 'Não lidas', icon: 'fas fa-circle-dot', count: store.unread },
 ]);
 
-const items = computed(() => store.notifications);
-const hasMore = computed(() => items.value.length < store.total);
+const items = computed(() => store.notifications.filter(n => (tab.value === 'unread' ? !n.read_at : true)));
+// Quanto já foi pedido ao servidor, e não quanto está na tela: marcar um aviso
+// como lido tira ele da aba "Não lidas" e faria o botão reaparecer sem ter mais
+// página para buscar.
+const hasMore = computed(() => (offset.value + limit) < store.total);
+
+// Agrupa por dia. Com 300+ avisos, cabeçalho de data é o que deixa evidente que
+// a lista começa no mais recente — a queixa que originou esta tela era
+// justamente parecer parada em junho.
+const diaLabel = (value) => {
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return 'Sem data';
+  const hoje = new Date();
+  const ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
+  if (dt.toDateString() === hoje.toDateString()) return 'Hoje';
+  if (dt.toDateString() === ontem.toDateString()) return 'Ontem';
+  return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+};
+
+const grupos = computed(() => {
+  const out = [];
+  for (const n of items.value) {
+    const label = diaLabel(n.created_at);
+    const ultimo = out[out.length - 1];
+    if (ultimo && ultimo.label === label) ultimo.items.push(n);
+    else out.push({ label, items: [n] });
+  }
+  return out;
+});
 
 async function load(reset = true) {
   if (reset) offset.value = 0;
@@ -40,6 +69,7 @@ async function load(reset = true) {
     limit,
     offset: offset.value,
   });
+  if (tab.value === 'all') totalAll.value = store.total;
 }
 
 async function loadMore() {
@@ -53,17 +83,7 @@ async function loadMore() {
 }
 
 watch(tab, () => load(true));
-
 onMounted(() => load(true));
-
-const formatFull = (d) => {
-  if (!d) return '';
-  const dt = new Date(d);
-  return `${dt.toLocaleDateString('pt-BR')} • ${dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-};
-
-const handleClick = (n) => { if (!n.read_at) store.markRead(n.id); };
-const handleRemove = (e, n) => { e.preventDefault(); e.stopPropagation(); store.remove(n.id); };
 </script>
 
 <template>
@@ -71,7 +91,7 @@ const handleRemove = (e, n) => { e.preventDefault(); e.stopPropagation(); store.
     <PageHeader
       icon="fas fa-bell"
       title="Notificações"
-      subtitle="Histórico de avisos do sistema."
+      subtitle="Histórico de avisos do sistema, do mais recente para o mais antigo."
       eyebrow="Caixa de entrada">
       <template #actions>
         <PageHelp
@@ -79,8 +99,9 @@ const handleRemove = (e, n) => { e.preventDefault(); e.stopPropagation(); store.
           title="Como usar a caixa de notificações"
           intro="O histórico do que o sistema te avisou. É consulta: nada aqui dispara ação sozinho."
           :steps="[
-            { title: 'Procure o aviso', text: 'As mais recentes primeiro. O que você ainda não abriu fica destacado.' },
-            { title: 'Vá para a origem', text: 'Clicar leva à tela que gerou o aviso, já no registro certo.' },
+            { title: 'Procure o aviso', text: 'As mais recentes primeiro, agrupadas por dia. O que você ainda não abriu fica marcado como novo.' },
+            { title: 'Vá para a origem', text: 'O aviso que mostra “Abrir” leva à tela que o gerou, já no registro certo.' },
+            { title: 'Limpe o que não serve', text: 'O X remove o aviso da sua caixa. Só da sua: não apaga para mais ninguém.' },
           ]"
           :tips="[
             'Não recebeu algo que esperava? Confira Preferências: o tipo pode estar desligado para você.',
@@ -111,46 +132,18 @@ const handleRemove = (e, n) => { e.preventDefault(); e.stopPropagation(); store.
       </p>
     </div>
 
-    <div v-else class="space-y-2">
-      <RouterLink v-for="n in items" :key="n.id" :to="n.link || '#'" @click="handleClick(n)"
-        :class="[
-          'group relative flex items-stretch gap-3 p-3 rounded-lg border transition-all',
-          !n.read_at
-            ? 'bg-accent-soft/40 border-accent/20 hover:bg-accent-soft/60'
-            : 'bg-surface-raised border-line hover:bg-surface-sunken',
-        ]">
-        <div v-if="n.data?.image" class="w-14 h-14 rounded-md overflow-hidden shrink-0">
-          <img :src="n.data.image" alt="" class="h-full w-full object-cover" />
+    <div v-else class="space-y-6">
+      <section v-for="grupo in grupos" :key="grupo.label">
+        <h2 class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2 sticky top-14 z-10
+                   bg-surface/90 backdrop-blur py-1">
+          {{ grupo.label }}
+        </h2>
+        <div class="space-y-2">
+          <NotificationItem v-for="n in grupo.items" :key="n.id" :notification="n" size="lg" />
         </div>
-        <div v-else
-          class="shrink-0 w-14 h-14 rounded-md grid place-items-center bg-surface-sunken border border-line">
-          <i :class="[metaOf(n.type).icon, metaOf(n.type).accent, 'text-base']"></i>
-        </div>
+      </section>
 
-        <div class="flex flex-col min-w-0 flex-1 justify-center">
-          <div class="flex items-center gap-2">
-            <span :class="['text-micro font-medium uppercase tracking-wide', metaOf(n.type).accent]">
-              {{ metaOf(n.type).label }}
-            </span>
-            <span v-if="!n.read_at" class="h-1.5 w-1.5 rounded-full bg-accent shrink-0"></span>
-          </div>
-          <h4 :class="['text-sm', !n.read_at ? 'font-semibold text-ink' : 'font-medium text-ink-muted']">
-            {{ n.title }}
-          </h4>
-          <p v-if="n.body" class="text-xs text-ink-muted line-clamp-2">{{ n.body }}</p>
-          <p class="text-micro text-ink-subtle mt-0.5">{{ formatFull(n.created_at) }}</p>
-        </div>
-
-        <button type="button" @click="(e) => handleRemove(e, n)"
-          class="absolute top-2 right-2 h-7 w-7 grid place-items-center rounded-md
-                 text-ink-subtle opacity-0 group-hover:opacity-100
-                 hover:bg-surface-sunken hover:text-data-neg transition-all"
-          title="Remover">
-          <i class="fas fa-xmark text-[11px]"></i>
-        </button>
-      </RouterLink>
-
-      <div v-if="hasMore" class="pt-3 text-center">
+      <div v-if="hasMore" class="pt-1 text-center">
         <Button variant="secondary" size="sm" :loading="store.loading" @click="loadMore">
           Carregar mais
         </Button>
