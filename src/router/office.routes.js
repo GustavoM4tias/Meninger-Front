@@ -557,7 +557,7 @@ export default [
                     {
                         path: 'notifications',
                         name: 'Notificações',
-                        component: () => import('@/views/Office/Settings/Notifications/Index.vue'),
+                        component: () => import('@/views/Office/Notifications/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Preferências de notificação por canal e tipo' },
                     },
                     {
@@ -584,7 +584,7 @@ export default [
                         // antigos. Aponta para a casca, que troca a URL ao montar.
                         path: 'alerts',
                         name: 'Alertas',
-                        component: () => import('@/views/Office/Settings/Notifications/Index.vue'),
+                        component: () => import('@/views/Office/Notifications/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Gestão de alertas recorrentes criados via Eme' },
                     },
                     {
@@ -592,7 +592,7 @@ export default [
                         // allowedRole abaixo continua guardando esta URL.
                         path: 'alerts/admin',
                         name: 'Painel de Alertas',
-                        component: () => import('@/views/Office/Settings/Notifications/Index.vue'),
+                        component: () => import('@/views/Office/Notifications/Index.vue'),
                         meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Painel admin de alertas: visão geral e uso por usuário' },
                     },
                     {

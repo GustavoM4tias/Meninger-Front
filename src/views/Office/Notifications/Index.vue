@@ -1,326 +1,160 @@
 <script setup>
-// Caixa de entrada: TUDO que chegou para esta pessoa, em um lugar só.
+// Avisos e notificações: UMA tela para o assunto inteiro.
 //
-// Eram três caixas. O aviso do sistema ficava aqui; o comunicado do mural, numa
-// tela própria que só aparecia quando o card flutuava; o alerta, misturado aos
-// avisos sem se identificar. Medido em 24/08/2026: de 36 destinatários de
-// comunicado, 13 tinham dado ciência - e o mural passou dois meses sem
-// publicação nenhuma, ou seja, invisível no intervalo.
+// Eram cinco telas e quatro itens de menu - mural, gestão do mural, caixa de
+// notificações, preferências e painel de alertas -, com dois sinos na barra de
+// cima e dois itens de menu com "notificações" no nome. Tudo isso responde a uma
+// pergunta só: o que me avisaram, e como quero ser avisado.
 //
-// A união é de SUPERFÍCIE, não de motor: comunicado continua com público-alvo e
-// trilha de ciência, alerta continua sendo cron + consulta. O que muda é que a
-// pessoa lê os três no mesmo lugar, e dá a ciência sem sair da lista.
-import { onMounted, ref, computed, watch } from 'vue';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
-import { useNotificationStore } from '@/stores/Config/notificationStore';
-import { useMuralStore } from '@/stores/Mural/muralStore';
+// Cinco portas chegam aqui, e cada uma abre na seção certa:
+//
+//   /notifications             caixa
+//   /mural                     caixa recortada na origem mural
+//   /mural/admin               comunicados (gestão)
+//   /settings/alerts           alertas
+//   /settings/alerts/admin     painel de alertas
+//   /settings/notifications    preferências
+//
+// Nenhuma rota morreu: elas são o nome que a empresa conhece, o alvo dos links
+// já espalhados (card flutuante, notificação de comunicado, botão do editor de
+// alertas da Eme) e o que as alçadas nomeiam.
+//
+// As seções condicionais seguem cada uma a sua regra, e as duas são COSMÉTICAS -
+// quem barra de verdade é o backend:
+//   Comunicados → useCan('/mural/admin'), porque a tela tem capacidades
+//   Painel      → permissionStore.isAdmin, porque alerta não tem capacidade
+// (a regra de escolha está no CLAUDE.md do backend, item 2c).
+import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useCan } from '@/composables/useCan';
-import MuralGestao from '@/views/Office/Mural/components/MuralGestao.vue';
-import NotificationItem from '@/components/Navigation/components/NotificationItem.vue';
+import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
+import { useNotificationStore } from '@/stores/Config/notificationStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Button from '@/components/UI/Button.vue';
-import Skeleton from '@/components/UI/Skeleton.vue';
+import CaixaEntrada from './components/CaixaEntrada.vue';
+import MuralGestao from '@/views/Office/Mural/components/MuralGestao.vue';
+import MeusAlertas from '@/views/Office/Settings/Alerts/MeusAlertas.vue';
+import PainelAlertas from '@/views/Office/Settings/Alerts/Admin/PainelAlertas.vue';
+import PreferenciasCanais from '@/views/Office/Settings/Notifications/components/PreferenciasCanais.vue';
 
-const store = useNotificationStore();
-const mural = useMuralStore();
 const route = useRoute();
 const router = useRouter();
+const perm = usePermissionStore();
 const can = useCan('/mural/admin');
+const store = useNotificationStore();
 
-const tab = ref('all'); // all | unread
-// A origem também é PORTA DE ENTRADA: /mural cai aqui já recortado no mural, e
-// é assim que o item "Mural de Avisos" do menu continua levando ao mural sem
-// existir uma segunda tela desenhando o mesmo dado.
-const origem = ref(route.path.startsWith('/mural') ? 'mural' : (String(route.query.origem || 'todas')));
+const isAdmin = computed(() => perm.isAdmin);
+const podeGerirMural = computed(() => can('view') || can('manage'));
 
-// A gestão de comunicados é a segunda aba, para quem tem a capacidade da tela
-// /mural/admin. Esconder é COSMÉTICO: quem barra é o requireCapability na API.
-const podeGerir = computed(() => can('view') || can('manage'));
-const secao = ref(route.path.startsWith('/mural/admin') ? 'gestao' : 'caixa');
-
-const secoes = computed(() => [
-  { value: 'caixa', label: 'Caixa de entrada', icon: 'fas fa-inbox' },
-  { value: 'gestao', label: 'Comunicados', icon: 'fas fa-bullhorn' },
-]);
-
-// URL limpa: as três portas (/notifications, /mural, /mural/admin) chegam na
-// mesma tela e passam a se chamar do mesmo jeito.
-watch([secao, origem], ([sec, org]) => {
-  const query = {};
-  if (sec === 'gestao') query.tab = 'gestao';
-  else if (org && org !== 'todas') query.origem = org;
-  router.replace({ path: '/notifications', query });
-});
-const limit = 30;
-const offset = ref(0);
-
-// O total da store é o da CONSULTA atual (na aba "Não lidas" ele vira o total de
-// não lidas). Guardar o total geral à parte evita o chip de "Todas" encolher
-// quando a pessoa alterna de aba.
-const totalAll = ref(0);
-watch(() => store.total, (v) => { if (tab.value === 'all') totalAll.value = v; });
-
-const tabs = computed(() => [
-  { value: 'all',    label: 'Todas',     icon: 'fas fa-list',       count: totalAll.value },
-  { value: 'unread', label: 'Não lidas', icon: 'fas fa-circle-dot', count: store.unread },
-]);
-
-// ─── Origem ─────────────────────────────────────────────────────────────────
-// Cada motor deixa a assinatura no próprio aviso, então dá para separar sem
-// tocar em nenhum deles: o comunicado vem com tipo `comunicado.*`, e o alerta
-// grava `source: 'alert'` no data (ver AlertEngine).
-function origemDe(n) {
-  if (String(n?.type || '').startsWith('comunicado.')) return 'mural';
-  if (n?.data?.source === 'alert') return 'alertas';
-  return 'sistema';
+// Qual seção a URL pede. A rota manda; a query é para quem troca de seção aqui.
+function secaoDaRota() {
+  const p = route.path;
+  const q = String(route.query.secao || '').toLowerCase();
+  if (p.startsWith('/mural/admin')) return 'comunicados';
+  if (p.startsWith('/settings/alerts/admin')) return 'painel';
+  if (p.startsWith('/settings/alerts')) return 'alertas';
+  if (p.startsWith('/settings/notifications')) return 'preferencias';
+  return q || 'caixa';
 }
 
-// Comunicado correspondente a um aviso, quando ele ainda está ativo no mural.
-// É o que traz o estado de ciência para dentro do card.
-const comunicadoDe = (n) => {
-  const id = n?.data?.comunicadoId;
-  return id ? mural.items.find(c => Number(c.id) === Number(id)) || null : null;
+const secao = ref(secaoDaRota());
+watch(() => route.fullPath, () => { secao.value = secaoDaRota(); });
+
+// Trocar de seção não inventa rota nova: fica tudo em /notifications?secao=…
+function irPara(v) {
+  secao.value = v;
+  router.replace({ path: '/notifications', query: v === 'caixa' ? {} : { secao: v } });
+}
+
+const secoes = computed(() => {
+  const lista = [{ value: 'caixa', label: 'Caixa', icon: 'fas fa-inbox', count: store.unread || undefined }];
+  if (podeGerirMural.value) lista.push({ value: 'comunicados', label: 'Comunicados', icon: 'fas fa-bullhorn' });
+  lista.push({ value: 'alertas', label: 'Alertas', icon: 'fas fa-tower-broadcast' });
+  if (isAdmin.value) lista.push({ value: 'painel', label: 'Painel', icon: 'fas fa-chart-line' });
+  lista.push({ value: 'preferencias', label: 'Preferências', icon: 'fas fa-sliders' });
+  return lista;
+});
+
+// Seção que a pessoa não pode ver cai na caixa: link antigo ou URL colada não
+// pode abrir tela vazia.
+const secaoValida = computed(() => {
+  if (secao.value === 'comunicados' && !podeGerirMural.value) return 'caixa';
+  if (secao.value === 'painel' && !isAdmin.value) return 'alertas';
+  return secao.value;
+});
+
+const CABECALHO = {
+  caixa: {
+    eyebrow: 'Caixa de entrada',
+    title: 'Avisos e notificações',
+    subtitle: 'Avisos do sistema, comunicados do mural e seus alertas, do mais recente para o mais antigo.',
+  },
+  comunicados: {
+    eyebrow: 'Mural · Gestão',
+    title: 'Comunicados',
+    subtitle: 'Escrever, publicar e acompanhar a leitura dos comunicados do mural.',
+  },
+  alertas: {
+    eyebrow: 'Alertas',
+    title: 'Meus alertas',
+    subtitle: 'O que você mandou a Eme vigiar, e o horário de cada consulta.',
+  },
+  painel: {
+    eyebrow: 'Alertas · Admin',
+    title: 'Painel de alertas',
+    subtitle: 'Visão geral dos alertas do sistema e do uso por pessoa.',
+  },
+  preferencias: {
+    eyebrow: 'Preferências',
+    title: 'Como quero ser avisado',
+    subtitle: 'Escolha por onde cada tipo de aviso chega até você.',
+  },
 };
 
-// Comunicado ativo que NÃO tem aviso na lista carregada (publicado antes das
-// notificações existirem, aviso apagado, destinatário incluído depois). Sem
-// isto, uma pendência de ciência sumiria da caixa.
-const comunicadosOrfaos = computed(() => {
-  const jaNaLista = new Set(
-    store.notifications.map(n => n?.data?.comunicadoId).filter(Boolean).map(Number)
-  );
-  return (mural.items || [])
-    .filter(c => !jaNaLista.has(Number(c.id)))
-    .map(c => ({
-      id: `com-${c.id}`,
-      sintetico: true,
-      comunicado: c,
-      type: 'comunicado.published',
-      title: c.title,
-      body: c.body,
-      // O comunicado pode apontar para um destino próprio (formulário, artigo);
-      // sem ele, a origem é o mural.
-      link: c.link || '/mural',
-      data: { comunicadoId: c.id, kind: c.kind },
-      created_at: c.publishedAt || c.createdAt,
-      // Informativo não fica "novo" para sempre: só o que exige ciência e ainda
-      // não foi confirmado conta como não lido.
-      read_at: c.requiresAck ? (c.acked ? (c.ackedAt || c.publishedAt) : null) : (c.publishedAt || c.createdAt),
-    }));
-});
-
-const unificados = computed(() => {
-  const base = store.notifications.map(n => ({
-    ...n,
-    sintetico: false,
-    comunicado: comunicadoDe(n),
-  }));
-  const ts = (x) => new Date(x?.created_at || 0).getTime() || 0;
-  return [...base, ...comunicadosOrfaos.value].sort((a, b) => ts(b) - ts(a));
-});
-
-const porEstado = computed(() => unificados.value.filter(n => (tab.value === 'unread' ? !n.read_at : true)));
-
-const contagemOrigem = computed(() => {
-  const c = { todas: 0, sistema: 0, mural: 0, alertas: 0 };
-  for (const n of porEstado.value) { c.todas++; c[origemDe(n)]++; }
-  return c;
-});
-
-// Comunicado que espera confirmação é a única coisa nesta tela que DEPENDE da
-// pessoa. Ganha um chip próprio, à frente das origens.
-const cienciaPendente = computed(() => mural.ackPendingCount || 0);
-
-const origens = computed(() => [
-  { value: 'todas',   label: 'Tudo',     icon: 'fas fa-inbox' },
-  { value: 'sistema', label: 'Sistema',  icon: 'fas fa-gear' },
-  { value: 'mural',   label: 'Mural',    icon: 'fas fa-thumbtack' },
-  { value: 'alertas', label: 'Alertas',  icon: 'fas fa-tower-broadcast' },
-].map(o => ({ ...o, count: contagemOrigem.value[o.value] })));
-
-const items = computed(() => (
-  origem.value === 'todas'
-    ? porEstado.value
-    : porEstado.value.filter(n => origemDe(n) === origem.value)
-));
-
-// Quanto já foi pedido ao servidor, e não quanto está na tela: marcar um aviso
-// como lido tira ele da aba "Não lidas" e faria o botão reaparecer sem ter mais
-// página para buscar.
-const hasMore = computed(() => (offset.value + limit) < store.total);
-
-// Agrupa por dia. Com 300+ avisos, cabeçalho de data é o que deixa evidente que
-// a lista começa no mais recente.
-const diaLabel = (value) => {
-  const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return 'Sem data';
-  const hoje = new Date();
-  const ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
-  if (dt.toDateString() === hoje.toDateString()) return 'Hoje';
-  if (dt.toDateString() === ontem.toDateString()) return 'Ontem';
-  return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-};
-
-const grupos = computed(() => {
-  const out = [];
-  for (const n of items.value) {
-    const label = diaLabel(n.created_at);
-    const ultimo = out[out.length - 1];
-    if (ultimo && ultimo.label === label) ultimo.items.push(n);
-    else out.push({ label, items: [n] });
-  }
-  return out;
-});
-
-// Pendência de ciência dentro do card.
-const precisaCiencia = (n) => !!(n.comunicado?.requiresAck && !n.comunicado?.acked);
-const confirmando = ref(null);
-async function darCiencia(n) {
-  const c = n.comunicado;
-  if (!c) return;
-  confirmando.value = c.id;
-  try { await mural.ack(c.id); } finally { confirmando.value = null; }
-}
-
-async function load(reset = true) {
-  if (reset) offset.value = 0;
-  await store.fetchNotifications({
-    unread: tab.value === 'unread',
-    limit,
-    offset: offset.value,
-  });
-  if (tab.value === 'all') totalAll.value = store.total;
-}
-
-async function loadMore() {
-  offset.value += limit;
-  await store.fetchNotifications({
-    unread: tab.value === 'unread',
-    limit,
-    offset: offset.value,
-    append: true,
-  });
-}
-
-watch(tab, () => load(true));
-onMounted(() => {
-  load(true);
-  mural.fetchMine();
-});
+const cabecalho = computed(() => CABECALHO[secaoValida.value] || CABECALHO.caixa);
 </script>
 
 <template>
   <PageContainer size="lg">
     <PageHeader
       icon="fas fa-bell"
-      :title="secao === 'gestao' ? 'Comunicados' : 'Notificações'"
-      :subtitle="secao === 'gestao'
-        ? 'Escrever, publicar e acompanhar a leitura dos comunicados do mural.'
-        : 'Avisos do sistema, comunicados do mural e seus alertas, do mais recente para o mais antigo.'"
-      :eyebrow="secao === 'gestao' ? 'Mural · Gestão' : 'Caixa de entrada'">
+      :title="cabecalho.title"
+      :subtitle="cabecalho.subtitle"
+      :eyebrow="cabecalho.eyebrow">
       <template #actions>
         <PageHelp
-          storage-key="caixa-notificacoes"
-          title="Como usar a caixa de notificações"
-          intro="Tudo que o sistema te avisou, num lugar só: aviso automático, comunicado do mural e o retorno dos seus alertas."
+          storage-key="avisos-e-notificacoes"
+          title="Como usar os avisos"
+          intro="Tudo que o sistema te avisa fica aqui, e é aqui também que você escolhe como quer ser avisado."
           :steps="[
-            { title: 'Escolha a origem', text: 'Sistema é o aviso automático. Mural é comunicado da empresa. Alertas é o que você mesmo mandou vigiar.' },
-            { title: 'Vá para a origem', text: 'O aviso que mostra “Abrir” leva à tela que o gerou, já no registro certo.' },
-            { title: 'Confirme o que é obrigatório', text: 'Comunicado que exige ciência traz o botão aqui mesmo: confirmar não sai da lista.' },
+            { title: 'Caixa', text: 'Aviso automático, comunicado do mural e o retorno dos seus alertas, na mesma lista. Filtre por origem quando procurar algo específico.' },
+            { title: 'Confirme o que é obrigatório', text: 'Comunicado que pede ciência traz o botão no próprio card: confirmar não tira você da lista.' },
+            { title: 'Alertas', text: 'Alerta é uma pergunta que a Eme repete sozinha no horário marcado e te avisa do resultado. Cria-se pela conversa com ela.' },
+            { title: 'Preferências', text: 'Cada tipo de aviso liga e desliga por canal: no app, e-mail e WhatsApp.' },
           ]"
           :tips="[
-            'Não recebeu algo que esperava? Confira Preferências: o tipo pode estar desligado para você.',
-            'Comunicado obrigatório continua cobrando até a ciência, mesmo depois de lido.',
+            'Alguns avisos críticos ignoram a preferência de propósito, para não passarem em branco.',
+            'O que você vê do mural depende do público que quem publicou escolheu.',
           ]" />
-        <RouterLink to="/settings/notifications">
-          <Button variant="secondary" size="sm" icon="fas fa-sliders">Preferências</Button>
-        </RouterLink>
-        <Button v-if="store.unread > 0" variant="secondary" size="sm"
+        <Button v-if="secaoValida === 'caixa' && store.unread > 0" variant="secondary" size="sm"
           icon="fas fa-check-double" @click="store.markAllRead()">
-          Marcar tudo
+          <span class="hidden sm:inline">Marcar tudo</span>
         </Button>
       </template>
     </PageHeader>
 
-    <!-- Seção: a caixa e a gestão do mural na mesma tela. Só aparece para quem
-         tem a alçada de gestão; para o resto, a tela é a caixa e ponto. -->
-    <div v-if="podeGerir" class="mb-3">
-      <SegmentedControl v-model="secao" :options="secoes" size="sm" />
+    <div class="mb-4">
+      <SegmentedControl :model-value="secaoValida" :options="secoes" size="sm"
+        @update:model-value="irPara" />
     </div>
 
-    <MuralGestao v-if="secao === 'gestao'" />
-
-    <template v-else>
-    <div class="mb-3">
-      <SegmentedControl v-model="tab" :options="tabs" size="sm" />
-    </div>
-
-    <!-- Origem: um filtro, não uma aba. A pessoa quase sempre quer "tudo", e
-         recorta quando procura algo específico. -->
-    <div class="mb-4 flex flex-wrap items-center gap-1.5">
-      <!-- O que depende de você vem antes do que é só leitura. -->
-      <button v-if="cienciaPendente" type="button" @click="origem = 'mural'"
-        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-micro font-medium
-               border-data-warn/40 bg-data-warn-soft text-data-warn hover:border-data-warn transition-colors duration-120">
-        <i class="fas fa-hand text-[10px]"></i>
-        {{ cienciaPendente }} {{ cienciaPendente === 1 ? 'aguarda' : 'aguardam' }} sua confirmação
-      </button>
-
-      <button v-for="o in origens" :key="o.value" type="button"
-        @click="origem = o.value"
-        :class="[
-          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-micro font-medium transition-colors duration-120',
-          origem === o.value
-            ? 'bg-accent-soft border-accent/30 text-accent'
-            : 'bg-surface-raised border-line text-ink-muted hover:text-ink hover:border-accent/30',
-        ]">
-        <i :class="[o.icon, 'text-[10px]']"></i>
-        {{ o.label }}
-        <span class="font-mono opacity-70">{{ o.count }}</span>
-      </button>
-    </div>
-
-    <Skeleton v-if="store.loading && !items.length" variant="row" :lines="5" />
-
-    <div v-else-if="!items.length" class="py-16 text-center">
-      <div class="w-12 h-12 rounded-2xl bg-surface-sunken border border-line grid place-items-center mx-auto mb-3">
-        <i class="far fa-bell-slash text-ink-subtle"></i>
-      </div>
-      <p class="text-sm text-ink-muted">
-        {{ tab === 'unread' ? 'Sem notificações não lidas' : 'Sem notificações' }}
-        <span v-if="origem !== 'todas'">nesta origem</span>
-      </p>
-    </div>
-
-    <div v-else class="space-y-6">
-      <section v-for="grupo in grupos" :key="grupo.label">
-        <h2 class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2 sticky top-14 z-10
-                   bg-surface/90 backdrop-blur py-1">
-          {{ grupo.label }}
-        </h2>
-        <div class="space-y-2">
-          <NotificationItem v-for="n in grupo.items" :key="n.id"
-            :notification="n" size="lg" :gerenciavel="!n.sintetico" :expansivel="!!n.comunicado">
-            <template v-if="precisaCiencia(n)" #acoes>
-              <Button size="sm" variant="secondary" icon="fas fa-check"
-                :loading="confirmando === n.comunicado.id"
-                @click="darCiencia(n)">
-                Li e estou ciente
-              </Button>
-            </template>
-          </NotificationItem>
-        </div>
-      </section>
-
-      <div v-if="hasMore" class="pt-1 text-center">
-        <Button variant="secondary" size="sm" :loading="store.loading" @click="loadMore">
-          Carregar mais
-        </Button>
-      </div>
-    </div>
-    </template>
+    <MuralGestao v-if="secaoValida === 'comunicados'" />
+    <MeusAlertas v-else-if="secaoValida === 'alertas'" />
+    <PainelAlertas v-else-if="secaoValida === 'painel'" />
+    <PreferenciasCanais v-else-if="secaoValida === 'preferencias'" />
+    <CaixaEntrada v-else />
   </PageContainer>
 </template>

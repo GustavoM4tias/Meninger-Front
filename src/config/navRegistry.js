@@ -370,15 +370,12 @@ export const navRegistry = [
                     // Mural do usuário: broadcast interno — visível a todos (o gate é
                     // a audiência de cada comunicado, não alçada de tela).
                     //
-                    // Desde 2026-08-24 a rota abre a CAIXA DE ENTRADA já recortada na
-                    // origem "mural": as duas telas desenhavam o mesmo dado. O item
-                    // mantém o nome porque é assim que a empresa chama a coisa, e é
-                    // por ele que se chega ao mural — /notifications não está no menu.
-                    // UM item para a caixa. "Mural de Avisos" e o sino apontavam para
-                    // a mesma tela por caminhos diferentes, e na barra de cima ainda
-                    // havia dois ícones. Agora o menu tem um nome só, e /mural segue
-                    // vivo como atalho (recorta a caixa na origem mural) para os links
-                    // já espalhados - só não aparece mais como item próprio.
+                    // UM item para o assunto inteiro (2026-08-24). Mural, gestão do
+                    // mural, caixa, alertas, painel e preferências eram telas e itens
+                    // separados para a mesma pergunta: o que me avisaram e como quero
+                    // ser avisado. Viraram seções de /notifications; as rotas antigas
+                    // seguem vivas como atalho para os links já espalhados, só não
+                    // aparecem mais como item próprio.
                     { route: '/notifications', name: 'Avisos e notificações', icon: 'fas fa-bell', permissionManaged: false },
                     { route: '/mural', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', permissionManaged: false, hiddenInNav: true },
                     // Delegável desde 2026-08-20: redigir, definir público e
@@ -390,8 +387,11 @@ export const navRegistry = [
                     // a tela de Alçadas lista e que as capacidades nomeiam —
                     // tirá-la daqui tornaria a delegação impossível de configurar.
                     { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack', hiddenInNav: true },
-                    // Preferências do próprio usuário — permissionManaged:false → visíveis a todos.
-                    { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false },
+                    // Preferências viraram a seção "Preferências" da tela acima: elas
+                    // configuram a caixa, não são um assunto à parte. Dois itens de
+                    // menu com "notificações" no nome era o oposto de unificar. A
+                    // rota fica viva (o sino e a caixa levam para cá).
+                    { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false, hiddenInNav: true },
                     // hiddenInNav desde 2026-08-24: virou a aba "Meus alertas" da tela
                     // de Notificações. Alerta é notificação que a própria pessoa
                     // programou, então ficava estranho em dois lugares do menu.
