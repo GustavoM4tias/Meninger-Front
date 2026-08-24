@@ -242,8 +242,11 @@ function clampPos(p) {
   const padding = 8;
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const boxW = expanded.value ? (w >= 640 ? 384 : 320) : 64;
-  const boxH = expanded.value ? 512 : 64;
+  // O tamanho do painel deixou de ser fixo: quem manda é o que a pessoa
+  // deixou. Com 384x512 cravado aqui, um painel esticado era "preso" cedo
+  // demais e parecia que o arrasto travava antes da borda.
+  const boxW = expanded.value ? (w >= 640 ? dock.caixa.value.w : 320) : 64;
+  const boxH = expanded.value ? dock.caixa.value.h : 64;
   return {
     right:  Math.max(padding, Math.min(p.right,  Math.max(padding, w - boxW - padding))),
     bottom: Math.max(padding, Math.min(p.bottom, Math.max(padding, h - boxH - padding))),
@@ -341,8 +344,7 @@ const isDragging    = ref(false);
 
 let startX = 0, startY = 0, startPos = null;
 
-function onPointerDown(e) {
-  if (expanded.value) return;
+function iniciarArrasto(e) {
   isPointerDown.value = true;
   isDragging.value = false;
   startX = e.clientX;
@@ -350,6 +352,23 @@ function onPointerDown(e) {
   startPos = { ...pos.value };
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup',   onPointerUp);
+}
+
+// A bolinha fechada: o arrasto é nela inteira.
+function onPointerDown(e) {
+  if (expanded.value) return;
+  iniciarArrasto(e);
+}
+
+// Aberta, a alça é o CABEÇALHO - como em qualquer janela. Antes o arrasto era
+// bloqueado quando aberta ('if (expanded) return'), então a Eme aberta ficava
+// presa no canto e a pessoa tinha que fechar, arrastar e abrir de novo.
+function onHeaderPointerDown(e) {
+  if (!expanded.value || emDock.value || isMobileViewport.value) return;
+  // Botão, campo e o editor de título continuam funcionando: só o vazio arrasta.
+  if (e.target?.closest?.('button, a, input, textarea, [contenteditable="true"]')) return;
+  e.preventDefault();
+  iniciarArrasto(e);
 }
 
 function onPointerMove(e) {
@@ -380,8 +399,8 @@ function onPointerUp() {
     expanded.value = true;
   } else if (isDragging.value) {
     savePos(pos.value);
-  } else {
-    expanded.value = true; // tap puro → abre
+  } else if (!expanded.value) {
+    expanded.value = true; // tap puro na bolinha → abre
   }
   isPointerDown.value = false;
   setTimeout(() => { isDragging.value = false; }, 0);
@@ -501,7 +520,11 @@ function rename(title) { aiStore.renameSession(title); }
             </div>
           </template>
 
-          <div class="flex items-center gap-1.5 px-3 py-2 border-b border-line bg-surface-raised">
+          <!-- O cabeçalho é a alça: arrastar daqui move a Eme aberta, e levar
+               até a borda direita propõe encostar. -->
+          <div @pointerdown="onHeaderPointerDown"
+            :class="emDock || isMobileViewport ? '' : 'cursor-grab active:cursor-grabbing select-none'"
+            class="flex items-center gap-1.5 px-3 py-2 border-b border-line bg-surface-raised">
             <img src="/Mlogo.png" class="h-4 flex-shrink-0 invert dark:invert-0" alt="Eme" />
             <!-- min-w-0 + truncate: título longo cortava em cima dos botões. -->
             <div class="flex-1 min-w-0 overflow-hidden">
