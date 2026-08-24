@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, nextTick, watch } from 'vue'
+import EmeContextBar from './EmeContextBar.vue';
 import { useOfficeAIStore } from '@/stores/officeAIStore'
 import { useAuthStore } from '@/stores/Settings/Auth/authStore'
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore'
@@ -185,6 +186,8 @@ async function confirmFeedback({ comment }) {
 
     <!-- Input -->
     <div class="border-t border-line px-3 py-3 bg-surface">
+      <!-- Onde a pessoa está e o que ela apontou com Ctrl+clique -->
+      <EmeContextBar />
       <div
         class="relative bg-surface-sunken border rounded-2xl flex items-end gap-2 px-2 py-1 transition"
         :class="composerStateClass">

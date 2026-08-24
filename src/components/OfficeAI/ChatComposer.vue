@@ -1,8 +1,8 @@
 <script setup>
-import { ref, nextTick, computed, watch } from 'vue';
+import { ref, nextTick, computed } from 'vue';
 import { useEmeVoice } from '@/composables/useEmeVoice';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
-import { useEmeScreenContext } from '@/composables/useEmeScreenContext';
+import EmeContextBar from './EmeContextBar.vue';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -17,26 +17,6 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'send', 'history']);
 
 const textareaEl = ref(null);
-
-// ── Barra de contexto ─────────────────────────────────────────────────────────
-// Duas coisas, com pesos visuais diferentes:
-//   - a TELA atual, sempre visível, para a pessoa ver que a Eme já sabe onde ela
-//     está sem precisar contar. É indicador, não escolha: não tem X.
-//   - os trechos marcados com Ctrl+clique, que ela escolheu e pode tirar. O que
-//     a Eme vai ler não pode ser surpresa.
-const { referencias, removerReferencia, tela, rota, ultimaMarcada } = useEmeScreenContext();
-
-// Na home a Eme É a tela: dizer "você está na home" não informa nada.
-const mostrarTela = computed(() => !!tela.value && rota.value !== '/');
-
-// A etiqueta recém-criada pisca por um instante - sem isso, quem clicou lá no
-// meio da página não percebe que apareceu algo aqui embaixo.
-const destaque = ref(null);
-watch(ultimaMarcada, (id) => {
-  if (!id) return;
-  destaque.value = id;
-  setTimeout(() => { if (destaque.value === id) destaque.value = null; }, 1400);
-});
 
 // ── Voz ───────────────────────────────────────────────────────────────────────
 const permStore = usePermissionStore();
@@ -137,35 +117,7 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
           : 'hover:shadow-elevated focus-within:border-accent/40 focus-within:shadow-glow-accent',
         containerStateClass,
       ]">
-    <!-- Contexto: onde a pessoa está e o que ela apontou -->
-    <div v-if="mostrarTela || referencias.length" class="flex flex-wrap items-center gap-1.5 px-4 pt-3">
-
-      <!-- A tela atual. Indicador, não escolha: a Eme já tem esse contexto. -->
-      <span v-if="mostrarTela" :title="`A Eme sabe que você está em ${tela}`"
-        class="inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg
-               border border-line bg-surface-sunken text-ink-muted text-micro select-none">
-        <i class="fas fa-location-dot text-micro shrink-0 text-accent"></i>
-        <span class="truncate max-w-[12rem]">{{ tela }}</span>
-      </span>
-
-      <!-- O que ela marcou com Ctrl+clique. Removível. -->
-      <span v-for="r in referencias" :key="r.id"
-        :class="destaque === r.id ? 'ring-2 ring-accent/40 scale-[1.03]' : ''"
-        class="inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg
-               bg-accent-soft border border-accent/25 text-accent text-micro
-               transition-all duration-200">
-        <i class="fas fa-crosshairs text-micro shrink-0"></i>
-        <span class="truncate max-w-[14rem]">{{ r.rotulo ? `${r.rotulo}: ${r.texto}` : r.texto }}</span>
-        <button type="button" @click="removerReferencia(r.id)"
-          class="shrink-0 opacity-60 hover:opacity-100" title="Tirar esta referência">
-          <i class="fas fa-xmark text-micro"></i>
-        </button>
-      </span>
-
-      <span v-if="mostrarTela && !referencias.length" class="text-micro text-ink-subtle">
-        Ctrl+clique em algo da tela para apontar
-      </span>
-    </div>
+    <div class="px-4 pt-3"><EmeContextBar /></div>
 
     <textarea
       ref="textareaEl"
