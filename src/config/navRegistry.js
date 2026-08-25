@@ -173,19 +173,13 @@ export const navRegistry = [
                 icon: 'fas fa-file-invoice-dollar',
                 pages: [
                     { route: '/financeiro/consulta-cef', name: 'Consulta de nº CEF', icon: 'fas fa-hashtag' },
-                ],
-            },
-            {
-                // Cobrança é só agrupamento de navegação - não tem tela própria.
-                // O Ato reúne as duas formas de cobrar a entrada (boleto Caixa e
-                // link de cartão Userede) numa tela só; as rotas antigas
-                // /financeiro/boleto-caixa e /financeiro/link-cartao redirecionam
-                // para cá, e as alçadas migram sozinhas pelo
-                // lib/ensurePermissionRouteRenames.js do backend.
-                key: 'cobranca',
-                name: 'Cobrança',
-                icon: 'fas fa-hand-holding-dollar',
-                pages: [
+                    // Veio da subcategoria "Cobrança" (2026-08-25), que existia só
+                    // para guardar este item. Cobrar a entrada É contas a receber.
+                    // O Ato reúne as duas formas (boleto Caixa e link de cartão
+                    // Userede) numa tela só; as rotas antigas
+                    // /financeiro/boleto-caixa e /financeiro/link-cartao seguem
+                    // redirecionando para ela, e as alçadas já migraram pelo
+                    // lib/ensurePermissionRouteRenames.js. A ROTA não mudou aqui.
                     { route: '/financeiro/cobranca/ato', name: 'Ato', icon: 'fas fa-file-invoice-dollar' },
                 ],
             },

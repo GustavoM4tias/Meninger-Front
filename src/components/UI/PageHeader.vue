@@ -1,6 +1,11 @@
 <script setup>
 defineProps({
-  title: { type: String, required: true },
+  // Não é obrigatório: a forma normal de usar quando o título precisa de um
+  // adorno (o botão de favorito, um badge) é o slot #title, e aí a prop não é
+  // passada. Eram 20 telas nesse padrão, cada uma cuspindo "Missing required
+  // prop: title" no console - aviso que não apontava defeito nenhum e ainda
+  // afogava os que apontam. O render nunca dependeu da prop: o slot já vence.
+  title: { type: String, default: '' },
   subtitle: { type: String, default: '' },
   icon: { type: String, default: '' },
   iconImg: { type: String, default: '' },   // logo de marca (PNG/SVG); vence o icon

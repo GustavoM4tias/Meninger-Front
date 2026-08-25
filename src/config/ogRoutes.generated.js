@@ -118,7 +118,7 @@ export const OG_ROUTES = {
     "name": "Ato",
     "category": "Financeiro",
     "group": "OPERAÇÃO",
-    "subcategory": "Cobrança"
+    "subcategory": "Contas a Receber"
   },
   "/financeiro/paymentflow": {
     "name": "Fluxo de Pagamento",
