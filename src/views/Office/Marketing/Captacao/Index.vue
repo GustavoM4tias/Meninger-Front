@@ -295,7 +295,12 @@ onMounted(async () => {
       </div>
 
       <!-- View -->
-      <LeadsTableView v-if="store.viewMode === 'list'"
+      <!-- No celular a tabela de leads so rolava de lado; abaixo de md a view
+           Lista mostra o mesmo cartao da view Cards. -->
+      <div v-if="store.viewMode === 'list'" class="md:hidden">
+        <LeadsCardsView :leads="orderedLeads" :loading="store.loading" @open-detail="openDetail" />
+      </div>
+      <LeadsTableView v-if="store.viewMode === 'list'" class="hidden md:block"
         :leads="orderedLeads" :loading="store.loading"
         @open-detail="openDetail"
         @open-campaign="openCampaign"

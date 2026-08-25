@@ -91,6 +91,14 @@ module.exports = {
           neutral: 'rgb(var(--data-neutral) / <alpha-value>)',
           'neutral-area': 'rgb(var(--data-neutral-area) / <alpha-value>)',
         },
+        // ── Cor de MARCA de terceiro ──────────────────────────────────────
+        // Azul da Meta. Nao e cor de interface nem de dado: e a identidade
+        // deles, entao NAO muda com o tema e NAO entra na paleta semantica.
+        // Existe aqui so pra parar de ser um hex solto espalhado pelas telas.
+        brand: {
+          meta: '#0866FF',
+          'meta-deep': '#0653CC',
+        },
         // Fundo do modal. Sempre escuro nos dois temas (ver --scrim).
         scrim: 'rgb(var(--scrim) / <alpha-value>)',
       },

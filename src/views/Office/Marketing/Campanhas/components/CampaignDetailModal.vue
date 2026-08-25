@@ -1233,7 +1233,25 @@ function onFormEditorSaved() {
             <template v-else>Nenhum lead chegou por essa campanha ainda.</template>
           </div>
           <div v-else class="rounded-lg border border-line overflow-hidden">
-            <table class="min-w-full text-sm">
+            <!-- Celular: uma linha por lead, sem rolagem lateral dentro do modal -->
+            <ul class="md:hidden divide-y divide-line/60">
+              <li v-for="l in leads" :key="`m-${l.id}`" class="px-3 py-2.5 flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="text-ink text-sm leading-tight break-words">{{ l.nome || '—' }}</div>
+                  <div class="text-micro text-ink-subtle break-all">{{ l.email || l.telefone || '' }}</div>
+                  <div class="text-micro font-mono text-ink-subtle mt-0.5">
+                    {{ l.midia_slug || 'sem mídia' }}
+                    <span v-if="l.meta_form_id"> · form {{ l.meta_form_id }}</span>
+                  </div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div :class="['text-micro font-medium', statusColor(l.status)]">{{ l.status }}</div>
+                  <div class="text-micro text-ink-subtle mt-0.5">{{ fmtRelative(l.created_at) }}</div>
+                </div>
+              </li>
+            </ul>
+
+            <table class="hidden md:table min-w-full text-sm">
               <thead class="bg-surface-sunken/30 border-b border-line">
                 <tr>
                   <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Quando</th>

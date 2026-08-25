@@ -118,6 +118,13 @@ const backlog = computed(() => ov.value?.backlog || null);
 
 function fmtInt(v) { return v == null ? '0' : new Intl.NumberFormat('pt-BR').format(Number(v)); }
 
+// Por que essa campanha represa. Mesma frase na tabela e no cartão do celular.
+function motivoBloqueio(c) {
+    if (c.not_synced) return 'campanha não sincronizada';
+    if (c.mapping_active === false) return 'vínculo desativado';
+    return 'sem mídia definida';
+}
+
 // Bloqueadas = ainda seguram lead que NENHUM vínculo resolve hoje (nem o da
 // campanha nem o do formulário). Recuperáveis = já dá pra soltar agora.
 const campanhasBloqueadas = computed(() => held.value.campaigns.filter(c => c.blocked_count > 0));
@@ -270,7 +277,63 @@ function statusBadge(s) {
               <i class="fas fa-circle-check text-data-pos text-xl mb-1.5 block"></i>
               Nenhuma campanha sem vínculo com leads represados. 🎉
             </div>
-            <table v-else class="min-w-full text-sm">
+            <!-- Celular: cartão. A tabela de 6 colunas não cabe em 375px e
+                 empurrava a página inteira na horizontal. -->
+            <ul v-else class="md:hidden divide-y divide-line/60">
+              <li v-for="c in campanhasBloqueadas" :key="`m-${c.campaign_id}`" class="p-3 flex flex-col gap-2">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
+                      class="text-ink font-medium leading-tight text-left hover:text-accent break-words">
+                      {{ c.name || '(não sincronizada)' }}
+                    </button>
+                    <div v-else class="text-ink font-medium leading-tight break-words">
+                      {{ c.name || '(não sincronizada)' }}
+                    </div>
+                    <div class="text-micro font-mono text-ink-subtle mt-0.5">#{{ c.campaign_id }}</div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="text-lg font-semibold text-data-neg tabular-nums leading-none">{{ fmtInt(c.blocked_count) }}</div>
+                    <div class="metric-label">represados</div>
+                  </div>
+                </div>
+
+                <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                  <div class="min-w-0">
+                    <dt class="metric-label">Conta</dt>
+                    <dd class="text-xs text-ink-muted break-words">{{ c.account_name || '—' }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="metric-label">Status</dt>
+                    <dd class="text-xs">
+                      <span v-if="!c.not_synced" :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge(c.effective_status).cls]">
+                        {{ statusBadge(c.effective_status).label }}
+                      </span>
+                      <span v-else class="text-micro text-ink-subtle italic">fora do cache</span>
+                    </dd>
+                  </div>
+                  <div class="col-span-2 min-w-0">
+                    <dt class="metric-label">Motivo</dt>
+                    <dd class="text-xs text-ink-muted">{{ motivoBloqueio(c) }}</dd>
+                  </div>
+                  <div v-if="c.resolvable_count" class="col-span-2">
+                    <dd class="text-micro text-ink-subtle">+ {{ fmtInt(c.resolvable_count) }} já recuperável nesta campanha</dd>
+                  </div>
+                </dl>
+
+                <!-- alvo de 40px: o dedo tem que acertar -->
+                <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
+                  class="h-10 w-full rounded-lg bg-accent text-white text-xs font-medium
+                         inline-flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity">
+                  <i class="fas fa-link text-[10px]"></i>Vincular campanha
+                </button>
+                <div v-else class="text-micro text-ink-subtle italic text-center py-1">
+                  Sincronize as campanhas para poder vincular.
+                </div>
+              </li>
+            </ul>
+
+            <table v-if="campanhasBloqueadas.length" class="hidden md:table min-w-full text-sm">
               <thead class="bg-surface-sunken/30 border-b border-line">
                 <tr>
                   <th class="px-3 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
@@ -302,11 +365,7 @@ function statusBadge(s) {
                     </span>
                     <span v-else class="text-micro text-ink-subtle italic">fora do cache</span>
                   </td>
-                  <td class="px-3 py-2.5 text-xs text-ink-muted">
-                    <span v-if="c.not_synced">campanha não sincronizada</span>
-                    <span v-else-if="c.mapping_active === false">vínculo desativado</span>
-                    <span v-else>sem mídia definida</span>
-                  </td>
+                  <td class="px-3 py-2.5 text-xs text-ink-muted">{{ motivoBloqueio(c) }}</td>
                   <td class="px-3 py-2.5 text-right">
                     <span class="inline-flex items-center gap-1 font-semibold text-data-neg">
                       {{ fmtInt(c.blocked_count) }}
@@ -415,6 +474,7 @@ function statusBadge(s) {
             <span class="text-micro text-ink-subtle">ainda sem leads represados, mas vão gerar</span>
           </div>
           <Surface variant="raised" padding="none" class="overflow-hidden">
+            <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
               <tbody class="divide-y divide-line/60">
                 <tr v-for="c in activeUnbound" :key="c.campaign_id" class="hover:bg-surface-hover/40 transition-colors">
@@ -436,6 +496,7 @@ function statusBadge(s) {
                 </tr>
               </tbody>
             </table>
+            </div>
           </Surface>
         </section>
 

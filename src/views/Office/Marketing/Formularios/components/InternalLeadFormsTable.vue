@@ -332,8 +332,106 @@ function fmtShortDate(iso) {
         </select>
       </div>
 
-      <!-- Tabela -->
-      <div class="overflow-x-auto">
+      <!-- Celular: cartao. Dez colunas nao cabem em 375px, e o hover das acoes
+           nao existe em tela de toque. -->
+      <div class="md:hidden">
+        <div v-if="store.loading" class="px-4 py-10 text-center text-ink-subtle text-sm">
+          <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
+        </div>
+        <EmptyState v-else-if="!store.forms.length" icon="fas fa-rectangle-list" size="sm"
+          title="Nenhum formulário ainda"
+          description='Crie o primeiro tocando em "Novo formulário".' />
+        <EmptyState v-else-if="!filtered.length" icon="fas fa-filter" size="sm"
+          title="Nada corresponde aos filtros"
+          description="Ajuste a busca ou limpe os filtros pra ver todos os formulários." />
+        <ul v-else class="divide-y divide-line/60">
+          <li v-for="f in paginated" :key="`m-${f.id}`" class="p-3 flex flex-col gap-2">
+
+            <div class="flex items-start justify-between gap-3" @click="openEdit(f)">
+              <div class="min-w-0 flex items-start gap-2">
+                <span :class="['inline-block w-2 h-2 rounded-full shrink-0 mt-1.5', priorityDot(f.priority).cls]"
+                  :title="priorityDot(f.priority).title"></span>
+                <div class="min-w-0">
+                  <div class="text-ink font-medium leading-tight break-words">{{ f.name }}</div>
+                  <div class="text-micro font-mono text-ink-subtle break-all mt-0.5">
+                    /{{ f.slug }}<span v-if="f.campaign_ref"> · {{ f.campaign_ref }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-lg font-semibold text-ink tabular-nums leading-none">{{ f.stats?.total || 0 }}</div>
+                <div class="metric-label">leads</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button @click="quickToggle($event, f)"
+                :class="['inline-flex items-center gap-1 rounded-md border px-2 py-1 text-micro font-medium transition-colors',
+                  f.active
+                    ? 'bg-data-pos/10 text-data-pos border-data-pos/20'
+                    : 'bg-slate-500/10 text-ink-muted border-line/20']">
+                <i :class="f.active ? 'fas fa-circle-check' : 'fas fa-circle-pause'" class="text-[10px]"></i>
+                {{ f.active ? 'Ativo' : 'Inativo' }}
+              </button>
+              <span v-if="endedAlready(f)" class="text-micro text-data-neg font-medium">encerrado</span>
+              <span v-if="f.stats?.failed" class="text-micro text-data-neg font-medium">{{ f.stats.failed }} com erro</span>
+              <span v-if="f.stats?.held" class="text-micro text-data-warn">{{ f.stats.held }} represado(s)</span>
+            </div>
+
+            <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5" @click="openEdit(f)">
+              <div class="min-w-0">
+                <dt class="metric-label">Mídia</dt>
+                <dd class="text-xs text-ink font-mono break-all">
+                  {{ f.midia_slug || '—' }}
+                  <span class="text-ink-subtle">· {{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '—' }}</span>
+                </dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="metric-label">Entrega ao CV</dt>
+                <dd class="text-xs text-ink-muted tabular-nums">
+                  <template v-if="deliveryRate(f.stats) !== null">{{ deliveryRate(f.stats) }}%</template>
+                  <template v-else>—</template>
+                </dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="metric-label">Período</dt>
+                <dd class="text-xs text-ink-muted">
+                  <span v-if="f.start_date">{{ fmtShortDate(f.start_date) }}</span>
+                  <span v-else>desde a criação</span>
+                  <template v-if="f.end_date"> → {{ fmtShortDate(f.end_date) }}</template>
+                  <template v-else> · sem fim</template>
+                </dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="metric-label">Último lead</dt>
+                <dd class="text-xs text-ink-muted">{{ fmtRelative(f.stats?.last_lead_at) }}</dd>
+              </div>
+            </dl>
+
+            <!-- Sem hover no celular: as acoes precisam de botao visivel, 40px -->
+            <div class="grid grid-cols-3 gap-1.5">
+              <a :href="lpUrl(f)" target="_blank" rel="noopener" @click.stop
+                class="h-10 rounded-lg border border-line text-micro font-medium text-ink-muted
+                       inline-flex items-center justify-center gap-1.5">
+                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>Abrir LP
+              </a>
+              <button @click="copyLpUrl($event, f)"
+                class="h-10 rounded-lg border border-line text-micro font-medium text-ink-muted
+                       inline-flex items-center justify-center gap-1.5">
+                <i class="fas fa-copy text-[10px]"></i>Copiar
+              </button>
+              <button @click="openEdit(f)"
+                class="h-10 rounded-lg bg-accent text-white text-micro font-medium
+                       inline-flex items-center justify-center gap-1.5">
+                <i class="fas fa-pen text-[10px]"></i>Editar
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Tabela (desktop) -->
+      <div class="hidden md:block overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead class="bg-surface-sunken/30 border-b border-line">
             <tr>

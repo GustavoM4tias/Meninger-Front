@@ -112,7 +112,7 @@ async function save() {
       <div class="space-y-4">
         <!-- Aviso: credenciais migraram -->
         <div class="flex items-start gap-2.5 rounded-lg border border-line bg-surface-sunken/30 px-3 py-2.5 text-xs text-ink-muted">
-          <i class="fas fa-key text-[#0866FF] mt-0.5"></i>
+          <i class="fas fa-key text-brand-meta mt-0.5"></i>
           <div>
             <b class="text-ink">Procurando os tokens do Meta?</b> App ID/Secret, verify token e access token
             agora ficam na aba

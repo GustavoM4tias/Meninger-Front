@@ -226,9 +226,87 @@ function fmtShortDate(iso) {
       <div>{{ store.error }}</div>
     </div>
 
-    <!-- Tabela -->
+    <!-- Lista -->
     <Surface variant="raised" padding="none" class="overflow-hidden">
-      <div class="overflow-x-auto">
+
+      <!-- Celular: cartao. Dez colunas nao cabem em 375px. -->
+      <div class="md:hidden">
+        <div v-if="store.loading" class="px-4 py-10 text-center text-ink-subtle text-sm">
+          <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
+        </div>
+        <div v-else-if="!store.forms.length" class="px-4 py-10 text-center text-ink-subtle text-sm">
+          Nenhum formulário sincronizado ainda. Toque em <b>"Sincronizar com Meta"</b>.
+        </div>
+        <div v-else-if="!filtered.length" class="px-4 py-10 text-center text-ink-subtle text-sm">
+          Nenhum formulário corresponde aos filtros.
+        </div>
+        <ul v-else class="divide-y divide-line/60">
+          <li v-for="f in filtered" :key="`m-${f.id}`" @click="openEdit(f)"
+            class="p-3 flex flex-col gap-2 cursor-pointer active:bg-surface-hover/40 transition-colors">
+
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 flex items-start gap-2">
+                <span :class="['inline-block w-2 h-2 rounded-full shrink-0 mt-1.5', priorityDot(f.priority).cls]"
+                  :title="priorityDot(f.priority).title"></span>
+                <div class="min-w-0">
+                  <div class="text-ink font-medium leading-tight break-words">{{ f.name || '(sem nome)' }}</div>
+                  <div class="text-micro font-mono text-ink-subtle break-all">
+                    #{{ f.id }}<span v-if="f.campaign_ref"> · {{ f.campaign_ref }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="text-lg font-semibold text-ink tabular-nums leading-none">{{ f.stats?.total || 0 }}</div>
+                <div class="metric-label">leads</div>
+              </div>
+            </div>
+
+            <!-- Os dois selos que decidem se o lead chega ao CV -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge(f.status).cls]">
+                {{ statusBadge(f.status).label }}
+              </span>
+              <span v-if="f.mapping_active && f.midia_slug"
+                class="inline-flex items-center gap-1 rounded-md bg-data-pos/10 text-data-pos border border-data-pos/20 px-1.5 py-0.5 text-micro font-medium">
+                <i class="fas fa-bolt text-[9px]"></i>Auto
+              </span>
+              <span v-else
+                class="inline-flex items-center gap-1 rounded-md bg-data-warn/10 text-data-warn border border-data-warn/20 px-1.5 py-0.5 text-micro font-medium">
+                <i class="fas fa-hand text-[9px]"></i>Manual
+              </span>
+              <span v-if="f.stats?.held" class="text-micro text-data-warn">{{ f.stats.held }} represado(s)</span>
+            </div>
+
+            <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5">
+              <div class="min-w-0">
+                <dt class="metric-label">Vínculo</dt>
+                <dd class="text-xs text-ink font-mono break-all">
+                  {{ f.midia_slug || '—' }}
+                  <span v-if="f.midia_slug" class="text-ink-subtle">· {{ f.cv_origem || 'FB' }}</span>
+                </dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="metric-label">Página</dt>
+                <dd class="text-xs text-ink-muted break-words">{{ f.page_name || '—' }}</dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="metric-label">Entrega ao CV</dt>
+                <dd class="text-xs text-ink-muted tabular-nums">
+                  <template v-if="deliveryRate(f.stats) !== null">{{ deliveryRate(f.stats) }}%</template>
+                  <template v-else>—</template>
+                  <span v-if="f.stats?.last_30d" class="text-ink-subtle"> · +{{ f.stats.last_30d }} em 30d</span>
+                </dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="metric-label">Último lead</dt>
+                <dd class="text-xs text-ink-muted">{{ fmtRelative(f.stats?.last_lead_at) }}</dd>
+              </div>
+            </dl>
+          </li>
+        </ul>
+      </div>
+
+      <div class="hidden md:block overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead class="bg-surface-sunken/30 border-b border-line">
             <tr>

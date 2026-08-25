@@ -169,9 +169,9 @@ async function copyWebhook() {
   <div class="max-w-4xl mx-auto space-y-5">
 
     <!-- Explicação -->
-    <div class="rounded-xl border border-[#0866FF]/20 bg-[#0866FF]/5 p-4 text-sm text-ink-muted space-y-1.5">
+    <div class="rounded-xl border border-brand-meta/20 bg-brand-meta/5 p-4 text-sm text-ink-muted space-y-1.5">
       <p>
-        <i class="fas fa-circle-info text-[#0866FF] mr-1"></i>
+        <i class="fas fa-circle-info text-brand-meta mr-1"></i>
         Como WhatsApp e Lead Ads usam o <b>mesmo App</b> na Meta, o <b>App Secret</b> é o mesmo nos dois.
         Definindo aqui, ele vale para as duas integrações de uma vez - sem risco de uma ficar pra trás.
       </p>

@@ -41,7 +41,64 @@ function goalLabel(g) { return GOAL_LABELS[g] || g || '—'; }
 
 <template>
   <Surface variant="raised" padding="none" class="overflow-hidden">
-    <div class="overflow-x-auto">
+
+    <!-- Celular: cartao. Onze colunas nao cabem em 375px. -->
+    <div class="md:hidden">
+      <div v-if="loading" class="px-4 py-10 text-center text-ink-subtle text-sm">
+        <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
+      </div>
+      <div v-else-if="!adsets.length" class="px-4 py-10 text-center text-ink-subtle text-sm">
+        Nenhum conjunto com veiculação no período.
+      </div>
+      <ul v-else class="divide-y divide-line/60">
+        <li v-for="a in adsets" :key="`m-${a.id}`" @click="emit('drill', a)"
+          class="p-3 flex flex-col gap-2 cursor-pointer active:bg-surface-hover/40 transition-colors">
+
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-ink font-medium leading-tight break-words">{{ a.name || '(não sincronizado)' }}</div>
+              <div class="text-micro font-mono text-ink-subtle break-all mt-0.5">#{{ a.id }}</div>
+              <div v-if="showCampaign && a.campaign?.name" class="text-micro text-ink-muted mt-0.5 break-words">
+                {{ a.campaign.name }}
+              </div>
+            </div>
+            <i class="fas fa-chevron-right text-[10px] text-ink-subtle mt-1.5 shrink-0"></i>
+          </div>
+
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge(a).cls]">
+              {{ statusBadge(a).label }}
+            </span>
+            <span class="text-micro text-ink-muted">{{ goalLabel(a.optimization_goal) }}</span>
+          </div>
+
+          <!-- Os tres numeros que decidem: quanto saiu, quantos vieram, a que custo -->
+          <div class="grid grid-cols-3 gap-2 rounded-lg bg-surface-sunken/40 px-2.5 py-2">
+            <div>
+              <div class="metric-label">Investido</div>
+              <div class="text-sm font-semibold text-ink tabular-nums">{{ fmtMoney(a.spend) }}</div>
+            </div>
+            <div>
+              <div class="metric-label">Leads</div>
+              <div class="text-sm font-semibold text-ink tabular-nums">{{ fmtInt(a.office_leads) }}</div>
+            </div>
+            <div>
+              <div class="metric-label">CAC</div>
+              <div class="text-sm font-semibold text-ink tabular-nums">
+                {{ a.cac != null ? fmtMoney(a.cac) : '—' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="text-micro text-ink-subtle tabular-nums">
+            CTR {{ fmtPct(a.ctr) }} · CPM {{ a.cpm != null ? fmtMoney(a.cpm) : '—' }} ·
+            {{ fmtInt(a.impressions) }} impressões
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="hidden md:block overflow-x-auto">
       <table class="min-w-full text-sm">
         <thead class="bg-surface-sunken/30 border-b border-line">
           <tr>

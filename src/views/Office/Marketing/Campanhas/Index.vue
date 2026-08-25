@@ -41,6 +41,10 @@ const store = useCampaignsStore();
 const perm = usePermissionStore();
 const isAdmin = computed(() => perm.isAdmin);
 
+// Resumo da gaveta de operações: o que precisa ser visto sem abrir.
+const opsEmAndamento = computed(() => store.ops.some(o => o.status === 'running'));
+const opsComErro = computed(() => store.ops.filter(o => o.status === 'error').length);
+
 // ── Régua de tempo: período mestre (default: este mês) ─────────────────────
 const periodo = ref({
     since: dayjs().startOf('month').format('YYYY-MM-DD'),
@@ -455,6 +459,152 @@ const levelTabs = computed(() => [
           </button>
       </div>
 
+      <!-- Retorno das ferramentas de admin: uma gaveta so, fechada por
+           padrao, junto do botao que dispara essas acoes. Antes eram tres
+           faixas soltas empurrando a tabela pra fora da primeira dobra. -->
+      <details v-if="isAdmin && (store.ops.length || store.lastSync || store.lastImport)"
+        class="mb-3 rounded-lg border border-line bg-surface overflow-hidden">
+        <summary class="px-3 py-2 cursor-pointer text-xs text-ink-muted hover:text-ink flex items-center gap-2">
+          <i class="fas fa-clock-rotate-left text-ink-subtle"></i>
+          <span class="font-medium text-ink">Operações recentes</span>
+          <span v-if="store.ops.length" class="text-micro text-ink-subtle">({{ store.ops.length }})</span>
+          <span v-if="opsEmAndamento" class="text-micro text-accent">
+            <i class="fas fa-circle-notch fa-spin mr-1"></i>em andamento
+          </span>
+          <span v-else-if="opsComErro" class="text-micro text-data-neg">
+            <i class="fas fa-circle-exclamation mr-1"></i>{{ opsComErro }} com erro
+          </span>
+        </summary>
+        <div class="px-3 pb-3 pt-1 space-y-3 border-t border-line">
+        <!-- Log de operações -->
+        <div v-if="store.ops.length" class="rounded-lg border border-line/60 bg-surface-sunken/20 overflow-hidden">
+          <div class="flex items-center justify-end px-3 py-1.5 border-b border-line/60">
+            <button @click="store.clearOps()" class="text-micro text-ink-subtle hover:text-data-neg">limpar histórico</button>
+          </div>
+          <ul class="divide-y divide-line/60 max-h-60 overflow-y-auto">
+            <li v-for="op in store.ops" :key="op.id" class="px-3 py-2 text-xs flex items-start gap-2.5">
+              <span class="mt-0.5 shrink-0 w-5 text-center">
+                <i v-if="op.status === 'running'" class="fas fa-circle-notch fa-spin text-accent"></i>
+                <i v-else-if="op.status === 'success'" class="fas fa-circle-check text-data-pos"></i>
+                <i v-else class="fas fa-circle-xmark text-data-neg"></i>
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span :class="[
+                    'inline-flex rounded text-micro px-1.5 py-0.5 font-mono uppercase',
+                    op.type === 'sync'      ? 'bg-accent/10 text-accent' :
+                    op.type === 'import'    ? 'bg-accent/10 text-accent' :
+                    op.type === 'backfill'  ? 'bg-accent/10 text-accent' :
+                    op.type === 'reconcile' ? 'bg-data-pos/10 text-data-pos' :
+                    op.type === 'ads'       ? 'bg-data-warn/10 text-data-warn' :
+                    'bg-slate-500/10 text-ink-muted'
+                  ]">{{ op.type }}</span>
+                  <span class="font-medium text-ink truncate">{{ op.label }}</span>
+                  <span class="text-micro text-ink-subtle ml-auto whitespace-nowrap">
+                    {{ new Date(op.started_at).toLocaleTimeString('pt-BR') }}
+                    <template v-if="op.duration_ms != null"> · {{ (op.duration_ms / 1000).toFixed(1) }}s</template>
+                  </span>
+                </div>
+
+                <div v-if="op.status === 'running'" class="text-micro text-ink-subtle mt-0.5">processando...</div>
+
+                <div v-else-if="op.status === 'success' && op.type === 'sync'" class="text-micro text-ink-muted mt-0.5">
+                  <b>{{ op.result.campaigns_total }}</b> campanhas em {{ op.result.accounts_count }} contas
+                  ({{ op.result.campaigns_new }} novas)
+                  <span v-if="op.result.errors?.length" class="text-data-warn">· {{ op.result.errors.length }} erros</span>
+                </div>
+
+                <div v-else-if="op.status === 'success' && op.type === 'import'" class="text-micro text-ink-muted mt-0.5">
+                  <b>{{ op.result.inserted }}</b> novos · {{ op.result.duplicates }} duplicados · {{ op.result.forms_count }} forms
+                  <span v-if="op.result.errors?.length" class="text-data-warn">· {{ op.result.errors.length }} erros</span>
+                </div>
+
+                <div v-else-if="op.status === 'success' && op.type === 'backfill'" class="text-micro text-ink-muted mt-0.5">
+                  <b>{{ fmtInt(op.result.rows_written) }}</b> linhas diárias · {{ op.result.accounts_count }} contas
+                  · níveis: {{ (op.result.levels || []).join(', ') }}
+                  <span v-if="op.result.errors?.length" class="text-data-warn">· {{ op.result.errors.length }} erros</span>
+                </div>
+
+                <div v-else-if="op.status === 'success' && op.type === 'reconcile'" class="text-micro text-ink-muted mt-0.5">
+                  <b>{{ op.result.matched }}</b> casados · {{ op.result.unmatched }} sem match · {{ op.result.errors }} erros (de {{ op.result.processed }})
+                </div>
+
+                <div v-else-if="op.status === 'success' && op.type === 'ads'" class="text-micro text-ink-muted mt-0.5">
+                  <b>{{ op.result.ads_total }}</b> ads · {{ op.result.ads_new }} novos · {{ op.result.ads_updated }} atualizados
+                </div>
+
+                <div v-else-if="op.status === 'error'" class="text-micro text-data-neg mt-0.5 break-words">
+                  {{ op.error || 'erro desconhecido' }}
+                </div>
+
+                <details v-if="op.result?.errors?.length" class="mt-1">
+                  <summary class="text-micro text-data-warn cursor-pointer">ver detalhes dos {{ op.result.errors.length }} erro(s)</summary>
+                  <ul class="mt-1 ml-2 space-y-0.5 text-micro text-ink-muted font-mono max-h-32 overflow-y-auto">
+                    <li v-for="(e, i) in op.result.errors.slice(0, 20)" :key="i">
+                      <b>{{ e.form_name || e.page_name || e.account_name || '?' }}:</b> {{ e.error }}
+                    </li>
+                    <li v-if="op.result.errors.length > 20" class="italic">… mais {{ op.result.errors.length - 20 }}</li>
+                  </ul>
+                </details>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Resultado do sync -->
+        <div v-if="store.lastSync"
+          :class="['rounded-lg border px-3 py-2.5 text-sm',
+            store.lastSync.errors?.length
+              ? 'border-data-warn/30 bg-data-warn/5 text-data-warn'
+              : 'border-data-pos/20 bg-data-pos/5 text-data-pos']">
+          <div class="flex items-start gap-2">
+            <i :class="store.lastSync.errors?.length ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check'" class="mt-0.5"></i>
+            <div class="flex-1">
+              <div>
+                Sincronizado: <b>{{ store.lastSync.accounts_count }}</b> conta(s) de anúncio,
+                <b>{{ store.lastSync.campaigns_total }}</b> campanha(s)
+                ({{ store.lastSync.campaigns_new }} nova(s), {{ store.lastSync.campaigns_updated }} atualizada(s))
+                <span class="text-micro text-ink-subtle">· janela {{ store.lastSync.since }} → {{ store.lastSync.until }}</span>
+              </div>
+              <div v-if="store.lastSync.errors?.length" class="mt-1.5 space-y-1">
+                <div v-for="(e, i) in store.lastSync.errors" :key="i"
+                  class="text-xs rounded border border-data-warn/30 bg-data-warn/10 px-2 py-1.5">
+                  <div class="font-medium"><i class="fas fa-circle-exclamation mr-1"></i>{{ e.account_name || 'Conta' }} <span class="text-ink-subtle font-mono">#{{ e.account_id }}</span></div>
+                  <div class="text-data-warn mt-0.5 font-mono text-micro break-words">{{ e.error }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resultado import histórico -->
+        <div v-if="store.lastImport"
+          class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-accent">
+          <div class="flex items-start gap-2">
+            <i class="fas fa-cloud-arrow-down mt-0.5"></i>
+            <div class="flex-1">
+              <div>
+                <b>Import histórico:</b> {{ store.lastImport.forms_count }} form(s) processado(s) ·
+                <b>{{ store.lastImport.inserted }}</b> novo(s),
+                <b>{{ store.lastImport.duplicates }}</b> duplicado(s)
+                · janela desde {{ store.lastImport.since }}
+              </div>
+              <div v-if="store.lastImport.errors?.length" class="mt-1.5 text-xs text-data-warn">
+                ⚠️ {{ store.lastImport.errors.length }} form(s) com erro
+                <span v-for="(e, i) in store.lastImport.errors.slice(0, 3)" :key="i" class="block font-mono text-micro mt-0.5">
+                  {{ e.form_name }}: {{ e.error }}
+                </span>
+              </div>
+              <div class="text-micro mt-1">
+                <RouterLink to="/meta?tab=captacao" class="underline">Ver leads em Captação →</RouterLink>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </div>
+      </details>
+
       <!-- Período mestre: as datas moram nos Filtros (Data início/fim) — sem
            picker separado no topo, igual ao dashboard de Leads. -->
 
@@ -500,136 +650,6 @@ const levelTabs = computed(() => [
           :objetivos-options="objetivosOptions"
           @buscar="buscar"
           @limpar="resetFilters" />
-      </div>
-
-      <!-- Resultado do sync -->
-      <div v-if="store.lastSync"
-        :class="['rounded-lg border px-3 py-2.5 text-sm mb-3',
-          store.lastSync.errors?.length
-            ? 'border-data-warn/30 bg-data-warn/5 text-data-warn'
-            : 'border-data-pos/20 bg-data-pos/5 text-data-pos']">
-        <div class="flex items-start gap-2">
-          <i :class="store.lastSync.errors?.length ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check'" class="mt-0.5"></i>
-          <div class="flex-1">
-            <div>
-              Sincronizado: <b>{{ store.lastSync.accounts_count }}</b> conta(s) de anúncio,
-              <b>{{ store.lastSync.campaigns_total }}</b> campanha(s)
-              ({{ store.lastSync.campaigns_new }} nova(s), {{ store.lastSync.campaigns_updated }} atualizada(s))
-              <span class="text-micro text-ink-subtle">· janela {{ store.lastSync.since }} → {{ store.lastSync.until }}</span>
-            </div>
-            <div v-if="store.lastSync.errors?.length" class="mt-1.5 space-y-1">
-              <div v-for="(e, i) in store.lastSync.errors" :key="i"
-                class="text-xs rounded border border-data-warn/30 bg-data-warn/10 px-2 py-1.5">
-                <div class="font-medium"><i class="fas fa-circle-exclamation mr-1"></i>{{ e.account_name || 'Conta' }} <span class="text-ink-subtle font-mono">#{{ e.account_id }}</span></div>
-                <div class="text-data-warn mt-0.5 font-mono text-micro break-words">{{ e.error }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Log de operações (só admin) ─────────────────────────────────── -->
-      <div v-if="isAdmin && store.ops.length" class="mb-3 rounded-lg border border-line bg-surface overflow-hidden">
-        <div class="flex items-center justify-between px-3 py-2 border-b border-line bg-surface-sunken/30">
-          <div class="text-xs font-semibold text-ink flex items-center gap-2">
-            <i class="fas fa-clock-rotate-left text-ink-subtle"></i>
-            Operações recentes ({{ store.ops.length }})
-          </div>
-          <button @click="store.clearOps()" class="text-micro text-ink-subtle hover:text-data-neg">limpar</button>
-        </div>
-        <ul class="divide-y divide-line/60 max-h-60 overflow-y-auto">
-          <li v-for="op in store.ops" :key="op.id" class="px-3 py-2 text-xs flex items-start gap-2.5">
-            <span class="mt-0.5 shrink-0 w-5 text-center">
-              <i v-if="op.status === 'running'" class="fas fa-circle-notch fa-spin text-accent"></i>
-              <i v-else-if="op.status === 'success'" class="fas fa-circle-check text-data-pos"></i>
-              <i v-else class="fas fa-circle-xmark text-data-neg"></i>
-            </span>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span :class="[
-                  'inline-flex rounded text-micro px-1.5 py-0.5 font-mono uppercase',
-                  op.type === 'sync'      ? 'bg-accent/10 text-accent' :
-                  op.type === 'import'    ? 'bg-accent/10 text-accent' :
-                  op.type === 'backfill'  ? 'bg-accent/10 text-accent' :
-                  op.type === 'reconcile' ? 'bg-data-pos/10 text-data-pos' :
-                  op.type === 'ads'       ? 'bg-data-warn/10 text-data-warn' :
-                  'bg-slate-500/10 text-ink-muted'
-                ]">{{ op.type }}</span>
-                <span class="font-medium text-ink truncate">{{ op.label }}</span>
-                <span class="text-micro text-ink-subtle ml-auto whitespace-nowrap">
-                  {{ new Date(op.started_at).toLocaleTimeString('pt-BR') }}
-                  <template v-if="op.duration_ms != null"> · {{ (op.duration_ms / 1000).toFixed(1) }}s</template>
-                </span>
-              </div>
-
-              <div v-if="op.status === 'running'" class="text-micro text-ink-subtle mt-0.5">processando...</div>
-
-              <div v-else-if="op.status === 'success' && op.type === 'sync'" class="text-micro text-ink-muted mt-0.5">
-                <b>{{ op.result.campaigns_total }}</b> campanhas em {{ op.result.accounts_count }} contas
-                ({{ op.result.campaigns_new }} novas)
-                <span v-if="op.result.errors?.length" class="text-data-warn">· {{ op.result.errors.length }} erros</span>
-              </div>
-
-              <div v-else-if="op.status === 'success' && op.type === 'import'" class="text-micro text-ink-muted mt-0.5">
-                <b>{{ op.result.inserted }}</b> novos · {{ op.result.duplicates }} duplicados · {{ op.result.forms_count }} forms
-                <span v-if="op.result.errors?.length" class="text-data-warn">· {{ op.result.errors.length }} erros</span>
-              </div>
-
-              <div v-else-if="op.status === 'success' && op.type === 'backfill'" class="text-micro text-ink-muted mt-0.5">
-                <b>{{ fmtInt(op.result.rows_written) }}</b> linhas diárias · {{ op.result.accounts_count }} contas
-                · níveis: {{ (op.result.levels || []).join(', ') }}
-                <span v-if="op.result.errors?.length" class="text-data-warn">· {{ op.result.errors.length }} erros</span>
-              </div>
-
-              <div v-else-if="op.status === 'success' && op.type === 'reconcile'" class="text-micro text-ink-muted mt-0.5">
-                <b>{{ op.result.matched }}</b> casados · {{ op.result.unmatched }} sem match · {{ op.result.errors }} erros (de {{ op.result.processed }})
-              </div>
-
-              <div v-else-if="op.status === 'success' && op.type === 'ads'" class="text-micro text-ink-muted mt-0.5">
-                <b>{{ op.result.ads_total }}</b> ads · {{ op.result.ads_new }} novos · {{ op.result.ads_updated }} atualizados
-              </div>
-
-              <div v-else-if="op.status === 'error'" class="text-micro text-data-neg mt-0.5 break-words">
-                {{ op.error || 'erro desconhecido' }}
-              </div>
-
-              <details v-if="op.result?.errors?.length" class="mt-1">
-                <summary class="text-micro text-data-warn cursor-pointer">ver detalhes dos {{ op.result.errors.length }} erro(s)</summary>
-                <ul class="mt-1 ml-2 space-y-0.5 text-micro text-ink-muted font-mono max-h-32 overflow-y-auto">
-                  <li v-for="(e, i) in op.result.errors.slice(0, 20)" :key="i">
-                    <b>{{ e.form_name || e.page_name || e.account_name || '?' }}:</b> {{ e.error }}
-                  </li>
-                  <li v-if="op.result.errors.length > 20" class="italic">… mais {{ op.result.errors.length - 20 }}</li>
-                </ul>
-              </details>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Resultado import histórico -->
-      <div v-if="store.lastImport"
-        class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-accent mb-3">
-        <div class="flex items-start gap-2">
-          <i class="fas fa-cloud-arrow-down mt-0.5"></i>
-          <div class="flex-1">
-            <div>
-              <b>Import histórico:</b> {{ store.lastImport.forms_count }} form(s) processado(s) ·
-              <b>{{ store.lastImport.inserted }}</b> novo(s),
-              <b>{{ store.lastImport.duplicates }}</b> duplicado(s)
-              · janela desde {{ store.lastImport.since }}
-            </div>
-            <div v-if="store.lastImport.errors?.length" class="mt-1.5 text-xs text-data-warn">
-              ⚠️ {{ store.lastImport.errors.length }} form(s) com erro
-              <span v-for="(e, i) in store.lastImport.errors.slice(0, 3)" :key="i" class="block font-mono text-micro mt-0.5">
-                {{ e.form_name }}: {{ e.error }}
-              </span>
-            </div>
-            <div class="text-micro mt-1">
-              <RouterLink to="/meta?tab=captacao" class="underline">Ver leads em Captação →</RouterLink>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Erro -->
@@ -719,8 +739,8 @@ const levelTabs = computed(() => [
             :style="{ '--i': Math.min(idx, 14) }"
             :title="`Ver campanhas de ${a.name}`">
             <div class="px-4 py-3.5 flex items-center gap-3 border-b border-line">
-              <span class="w-10 h-10 shrink-0 rounded-xl grid place-items-center text-white text-base"
-                style="background:linear-gradient(135deg,#0866ff,#0653cc)">
+              <span class="w-10 h-10 shrink-0 rounded-xl grid place-items-center text-white text-base
+                           bg-gradient-to-br from-brand-meta to-brand-meta-deep">
                 <i class="fab fa-meta"></i>
               </span>
               <div class="flex-1 min-w-0">
@@ -773,7 +793,14 @@ const levelTabs = computed(() => [
         </div>
 
         <!-- View: Lista -->
-        <Surface v-else variant="raised" padding="none" class="overflow-hidden">
+        <!-- No celular a lista de 10 colunas so rolava de lado. Abaixo de md ela
+             usa o mesmo cartao da view Cards; a tabela continua no desktop. -->
+        <div v-else-if="filtered.length" class="md:hidden">
+          <CampaignsCardsView :campaigns="filtered" :currency="currency" @select="openDetail" />
+        </div>
+
+        <Surface v-if="viewMode === 'list'" variant="raised" padding="none"
+          :class="['overflow-hidden', filtered.length ? 'hidden md:block' : '']">
           <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
               <thead class="bg-surface-sunken/30 border-b border-line">
