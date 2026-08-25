@@ -26,9 +26,19 @@ const expanded = computed({
 });
 
 // ── Retomar a conversa ───────────────────────────────────────────────────────
-// Recarregar a página zerava a Eme: ela abria em branco, como se nunca tivesse
-// conversado. O id da sessão não sobrevive ao reload, mas o histórico está no
-// banco - então ao abrir sem conversa carregada ela retoma a última.
+// Recarregar a página zerava a Eme, então ela passou a reabrir a última
+// conversa do banco. Só que "última" no banco não quer dizer "a que eu estava
+// tendo": abrir a Eme numa terça de manhã trazia de volta uma conversa de
+// quinta passada, sobre uma tela que a pessoa nem está mais vendo. Uma resposta
+// velha reaparecendo como se fosse o assunto de agora é pior do que abrir em
+// branco - ela parece atual, e não é.
+//
+// A regra é de CONTINUIDADE, não de histórico: só retoma o que teve atividade
+// nos últimos 30 minutos, que é a janela de um F5 no meio da pergunta, de ir
+// conferir outra tela e voltar, de fechar a bolinha sem querer. Passou disso,
+// abre em branco - e o histórico continua a um clique, no botão de conversas.
+const JANELA_RETOMADA_MS = 30 * 60 * 1000;
+
 const retomando = ref(false);
 const retomada = ref(null);   // título da conversa retomada, para avisar
 
@@ -39,6 +49,10 @@ async function retomarUltimaConversa() {
     if (!aiStore.sessions.length) await aiStore.loadSessions();
     const ultima = aiStore.sessions[0];
     if (!ultima) return;
+    // Sem data legível o seguro é NÃO retomar: um título antigo aparecendo como
+    // "Retomando" é exatamente o que se quer evitar aqui.
+    const quando = new Date(ultima.updated_at || ultima.updatedAt || 0).getTime();
+    if (!quando || Date.now() - quando > JANELA_RETOMADA_MS) return;
     await aiStore.loadMessages(ultima.id);
     retomada.value = ultima.title || 'conversa anterior';
     setTimeout(() => { retomada.value = null; }, 6000);
