@@ -200,7 +200,13 @@ export const navRegistry = [
             { route: '/checklists', name: 'Checklists', icon: 'fas fa-clipboard-check' },
             // "Meus relatórios" (admin cria via Eme) + "Compartilhados comigo"
             // (qualquer usuário) → NÃO é adminOnly; o gate de criação fica no builder.
-            { route: '/relatorios', name: 'Relatórios', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
+            //
+            // Chamava-se só "Relatórios" e colidia com a subcategoria Relatórios
+            // do Comercial, que é outra coisa: lá são relatórios FIXOS de
+            // negócio (Faturamento, Leads, Corretores...), aqui é o construtor
+            // de relatório sob medida. Dois itens com o mesmo nome no mesmo menu
+            // obrigam a abrir para descobrir qual é qual.
+            { route: '/relatorios', name: 'Relatórios da Eme', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
 
             { route: '/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
             // Veio de Comercial (2026-08-25). É ferramenta de operação: dispara
@@ -209,12 +215,15 @@ export const navRegistry = [
             // Delegável desde 2026-08-19: histórico e reprocessamento vão por
             // alçada; a aba Configurações (e o processamento manual avulso, que
             // mora nela) continua só para admin.
-            { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser' },
             // Veio de Financeiro > "Operações" (2026-08-25), subcategoria que
             // existia só para guardar este item. É ferramenta de processo:
             // monta o lançamento e o empurra pelo pipeline do Sienge. A rota
             // não mudou, então nenhuma alçada migra.
             { route: '/financeiro/paymentflow', section: 'Fluxo de Pagamento', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
+            // Por último de propósito: é a ferramenta que menos se abre, e a
+            // única cujo efeito é destrutivo (cancela no CV e exclui contrato no
+            // Sienge). Item raro e perigoso não disputa o topo da lista.
+            { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser' },
         ],
     },
     // ── Academy (Conhecimento & Trilhas) ───────────────────────────────────────

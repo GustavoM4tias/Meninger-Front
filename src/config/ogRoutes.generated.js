@@ -127,7 +127,7 @@ export const OG_ROUTES = {
     "subcategory": null
   },
   "/relatorios": {
-    "name": "Relatórios",
+    "name": "Relatórios da Eme",
     "category": "Ferramentas",
     "group": "OPERAÇÃO",
     "subcategory": null
@@ -138,14 +138,14 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": null
   },
-  "/comercial/cancelamento-reservas": {
-    "name": "Cancelamentos",
+  "/financeiro/paymentflow": {
+    "name": "Fluxo de Pagamento",
     "category": "Ferramentas",
     "group": "OPERAÇÃO",
     "subcategory": null
   },
-  "/financeiro/paymentflow": {
-    "name": "Fluxo de Pagamento",
+  "/comercial/cancelamento-reservas": {
+    "name": "Cancelamentos",
     "category": "Ferramentas",
     "group": "OPERAÇÃO",
     "subcategory": null
