@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import dayjs from 'dayjs';
 import { useChecklistStore } from '@/stores/Checklist/checklistStore.js';
+import { useChartTheme } from '@/composables/useChartTheme';
 
 const store = useChecklistStore();
 defineEmits(['open-task']);

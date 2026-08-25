@@ -306,11 +306,11 @@ const chartOption = computed(() => {
         series: [
             {
                 name: 'Aprovados', type: 'bar', stack: 'v', barMaxWidth: 42, barCategoryGap: '30%',
-                itemStyle: { color: primaryColor, borderRadius: [0, 0, 0, 0] }, emphasis: { focus: 'series' }, data: aprov
+                itemStyle: { color: t.posArea.value, borderRadius: [0, 0, 0, 0] }, emphasis: { focus: 'series' }, data: aprov
             },
             {
                 name: 'Reprovados', type: 'bar', stack: 'v', barMaxWidth: 42, barCategoryGap: '30%',
-                itemStyle: { color: secondaryColor, borderRadius: [6, 6, 0, 0] }, emphasis: { focus: 'series' }, data: reprov
+                itemStyle: { color: t.negArea.value, borderRadius: [6, 6, 0, 0] }, emphasis: { focus: 'series' }, data: reprov
             }
         ],
         media: [

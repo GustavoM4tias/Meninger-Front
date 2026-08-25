@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useCan } from '@/composables/useCan';
+import { useChartTheme } from '@/composables/useChartTheme';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import ChartActions from '@/components/config/ChartActions.vue';
 import Export from '@/components/config/Export.vue';

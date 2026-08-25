@@ -40,9 +40,9 @@ const contractsStore = useContractsStore();
 const goalStore = useProjectionGoalModeStore();
 
 // ── Tema reativo ─────────────────────────────────────
-const isDark = ref(false);
-// O observer de tema vive no `useChartTheme` (um só para o app inteiro).
-// `t.isDark` é readonly: escrever nele aqui não faria nada.
+const t = useChartTheme();
+// O observer de tema vive no `useChartTheme` (um so para o app inteiro).
+const isDark = t.isDark;
 
 const txt = t.ink;
 const sub = t.inkMuted;

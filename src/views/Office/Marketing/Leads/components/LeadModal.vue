@@ -12,6 +12,7 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
 import LeadDetailModal from './LeadDetailModal.vue';
+import { useChartTheme } from '@/composables/useChartTheme';
 import VChart from 'vue-echarts';
 import * as echarts from 'echarts/core';
 import { FunnelChart, PieChart, BarChart } from 'echarts/charts';
