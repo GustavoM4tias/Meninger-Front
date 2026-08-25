@@ -6,6 +6,8 @@ import { ref, computed, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Button from '@/components/UI/Button.vue';
+import Modal from '@/components/UI/Modal.vue';
+import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import EnterpriseMultiSelect from '@/components/Marketing/EnterpriseMultiSelect.vue';
 import MetaFormMappingModal from '@/views/Office/Marketing/Formularios/components/MetaFormMappingModal.vue';
 import CreativeLightbox from './CreativeLightbox.vue';
@@ -61,6 +63,8 @@ watch([() => props.open, () => props.campaignId, () => props.since, () => props.
     adsLastSync.value = null;
     formDetailOpen.value = false;
     formDetailData.value = null;
+    heldPreview.value = null;
+    heldChecking.value = false;
 
     if (!isOpen || !id) return;
     loading.value = true;
@@ -210,6 +214,57 @@ const vinculo = ref({
 const vinculoSaving = ref(false);
 const vinculoError = ref(null);
 
+// ── Represados DESTA campanha ──────────────────────────────────────────────
+// Vincular a campanha só vale pro PRÓXIMO lead — os que chegaram antes ficaram
+// em `held` e continuavam parados. Aqui, no mesmo lugar em que a pessoa vincula,
+// dá pra soltar os que já estão presos.
+const heldPreview = ref(null);      // { scanned, recoverable, no_binding, no_contact }
+const heldChecking = ref(false);
+const heldSending = ref(false);
+const pedindoEnvioHeld = ref(false);
+
+async function checarRepresados() {
+    const id = campaign.value?.id;
+    if (!id) return;
+    heldChecking.value = true;
+    try {
+        const d = await store.previewRecoverableForCampaign(id, { limit: 1000 });
+        // Guarda contra race: só aplica se a campanha visível ainda for a mesma.
+        if (campaign.value?.id === id) heldPreview.value = d;
+    } finally {
+        heldChecking.value = false;
+    }
+}
+
+async function enviarRepresados() {
+    pedindoEnvioHeld.value = false;
+    const id = campaign.value?.id;
+    if (!id) return;
+    heldSending.value = true;
+    try {
+        const d = await store.dispatchRecoverable({ campaignIds: [id], limit: 1000 });
+        if (!d) {
+            toast.error(store.error || 'Não foi possível enviar os represados.');
+        } else if (d.failed) {
+            toast.warning(`${d.delivered} entregue(s), ${d.failed} falha(s) no envio ao CV.`);
+        } else if (d.delivered) {
+            toast.success(`${d.delivered} lead(s) represado(s) entregue(s) ao CV.`);
+        } else {
+            toast.info('Nenhum lead saiu: os represados ainda não têm vínculo resolvível.');
+        }
+        emit('saved', campaign.value);
+        await checarRepresados();
+    } finally {
+        heldSending.value = false;
+    }
+}
+
+// A contagem é uma varredura no represado — só roda quando a aba de vínculo
+// abre (e depois de salvar), não em todo detalhe de campanha aberto.
+watch([() => activeSection.value, () => campaign.value?.id], ([sec, id]) => {
+    if (sec === 'vinculo' && id && !heldPreview.value && !heldChecking.value) checarRepresados();
+});
+
 watch(campaign, (c) => {
     if (!c) return;
     vinculo.value = {
@@ -270,6 +325,8 @@ async function saveVinculo() {
         if (updated) {
             campaign.value = { ...campaign.value, ...updated };
             emit('saved', updated);
+            // O vínculo mudou: reconta o que dá pra soltar agora.
+            await checarRepresados();
         }
     } finally {
         vinculoSaving.value = false;
@@ -858,6 +915,41 @@ function onFormEditorSaved() {
             </div>
           </div>
 
+          <!-- Leads que JÁ chegaram represados (o vínculo acima não os solta sozinho) -->
+          <div v-if="heldChecking" class="text-micro text-ink-subtle flex items-center gap-1.5">
+            <i class="fas fa-circle-notch fa-spin"></i> Verificando leads represados desta campanha...
+          </div>
+          <div v-else-if="heldPreview && heldPreview.scanned > 0"
+            class="rounded-lg border px-3 py-2.5 flex items-start gap-3 flex-wrap"
+            :class="heldPreview.recoverable ? 'border-accent/30 bg-accent/5' : 'border-data-warn/30 bg-data-warn/5'">
+            <i :class="heldPreview.recoverable ? 'fas fa-rotate-right text-accent' : 'fas fa-hand text-data-warn'"
+               class="mt-0.5"></i>
+            <div class="flex-1 min-w-[180px]">
+              <div class="text-xs font-medium text-ink">
+                {{ fmtInt(heldPreview.scanned) }} lead(s) desta campanha já chegaram represados
+              </div>
+              <div class="text-micro text-ink-muted mt-0.5">
+                <template v-if="heldPreview.recoverable">
+                  <b>{{ fmtInt(heldPreview.recoverable) }}</b> saem agora com o vínculo salvo.
+                  Vincular sozinho só vale pro próximo lead — estes precisam ser enviados.
+                </template>
+                <template v-else>
+                  Nenhum sai ainda: salve uma mídia com o roteamento ativo acima e verifique de novo.
+                </template>
+                <template v-if="heldPreview.no_contact"> · {{ fmtInt(heldPreview.no_contact) }} sem e-mail/telefone (não vão)</template>
+              </div>
+            </div>
+            <Button v-if="heldPreview.recoverable" size="sm" icon="fas fa-paper-plane"
+              :loading="heldSending" :disabled="heldSending"
+              @click="pedindoEnvioHeld = true">
+              Enviar {{ fmtInt(heldPreview.recoverable) }} ao CV
+            </Button>
+            <Button v-else variant="secondary" size="sm" icon="fas fa-arrows-rotate"
+              :loading="heldChecking" @click="checarRepresados">
+              Verificar de novo
+            </Button>
+          </div>
+
           <div v-if="vinculoError" class="rounded border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
             <i class="fas fa-circle-exclamation mr-1.5"></i>{{ vinculoError }}
           </div>
@@ -1347,6 +1439,14 @@ function onFormEditorSaved() {
       v-model:open="formEditorOpen"
       :form="formDetailData"
       @saved="onFormEditorSaved" />
+
+    <ConfirmDialog :open="pedindoEnvioHeld" tone="accent"
+      :title="`Enviar ${heldPreview?.recoverable || 0} lead(s) represado(s) ao CV?`"
+      :consequence="`Os ${heldPreview?.recoverable || 0} lead(s) represado(s) desta campanha são roteados e despachados ao CRM agora.`"
+      hint="É upsert: lead que já existe no CV é atualizado, não duplicado."
+      :confirm-label="`Enviar ${heldPreview?.recoverable || 0}`"
+      :loading="heldSending"
+      @confirm="enviarRepresados" @cancel="pedindoEnvioHeld = false" />
 
     <!-- Lightbox de criativo (imagem ou vídeo do ad) -->
     <CreativeLightbox

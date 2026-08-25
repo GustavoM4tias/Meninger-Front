@@ -399,14 +399,25 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         }
     }
 
-    // Envia ao CV os represados (held) que já têm vínculo. preview=true só conta.
-    async function dispatchRecoverable({ preview = false, limit = 500 } = {}) {
-        const label = preview ? 'Contar represados recuperáveis' : 'Enviar represados recuperáveis ao CV';
-        return withOp({ type: 'recover', label, details: { preview, limit } }, async () => {
+    /**
+     * Envia ao CV os represados (held) que já têm vínculo.
+     * `campaignIds`/`formIds` recortam o envio — o caso real é vincular UMA
+     * campanha e soltar só os leads dela. Sem recorte, envia todos.
+     */
+    async function dispatchRecoverable({ preview = false, limit = 500, campaignIds = null, formIds = null } = {}) {
+        const camps = (campaignIds || []).map(String).filter(Boolean);
+        const forms = (formIds || []).map(String).filter(Boolean);
+        const escopo = camps.length || forms.length ? ' (recorte)' : '';
+        const label = preview ? 'Contar represados recuperáveis' : `Enviar represados recuperáveis ao CV${escopo}`;
+        return withOp({ type: 'recover', label, details: { preview, limit, campaignIds: camps, formIds: forms } }, async () => {
             try {
                 const d = await apiFetch('/cv-binding/dispatch-recoverable', {
                     method: 'POST',
-                    body: JSON.stringify({ preview, limit }),
+                    body: JSON.stringify({
+                        preview, limit,
+                        ...(camps.length ? { campaign_ids: camps } : {}),
+                        ...(forms.length ? { form_ids: forms } : {}),
+                    }),
                 });
                 if (!preview) await fetchBindingOverview();
                 return d;
@@ -415,6 +426,22 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
                 return null;
             }
         });
+    }
+
+    /**
+     * Só CONTA quantos represados de uma campanha sairiam agora — sem escrever,
+     * sem entrar no log de operações (é leitura de apoio da tela de vínculo).
+     */
+    async function previewRecoverableForCampaign(campaignId, { limit = 1000 } = {}) {
+        if (!campaignId) return null;
+        try {
+            return await apiFetch('/cv-binding/dispatch-recoverable', {
+                method: 'POST',
+                body: JSON.stringify({ preview: true, limit, campaign_ids: [String(campaignId)] }),
+            });
+        } catch {
+            return null;
+        }
     }
 
     // ── Cutover: disparar backlog (histórico + fila de sombra) ao CV ────────
@@ -450,6 +477,6 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         allAds, loadingAllAds, fetchAllAds,
         report, loadingReport, coverage,
         fetchReport, fetchCoverage, backfillDaily,
-        bindingOverview, loadingBinding, fetchBindingOverview, dispatchRecoverable,
+        bindingOverview, loadingBinding, fetchBindingOverview, dispatchRecoverable, previewRecoverableForCampaign,
     };
 });

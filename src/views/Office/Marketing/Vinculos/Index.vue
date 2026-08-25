@@ -12,6 +12,7 @@
 // Read-only + atalho pra ação. A vinculação em si acontece no modal de campanha.
 
 import { onMounted, ref, computed } from 'vue';
+import { useToast } from 'vue-toastification';
 import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Surface from '@/components/UI/Surface.vue';
@@ -19,6 +20,7 @@ import Button from '@/components/UI/Button.vue';
 import CampaignDetailModal from '../Campanhas/components/CampaignDetailModal.vue';
 
 const store = useCampaignsStore();
+const toast = useToast();
 
 const detailOpen = ref(false);
 const detailId = ref(null);
@@ -33,28 +35,77 @@ async function reload() {
 onMounted(reload);
 
 // ── Enviar represados recuperáveis ao CV ────────────────────────────────────
+// Dois recortes: TUDO (botão do topo da seção) ou UMA campanha/formulário
+// (botão da linha). O recorte por linha é o caso real: a pessoa acabou de
+// vincular aquela campanha e quer soltar só os leads dela.
 const sending = ref(false);
+const sendingKey = ref(null);        // 'all' | 'campaign:<id>' | 'form:<id>'
 const sendResult = ref(null);
 
 /* Enviar represado despacha lead de verdade ao CRM. O `confirm` do navegador
    nao deixava claro QUANTOS saem de uma vez. */
 const pedindoEnvio = ref(false);
+const alvoEnvio = ref(null);         // { key, label, total, campaignIds, formIds }
 
-function enviarRecuperaveis() {
+function enviarTodos() {
     const total = summary.value.leads_recoverable || 0;
     if (!total) return;
+    alvoEnvio.value = { key: 'all', label: 'de todas as campanhas já vinculadas', total, campaignIds: [], formIds: [] };
+    pedindoEnvio.value = true;
+}
+
+function enviarCampanha(c) {
+    if (!c?.resolvable_count) return;
+    alvoEnvio.value = {
+        key: `campaign:${c.campaign_id}`,
+        label: `da campanha "${c.name || '#' + c.campaign_id}"`,
+        total: c.resolvable_count,
+        campaignIds: [c.campaign_id],
+        formIds: [],
+    };
+    pedindoEnvio.value = true;
+}
+
+function enviarFormulario(f) {
+    if (!f?.held_count) return;
+    alvoEnvio.value = {
+        key: `form:${f.form_id}`,
+        label: `do formulário "${f.name || '#' + f.form_id}"`,
+        total: f.held_count,
+        campaignIds: [],
+        formIds: [f.form_id],
+    };
     pedindoEnvio.value = true;
 }
 
 async function enviarConfirmado() {
+    const alvo = alvoEnvio.value;
+    if (!alvo) return;
     pedindoEnvio.value = false;
     sending.value = true;
+    sendingKey.value = alvo.key;
     sendResult.value = null;
     try {
-        const d = await store.dispatchRecoverable({ preview: false, limit: 1000 });
+        const d = await store.dispatchRecoverable({
+            preview: false,
+            limit: 1000,
+            campaignIds: alvo.campaignIds,
+            formIds: alvo.formIds,
+        });
         sendResult.value = d;
+        if (!d) {
+            toast.error(store.error || 'Não foi possível enviar os represados.');
+        } else if (d.failed) {
+            toast.warning(`${d.delivered} entregue(s), ${d.failed} falha(s) no envio ao CV.`);
+        } else if (d.delivered) {
+            toast.success(`${d.delivered} lead(s) represado(s) entregue(s) ao CV.`);
+        } else {
+            toast.info('Nenhum lead saiu: os represados ainda não têm vínculo resolvível.');
+        }
     } finally {
         sending.value = false;
+        sendingKey.value = null;
+        alvoEnvio.value = null;
     }
 }
 
@@ -67,10 +118,19 @@ const backlog = computed(() => ov.value?.backlog || null);
 
 function fmtInt(v) { return v == null ? '0' : new Intl.NumberFormat('pt-BR').format(Number(v)); }
 
+// Bloqueadas = ainda seguram lead que NENHUM vínculo resolve hoje (nem o da
+// campanha nem o do formulário). Recuperáveis = já dá pra soltar agora.
+const campanhasBloqueadas = computed(() => held.value.campaigns.filter(c => c.blocked_count > 0));
+const campanhasRecuperaveis = computed(() => held.value.campaigns.filter(c => c.resolvable_count > 0));
+const formsRecuperaveis = computed(() => (held.value.forms || []).filter(f => f.is_bound && f.held_count > 0));
+const temRecuperavel = computed(() => campanhasRecuperaveis.value.length > 0 || formsRecuperaveis.value.length > 0);
+
 // Saúde geral: verde se cobertura alta e sem risco; âmbar/vermelho conforme.
 const healthTone = computed(() => {
     const s = summary.value;
     if (s.leads_at_risk > 0 || s.unbound_campaigns_with_leads > 0) return 'danger';
+    // Vínculo resolvido mas lead ainda parado: não é "tudo certo" — falta enviar.
+    if (s.leads_recoverable > 0) return 'warn';
     if (s.active_unbound_campaigns > 0) return 'warn';
     if (funnel.value.coverage_pct != null && funnel.value.coverage_pct < 90) return 'warn';
     return 'ok';
@@ -81,10 +141,17 @@ const healthCopy = computed(() => {
     if (healthTone.value === 'danger') {
         return {
             title: `${fmtInt(s.leads_at_risk)} lead(s) represado(s) por falta de vínculo`,
-            desc: `${s.unbound_campaigns_with_leads} campanha(s) sem vínculo estão segurando leads que não chegam ao CV. Vincule-as abaixo.`,
+            desc: `${s.unbound_campaigns_with_leads} campanha(s) sem vínculo estão segurando leads que não chegam ao CV. Vincule-as abaixo.`
+                + (s.leads_recoverable > 0 ? ` Outros ${fmtInt(s.leads_recoverable)} lead(s) já têm vínculo e só falta enviar.` : ''),
         };
     }
     if (healthTone.value === 'warn') {
+        if (s.leads_recoverable > 0) {
+            return {
+                title: `${fmtInt(s.leads_recoverable)} lead(s) represado(s) prontos pra enviar`,
+                desc: 'O vínculo já resolve esses leads, mas eles ficaram presos de antes. Envie-os ao CV abaixo.',
+            };
+        }
         return {
             title: 'Atenção preventiva',
             desc: s.active_unbound_campaigns > 0
@@ -192,14 +259,14 @@ function statusBadge(s) {
               <i class="fas fa-triangle-exclamation text-data-neg"></i>
               Campanhas sem vínculo represando leads
             </h2>
-            <span v-if="held.campaigns.filter(c => !c.is_bound).length"
+            <span v-if="campanhasBloqueadas.length"
               class="inline-flex rounded-full bg-data-neg/10 text-data-neg text-micro font-semibold px-2 py-0.5">
-              {{ held.campaigns.filter(c => !c.is_bound).length }}
+              {{ campanhasBloqueadas.length }}
             </span>
           </div>
 
           <Surface variant="raised" padding="none" class="overflow-hidden">
-            <div v-if="!held.campaigns.filter(c => !c.is_bound).length" class="px-4 py-8 text-center text-ink-subtle text-sm">
+            <div v-if="!campanhasBloqueadas.length" class="px-4 py-8 text-center text-ink-subtle text-sm">
               <i class="fas fa-circle-check text-data-pos text-xl mb-1.5 block"></i>
               Nenhuma campanha sem vínculo com leads represados. 🎉
             </div>
@@ -215,7 +282,7 @@ function statusBadge(s) {
                 </tr>
               </thead>
               <tbody class="divide-y divide-line/60">
-                <tr v-for="c in held.campaigns.filter(c => !c.is_bound)" :key="c.campaign_id"
+                <tr v-for="c in campanhasBloqueadas" :key="c.campaign_id"
                   class="hover:bg-surface-hover/40 transition-colors">
                   <td class="px-3 py-2.5">
                     <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
@@ -242,8 +309,11 @@ function statusBadge(s) {
                   </td>
                   <td class="px-3 py-2.5 text-right">
                     <span class="inline-flex items-center gap-1 font-semibold text-data-neg">
-                      {{ fmtInt(c.held_count) }}
+                      {{ fmtInt(c.blocked_count) }}
                     </span>
+                    <div v-if="c.resolvable_count" class="text-micro text-ink-subtle">
+                      + {{ fmtInt(c.resolvable_count) }} já recuperável
+                    </div>
                   </td>
                   <td class="px-3 py-2.5 text-right">
                     <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
@@ -258,20 +328,20 @@ function statusBadge(s) {
           </Surface>
         </section>
 
-        <!-- ══ Represados recuperáveis (campanha já vinculada) ══════════════ -->
-        <section v-if="held.campaigns.filter(c => c.is_bound).length" class="mb-5">
+        <!-- ══ Represados recuperáveis (vínculo já resolve) ═════════════════ -->
+        <section v-if="temRecuperavel" class="mb-5">
           <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
             <div class="flex items-center gap-2">
               <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
                 <i class="fas fa-rotate-right text-accent"></i>
                 Represados recuperáveis
               </h2>
-              <span class="text-micro text-ink-subtle">campanha já tem vínculo — só falta enviar ao CV</span>
+              <span class="text-micro text-ink-subtle">o vínculo já resolve — falta enviar ao CV</span>
             </div>
-            <Button size="sm" icon="fas fa-paper-plane" :loading="sending"
-              :disabled="!summary.leads_recoverable"
-              @click="enviarRecuperaveis">
-              Enviar {{ fmtInt(summary.leads_recoverable) }} ao CV
+            <Button size="sm" icon="fas fa-paper-plane" :loading="sending && sendingKey === 'all'"
+              :disabled="sending || !summary.leads_recoverable"
+              @click="enviarTodos">
+              Enviar todos ({{ fmtInt(summary.leads_recoverable) }})
             </Button>
           </div>
 
@@ -289,16 +359,47 @@ function statusBadge(s) {
 
           <Surface variant="raised" padding="md">
             <ul class="divide-y divide-line/60 -my-1">
-              <li v-for="c in held.campaigns.filter(c => c.is_bound)" :key="c.campaign_id"
-                class="py-2 flex items-center gap-3 text-sm">
+              <li v-for="c in campanhasRecuperaveis" :key="c.campaign_id"
+                class="py-2 flex items-center gap-3 text-sm flex-wrap">
                 <i class="fas fa-hand text-ink-subtle text-xs"></i>
                 <button @click="openCampaign(c.campaign_id)"
                   class="flex-1 min-w-0 truncate text-ink text-left hover:text-accent hover:underline"
-                  :title="`Abrir campanha ${c.name || c.campaign_id}`">{{ c.name || `#${c.campaign_id}` }}</button>
-                <span class="text-ink-muted">{{ fmtInt(c.held_count) }} lead(s)</span>
+                  :title="`Abrir campanha ${c.name || c.campaign_id}`">
+                  {{ c.name || `#${c.campaign_id}` }}
+                  <span v-if="c.resolvable_via_form" class="text-micro text-ink-subtle">(vínculo do formulário)</span>
+                </button>
+                <span class="text-ink-muted whitespace-nowrap">{{ fmtInt(c.resolvable_count) }} lead(s)</span>
+                <button
+                  class="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium
+                         hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="sending"
+                  @click="enviarCampanha(c)">
+                  <i :class="sending && sendingKey === `campaign:${c.campaign_id}` ? 'fas fa-circle-notch fa-spin' : 'fas fa-paper-plane'"
+                     class="text-[9px]"></i>
+                  Enviar {{ fmtInt(c.resolvable_count) }}
+                </button>
                 <RouterLink to="/meta?tab=captacao" class="text-micro text-accent hover:underline whitespace-nowrap">
                   ver na inbox →
                 </RouterLink>
+              </li>
+
+              <li v-for="f in formsRecuperaveis" :key="`form-${f.form_id}`"
+                class="py-2 flex items-center gap-3 text-sm flex-wrap">
+                <i class="fas fa-file-lines text-ink-subtle text-xs"></i>
+                <span class="flex-1 min-w-0 truncate text-ink" :title="f.name">
+                  {{ f.name || `#${f.form_id}` }}
+                  <span class="text-micro text-ink-subtle">(lead sem campanha)</span>
+                </span>
+                <span class="text-ink-muted whitespace-nowrap">{{ fmtInt(f.held_count) }} lead(s)</span>
+                <button
+                  class="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium
+                         hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="sending"
+                  @click="enviarFormulario(f)">
+                  <i :class="sending && sendingKey === `form:${f.form_id}` ? 'fas fa-circle-notch fa-spin' : 'fas fa-paper-plane'"
+                     class="text-[9px]"></i>
+                  Enviar {{ fmtInt(f.held_count) }}
+                </button>
               </li>
             </ul>
           </Surface>
@@ -394,18 +495,10 @@ function statusBadge(s) {
   </div>
 
   <ConfirmDialog :open="pedindoEnvio" tone="accent"
-    :title="`Enviar ${summary.leads_recoverable || 0} lead(s) represado(s) ao CV?`"
-    consequence="Eles são roteados e despachados ao CRM agora. São leads de campanhas que já têm vínculo."
+    :title="`Enviar ${alvoEnvio?.total || 0} lead(s) represado(s) ao CV?`"
+    :consequence="`Os ${alvoEnvio?.total || 0} lead(s) represado(s) ${alvoEnvio?.label || ''} são roteados e despachados ao CRM agora.`"
     hint="É upsert: lead que já existe no CV é atualizado, não duplicado."
-    :confirm-label="`Enviar ${summary.leads_recoverable || 0}`"
-    :loading="sending"
-    @confirm="enviarConfirmado" @cancel="pedindoEnvio = false" />
-
-  <ConfirmDialog :open="pedindoEnvio" tone="accent"
-    :title="`Enviar ${summary.leads_recoverable || 0} lead(s) represado(s) ao CV?`"
-    consequence="Eles são roteados e despachados ao CRM agora. São leads de campanhas que já têm vínculo."
-    hint="É upsert: lead que já existe no CV é atualizado, não duplicado."
-    :confirm-label="`Enviar ${summary.leads_recoverable || 0}`"
+    :confirm-label="`Enviar ${alvoEnvio?.total || 0}`"
     :loading="sending"
     @confirm="enviarConfirmado" @cancel="pedindoEnvio = false" />
 </template>
