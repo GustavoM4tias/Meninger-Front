@@ -837,7 +837,7 @@
               </span>
             </template>
 
-            <template #cell-createdAt="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+            <template #cell-created_at="{ row }">{{ formatDateTime(row.created_at) }}</template>
 
             <template #actions="{ row }">
               <IconButton icon="fas fa-up-right-and-down-left-from-center" size="sm"
@@ -1082,7 +1082,7 @@ const COLUNAS = [
   { key: 'payment_status', label: 'Pagamento', priority: 2, sortable: true, width: '8rem' },
   { key: 'vencimento', label: 'Vencimento', priority: 2, sortable: true, width: '7rem' },
   { key: 'cv_situacao', label: 'Etapa no CV', priority: 3, truncate: false },
-  { key: 'createdAt', label: 'Emitido em', priority: 3, sortable: true, width: '9rem' },
+  { key: 'created_at', label: 'Emitido em', priority: 3, sortable: true, width: '9rem' },
 ];
 
 /* ── Recorte pelo KPI ─────────────────────────────────────────────────────
@@ -1101,11 +1101,7 @@ const RECORTES = {
      `reserva_morta` fora pelo mesmo motivo: reserva cancelada no CV não tem
      boleto a consertar, o cliente desistiu. Elas vão pro cartão Canceladas. */
   error: { label: 'com erro', teste: (r) => r.status === 'error' && !r.has_boleto && !r.reserva_morta },
-  dead: {
-    label: 'canceladas',
-    teste: (r) => r.reserva_morta
-      && ((r.status === 'error' && !r.has_boleto) || r.payment_status === 'cancelled'),
-  },
+  skipped: { label: 'ignoradas', teste: (r) => r.status === 'skipped' || r.ignorado },
 };
 
 const recorteAtivo = computed(() => RECORTES[recorte.value] || null);
@@ -1195,29 +1191,33 @@ function onFiltersChanged() {
 const kpiCards = computed(() => {
   const st = store.stats;
   if (!st) return [];
-  const pct = (k) => st.percent?.[k] ?? 0;
+  /* A tela lê o histórico UNIFICADO (/cobranca-ato), cujos baldes vêm em
+     português. Denominador dos percentuais é `emitidos`, igual ao endpoint
+     antigo — assim o número na tela não muda de significado. */
+  const b = (k) => st[k] || { qty: 0, valor: 0 };
+  const pct = (k) => (st.emitidos?.qty ? Math.round((b(k).qty / st.emitidos.qty) * 1000) / 10 : 0);
   return [
-    { key: 'emitidos', label: 'Emitidos', value: st.emitidos.qty,
-      hint: formatCurrency(st.emitidos.valor), icon: 'fas fa-barcode', tone: 'accent',
+    { key: 'emitidos', label: 'Emitidos', value: b('emitidos').qty,
+      hint: formatCurrency(b('emitidos').valor), icon: 'fas fa-barcode', tone: 'accent',
       tooltip: 'Clique para ver todos os registros' },
-    { key: 'paid', label: 'Pagos', value: st.paid.qty,
-      hint: `${pct('paid')}% · ${formatCurrency(st.paid.valor)}`,
+    { key: 'paid', label: 'Pagos', value: b('pagos').qty,
+      hint: `${pct('pagos')}% · ${formatCurrency(b('pagos').valor)}`,
       icon: 'fas fa-circle-check', tone: 'pos', tooltip: 'Clique para ver só os pagos' },
-    { key: 'pending', label: 'Pendentes', value: st.pending.qty,
-      hint: `${pct('pending')}% · ${formatCurrency(st.pending.valor)}`,
+    { key: 'pending', label: 'Pendentes', value: b('pendentes').qty,
+      hint: `${pct('pendentes')}% · ${formatCurrency(b('pendentes').valor)}`,
       icon: 'fas fa-clock', tone: 2, tooltip: 'Clique para ver só os pendentes' },
-    { key: 'cancelled', label: 'Baixados', value: st.cancelled.qty,
-      hint: `${pct('cancelled')}% evasão · ${formatCurrency(st.cancelled.valor)}`,
+    { key: 'cancelled', label: 'Baixados', value: b('cancelados').qty,
+      hint: `${pct('cancelados')}% evasão · ${formatCurrency(b('cancelados').valor)}`,
       icon: 'fas fa-ban', tone: 'neutral',
       tooltip: 'Boleto vencido sem pagamento, com a reserva viva. Esta é a evasão de verdade' },
-    { key: 'error', label: 'Com erro', value: st.errors?.qty ?? 0,
-      hint: st.errors?.valor != null ? formatCurrency(st.errors.valor) : '',
+    { key: 'error', label: 'Com erro', value: b('erros').qty,
+      hint: formatCurrency(b('erros').valor),
       icon: 'fas fa-triangle-exclamation', tone: 'neg',
       tooltip: 'Reservas que hoje estão sem boleto por falha. Clique para ver só elas' },
-    { key: 'dead', label: 'Canceladas', value: st.dead?.qty ?? 0,
-      hint: st.dead?.valor ? formatCurrency(st.dead.valor) : 'reserva encerrada no CV',
+    { key: 'skipped', label: 'Ignoradas', value: b('ignorados').qty,
+      hint: b('ignorados').valor ? formatCurrency(b('ignorados').valor) : 'sem série de Ato',
       icon: 'fas fa-user-slash', tone: 'neutral',
-      tooltip: 'Reserva encerrada no CV: o boleto foi baixado ou nem saiu. Não é evasão nem erro a resolver' },
+      tooltip: 'Reserva sem série de Ato: a cobrança nem chegou a sair. Não é evasão nem erro a resolver' },
   ];
 });
 
