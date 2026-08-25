@@ -104,17 +104,6 @@ export const navRegistry = [
         group: 'OPERAÇÃO',
         subcategories: [
             {
-                key: 'projection',
-                name: 'Projeção & Metas',
-                icon: 'fas fa-bullseye',
-                pages: [
-                    // Vendas × Projeção virou guia do Relatório Comercial
-                    // (Vendas > Relatório Comercial). O editor de Projeção
-                    // continua aqui, porque é cadastro, não leitura.
-                    { route: '/comercial/projections', section: 'Projeção', name: 'Projeção', icon: 'fas fa-chart-line' },
-                ],
-            },
-            {
                 key: 'sales',
                 name: 'Vendas',
                 icon: 'fas fa-handshake',
@@ -123,6 +112,14 @@ export const navRegistry = [
                     // a tela liberada; sem isso não-admin ficava 403 sem ter onde liberar).
                     { route: '/comercial/precadastros', section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip' },
                     { route: '/comercial/reservas-report', section: 'Reservas', name: 'Reservas', icon: 'fas fa-bookmark' },
+                    // Veio da subcategoria "Projeção & Metas" (2026-08-25), que
+                    // tinha este único item - uma pasta para guardar um arquivo,
+                    // custando um clique sem organizar nada. Aqui os três contam
+                    // a mesma história: o que se vende, o que se reservou e o que
+                    // se projeta. Vendas × Projeção continua sendo guia do
+                    // Relatório Comercial; o que mora aqui é o EDITOR, que é
+                    // cadastro, não leitura. A rota não mudou.
+                    { route: '/comercial/projections', section: 'Projeção', name: 'Projeção', icon: 'fas fa-chart-line' },
                 ],
             },
             {

@@ -36,12 +36,6 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": "Eventos"
   },
-  "/comercial/projections": {
-    "name": "Projeção",
-    "category": "Comercial",
-    "group": "OPERAÇÃO",
-    "subcategory": "Projeção & Metas"
-  },
   "/comercial/precadastros": {
     "name": "Pré-Cadastros",
     "category": "Comercial",
@@ -50,6 +44,12 @@ export const OG_ROUTES = {
   },
   "/comercial/reservas-report": {
     "name": "Reservas",
+    "category": "Comercial",
+    "group": "OPERAÇÃO",
+    "subcategory": "Vendas"
+  },
+  "/comercial/projections": {
+    "name": "Projeção",
     "category": "Comercial",
     "group": "OPERAÇÃO",
     "subcategory": "Vendas"
