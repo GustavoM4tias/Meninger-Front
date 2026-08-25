@@ -120,12 +120,6 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": "Contas a Receber"
   },
-  "/financeiro/paymentflow": {
-    "name": "Fluxo de Pagamento",
-    "category": "Financeiro",
-    "group": "OPERAÇÃO",
-    "subcategory": "Operações"
-  },
   "/checklists": {
     "name": "Checklists",
     "category": "Ferramentas",
@@ -146,6 +140,12 @@ export const OG_ROUTES = {
   },
   "/comercial/cancelamento-reservas": {
     "name": "Cancelamentos",
+    "category": "Ferramentas",
+    "group": "OPERAÇÃO",
+    "subcategory": null
+  },
+  "/financeiro/paymentflow": {
+    "name": "Fluxo de Pagamento",
     "category": "Ferramentas",
     "group": "OPERAÇÃO",
     "subcategory": null

@@ -183,14 +183,6 @@ export const navRegistry = [
                     { route: '/financeiro/cobranca/ato', name: 'Ato', icon: 'fas fa-file-invoice-dollar' },
                 ],
             },
-            {
-                key: 'operacoes',
-                name: 'Operações',
-                icon: 'fas fa-money-check-dollar',
-                pages: [
-                    { route: '/financeiro/paymentflow', section: 'Fluxo de Pagamento', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
-                ],
-            },
         ],
     },
 
@@ -218,6 +210,11 @@ export const navRegistry = [
             // alçada; a aba Configurações (e o processamento manual avulso, que
             // mora nela) continua só para admin.
             { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser' },
+            // Veio de Financeiro > "Operações" (2026-08-25), subcategoria que
+            // existia só para guardar este item. É ferramenta de processo:
+            // monta o lançamento e o empurra pelo pipeline do Sienge. A rota
+            // não mudou, então nenhuma alçada migra.
+            { route: '/financeiro/paymentflow', section: 'Fluxo de Pagamento', name: 'Fluxo de Pagamento', icon: 'fas fa-diagram-project' },
         ],
     },
     // ── Academy (Conhecimento & Trilhas) ───────────────────────────────────────
