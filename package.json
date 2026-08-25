@@ -6,6 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "check": "node _design/imports-pendurados.mjs && node _design/dialogos-a-mao.mjs && node _design/identificadores-soltos.mjs",
+    "check:imports": "node _design/imports-pendurados.mjs",
+    "check:ui": "node _design/mapscreens.mjs",
     "prebuild": "node scripts/gen-og-routes.mjs",
     "build": "vite build",
     "preview": "vite preview",

@@ -26,6 +26,7 @@ const { aberto, opcoes, aceitar, recusar } = useConfirmHost();
     :ask-note="!!opcoes.askNote"
     :note-label="opcoes.noteLabel || 'Motivo (opcional)'"
     :note-placeholder="opcoes.notePlaceholder || ''"
+    :note-default="opcoes.noteDefault || ''"
     @confirm="aceitar"
     @cancel="recusar"
     @update:open="(v) => { if (!v) recusar(); }" />

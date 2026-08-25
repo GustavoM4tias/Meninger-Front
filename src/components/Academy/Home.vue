@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import DataCounter from './dataCounter.vue';
+import DataCounter from './components/dataCounter.vue';
 
 </script>
 

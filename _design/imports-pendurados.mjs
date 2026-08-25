@@ -24,9 +24,17 @@ import { fileURLToPath } from 'node:url';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = process.argv[2] ? path.resolve(process.argv[2]) : path.join(AQUI, '..');
 
-/* `@/` é o alias de `src/` (ver vite.config). Import relativo não entra aqui:
-   esse o próprio bundler resolve na hora, e quebra local antes de virar commit. */
+/* Duas formas de apontar para outro arquivo, e as DUAS enganam do mesmo jeito:
+     · `@/...`  alias de `src/` (ver vite.config)
+     · `./...`  vizinho de pasta
+
+   O relativo ficou de fora deste detector até 25/08/2026, com o argumento de
+   que "o bundler quebra local antes de virar commit". Não quebra: se o vizinho
+   existe no disco de quem escreveu, o build passa e o commit sai limpo - que é
+   exatamente o defeito. Naquele dia, 11 das 15 bombas encontradas eram
+   relativas, todas invisíveis para cá. */
 const ALIAS = /(?:from|import)\s*\(?\s*['"]@\/([^'"]+)['"]/g;
+const RELATIVO = /(?:from|import)\s*\(?\s*['"](\.\.?\/[^'"]+)['"]/g;
 const SUFIXOS = ['', '.js', '.vue', '.mjs', '.ts', '/index.js', '/index.vue'];
 
 function versionados() {
@@ -46,18 +54,38 @@ function conteudoNoGit(rel) {
 
 const arquivos = versionados();
 const existe = new Set(arquivos);
-const resolve = (alvo) => SUFIXOS.some((s) => existe.has(`src/${alvo}${s}`));
+const resolve = (alvo) => SUFIXOS.some((s) => existe.has(`${alvo}${s}`));
+
+/* Só interessa import de ARQUIVO NOSSO. Pacote do npm não passa por aqui
+   (não casa nem com `@/` nem com `./`), e extensão que o bundler trata como
+   asset (css, svg, png) também mora no repo, então continua valendo. */
+function alvoRelativo(deOndeRel, spec) {
+    const base = path.posix.dirname(deOndeRel.split(path.sep).join('/'));
+    return path.posix.normalize(path.posix.join(base, spec));
+}
 
 let achados = 0;
 for (const rel of arquivos) {
     if (!/\.(vue|js|mjs|ts)$/.test(rel)) continue;
     const fonte = conteudoNoGit(rel);
     if (fonte == null) continue;
+
     for (const m of fonte.matchAll(ALIAS)) {
-        if (resolve(m[1])) continue;
+        if (resolve(`src/${m[1]}`)) continue;
         achados++;
         console.log(`${rel}`);
         console.log(`   importa @/${m[1]}, que não está no repositório`);
+    }
+
+    for (const m of fonte.matchAll(RELATIVO)) {
+        const alvo = alvoRelativo(rel, m[1]);
+        if (resolve(alvo)) continue;
+        const noDisco = SUFIXOS.some((s) => fs.existsSync(path.join(RAIZ, alvo + s)));
+        achados++;
+        console.log(`${rel}`);
+        console.log(noDisco
+            ? `   importa ${m[1]}, que existe na SUA máquina mas não está no repositório`
+            : `   importa ${m[1]}, que não existe em lugar nenhum`);
     }
 }
 

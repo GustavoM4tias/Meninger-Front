@@ -43,6 +43,10 @@ const props = defineProps({
   askNote: { type: Boolean, default: false },
   noteLabel: { type: String, default: 'Motivo (opcional)' },
   notePlaceholder: { type: String, default: '' },
+  /* Valor inicial do campo. Existe para o caso "renomear": a pergunta precisa
+     abrir com o nome atual, senão a pessoa redigita tudo. Fica vazio no caso
+     comum (pedir motivo), que é o padrão. */
+  noteDefault: { type: String, default: '' },
 });
 
 const emit = defineEmits(['update:open', 'confirm', 'cancel']);
@@ -50,8 +54,9 @@ const emit = defineEmits(['update:open', 'confirm', 'cancel']);
 const note = ref('');
 
 /* Motivo não sobrevive de um diálogo para o outro: reaproveitar o texto da
-   confirmação anterior é registrar a justificativa errada. */
-watch(() => props.open, (v) => { if (v) note.value = ''; });
+   confirmação anterior é registrar a justificativa errada. Só o valor que a
+   PERGUNTA declarou (noteDefault) entra, e sempre do zero. */
+watch(() => props.open, (v) => { if (v) note.value = props.noteDefault || ''; });
 
 function cancelar() {
   emit('cancel');
