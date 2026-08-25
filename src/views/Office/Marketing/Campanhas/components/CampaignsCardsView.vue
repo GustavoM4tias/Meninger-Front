@@ -2,26 +2,17 @@
 // View Cards: grid de cartões grandes por campanha — pra escaneamento visual.
 // Mostra status, gasto, leads, CAC, datas.
 
+import * as fmt from '@/utils/format';
+
 defineProps({
     campaigns: { type: Array, required: true },
     currency: { type: String, default: 'BRL' },
 });
 const emit = defineEmits(['select']);
 
-function fmtMoney(v, currency = 'BRL') {
-    if (v == null) return '—';
-    try { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(Number(v)); }
-    catch { return `R$ ${v}`; }
-}
-function fmtInt(v) {
-    if (v == null) return '—';
-    return new Intl.NumberFormat('pt-BR').format(Number(v));
-}
-function fmtShortDate(iso) {
-    if (!iso) return '—';
-    try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }); }
-    catch { return '—'; }
-}
+const fmtMoney = (v, currency = 'BRL') => fmt.fmtMoney(v, { moeda: currency });
+const fmtInt = fmt.fmtInt;
+const fmtShortDate = fmt.fmtDateCurta;
 function statusBadge(c) {
     const s = String(c.effective_status || c.status || '').toUpperCase();
     if (s.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-data-pos/15 text-data-pos border-data-pos/30' };

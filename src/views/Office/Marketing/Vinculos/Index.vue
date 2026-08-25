@@ -13,6 +13,7 @@
 
 import { onMounted, ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
+import * as fmt from '@/utils/format';
 import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Surface from '@/components/UI/Surface.vue';
@@ -116,7 +117,8 @@ const held = computed(() => ov.value?.held || { campaigns: [], forms: [] });
 const activeUnbound = computed(() => ov.value?.active_unbound_campaigns || []);
 const backlog = computed(() => ov.value?.backlog || null);
 
-function fmtInt(v) { return v == null ? '0' : new Intl.NumberFormat('pt-BR').format(Number(v)); }
+/* Vazio é '0', não '—': aqui a ausência de represado significa zero mesmo. */
+const fmtInt = (v) => fmt.fmtInt(v, '0');
 
 // Por que essa campanha represa. Mesma frase na tabela e no cartão do celular.
 function motivoBloqueio(c) {

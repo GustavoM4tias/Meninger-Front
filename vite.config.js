@@ -30,6 +30,18 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION_ACADEMY__: JSON.stringify(academyVersion),
       __APP_GIT_SHA__: JSON.stringify(sha),
     },
+    // ── console.log não vai para produção ──────────────────────────────────
+    // Havia 50 chamadas espalhadas por 17 arquivos indo para o console de quem
+    // usa o Office - resposta de API, payload de reconhecimento facial, estado
+    // interno da Eme. Apagar na mão custaria o log que serve em DEV, então o
+    // corte é no build: o esbuild trata estas como sem efeito colateral e as
+    // remove ao minificar.
+    //
+    // `console.error` e `console.warn` FICAM de propósito: são o que sobra pra
+    // diagnosticar um erro que só acontece na máquina do usuário.
+    esbuild: {
+      pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
+    },
     build: {
       chunkSizeWarningLimit: 1500,
       rollupOptions: {

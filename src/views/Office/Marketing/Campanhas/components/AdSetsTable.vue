@@ -4,6 +4,7 @@
 // anúncios do conjunto.
 
 import Surface from '@/components/UI/Surface.vue';
+import * as fmt from '@/utils/format';
 
 const props = defineProps({
     adsets:   { type: Array, default: () => [] },
@@ -13,13 +14,11 @@ const props = defineProps({
 });
 const emit = defineEmits(['drill']);
 
-function fmtMoney(v) {
-    if (v == null) return '—';
-    try { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: props.currency }).format(Number(v)); }
-    catch { return `R$ ${v}`; }
-}
-function fmtInt(v) { return v == null ? '—' : new Intl.NumberFormat('pt-BR').format(Number(v)); }
-function fmtPct(v) { return v == null ? '—' : `${Number(v).toFixed(2)}%`; }
+/* CTR da Meta já vem em pontos percentuais (2.5 = 2,5%), por isso `fmtPct`
+   e não `fmtRatio` - ver utils/format.js. */
+const fmtMoney = (v) => fmt.fmtMoney(v, { moeda: props.currency });
+const fmtInt = fmt.fmtInt;
+const fmtPct = fmt.fmtPct;
 
 function statusBadge(a) {
     const s = String(a.effective_status || a.status || '').toUpperCase();
