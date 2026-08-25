@@ -31,6 +31,9 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   const agentSteps = ref([])        // [{ name, label, status:'running'|'done'|'error', ms? }]
   const streamStartedAt = ref(null) // Date.now() do envio — cronômetro na UI
   const streamStale = ref(false)    // true = sem bytes do servidor há tempo demais
+  const carregandoMensagens = ref(false)   // abrindo uma conversa do histórico
+  const erroMensagens = ref(null)          // por que ela não abriu
+
   let abortCtrl = null              // AbortController do fetch em andamento
   let cancelReason = null           // 'user' | 'timeout' — motivo do abort
 
@@ -54,10 +57,34 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     } catch { /* silencioso */ }
   }
 
+  // ── Abrir uma conversa do histórico ───────────────────────────────────────
+  //
+  // Antes isto não tinha estado nem catch: quem clicava numa conversa via o
+  // painel fechar e o chat ficar em branco, sem spinner e sem caminho de volta
+  // se a chamada demorasse ou falhasse. Agora a tela sabe as três situações -
+  // carregando, deu certo, deu errado - e a terceira oferece tentar de novo.
   async function loadMessages(sessionId) {
-    const data = await getSessionMessages(sessionId)
+    carregandoMensagens.value = true
+    erroMensagens.value = null
+    // A sessão passa a ser a atual ANTES da resposta: é ela que o cabeçalho e o
+    // botão de recarregar usam, e sem isso a tela de erro não sabe o que refazer.
     currentSessionId.value = sessionId
-    messages.value = data.messages.map(parseMessage)
+    try {
+      const data = await getSessionMessages(sessionId)
+      messages.value = data.messages.map(parseMessage)
+    } catch (err) {
+      erroMensagens.value = err?.message || 'Não foi possível abrir esta conversa.'
+      messages.value = []
+      throw err
+    } finally {
+      carregandoMensagens.value = false
+    }
+  }
+
+  /** Tentar de novo a conversa que falhou. */
+  async function recarregarMensagens() {
+    if (!currentSessionId.value) return
+    try { await loadMessages(currentSessionId.value) } catch { /* o erro já está no estado */ }
   }
 
   function newSession() {
@@ -65,6 +92,8 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     messages.value = []
     streamingText.value = ''
     pendingAction.value = null
+    erroMensagens.value = null
+    carregandoMensagens.value = false
   }
 
   async function favoriteSession(id) {
@@ -435,7 +464,8 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     pendingAction, storageUsage, historyOpen, composerDraft,
     agentSteps, streamStartedAt, streamStale,
     isAtStorageLimit, hasSession,
-    loadSessions, loadMessages, newSession, favoriteSession, deleteSession,
+    carregandoMensagens, erroMensagens,
+    loadSessions, loadMessages, recarregarMensagens, newSession, favoriteSession, deleteSession,
     loadStorageUsage, sendMessage, cancelStream, retryMessage, renameSession, sendFeedback,
     setMode, minimize, expand, setDraft,
     currentSessionTitle,

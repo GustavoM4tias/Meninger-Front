@@ -1,12 +1,35 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent, h } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useOfficeAIStore } from '@/stores/officeAIStore';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { initEmeVoice, useEmeVoice, enqueueSpeech, onAllSpeechDone, cancelSpeech, markConversationActive } from '@/composables/useEmeVoice';
-import OfficeChatSession from './OfficeChatSession.vue';
-import OfficeChatHistory from './OfficeChatHistory.vue';
-import ChatTitleEditor from './ChatTitleEditor.vue';
+// ── O botão é leve; a conversa é que pesa ─────────────────────────────────
+//
+// Este componente é montado em TODA tela do Office, mas 99% do tempo ele é só
+// uma bolinha no canto. Trazer a sessão inteira junto - com o ChatMessage e os
+// renderers atrás dele - fazia cada página pagar o chat inteiro para exibir um
+// botão. Agora a conversa, o histórico e o editor de título só descem quando a
+// pessoa abre.
+// A conversa é a única que ganha placeholder: ela ocupa o painel inteiro, e sem
+// isto o quadro pisca em branco entre abrir e o pedaço chegar. O histórico e o
+// editor de título são sobreposições pequenas - piscar neles não se percebe.
+const CarregandoConversa = {
+    render: () => h('div', { class: 'flex flex-col items-center justify-center h-full gap-3' }, [
+        h('i', { class: 'fas fa-circle-notch fa-spin text-accent text-xl' }),
+        h('p', { class: 'text-xs text-ink-muted' }, 'Abrindo a Eme…'),
+    ]),
+};
+
+const OfficeChatSession = defineAsyncComponent({
+    loader: () => import('./OfficeChatSession.vue'),
+    loadingComponent: CarregandoConversa,
+    // 120ms antes de mostrar o spinner: numa conexão boa o pedaço chega antes
+    // disso, e um spinner que aparece e some é pior que nenhum.
+    delay: 120,
+});
+const OfficeChatHistory = defineAsyncComponent(() => import('./OfficeChatHistory.vue'));
+const ChatTitleEditor = defineAsyncComponent(() => import('./ChatTitleEditor.vue'));
 import IconButton from '@/components/UI/IconButton.vue';
 import { setEmeScreen, instalarCapturaCtrlClique } from '@/composables/useEmeScreenContext';
 import { useEmeDock } from '@/composables/useEmeDock';

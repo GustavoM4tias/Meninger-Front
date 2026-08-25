@@ -12,14 +12,16 @@
 //    rastreia leitura ("o pixel"). O Outlook faz igual: mostra só se a pessoa
 //    pedir, e diz que bloqueou.
 
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, inject } from 'vue';
 import DOMPurify from 'dompurify';
+import { useOutlookAiStore } from '@/stores/Microsoft/outlookAiStore';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Badge from '@/components/UI/Badge.vue';
 import { attachmentUrl } from '@/utils/Microsoft/apiOutlook';
+import PessoaCard from './PessoaCard.vue';
 
 const props = defineProps({
   message:     { type: Object,  default: null },
@@ -33,12 +35,58 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'reply', 'replyAll', 'forward', 'flag', 'delete', 'move']);
 
+// ── Leitura da IA ─────────────────────────────────────────────────────────────
+// Vem do cache da triagem, nunca de uma chamada nova ao modelo ao abrir o
+// e-mail: abrir mensagem tem que ser instantâneo. Mensagem que a IA ainda não
+// leu simplesmente não mostra o painel - ausência não é erro.
+const ai = useOutlookAiStore();
+const escrever = inject('olEscrever', null);
+const leitura = ref(null);
+const mostrarSugestoes = ref(false);
+
+watch(() => props.message?.id, async (id) => {
+    leitura.value = null;
+    mostrarSugestoes.value = false;
+    if (id) leitura.value = await ai.leituraDe(id);
+}, { immediate: true });
+
+const URGENCIA = {
+    'Crítica': 'text-data-neg',
+    'Alta': 'text-data-warn',
+    'Média': 'text-ink-muted',
+    'Baixa': 'text-ink-subtle',
+};
+
+/** A sugestão vira um rascunho de resposta de verdade, montado pelo Outlook. */
+function usarSugestao(sug) {
+    if (!escrever) return;
+    // Sem `id`: nao e rascunho do Outlook, e texto pronto. O ComposeModal
+    // hidrata a caixa com ele e nao acrescenta citacao nenhuma.
+    escrever({
+        to: [props.message?.from].filter(f => f?.email),
+        subject: props.message?.subject?.startsWith('Re:')
+            ? props.message.subject
+            : `Re: ${props.message?.subject || ''}`,
+        body: sug.corpo || '',
+    });
+}
+
+// A lista de destinatários abre e fecha: uma conversa com doze pessoas em cópia
+// tomaria o cabeçalho inteiro, e na maior parte das vezes o que importa é quem
+// mandou.
+const mostrarPessoas = ref(false);
+
+const destinatarios = computed(() => [
+  ...(props.message?.to || []).map(p => ({ ...p, tipo: 'para' })),
+  ...(props.message?.cc || []).map(p => ({ ...p, tipo: 'cc' })),
+]);
+
 const mostrarImagens = ref(false);
 // Painel de "Mover para": abre em cima da mensagem, sem modal, e fecha ao trocar
 // de e-mail. Mover exige Mail.ReadWrite no tenant; sem a permissão o Graph
 // responde 403 e o erro chega em toast, não em silêncio.
 const escolhendoPasta = ref(false);
-watch(() => props.message?.id, () => { mostrarImagens.value = false; escolhendoPasta.value = false; });
+watch(() => props.message?.id, () => { mostrarImagens.value = false; escolhendoPasta.value = false; mostrarPessoas.value = false; });
 
 function mover(pasta) {
   escolhendoPasta.value = false;
@@ -133,19 +181,64 @@ function quandoCompleto(iso) {
 
           <div class="min-w-0 flex-1">
             <h2 class="text-base font-semibold text-ink leading-snug">{{ message.subject }}</h2>
-            <p class="text-sm text-ink-muted mt-1 truncate">
-              <span class="text-ink">{{ message.from?.name || message.from?.email }}</span>
-              <span v-if="message.from?.name && message.from?.email" class="text-ink-subtle">
-                &lt;{{ message.from.email }}&gt;
+
+            <!-- Quem mandou vira gente clicável, não texto. -->
+            <div class="flex items-center gap-2 mt-1.5 min-w-0">
+              <PessoaCard v-if="message.from" :pessoa="message.from" />
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm text-ink truncate">{{ message.from?.name || message.from?.email }}</span>
+                <span class="block text-micro text-ink-subtle">
+                  {{ quandoCompleto(message.receivedAt || message.sentAt) }}
+                </span>
               </span>
-            </p>
-            <p class="text-xs text-ink-subtle mt-0.5">
-              {{ quandoCompleto(message.receivedAt || message.sentAt) }}
-            </p>
-            <p v-if="message.to?.length" class="text-xs text-ink-subtle mt-1 truncate">
-              para {{ message.to.map(t => t.name || t.email).join(', ') }}
-              <span v-if="message.cc?.length"> · cc {{ message.cc.map(t => t.name || t.email).join(', ') }}</span>
-            </p>
+            </div>
+
+            <!-- Quem mais está lendo. Empilhados: numa conversa de doze pessoas,
+                 doze linhas de e-mail não cabem no cabeçalho - mas saber quem
+                 está em cópia muda o que você escreve. -->
+            <div v-if="destinatarios.length" class="flex items-center gap-2 mt-2 flex-wrap">
+              <span class="text-micro text-ink-subtle shrink-0">
+                {{ destinatarios.length === 1 ? 'também para' : `${destinatarios.length} pessoas` }}
+              </span>
+
+              <div v-if="!mostrarPessoas" class="flex items-center">
+                <PessoaCard v-for="(pe, i) in destinatarios.slice(0, 6)" :key="pe.email || i"
+                  :pessoa="pe" size="sm"
+                  :style="{ marginLeft: i ? '-0.35rem' : 0 }" />
+                <button v-if="destinatarios.length > 6" type="button"
+                  class="ml-1.5 text-micro text-accent hover:underline"
+                  @click="mostrarPessoas = true">
+                  +{{ destinatarios.length - 6 }}
+                </button>
+                <button v-else-if="destinatarios.length" type="button"
+                  class="ml-1.5 text-micro text-ink-subtle hover:text-accent transition-colors"
+                  @click="mostrarPessoas = true" title="Ver os nomes">
+                  <i class="fas fa-chevron-down text-micro"></i>
+                </button>
+              </div>
+
+              <button v-else type="button" class="text-micro text-ink-subtle hover:text-accent"
+                @click="mostrarPessoas = false">
+                <i class="fas fa-chevron-up text-micro"></i> recolher
+              </button>
+            </div>
+
+            <!-- Aberto: nome e papel de cada um -->
+            <Transition
+              enter-active-class="transition duration-200 ease-out-expo"
+              enter-from-class="opacity-0 -translate-y-1"
+              leave-active-class="transition duration-120" leave-to-class="opacity-0">
+              <div v-if="mostrarPessoas" class="flex flex-wrap gap-1.5 mt-2">
+                <span v-for="(pe, i) in destinatarios" :key="pe.email || i"
+                  class="inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full border border-line
+                         bg-surface-sunken animate-slide-up"
+                  :style="{ animationDelay: `${Math.min(i, 12) * 25}ms` }">
+                  <PessoaCard :pessoa="pe" size="sm" />
+                  <span class="text-micro text-ink-muted truncate max-w-[9rem]">{{ pe.name || pe.email }}</span>
+                  <span v-if="pe.tipo === 'cc'" class="text-micro text-ink-subtle">cc</span>
+                </span>
+              </div>
+            </Transition>
 
             <div v-if="message.categories?.length" class="flex flex-wrap gap-1.5 mt-2">
               <Badge v-for="c in message.categories" :key="c" size="sm" variant="neutral">{{ c }}</Badge>
@@ -223,10 +316,77 @@ function quandoCompleto(iso) {
       </div>
 
       <!-- Corpo -->
-      <div class="flex-1 overflow-y-auto px-4 sm:px-5 py-4">
+      <div class="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-4">
+
+        <!-- O que a IA entendeu. Fica ANTES do corpo porque é o resumo: quem já
+             sabe do que se trata rola direto para o texto. -->
+        <section v-if="leitura?.resumo"
+          class="rounded-xl border border-accent/25 p-3.5 bg-gradient-to-br from-accent-soft to-surface-sunken
+                 animate-slide-up">
+          <div class="flex items-center gap-2 mb-1.5">
+            <p class="flex items-center gap-2 text-micro font-semibold uppercase tracking-wide text-accent flex-1">
+              <i class="fas fa-wand-magic-sparkles"></i> Leitura da IA
+            </p>
+            <span v-if="leitura.fonte === 'heuristica'" class="text-micro text-ink-subtle">
+              por regra, sem modelo
+            </span>
+          </div>
+
+          <p class="text-sm leading-relaxed text-ink">{{ leitura.resumo }}</p>
+
+          <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-micro text-ink-muted">
+            <span v-if="leitura.intencao"><i class="fas fa-bullseye mr-1.5 text-ink-subtle"></i>{{ leitura.intencao }}</span>
+            <span v-if="leitura.prazo"><i class="fas fa-clock mr-1.5 text-ink-subtle"></i>{{ leitura.prazo }}</span>
+            <span v-if="leitura.urgencia" :class="URGENCIA[leitura.urgencia] || 'text-ink-muted'">
+              <i class="fas fa-gauge-high mr-1.5"></i>{{ leitura.urgencia }}
+            </span>
+          </div>
+
+          <!-- O que ela FARIA aqui, e o que a rebaixou. Mesma frase da Triagem. -->
+          <p v-if="leitura.motivoRebaixe"
+            class="text-micro text-ink-subtle mt-2 pt-2 border-t border-accent/15">
+            <i class="fas fa-shield-halved mr-1.5"></i>{{ leitura.motivoRebaixe }}
+          </p>
+        </section>
+
         <!-- eslint-disable-next-line vue/no-v-html -- passou por DOMPurify acima -->
         <div class="mail-body text-sm text-ink leading-relaxed" v-html="corpoSeguro"></div>
       </div>
+
+      <!-- Respostas sugeridas: rodapé fixo, porque é ação, não leitura -->
+      <footer v-if="canSend && leitura?.sugestoes?.length"
+        class="shrink-0 border-t border-line bg-surface-sunken px-4 sm:px-5 py-3">
+        <button type="button" @click="mostrarSugestoes = !mostrarSugestoes"
+          class="flex items-center gap-2 w-full text-left group">
+          <i class="fas fa-wand-magic-sparkles text-micro text-accent"></i>
+          <span class="text-micro font-semibold uppercase tracking-wide text-accent flex-1">
+            {{ leitura.sugestoes.length }} resposta(s) sugerida(s)
+          </span>
+          <i class="fas fa-chevron-down text-micro text-accent transition-transform duration-200"
+            :class="mostrarSugestoes ? 'rotate-180' : ''"></i>
+        </button>
+
+        <Transition
+          enter-active-class="transition duration-200 ease-out-expo"
+          enter-from-class="opacity-0 -translate-y-1"
+          leave-active-class="transition duration-120"
+          leave-to-class="opacity-0">
+          <div v-if="mostrarSugestoes" class="flex flex-col gap-1.5 mt-2.5">
+            <button v-for="(sug, i) in leitura.sugestoes" :key="i" type="button"
+              @click="usarSugestao(sug)"
+              class="px-3 py-2 min-h-10 rounded-lg border border-accent/25 bg-accent-soft text-accent
+                     text-xs text-left animate-slide-up
+                     hover:border-accent/50 hover:-translate-y-0.5 transition-all duration-200 ease-out-expo"
+              :style="{ animationDelay: `${i * 50}ms` }"
+              :title="sug.corpo">
+              {{ sug.label }}
+            </button>
+            <p class="text-micro text-ink-subtle mt-0.5">
+              Escolher uma abre o rascunho para você revisar. Nada é enviado daqui.
+            </p>
+          </div>
+        </Transition>
+      </footer>
     </template>
   </div>
 </template>

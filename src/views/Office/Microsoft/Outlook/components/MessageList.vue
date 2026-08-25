@@ -16,9 +16,36 @@ const props = defineProps({
   canOrganize:{ type: Boolean, default: false },
   emptyTitle: { type: String,  default: 'Nada por aqui' },
   emptyText:  { type: String,  default: '' },
+  // Leituras da IA (as prioritárias da triagem). A lista NÃO chama a IA: ela só
+  // pinta o que a triagem já classificou, e some sem barulho quando não há nada.
+  leituras:   { type: Array,   default: () => [] },
+  // Preenchido so quando a lista mostra a caixa INTEIRA: ai cada linha precisa
+  // dizer de onde veio, senao a pessoa nao entende por que aquele e-mail que
+  // ela arquivou meses atras esta na tela.
+  pastas:     { type: Array,   default: () => [] },
 });
 
-const emit = defineEmits(['open', 'flag', 'delete', 'more']);
+const emit = defineEmits(['open', 'flag', 'delete', 'more', 'menu']);
+
+// Cor de estado sempre com o rótulo escrito ao lado - cor sozinha não conta nada
+// para quem não distingue as duas.
+const CLASSES = {
+  critica: { label: 'Prazo', ponto: 'bg-data-neg',  texto: 'text-data-neg',  tinta: 'bg-data-neg-soft' },
+  alta:    { label: 'Decisão', ponto: 'bg-data-warn', texto: 'text-data-warn', tinta: 'bg-data-warn-soft' },
+};
+
+const porMensagem = computed(() =>
+  Object.fromEntries((props.leituras || []).map(l => [l.messageId, l]))
+);
+
+const nomeDaPasta = computed(() =>
+  Object.fromEntries((props.pastas || []).map(f => [f.id, f.name]))
+);
+
+function selo(id) {
+  const l = porMensagem.value[id];
+  return l && CLASSES[l.classe] ? { ...CLASSES[l.classe], acao: l.acao, prazo: l.prazo } : null;
+}
 
 const hoje = new Date().toDateString();
 
@@ -52,7 +79,9 @@ const vazio = computed(() => !props.loading && !props.messages.length);
         <button
           type="button"
           @click="emit('open', m)"
-          class="w-full text-left px-3 sm:px-4 py-3 min-h-[3.25rem] flex gap-3 transition-colors group"
+          @contextmenu.prevent="emit('menu', { evento: $event, mensagem: m })"
+          class="w-full text-left px-3 sm:px-4 py-3 min-h-[3.25rem] flex gap-3 group
+                 transition-all duration-120 ease-out-expo hover:translate-x-0.5"
           :class="[
             m.id === selectedId ? 'bg-accent-soft' : 'hover:bg-surface-hover',
             m.isRead ? '' : 'bg-surface-raised',
@@ -78,8 +107,24 @@ const vazio = computed(() => !props.loading && !props.messages.length);
 
             <p class="truncate text-xs text-ink-subtle mt-0.5">{{ m.preview }}</p>
 
-            <div v-if="m.hasAttachments || m.flagged || m.categories?.length"
+            <div v-if="selo(m.id) || m.hasAttachments || m.flagged || m.categories?.length"
               class="flex items-center gap-2 mt-1.5 flex-wrap">
+              <!-- O que a IA entendeu, na própria linha: sem isto a pessoa
+                   precisa abrir cada mensagem para descobrir qual é a urgente. -->
+              <span v-if="selo(m.id)"
+                class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-md text-micro font-semibold animate-pop-in"
+                :class="[selo(m.id).tinta, selo(m.id).texto]"
+                :title="selo(m.id).acao || ''">
+                <span class="w-1.5 h-1.5 rounded-full" :class="selo(m.id).ponto"></span>
+                {{ selo(m.id).prazo || selo(m.id).label }}
+              </span>
+              <span v-if="pastas.length && nomeDaPasta[m.folderId]"
+                class="inline-flex items-center gap-1 text-micro text-ink-subtle px-1.5 py-0.5
+                       rounded-md bg-surface-sunken max-w-[10rem] truncate">
+                <i class="far fa-folder text-micro"></i>{{ nomeDaPasta[m.folderId] }}
+              </span>
+              <i v-if="m.importance === 'high'" class="fas fa-arrow-up text-micro text-data-neg"
+                title="Importância alta"></i>
               <i v-if="m.hasAttachments" class="fas fa-paperclip text-micro text-ink-subtle"></i>
               <i v-if="m.flagged" class="fas fa-flag text-micro text-data-warn"></i>
               <span v-for="c in (m.categories || []).slice(0, 2)" :key="c"

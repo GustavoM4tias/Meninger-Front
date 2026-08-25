@@ -6,31 +6,44 @@
 import { computed, ref, defineAsyncComponent } from 'vue';
 
 import { ehEscrita } from '@/utils/OfficeAI/toolKind';
+// ── O que vem junto, e o que vem quando precisar ──────────────────────────
+//
+// Só o texto é estático: é o que aparece em quase toda mensagem, e adiar ele
+// faria a conversa piscar em branco a cada linha.
+//
+// TODO O RESTO É SOB DEMANDA, e não é preferência de estilo. Cada renderer
+// estático entrava no pedaço baixado ANTES da primeira mensagem aparecer, e
+// alguns arrastam bibliotecas inteiras junto - o de gráfico puxa o ECharts,
+// mais de 600 KB. Numa conversa comum nenhum deles é usado, e mesmo assim
+// todos eram baixados e interpretados só para abrir o chat.
 import ChatText from './renderers/ChatText.vue';
 // Estes dois são os pesados da casa: ChatChart traz o echarts e ChatTable traz o
 // exceljs (1,5 MB somados). A maioria das respostas da Eme é texto. Assíncronos,
 // eles só são baixados na primeira resposta que realmente tem gráfico ou tabela.
 const ChatTable = defineAsyncComponent(() => import('./renderers/ChatTable.vue'));
 const ChatChart = defineAsyncComponent(() => import('./renderers/ChatChart.vue'));
-import ChatNavAction from './renderers/ChatNavAction.vue';
-import ChatLeadsActions from './renderers/ChatLeadsActions.vue';
-import ChatEventsActions from './renderers/ChatEventsActions.vue';
-import ChatEnterprisesActions from './renderers/ChatEnterprisesActions.vue';
-import ChatEnterpriseDetail from './renderers/ChatEnterpriseDetail.vue';
-import ChatMcmvActions from './renderers/ChatMcmvActions.vue';
-import ChatPrecadastrosSummary from './renderers/ChatPrecadastrosSummary.vue';
-import ChatPrecadastrosActions from './renderers/ChatPrecadastrosActions.vue';
-import ChatReservasSummary from './renderers/ChatReservasSummary.vue';
-import ChatReservasActions from './renderers/ChatReservasActions.vue';
-import ChatAlertEditor from './renderers/ChatAlertEditor.vue';
-import ChatAcademyCards from './renderers/ChatAcademyCards.vue';
-import ChatImobiliariaCards from './renderers/ChatImobiliariaCards.vue';
-import ChatConditionSheet from './renderers/ChatConditionSheet.vue';
-import ChatCampaignCards from './renderers/ChatCampaignCards.vue';
-import ChatPersonCards from './renderers/ChatPersonCards.vue';
-import ChatNotificationPrefs from './renderers/ChatNotificationPrefs.vue';
-import ChatReportCards from './renderers/ChatReportCards.vue';
-import ChatChecklistCards from './renderers/ChatChecklistCards.vue';
+const ChatNavAction = defineAsyncComponent(() => import('./renderers/ChatNavAction.vue'));
+const ChatLeadsActions = defineAsyncComponent(() => import('./renderers/ChatLeadsActions.vue'));
+const ChatEventsActions = defineAsyncComponent(() => import('./renderers/ChatEventsActions.vue'));
+const ChatEnterprisesActions = defineAsyncComponent(() => import('./renderers/ChatEnterprisesActions.vue'));
+const ChatEnterpriseDetail = defineAsyncComponent(() => import('./renderers/ChatEnterpriseDetail.vue'));
+const ChatMcmvActions = defineAsyncComponent(() => import('./renderers/ChatMcmvActions.vue'));
+const ChatPrecadastrosSummary = defineAsyncComponent(() => import('./renderers/ChatPrecadastrosSummary.vue'));
+const ChatPrecadastrosActions = defineAsyncComponent(() => import('./renderers/ChatPrecadastrosActions.vue'));
+const ChatReservasSummary = defineAsyncComponent(() => import('./renderers/ChatReservasSummary.vue'));
+const ChatReservasActions = defineAsyncComponent(() => import('./renderers/ChatReservasActions.vue'));
+const ChatAlertEditor = defineAsyncComponent(() => import('./renderers/ChatAlertEditor.vue'));
+const ChatAcademyCards = defineAsyncComponent(() => import('./renderers/ChatAcademyCards.vue'));
+const ChatImobiliariaCards = defineAsyncComponent(() => import('./renderers/ChatImobiliariaCards.vue'));
+const ChatConditionSheet = defineAsyncComponent(() => import('./renderers/ChatConditionSheet.vue'));
+const ChatCampaignCards = defineAsyncComponent(() => import('./renderers/ChatCampaignCards.vue'));
+const ChatPersonCards = defineAsyncComponent(() => import('./renderers/ChatPersonCards.vue'));
+const ChatNotificationPrefs = defineAsyncComponent(() => import('./renderers/ChatNotificationPrefs.vue'));
+const ChatReportCards = defineAsyncComponent(() => import('./renderers/ChatReportCards.vue'));
+const ChatChecklistCards = defineAsyncComponent(() => import('./renderers/ChatChecklistCards.vue'));
+const ChatAssistantTasks = defineAsyncComponent(() => import('./renderers/ChatAssistantTasks.vue'));
+const ChatAssistantInvites = defineAsyncComponent(() => import('./renderers/ChatAssistantInvites.vue'));
+const ChatMeetingCard = defineAsyncComponent(() => import('./renderers/ChatMeetingCard.vue'));
 import EmeAgentStatus from './EmeAgentStatus.vue';
 
 const props = defineProps({
@@ -213,6 +226,16 @@ const stepsOpen = ref(false);
 
         <!-- Checklist: cards de checklist / tarefas -->
         <ChatChecklistCards v-if="action?.type === 'checklist_cards' || action?.type === 'checklist_tasks'" :action="action" />
+
+        <!-- Assistente pessoal: a parte se risca AQUI, sem sair do chat. -->
+        <ChatAssistantTasks
+          v-if="action?.type === 'assistant_tasks' || action?.type === 'assistant_task'"
+          :action="action" />
+
+        <ChatAssistantInvites v-if="action?.type === 'assistant_invites'" :action="action" />
+
+        <!-- Reunião: o link de entrada vira botão, não URL colada na frase. -->
+        <ChatMeetingCard v-if="action?.type === 'meeting_card'" :action="action" />
 
         <!-- "O que a Eme fez" — transparência pós-resposta -->
         <div v-if="!streaming && steps.length" class="text-micro text-ink-subtle">

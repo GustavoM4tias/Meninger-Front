@@ -147,7 +147,37 @@ async function confirmFeedback({ comment }) {
     <!-- Mensagens -->
     <div ref="messagesEl" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth"
       :class="compact ? 'text-sm' : ''">
-      <div v-if="!aiStore.messages.length && !aiStore.isStreaming"
+      <!-- Abrindo uma conversa do histórico -->
+      <div v-if="aiStore.carregandoMensagens"
+        class="flex flex-col items-center justify-center h-full gap-3 px-2 text-center">
+        <i class="fas fa-circle-notch fa-spin text-accent text-xl"></i>
+        <p class="text-xs text-ink-muted">Abrindo a conversa…</p>
+      </div>
+
+      <!-- Não abriu: diz o motivo e oferece o caminho de volta -->
+      <div v-else-if="aiStore.erroMensagens"
+        class="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
+        <div class="h-11 w-11 rounded-2xl bg-data-warn-soft border border-data-warn/25 grid place-items-center">
+          <i class="fas fa-triangle-exclamation text-data-warn"></i>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-ink">Não consegui abrir esta conversa</p>
+          <p class="text-xs text-ink-muted mt-0.5 max-w-[34ch]">{{ aiStore.erroMensagens }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" @click="aiStore.recarregarMensagens()"
+            class="px-3 py-1.5 rounded-lg text-xs font-medium bg-accent-soft text-accent
+                   hover:brightness-105 transition-all duration-120">
+            <i class="fas fa-rotate mr-1.5"></i>Tentar de novo
+          </button>
+          <button type="button" @click="aiStore.newSession()"
+            class="px-3 py-1.5 rounded-lg text-xs text-ink-subtle hover:text-ink transition-colors duration-120">
+            Começar uma nova
+          </button>
+        </div>
+      </div>
+
+      <div v-else-if="!aiStore.messages.length && !aiStore.isStreaming"
         class="flex flex-col items-center justify-center h-full gap-4 px-2 text-center">
         <div class="h-12 w-12 rounded-2xl bg-accent-soft border border-accent/20 grid place-items-center animate-glow-pulse">
           <img src="/Mlogo.png" class="h-6 invert dark:invert-0" alt="Eme" />

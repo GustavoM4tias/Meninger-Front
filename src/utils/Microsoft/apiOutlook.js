@@ -38,6 +38,16 @@ export const setFlag       = (id, flagged)    => requestWithAuth(`${R}/messages/
 export const setCategories = (id, categories) => requestWithAuth(`${R}/messages/${id}/categories`, P({ categories }));
 export const moveMessage   = (id, destinationId) => requestWithAuth(`${R}/messages/${id}/move`,    B({ destinationId }));
 export const deleteMessage = (id)             => requestWithAuth(`${R}/messages/${id}`,            D());
+export const setImportance = (id, importance) => requestWithAuth(`${R}/messages/${id}/importance`, P({ importance }));
+
+/** URL do .eml da mensagem inteira (cabeçalho, anexos e assinatura juntos). */
+export const downloadUrl = (id, nome) =>
+    `${R}/messages/${id}/download?nome=${encodeURIComponent(nome || 'mensagem')}`;
+
+// ── Pastas ────────────────────────────────────────────────────────────────────
+export const createFolder = (name, parentId) => requestWithAuth(`${R}/folders`, B({ name, parentId }));
+export const renameFolder = (id, name)       => requestWithAuth(`${R}/folders/${id}`, P({ name }));
+export const deleteFolder = (id)             => requestWithAuth(`${R}/folders/${id}`, D());
 
 // ── Rascunho e envio ──────────────────────────────────────────────────────────
 export const createDraft  = (data)     => requestWithAuth(`${R}/drafts`,            B(data));

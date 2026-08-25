@@ -1,6 +1,6 @@
 <!-- src/views/Office/layouts/OfficeShell.vue -->
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import Button from '@/components/UI/Button.vue';
@@ -11,8 +11,21 @@ import Carregamento from '@/components/Loading/Carregamento.vue';
 import InPersonRecordingBar from '@/components/InPersonRecordingBar.vue';
 import MuralFloatingCard from '@/components/Mural/MuralFloatingCard.vue';
 import MuralHost from '@/components/Platform/MuralHost.vue';
+import ReconnectModal from '@/components/Microsoft/ReconnectModal.vue';
+import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
 
 const authStore = useAuthStore();
+
+// Estado da sessão Microsoft, uma vez por carregamento do Office.
+//
+// Sem isto o aviso de sessão caída só apareceria depois de a pessoa entrar numa
+// tela da Microsoft e a chamada falhar - ou seja, depois do erro. Aqui ele
+// chega ANTES: a pessoa descobre que precisa reconectar sem primeiro esbarrar
+// numa agenda vazia.
+//
+// É barato (uma chamada) e silencioso: quem nunca vinculou conta não vê nada.
+const ms = useMicrosoftStore();
+onMounted(() => { ms.fetchStatus?.().catch(() => {}); });
 
 // A Eme encostada na direita empurra o Office em vez de cobrir. Isto era uma
 // regra global no CSS e quebrava o layout: o padding no #app não alcançava os
@@ -107,6 +120,10 @@ function dispensar() {
              POR VEZ. O porteiro é quem decide a ordem - ver
              components/Platform/MuralHost.vue. Fica só no ramo autenticado. -->
         <MuralHost />
+        <!-- A sessão Microsoft caiu de verdade (não é instabilidade: o backend
+             já tentou renovar). Não bloqueia o Office - só o que depende da
+             Microsoft é que para. -->
+        <ReconnectModal />
         <Carregamento />
     </div>
 </template>

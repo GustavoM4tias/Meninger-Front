@@ -67,13 +67,27 @@ export const useOutlookStore = defineStore('outlook', () => {
         try { categories.value = await api.getCategories(); } catch { categories.value = []; }
     }
 
+    // As configurações da caixa dependem de MailboxSettings.Read, que o tenant
+    // ainda não concedeu: hoje esta chamada dá 403 SEMPRE. Repeti-la a cada
+    // abertura era uma ida ao servidor garantidamente perdida - depois da
+    // primeira recusa, a tela para de perguntar até recarregar a página.
+    let mailboxNegado = false;
+
     async function fetchMailbox() {
-        try { mailbox.value = await api.getMailbox(); } catch { mailbox.value = null; }
+        if (mailboxNegado) return;
+        try { mailbox.value = await api.getMailbox(); }
+        catch (err) {
+            mailbox.value = null;
+            if (/permiss|forbidden|accessdenied|403/i.test(err?.message || '')) mailboxNegado = true;
+        }
     }
 
     function _params() {
         return {
-            folder: folder.value,
+            // 'tudo' nao e uma pasta do Outlook: e a caixa inteira. O backend
+            // varre tudo e tira Enviados, Rascunhos e Lixeira.
+            ...(folder.value === 'tudo' || buscaGlobal.value ? { escopo: 'tudo' } : {}),
+            folder: folder.value === 'tudo' ? 'inbox' : folder.value,
             search: search.value,
             skip: skip.value,
             // Filtro e busca não convivem: quando há busca, o Graph ignora o resto.
@@ -115,8 +129,13 @@ export const useOutlookStore = defineStore('outlook', () => {
         await fetchMessages();
     }
 
-    async function applySearch(text) {
+    // `emTodaCaixa` liga o escopo 'tudo' enquanto a busca durar, sem mudar a
+    // pasta que a pessoa tinha aberto: ao limpar, ela volta para onde estava.
+    const buscaGlobal = ref(false);
+
+    async function applySearch(text, { emTodaCaixa = true } = {}) {
         search.value = (text || '').trim();
+        buscaGlobal.value = !!search.value && emTodaCaixa;
         skip.value = 0;
         await fetchMessages();
     }
@@ -182,6 +201,39 @@ export const useOutlookStore = defineStore('outlook', () => {
         catch (err) { desfazer(); error.value = err.message; noteGraphError(err); throw err; }
     }
 
+    /** Importância não é sinalizador: é "isto pesa", não "eu tenho que agir". */
+    async function setImportance(id, importance) {
+        const antes = messages.value.find(m => m.id === id)?.importance || 'normal';
+        const desfazer = _patchLocal(id, { importance });
+        try { await api.setImportance(id, importance); }
+        catch (err) { desfazer(); error.value = err.message; noteGraphError(err); throw err; }
+        return antes;
+    }
+
+    // ── Pastas ────────────────────────────────────────────────────────────────
+    // Depois de mexer, recarrega a árvore: pasta nova que só aparece no próximo
+    // F5 é pior do que não ter o botão.
+
+    async function criarPasta(nome, parentId = null) {
+        const nova = await api.createFolder(nome, parentId);
+        await fetchFolders();
+        return nova;
+    }
+
+    async function renomearPasta(id, nome) {
+        const r = await api.renameFolder(id, nome);
+        await fetchFolders();
+        return r;
+    }
+
+    async function excluirPasta(id) {
+        await api.deleteFolder(id);
+        // Estava dentro dela: volta para a Caixa de Entrada em vez de ficar
+        // olhando uma pasta que não existe mais.
+        if (folder.value === id) await openFolder('inbox');
+        else await fetchFolders();
+    }
+
     async function setCategories(id, cats) {
         const desfazer = _patchLocal(id, { categories: cats });
         try { await api.setCategories(id, cats); }
@@ -241,7 +293,8 @@ export const useOutlookStore = defineStore('outlook', () => {
         init, fetchFolders, fetchMessages, fetchUnread, loadMore,
         openFolder, applySearch, applyFilters, clearFilters,
         openMessage, closeMessage,
-        markRead, toggleFlag, setCategories, moveMessage, deleteMessage,
+        markRead, toggleFlag, setCategories, setImportance, moveMessage, deleteMessage,
+        criarPasta, renomearPasta, excluirPasta,
         startReply, saveDraft, send,
     };
 });

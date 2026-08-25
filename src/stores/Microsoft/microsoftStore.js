@@ -76,8 +76,21 @@ export const useMicrosoftStore = defineStore('microsoft', () => {
             await fetchStatus(); // atualiza expiresAt
             return true;
         } catch (err) {
-            console.warn('[microsoftStore] refreshToken failed:', err.message);
-            // Se o servidor retornou requiresReauth, marca como desconectado
+            // SÓ O DEFINITIVO DERRUBA A SESSÃO.
+            //
+            // Antes, QUALQUER falha aqui marcava `needsReconnect` - rede caindo,
+            // 503 da Microsoft, backend reiniciando. O modal de "sua conexão
+            // caiu" aparecia por nada, e a pessoa era mandada relogar numa conta
+            // cujo token estava intacto no banco. O servidor sabe a diferença
+            // (`requiresReauth`), e agora a tela respeita isso.
+            const definitivo = err?.payload?.requiresReauth === true || err?.status === 401;
+
+            if (!definitivo) {
+                console.warn('[microsoftStore] renovação falhou por motivo passageiro:', err.message);
+                return false;   // estado intacto: a próxima chamada tenta de novo
+            }
+
+            console.warn('[microsoftStore] autorização Microsoft expirou de verdade:', err.message);
             connected.value      = false;
             tokenValid.value     = false;
             needsReconnect.value = linked.value;
@@ -101,7 +114,11 @@ export const useMicrosoftStore = defineStore('microsoft', () => {
         if (!isMicrosoftAuth) return false;
 
         const ok = await refreshToken();
-        if (!ok) await fetchStatus(); // confirma o estado real (linked x connected)
+        // Confirma no servidor antes de concluir qualquer coisa: `/status` lê o
+        // banco (`linked && !refresh_token`), que é a única verdade durável
+        // sobre a sessão. Sem esta confirmação, um erro de rede no meio do
+        // caminho ditava o que a tela ia mostrar.
+        if (!ok) await fetchStatus();
         return ok;
     }
 

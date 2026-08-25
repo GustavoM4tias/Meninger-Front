@@ -20,9 +20,13 @@ onMounted(() => {
 const favoriteSessions = computed(() => aiStore.sessions.filter(s => s.is_favorited));
 const recentSessions = computed(() => aiStore.sessions.filter(s => !s.is_favorited));
 
+// Fecha o painel PRIMEIRO e deixa o carregamento acontecer atrás: o spinner da
+// conversa é quem conta o que está acontecendo. Fechar depois de esperar fazia o
+// clique parecer que não funcionou. O `catch` existe porque a tela de erro já
+// mostra o motivo - relançar aqui só sujaria o console.
 function open(id) {
-  aiStore.loadMessages(id);
   aiStore.historyOpen = false;
+  aiStore.loadMessages(id).catch(() => {});
 }
 
 function fromNow(d) { return dayjs(d).fromNow(); }

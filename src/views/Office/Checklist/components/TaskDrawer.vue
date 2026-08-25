@@ -12,6 +12,7 @@ import MultiSelector from '@/components/UI/MultiSelector.vue';
 import UserAvatar from '@/components/UI/UserAvatar.vue';
 import UserAvatarStack from '@/components/UI/UserAvatarStack.vue';
 import UserInfoModal from '@/components/UI/UserInfoModal.vue';
+import ParceriaModal from '@/components/Colab/ParceriaModal.vue';
 import AttachmentViewerModal from './AttachmentViewerModal.vue';
 import AttachmentPicker from '@/views/Office/Comercial/Conditions/components/AttachmentPicker.vue';
 import ImageAnnotator from './ImageAnnotator.vue';
@@ -414,6 +415,14 @@ const assignees = computed(() => {
 // Modal de info do colaborador (clique na bolinha) — estilo organograma.
 const infoUser = ref(null);
 
+// ── Fazer junto: a mesma regra do assistente ────────────────────────────────
+// Mexer em `assignee_user_ids` continua sendo de ADMIN, e é por isso que este
+// botão existe: ele dá a QUEM É DONO da tarefa exatamente uma coisa - somar
+// alguém - sob a regra da hierarquia, sem abrir a edição inteira.
+const parceriaAberta = ref(false);
+const parceirosAtuais = computed(() =>
+    assignees.value.map(u => ({ id: u.id, nome: u.username || u.name })));
+
 // Subtarefas (checklist dentro da tarefa) — acompanha a evolução.
 const newItemText = ref('');
 function addChecklistItem() {
@@ -463,9 +472,19 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
             <div v-else class="flex-1 min-h-0 overflow-y-auto px-5 py-5 space-y-6">
 
                 <!-- Responsáveis (bolinhas; clique abre o card do colaborador) -->
-                <div v-if="assignees.length" class="flex items-center gap-2.5">
-                    <span class="text-xs font-semibold text-ink-muted uppercase tracking-wide">Responsáveis</span>
-                    <UserAvatarStack :users="assignees" :size="30" @select="infoUser = $event" />
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <span v-if="assignees.length"
+                        class="text-xs font-semibold text-ink-muted uppercase tracking-wide">Responsáveis</span>
+                    <UserAvatarStack v-if="assignees.length" :users="assignees" :size="30"
+                        @select="infoUser = $event" />
+
+                    <button type="button" @click="parceriaAberta = true"
+                        class="group inline-flex items-center gap-1.5 px-2 py-1 rounded-full border border-dashed
+                               border-line text-micro text-ink-subtle hover:text-accent hover:border-accent/40
+                               transition-all duration-200 ease-out-expo">
+                        <i class="fas fa-user-plus text-[0.65rem]"></i>
+                        fazer junto
+                    </button>
                 </div>
 
                 <!-- Painel de autorização / aprovação -->
@@ -709,6 +728,13 @@ const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
         <AttachmentViewerModal v-if="viewerAtt" :attachment="viewerAtt" @close="viewerAtt = null" />
         <ImageAnnotator v-if="annotateAtt" :attachment="annotateAtt" :task-id="taskId" @close="annotateAtt = null" />
         <UserInfoModal v-if="infoUser" :user="infoUser" @close="infoUser = null" />
+
+        <!-- Quem está abaixo entra na hora; do seu nível para cima, vira pedido.
+             Remover responsável continua sendo do admin, pelo caminho de sempre:
+             somar é reversível conversando, tirar não. -->
+        <ParceriaModal :open="parceriaAberta" escopo="checklist" :id="taskId"
+            :titulo="data?.task?.title || ''" :parceiros="parceirosAtuais" :pode-remover="false"
+            @close="parceriaAberta = false" @mudou="load(); emit('changed')" />
 
         <!-- Confirmação (excluir tarefa / anexo) -->
         <Modal :open="!!confirmState" size="sm" :title="confirmState?.title" @close="confirmCancel">
