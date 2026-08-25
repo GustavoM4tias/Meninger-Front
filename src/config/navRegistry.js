@@ -326,93 +326,73 @@ export const navRegistry = [
     //                             Alertas, Reportar Problema), que vivem aqui em vez de uma categoria
     //                             própria. Por causa deles, a categoria aparece para qualquer usuário
     //                             — o não-admin só enxerga esses itens.
+    // ── Minha conta ────────────────────────────────────────────────────────────
+    // Tudo que pertence à PESSOA, e por isso aparece para todo mundo e fica
+    // fora das Alçadas.
+    //
+    // Isto morava dentro de "Administração", e era o defeito: a categoria
+    // aparecia para qualquer usuário justamente por causa destes itens, então
+    // um vendedor abria "Administração" e encontrava a própria conta, os
+    // próprios avisos e o botão de reportar problema. Ele não administra nada -
+    // o rótulo prometia uma coisa e entregava outra.
+    //
+    // O critério aqui é DONO, não assunto: o que é da pessoa fica junto.
+    {
+        key: 'conta',
+        label: 'Minha conta',
+        icon: 'fas fa-circle-user',
+        group: 'SISTEMA',
+        permissionManaged: false,
+        pages: [
+            { route: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-gear', permissionManaged: false },
+            { route: '/notifications', name: 'Avisos e notificações', icon: 'fas fa-bell', permissionManaged: false },
+            // hiddenInNav: /mural é a caixa recortada na origem, e preferências
+            // e alertas viraram seções da tela de avisos. As rotas seguem vivas
+            // porque o sino, a caixa e os links levam para elas.
+            { route: '/mural', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', permissionManaged: false, hiddenInNav: true },
+            { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false, hiddenInNav: true },
+            { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false, hiddenInNav: true },
+            { route: '/report', name: 'Reportar Problema', icon: 'fas fa-bug', permissionManaged: false },
+            // Instalar o app é ação pessoal, não documentação do sistema - veio
+            // de "Sobre o Office" em 2026-08-25.
+            { route: '/instalar', name: 'Instalar o app', icon: 'fas fa-mobile-screen-button', permissionManaged: false },
+        ],
+    },
+
+    // ── Administração ──────────────────────────────────────────────────────────
+    // Só o que administra o SISTEMA e os OUTROS. Sem subcategorias de propósito:
+    // eram três divisões (Usuários & Acessos, Integrações & Dados, Inteligência)
+    // que só faziam sentido para quem já conhecia o sistema, num lugar que se
+    // abre raramente e onde se procura pelo nome do item.
+    //
+    // adminOnly:true            → trava de CÓDIGO, nunca delegável
+    // sem flag                  → delegável pela tela de Alçadas
     {
         key: 'admin',
         label: 'Administração',
         icon: 'fas fa-user-shield',
         group: 'SISTEMA',
-        subcategories: [
-            {
-                key: 'access',
-                name: 'Usuários & Acessos',
-                icon: 'fas fa-users-gear',
-                pages: [
-                    // Conta do próprio usuário — permissionManaged:false → visível a todos.
-                    { route: '/settings/Account', section: 'Minha Conta', name: 'Minha Conta', icon: 'fas fa-user-gear', permissionManaged: false },
-                    { route: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users', adminOnly: true },
-                    { route: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
-                    { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
-                    { route: '/settings/management', section: 'Departamentos', name: 'Departamentos', icon: 'fas fa-building-user', adminOnly: true },
-                    { route: '/settings/empresas', section: 'Empresas', name: 'Empresas', icon: 'fas fa-building-circle-arrow-right', adminOnly: true },
-                    { route: '/settings/integrity', section: 'Integridade', name: 'Integridade', icon: 'fas fa-shield-heart', adminOnly: true },
-                ],
-            },
-            {
-                key: 'integrations',
-                name: 'Integrações & Dados',
-                icon: 'fas fa-plug',
-                pages: [
-                    { route: '/tools/bucket-upload', section: 'Looqbox', name: 'Looqbox', icon: 'fas fa-cloud-arrow-up', iconImg: '/icons/looqbox.png' },
-                    { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
-                    { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.png', adminOnly: true },
-                ],
-            },
-            {
-                key: 'intelligence',
-                name: 'Inteligência (Eme)',
-                icon: 'fas fa-microchip',
-                pages: [
-                    { route: '/tools/eme-brain', section: 'Cérebro da Eme', name: 'Cérebro da Eme', icon: 'fas fa-brain', adminOnly: true },
-                    { route: '/tools/eme-atende', section: 'Eme Atende', name: 'Eme Atende', icon: 'fas fa-headset', adminOnly: true },
-                ],
-            },
-            {
-                key: 'communication',
-                name: 'Comunicação',
-                icon: 'fas fa-comments',
-                pages: [
-                    // Mural do usuário: broadcast interno — visível a todos (o gate é
-                    // a audiência de cada comunicado, não alçada de tela).
-                    //
-                    // UM item para o assunto inteiro (2026-08-24). Mural, gestão do
-                    // mural, caixa, alertas, painel e preferências eram telas e itens
-                    // separados para a mesma pergunta: o que me avisaram e como quero
-                    // ser avisado. Viraram seções de /notifications; as rotas antigas
-                    // seguem vivas como atalho para os links já espalhados, só não
-                    // aparecem mais como item próprio.
-                    { route: '/notifications', name: 'Avisos e notificações', icon: 'fas fa-bell', permissionManaged: false },
-                    { route: '/mural', name: 'Mural de Avisos', icon: 'fas fa-thumbtack', permissionManaged: false, hiddenInNav: true },
-                    // Delegável desde 2026-08-20: redigir, definir público e
-                    // publicar vão por alçada; EXCLUIR comunicado segue admin
-                    // (some com a trilha de leitura) — ver screenCapabilities.
-                    //
-                    // hiddenInNav desde 2026-08-24: a gestão virou a aba "Gestão"
-                    // dentro de /mural. A entrada continua aqui porque é ela que
-                    // a tela de Alçadas lista e que as capacidades nomeiam —
-                    // tirá-la daqui tornaria a delegação impossível de configurar.
-                    { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack', hiddenInNav: true },
-                    // Preferências viraram a seção "Preferências" da tela acima: elas
-                    // configuram a caixa, não são um assunto à parte. Dois itens de
-                    // menu com "notificações" no nome era o oposto de unificar. A
-                    // rota fica viva (o sino e a caixa levam para cá).
-                    { route: '/settings/notifications', section: 'Notificações', name: 'Notificações', icon: 'fas fa-bell', permissionManaged: false, hiddenInNav: true },
-                    // hiddenInNav desde 2026-08-24: virou a aba "Meus alertas" da tela
-                    // de Notificações. Alerta é notificação que a própria pessoa
-                    // programou, então ficava estranho em dois lugares do menu.
-                    { route: '/settings/alerts', section: 'Alertas', name: 'Alertas', icon: 'fas fa-tower-broadcast', permissionManaged: false, hiddenInNav: true },
-                    { route: '/report', name: 'Reportar Problema', icon: 'fas fa-bug', permissionManaged: false },
-                ],
-            },
+        pages: [
+            { route: '/settings/users', section: 'Usuários', name: 'Usuários', icon: 'fas fa-users', adminOnly: true },
+            // Sem adminOnly: já é delegável hoje pela tela de Alçadas, e a
+            // intenção é liberá-lo. Fica aqui só enquanto isso não acontece.
+            { route: '/settings/organograma', section: 'Organograma', name: 'Organograma', icon: 'fas fa-sitemap' },
+            { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
+            { route: '/settings/management', section: 'Departamentos', name: 'Departamentos', icon: 'fas fa-building-user', adminOnly: true },
+            { route: '/settings/empresas', section: 'Empresas', name: 'Empresas', icon: 'fas fa-building-circle-arrow-right', adminOnly: true },
+            { route: '/settings/integrity', section: 'Integridade', name: 'Integridade', icon: 'fas fa-shield-heart', adminOnly: true },
+            // hiddenInNav: virou seção da tela do Mural. Continua aqui porque é
+            // por este item que a delegação da gestão do mural é configurada -
+            // tirá-lo tornaria a delegação impossível de encontrar.
+            { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack', hiddenInNav: true },
+            { route: '/tools/bucket-upload', section: 'Looqbox', name: 'Looqbox', icon: 'fas fa-cloud-arrow-up', iconImg: '/icons/looqbox.png' },
+            { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
+            { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.png', adminOnly: true },
+            { route: '/tools/eme-brain', section: 'Cérebro da Eme', name: 'Cérebro da Eme', icon: 'fas fa-brain', adminOnly: true },
+            { route: '/tools/eme-atende', section: 'Eme Atende', name: 'Eme Atende', icon: 'fas fa-headset', adminOnly: true },
         ],
     },
 
-    // ── Sobre o Office ─────────────────────────────────────────────────────────
-    // Apresentação do próprio sistema: o Mapa do Sistema (visual) e a Visão
-    // Executiva (texto), ambos lendo de config/aboutOffice.js.
-    // adminOnly:true nos dois: o conteúdo expõe economia, custo de ferramenta e
-    // potencial financeiro da companhia — material de diretoria, não delegável.
-    // A categoria fica com permissionManaged:false para não aparecer vazia na
-    // tela de Alçadas (nenhum item dela é gerenciável por alçada).
     {
         key: 'sobre',
         label: 'Sobre o Office',
@@ -420,9 +400,8 @@ export const navRegistry = [
         group: 'SISTEMA',
         permissionManaged: false,
         pages: [
-            // Sem adminOnly: é a única tela desta categoria que todo mundo usa.
-            // A categoria já é permissionManaged:false, então não passa por alçada.
-            { route: '/instalar', name: 'Instalar o app', icon: 'fas fa-mobile-screen-button', permissionManaged: false },
+            // "Instalar o app" saiu daqui em 2026-08-25: é ação pessoal, e esta
+            // categoria é documentação sobre o sistema. Foi para Minha conta.
             { route: '/sobre', name: 'Mapa do Sistema', icon: 'fas fa-diagram-project', adminOnly: true },
             { route: '/sobre/relatorio', name: 'Visão Executiva', icon: 'fas fa-file-lines', adminOnly: true },
             // Changelog do sistema (/docs). A tela já existia sem entrada no menu;

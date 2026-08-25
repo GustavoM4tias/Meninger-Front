@@ -248,115 +248,115 @@ export const OG_ROUTES = {
   },
   "/settings/account": {
     "name": "Minha Conta",
-    "category": "Administração",
+    "category": "Minha conta",
     "group": "SISTEMA",
-    "subcategory": "Usuários & Acessos"
+    "subcategory": null
+  },
+  "/notifications": {
+    "name": "Avisos e notificações",
+    "category": "Minha conta",
+    "group": "SISTEMA",
+    "subcategory": null
+  },
+  "/mural": {
+    "name": "Mural de Avisos",
+    "category": "Minha conta",
+    "group": "SISTEMA",
+    "subcategory": null
+  },
+  "/settings/notifications": {
+    "name": "Notificações",
+    "category": "Minha conta",
+    "group": "SISTEMA",
+    "subcategory": null
+  },
+  "/settings/alerts": {
+    "name": "Alertas",
+    "category": "Minha conta",
+    "group": "SISTEMA",
+    "subcategory": null
+  },
+  "/report": {
+    "name": "Reportar Problema",
+    "category": "Minha conta",
+    "group": "SISTEMA",
+    "subcategory": null
+  },
+  "/instalar": {
+    "name": "Instalar o app",
+    "category": "Minha conta",
+    "group": "SISTEMA",
+    "subcategory": null
   },
   "/settings/users": {
     "name": "Usuários",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Usuários & Acessos"
+    "subcategory": null
   },
   "/settings/organograma": {
     "name": "Organograma",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Usuários & Acessos"
+    "subcategory": null
   },
   "/settings/permissions": {
     "name": "Alçadas",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Usuários & Acessos"
+    "subcategory": null
   },
   "/settings/management": {
     "name": "Departamentos",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Usuários & Acessos"
+    "subcategory": null
   },
   "/settings/empresas": {
     "name": "Empresas",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Usuários & Acessos"
+    "subcategory": null
   },
   "/settings/integrity": {
     "name": "Integridade",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Usuários & Acessos"
-  },
-  "/tools/bucket-upload": {
-    "name": "Looqbox",
-    "category": "Administração",
-    "group": "SISTEMA",
-    "subcategory": "Integrações & Dados"
-  },
-  "/settings/backup-sienge": {
-    "name": "Backup Sienge",
-    "category": "Administração",
-    "group": "SISTEMA",
-    "subcategory": "Integrações & Dados"
-  },
-  "/settings/docusign": {
-    "name": "DocuSign",
-    "category": "Administração",
-    "group": "SISTEMA",
-    "subcategory": "Integrações & Dados"
-  },
-  "/tools/eme-brain": {
-    "name": "Cérebro da Eme",
-    "category": "Administração",
-    "group": "SISTEMA",
-    "subcategory": "Inteligência (Eme)"
-  },
-  "/tools/eme-atende": {
-    "name": "Eme Atende",
-    "category": "Administração",
-    "group": "SISTEMA",
-    "subcategory": "Inteligência (Eme)"
-  },
-  "/notifications": {
-    "name": "Avisos e notificações",
-    "category": "Administração",
-    "group": "SISTEMA",
-    "subcategory": "Comunicação"
-  },
-  "/mural": {
-    "name": "Mural de Avisos",
-    "category": "Administração",
-    "group": "SISTEMA",
-    "subcategory": "Comunicação"
+    "subcategory": null
   },
   "/mural/admin": {
     "name": "Gestão do Mural",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Comunicação"
+    "subcategory": null
   },
-  "/settings/notifications": {
-    "name": "Notificações",
+  "/tools/bucket-upload": {
+    "name": "Looqbox",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Comunicação"
+    "subcategory": null
   },
-  "/settings/alerts": {
-    "name": "Alertas",
+  "/settings/backup-sienge": {
+    "name": "Backup Sienge",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Comunicação"
+    "subcategory": null
   },
-  "/report": {
-    "name": "Reportar Problema",
+  "/settings/docusign": {
+    "name": "DocuSign",
     "category": "Administração",
     "group": "SISTEMA",
-    "subcategory": "Comunicação"
+    "subcategory": null
   },
-  "/instalar": {
-    "name": "Instalar o app",
-    "category": "Sobre o Office",
+  "/tools/eme-brain": {
+    "name": "Cérebro da Eme",
+    "category": "Administração",
+    "group": "SISTEMA",
+    "subcategory": null
+  },
+  "/tools/eme-atende": {
+    "name": "Eme Atende",
+    "category": "Administração",
     "group": "SISTEMA",
     "subcategory": null
   },
