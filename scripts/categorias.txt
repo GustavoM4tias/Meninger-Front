@@ -3,7 +3,10 @@ comercial|Comercial
 financeiro|Financeiro
 ferramentas|Ferramentas
 academy|Academy
+meu-dia|Meu dia
 microsoft|Microsoft
 meta|Meta
+cv-crm|CV CRM
+minha-conta|Minha conta
 administracao|Administração
 sobre-o-office|Sobre o Office

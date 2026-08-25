@@ -23,13 +23,14 @@ import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 
+const route = useRoute();
+const router = useRouter();
+const eventStore = useEventStore();
+
 /* O erro da store aparecia num balao proprio no canto INFERIOR ESQUERDO -
    sozinho no sistema, porque o toast do app mora na direita. Agora ele passa
    pelo caminho de sempre. */
 watch(() => eventStore.errorMessage, (msg) => { if (msg) toast.error(msg); });
-const route = useRoute();
-const router = useRouter();
-const eventStore = useEventStore();
 
 const search = ref('');
 // Resolve o evento aberto PELO ID contra a store: quando a lista é

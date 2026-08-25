@@ -324,6 +324,14 @@ const activePillClasses = 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
 const idlePillClasses = 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700';
 
 const typeParam = computed(() => String(route.params.type || 'questions'));
+/* Enum que a API usa. `categoryName` já dependia dele para resolver a categoria
+   quando o item não traz o próprio type, mas ninguém o declarava. */
+const apiType = computed(() => ({
+    questions: 'QUESTION',
+    discussions: 'DISCUSSION',
+    suggestions: 'SUGGESTION',
+    incidents: 'INCIDENT',
+}[typeParam.value] || 'QUESTION'));
 const q = ref('');
 const status = ref('OPEN');
 
@@ -455,14 +463,7 @@ async function openCreateModal() {
     form.audiences = userTokensOrDefault();
 
     // default: tipo do route atual (questions/discussions/etc) -> enum
-    const defaultType = ({
-        questions: 'QUESTION',
-        discussions: 'DISCUSSION',
-        suggestions: 'SUGGESTION',
-        incidents: 'INCIDENT',
-    }[typeParam.value] || 'QUESTION');
-
-    form.type = defaultType;
+    form.type = apiType.value;
 
     const opts = categoriesByType.value?.[form.type] || [];
     form.categorySlug = opts?.[0]?.slug || 'geral';
