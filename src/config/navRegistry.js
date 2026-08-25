@@ -151,17 +151,6 @@ export const navRegistry = [
                     { route: '/comercial/mcmv', section: 'MCMV', name: 'Minha Casa Minha Vida', icon: 'fas fa-house-circle-check' },
                 ],
             },
-            {
-                key: 'terminations',
-                name: 'Cancelamentos',
-                icon: 'fas fa-handshake-slash',
-                pages: [
-                    // Delegável desde 2026-08-19: histórico e reprocessamento vão
-                    // por alçada; a aba Configurações (e o processamento manual
-                    // avulso, que mora nela) continua só para admin.
-                    { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser' },
-                ],
-            },
         ],
     },
 
@@ -231,6 +220,13 @@ export const navRegistry = [
             { route: '/relatorios', name: 'Relatórios', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
 
             { route: '/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
+            // Veio de Comercial (2026-08-25). É ferramenta de operação: dispara
+            // o cancelamento no CV e no Sienge e mostra o histórico. A ROTA não
+            // mudou, só o lugar no menu, então nenhuma alçada precisa migrar.
+            // Delegável desde 2026-08-19: histórico e reprocessamento vão por
+            // alçada; a aba Configurações (e o processamento manual avulso, que
+            // mora nela) continua só para admin.
+            { route: '/comercial/cancelamento-reservas', section: 'Cancelamentos', name: 'Cancelamentos', icon: 'fas fa-eraser' },
         ],
     },
     // ── Academy (Conhecimento & Trilhas) ───────────────────────────────────────

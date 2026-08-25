@@ -96,12 +96,6 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": "Condições & Regras"
   },
-  "/comercial/cancelamento-reservas": {
-    "name": "Cancelamentos",
-    "category": "Comercial",
-    "group": "OPERAÇÃO",
-    "subcategory": "Cancelamentos"
-  },
   "/financeiro/titulos": {
     "name": "Títulos",
     "category": "Financeiro",
@@ -146,6 +140,12 @@ export const OG_ROUTES = {
   },
   "/validator": {
     "name": "Validador",
+    "category": "Ferramentas",
+    "group": "OPERAÇÃO",
+    "subcategory": null
+  },
+  "/comercial/cancelamento-reservas": {
+    "name": "Cancelamentos",
     "category": "Ferramentas",
     "group": "OPERAÇÃO",
     "subcategory": null
