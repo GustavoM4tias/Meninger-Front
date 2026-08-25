@@ -190,6 +190,12 @@ export default [
                         component: () => import('@/views/Office/Comercial/Buildings/Index.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Listagem de empreendimentos' },
                     },
+                    {
+                        path: 'workflow/groups',
+                        name: 'Grupos de Workflow',
+                        component: () => import('@/views/Office/Comercial/Workflow/Index.vue'),
+                        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Grupos de Workflow: quais situações do CV formam cada etapa de reserva e repasse' },
+                    },
                 ],
             },
             // Rota da primeira versao deste painel, viva por algumas horas.
@@ -325,12 +331,9 @@ export default [
                         component: () => import('@/views/Office/Comercial/Projections/ProjectionDetail.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Projeção Detalhes' },
                     },
-                    {
-                        path: 'workflow/groups',
-                        name: 'Grupos de Workflow',
-                        component: () => import('@/views/Office/Comercial/Workflow/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Grupos de Workflow' },
-                    },
+                    // Foi para /crm/workflow/groups (2026-08-25): grupo de workflow
+                    // é situação do CV, mora com o resto do CV.
+                    { path: 'workflow/groups', redirect: to => ({ path: '/crm/workflow/groups', query: to.query }) },
                     {
                         path: 'conditions',
                         name: 'Fichas Comerciais',
@@ -422,6 +425,15 @@ export default [
                 ],
             },
 
+            {
+                // Assistente pessoal: a lista unica do que precisa da pessoa.
+                // Sem alcada de tela - e a propria lista dela, como as
+                // preferencias de notificacao.
+                path: 'assistente',
+                name: 'Meu dia',
+                component: () => import('@/views/Office/Assistente/Index.vue'),
+                meta: { requiresAuth: true, searchable: true, content: 'Assistente pessoal: meu dia, tarefas, prazos, pendencias de e-mail e agenda num lugar so' },
+            },
             {
                 path: 'microsoft',
                 name: 'microsoft',

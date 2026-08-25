@@ -149,7 +149,6 @@ export const navRegistry = [
                 pages: [
                     { route: '/comercial/conditions', section: 'Fichas Comerciais', name: 'Fichas Comerciais', icon: 'fas fa-file-contract' },
                     { route: '/comercial/mcmv', section: 'MCMV', name: 'Minha Casa Minha Vida', icon: 'fas fa-house-circle-check' },
-                    { route: '/comercial/workflow/groups', section: 'Grupos Workflow', name: 'Grupos Workflow', icon: 'fas fa-chart-diagram' },
                 ],
             },
             {
@@ -256,6 +255,26 @@ export const navRegistry = [
 
     // ═══ RECURSOS ═══════════════════════════════════════════════════════════════
 
+    // ── Assistente pessoal ─────────────────────────────────────────────────────
+    // Fica em RECURSOS e sem alçada: a lista é da própria pessoa, e exigir a
+    // rota na alçada criaria o absurdo de alguém não poder anotar um lembrete
+    // para si mesmo.
+    {
+        key: 'assistente',
+        label: 'Meu dia',
+        icon: 'fas fa-compass',
+        group: 'RECURSOS',
+        // Fora da tela de Alçadas de propósito: a lista é da própria pessoa, e
+        // amarrá-la a uma alçada criaria o absurdo de alguém não poder anotar
+        // um lembrete para si mesmo. Mesmo desenho das preferências de
+        // notificação. Sem isto a categoria só apareceria para quem tivesse a
+        // rota concedida - ou seja, para ninguém.
+        permissionManaged: false,
+        pages: [
+            { route: '/assistente', section: 'Meu dia', name: 'Meu dia', icon: 'fas fa-compass' },
+        ],
+    },
+
     // ── Microsoft (só exibido quando a integração está ativa) ──────────────────
     {
         key: 'microsoft',
@@ -308,6 +327,7 @@ export const navRegistry = [
             { route: '/crm/correspondentes', section: 'Correspondentes', name: 'Correspondentes', icon: 'fas fa-people-group' },
             // Tela única com abas internas (Geral/Lançamentos/Em Obras/…) → um só item.
             { route: '/crm/buildings', name: 'Empreendimentos', icon: 'fas fa-building' },
+            { route: '/crm/workflow/groups', section: 'Grupos Workflow', name: 'Grupos de Workflow', icon: 'fas fa-chart-diagram' },
             { route: '/crm/configuracoes', section: 'Configurações', name: 'Configurações', icon: 'fas fa-sliders', adminOnly: true },
         ],
     },

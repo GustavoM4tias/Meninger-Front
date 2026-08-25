@@ -96,12 +96,6 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": "Condições & Regras"
   },
-  "/comercial/workflow/groups": {
-    "name": "Grupos Workflow",
-    "category": "Comercial",
-    "group": "OPERAÇÃO",
-    "subcategory": "Condições & Regras"
-  },
   "/comercial/cancelamento-reservas": {
     "name": "Cancelamentos",
     "category": "Comercial",
@@ -180,6 +174,12 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": null
   },
+  "/assistente": {
+    "name": "Meu dia",
+    "category": "Meu dia",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
   "/microsoft/outlook": {
     "name": "Outlook",
     "category": "Microsoft",
@@ -230,6 +230,12 @@ export const OG_ROUTES = {
   },
   "/crm/buildings": {
     "name": "Empreendimentos",
+    "category": "CV CRM",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
+  "/crm/workflow/groups": {
+    "name": "Grupos de Workflow",
     "category": "CV CRM",
     "group": "RECURSOS",
     "subcategory": null
@@ -311,6 +317,12 @@ export const OG_ROUTES = {
     "category": "Administração",
     "group": "SISTEMA",
     "subcategory": "Inteligência (Eme)"
+  },
+  "/notifications": {
+    "name": "Avisos e notificações",
+    "category": "Administração",
+    "group": "SISTEMA",
+    "subcategory": "Comunicação"
   },
   "/mural": {
     "name": "Mural de Avisos",

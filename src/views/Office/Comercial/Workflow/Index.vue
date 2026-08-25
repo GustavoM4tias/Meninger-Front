@@ -178,7 +178,7 @@ onMounted(async () => {
             icon="fas fa-diagram-project">
             <template #title>
                 <span>Grupos de Workflow</span>
-                <Favorite :router="'/comercial/workflow/groups'" :section="'Grupos Workflow'" />
+                <Favorite :router="'/crm/workflow/groups'" :section="'Grupos Workflow'" />
             </template>
             <template #actions>
                 <PageHelp
