@@ -138,7 +138,50 @@
           </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Celular: cartao por empreendimento -->
+        <div class="md:hidden">
+          <ul v-if="sortedGroups.length" class="divide-y divide-line">
+            <li v-for="group in sortedGroups" :key="`m-${group.costCenterId}`" class="p-3 flex flex-col gap-2">
+              <div class="flex items-start gap-3">
+                <div class="h-9 w-9 rounded-lg bg-data-pos/10 border border-data-pos/20 grid place-items-center text-data-pos shrink-0">
+                  <i class="fas fa-building text-xs"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm font-semibold text-ink break-words">
+                    {{ group.costCenterName || resolveEnterpriseName(group.costCenterId) || '—' }}
+                  </div>
+                  <div class="text-micro text-ink-subtle font-mono">
+                    CC {{ group.costCenterId }} · {{ group.expenses.length }} lançamento(s)
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-lg bg-surface-sunken/40 px-2.5 py-2">
+                <div class="metric-label">Total</div>
+                <div class="text-lg font-bold text-data-pos font-mono tabular-nums leading-tight">
+                  {{ Number(group.total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+                </div>
+                <div v-if="Number(group.cancelledTotal) > 0"
+                  class="text-micro text-data-neg font-mono tabular-nums mt-0.5">
+                  <i class="fas fa-ban mr-0.5"></i>{{ Number(group.cancelledTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }} cancelado
+                </div>
+              </div>
+
+              <!-- alvo de 40px -->
+              <button @click="openDetails(group)"
+                class="h-10 w-full rounded-lg border border-line text-xs font-medium text-ink
+                       inline-flex items-center justify-center gap-1.5 hover:bg-surface-sunken transition-colors">
+                <i class="fas fa-eye text-[10px]"></i>Ver detalhes
+              </button>
+            </li>
+          </ul>
+          <div v-else-if="!store.isLoading" class="px-4 py-10">
+            <EmptyState icon="fas fa-inbox" title="Nenhum gasto encontrado"
+              description="Ajuste os filtros e tente novamente." />
+          </div>
+        </div>
+
+        <div class="hidden md:block overflow-x-auto">
           <table class="min-w-full">
             <thead class="bg-surface-sunken/60 border-b border-line">
               <tr>
@@ -342,7 +385,99 @@
 
         <!-- Tabela -->
         <div class="overflow-auto" style="max-height: calc(92vh - 280px)">
-          <table class="min-w-full text-sm">
+          <!-- Celular: cartao por lancamento. Dez colunas nao cabem em 375px. -->
+          <ul class="md:hidden divide-y divide-line/60">
+            <li v-for="exp in modalExpenses" :key="`m-${exp.id}`"
+              :class="['p-3 flex flex-col gap-2', selectedExpenseIds.includes(exp.id) ? 'bg-data-pos/10' : '']">
+
+              <div class="flex items-start gap-2.5">
+                <input type="checkbox" :checked="selectedExpenseIds.includes(exp.id)"
+                  @change="toggleExpenseSelection(exp.id)"
+                  class="w-5 h-5 mt-0.5 shrink-0 text-data-pos border-line rounded focus:ring-data-pos cursor-pointer" />
+                <div class="min-w-0 flex-1">
+                  <div v-if="exp.bill" class="text-sm font-semibold text-ink break-words">
+                    {{ exp.bill.creditor_json?.tradeName || exp.bill.creditor_json?.name || '—' }}
+                  </div>
+                  <div v-else class="text-sm text-ink-subtle italic">sem vínculo</div>
+                  <div v-if="exp.bill" class="text-micro text-ink-muted break-words mt-0.5">
+                    {{ exp.bill.document_identification_id }} {{ exp.bill.document_number }}
+                    <span class="text-ink-subtle">· #{{ exp.bill.id }}</span>
+                  </div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="font-bold font-mono tabular-nums text-sm"
+                    :class="exp.status === 'cancelled' ? 'text-ink-subtle line-through' : 'text-data-pos'">
+                    {{ Number(exp.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+                  </div>
+                  <Badge :variant="expStatusVariant(exp.status)" size="sm" class="mt-0.5">
+                    {{ expStatusLabel(exp.status) }}
+                  </Badge>
+                </div>
+              </div>
+
+              <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                <div class="min-w-0">
+                  <dt class="metric-label">Pago em</dt>
+                  <dd class="text-xs text-ink font-mono tabular-nums">{{ formatDate(exp.paidAt) }}</dd>
+                </div>
+                <div class="min-w-0">
+                  <dt class="metric-label">Vencimento</dt>
+                  <dd class="text-xs text-ink-muted font-mono tabular-nums">{{ formatDate(exp.dueDate) }}</dd>
+                </div>
+                <div class="min-w-0">
+                  <dt class="metric-label">Parcela</dt>
+                  <dd class="text-xs text-ink-muted font-mono">
+                    {{ exp.installmentsNumber > 1 ? `${exp.installmentNumber}/${exp.installmentsNumber}` : '1/1' }}
+                  </dd>
+                </div>
+                <div class="min-w-0">
+                  <dt class="metric-label">Departamento</dt>
+                  <dd class="text-xs text-ink-muted break-words">
+                    {{ exp.departmentName || exp.bill?.mainDepartmentName || '—' }}
+                  </dd>
+                </div>
+                <div v-if="exp.bill?.totalInvoiceAmount" class="min-w-0">
+                  <dt class="metric-label">V. Título</dt>
+                  <dd class="text-xs text-ink-muted font-mono tabular-nums">
+                    {{ Number(exp.bill.totalInvoiceAmount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
+                  </dd>
+                </div>
+                <div v-if="exp.bill?.creditor_json?.cnpj" class="min-w-0">
+                  <dt class="metric-label">CNPJ</dt>
+                  <dd class="text-xs text-ink-muted font-mono break-all">{{ exp.bill.creditor_json.cnpj }}</dd>
+                </div>
+                <div v-if="exp.description" class="col-span-2 min-w-0">
+                  <dt class="metric-label">Observação</dt>
+                  <dd class="text-xs text-ink-muted break-words">{{ exp.description }}</dd>
+                </div>
+              </dl>
+
+              <!-- Sem hover no celular: os dois botoes ficam visiveis, 40px -->
+              <div class="grid grid-cols-2 gap-1.5">
+                <button @click="openEditModal(exp)"
+                  class="h-10 rounded-lg border border-line text-micro font-medium text-ink-muted
+                         inline-flex items-center justify-center gap-1.5">
+                  <i class="fas fa-pen text-[10px]"></i>Editar
+                </button>
+                <button @click="removeExpense(exp)"
+                  class="h-10 rounded-lg border border-data-neg/30 text-micro font-medium text-data-neg
+                         inline-flex items-center justify-center gap-1.5">
+                  <i class="fas fa-trash text-[10px]"></i>Excluir
+                </button>
+              </div>
+            </li>
+
+            <li v-if="!modalExpenses.length" class="px-4 py-10">
+              <EmptyState icon="fas fa-magnifying-glass" title="Nenhum lançamento encontrado"
+                description="Ajuste os filtros de busca acima.">
+                <button @click="clearModalFilters" class="text-xs text-data-pos hover:underline mt-2">
+                  Limpar filtros
+                </button>
+              </EmptyState>
+            </li>
+          </ul>
+
+          <table class="hidden md:table min-w-full text-sm">
             <thead class="sticky top-0 z-10 bg-surface-sunken/95 backdrop-blur-sm border-b border-line">
               <tr>
                 <th class="px-3 py-3 w-10">

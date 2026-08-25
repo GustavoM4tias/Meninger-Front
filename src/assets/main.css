@@ -863,3 +863,26 @@ html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }
    isso por regra global no #app e na nav, e quebrava o layout: o padding não
    alcançava os elementos fixos do Nav, então a barra e o menu ficavam por baixo
    do painel. */
+
+/* ───────────────────────────────────────────────
+   Ação que só aparecia no hover
+   O padrão `opacity-0 group-hover:opacity-100` esconde a ação da linha ou do
+   card até o mouse passar por cima. Em tela de TOQUE não existe "passar por
+   cima": a ação simplesmente nunca aparecia, e em 43 lugares do Office ela
+   era inalcançável no celular - abrir a LP, copiar o link, apagar a conversa.
+
+   Duas correções, sem tocar em nenhum componente:
+     · ponteiro sem hover (dedo)  → a ação nasce visível
+     · foco pelo teclado na linha → a ação aparece (quem navega por Tab
+       também não tem "hover", e um botão invisível não é alcançável)
+
+   `!important` porque o `opacity-0` vem de utilitário e ganharia por ordem.
+   ─────────────────────────────────────────────── */
+@media (hover: none) {
+  .opacity-0.group-hover\:opacity-100 {
+    opacity: 1 !important;
+  }
+}
+.group:focus-within .opacity-0.group-hover\:opacity-100 {
+  opacity: 1;
+}

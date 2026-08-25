@@ -111,7 +111,119 @@
                     </span>
                 </div>
 
-                <div class="overflow-x-auto">
+                <!-- Celular: cartao por empreendimento. Sete colunas densas nao
+                     cabem em 375px, e essa e a tela que a diretoria abre no celular. -->
+                <div class="md:hidden">
+                    <div v-if="store.isLoading" class="px-4 py-10 text-center text-ink-muted text-sm">
+                        <i class="fas fa-circle-notch fa-spin mr-2"></i> Carregando...
+                    </div>
+                    <div v-else-if="!sortedItems.length" class="px-4 py-10">
+                        <EmptyState icon="fas fa-inbox"
+                            :title="can('configure') ? 'Nenhum empreendimento no mês' : 'Nenhum empreendimento liberado'"
+                            :description="can('configure') ? 'Ajuste o mês de referência/filtros. Marque os departamentos em Departamentos, senão o gasto aparece zerado.' : 'A diretoria vê apenas empreendimentos liberados.'" />
+                    </div>
+                    <ul v-else class="divide-y divide-line">
+                        <li v-for="item in sortedItems" :key="`m-${item.enterpriseKey ?? item.erpId ?? item.companyId}`"
+                            class="p-3 flex flex-col gap-2.5">
+
+                            <div class="flex items-start gap-3">
+                                <div class="h-9 w-9 rounded-lg bg-data-pos/10 border border-data-pos/20 grid place-items-center text-data-pos shrink-0">
+                                    <i class="fas fa-building text-xs"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-sm font-semibold text-ink break-words">{{ item.enterpriseName || '—' }}</div>
+                                    <div class="text-micro text-ink-subtle font-mono break-words">
+                                        Empresa {{ item.companyId || item.displayId || '—' }}
+                                        <span v-if="item.header?.costCenterIds?.length">· CC {{ item.header.costCenterIds.join(', ') }}</span>
+                                    </div>
+                                </div>
+                                <button v-if="can('configure')" @click="openEnterpriseSettings(item)"
+                                    class="h-8 w-8 shrink-0 grid place-items-center rounded-lg text-ink-subtle hover:text-accent"
+                                    title="Configurar / liberar empreendimento">
+                                    <i class="fas fa-gear text-xs"></i>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <Badge v-if="can('configure')" :variant="item.released ? 'success' : 'warning'" size="sm">
+                                    <i class="fas" :class="item.released ? 'fa-circle-check' : 'fa-pen-ruler'"></i>
+                                    {{ item.released ? 'Liberado' : 'Rascunho' }}
+                                </Badge>
+                                <Badge v-if="statusInfo(item)" :variant="statusInfo(item).variant" size="sm">
+                                    <i class="fas" :class="statusInfo(item).icon"></i>
+                                    {{ statusInfo(item).label }}
+                                </Badge>
+                            </div>
+
+                            <!-- Gasto contra orcamento: a leitura principal, com a barra -->
+                            <div class="rounded-lg bg-surface-sunken/40 px-2.5 py-2">
+                                <div class="flex items-baseline justify-between gap-2">
+                                    <span class="metric-label">Gasto acumulado</span>
+                                    <span class="text-base font-bold text-ink font-mono tabular-nums">{{ fmtBRL(item.header?.spentAccumulated) }}</span>
+                                </div>
+                                <div class="h-1.5 rounded-full bg-surface-sunken overflow-hidden mt-1.5">
+                                    <div class="h-full rounded-full" :class="pctBarClass(item.header?.pctInvested)"
+                                        :style="{ width: Math.min(100, Number(item.header?.pctInvested || 0) * 100) + '%' }"></div>
+                                </div>
+                                <div class="text-micro text-ink-subtle mt-0.5">
+                                    {{ fmtPct(item.header?.pctInvested) }} de {{ fmtBRL(item.header?.budgetTotal) }}
+                                </div>
+                                <div v-if="Number(item.header?.lojaExcedenteAno || 0) > 0" class="text-micro text-data-warn mt-0.5">
+                                    inclui {{ fmtBRL(item.header.lojaExcedenteAno) }} de excedente da loja
+                                </div>
+                            </div>
+
+                            <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                                <div class="min-w-0">
+                                    <dt class="metric-label">Saldo</dt>
+                                    <dd class="text-sm font-bold font-mono tabular-nums" :class="moneyClass(item.header?.remainingBudgetTotal)">
+                                        {{ fmtBRL(item.header?.remainingBudgetTotal) }}
+                                    </dd>
+                                </div>
+                                <div class="min-w-0">
+                                    <dt class="metric-label">Orçamento / unid</dt>
+                                    <dd class="text-xs text-ink-muted font-mono tabular-nums">{{ fmtBRL(item.header?.plannedCostPerUnit) }}</dd>
+                                </div>
+                                <div class="min-w-0">
+                                    <dt class="metric-label">A comercializar</dt>
+                                    <dd class="text-sm font-bold text-ink font-mono tabular-nums">
+                                        {{ Number(item.header?.futureUnits || 0) }}
+                                        <span class="text-micro font-normal text-ink-subtle">unid.</span>
+                                    </dd>
+                                    <dd class="mt-0.5">
+                                        <Badge :variant="futureSourceInfo(item).variant" size="sm">
+                                            <i class="fas" :class="futureSourceInfo(item).icon"></i> {{ futureSourceInfo(item).label }}
+                                        </Badge>
+                                    </dd>
+                                </div>
+                                <div class="min-w-0">
+                                    <dt class="metric-label">Recomendado / unid</dt>
+                                    <dd class="text-sm font-semibold font-mono tabular-nums" :class="moneyClass(item.header?.recommendedPerFutureUnit)">
+                                        {{ fmtBRL(item.header?.recommendedPerFutureUnit) }}
+                                    </dd>
+                                    <dd class="text-micro text-ink-subtle font-mono">VGV fut. {{ fmtCompact(item.header?.futureRevenue) }}</dd>
+                                </div>
+                            </dl>
+
+                            <div class="grid gap-1.5" :class="can('configure') ? 'grid-cols-2' : 'grid-cols-1'">
+                                <Button v-if="can('configure')" size="sm" class="!h-10"
+                                    :variant="item.released ? 'ghost' : 'primary'"
+                                    :icon="item.released ? 'fas fa-rotate-left' : 'fas fa-circle-check'"
+                                    :loading="adminStore.releasingId === stageKey(item)"
+                                    :disabled="stageKey(item) == null"
+                                    @click="quickToggleRelease(item)">
+                                    {{ item.released ? 'Rascunho' : 'Liberar' }}
+                                </Button>
+                                <Button variant="secondary" size="sm" class="!h-10" icon="fas fa-file-invoice-dollar"
+                                    :disabled="reportKey(item) == null" @click="openReport(item)">
+                                    Relatório
+                                </Button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="hidden md:block overflow-x-auto">
                     <table class="min-w-full">
                         <thead class="bg-surface-sunken/60 border-b border-line">
                             <tr>
