@@ -40,6 +40,8 @@ const router = useRouter();
 const leads = toRef(store, 'leads');
 const periodo = toRef(store, 'periodo');
 const filas = toRef(store, 'filas');
+const filasSemVinculo = toRef(store, 'filasSemVinculo');
+const filaEmpreendimentos = toRef(store, 'filaEmpreendimentos');
 const error = toRef(store, 'error');
 const filtros = toRef(store, 'filtros');
 const kpiSituacoes = toRef(store, 'kpiSituacoes');
@@ -329,9 +331,10 @@ onUnmounted(() => {
             ]"
             :tips="[
               'As filas de atendimento ficam no botão ao lado de Exportar.',
+              'Nas Filas, escolha qual fila atende cada empreendimento: é ela que recebe o lead que volta com interesse novo. Empreendimento sem fila aparece em destaque no topo da gaveta.',
               'Selecione vários empreendimentos na tabela para abri-los juntos.',
             ]" />
-          <Filas :filas="filas" />
+          <Filas :filas="filas" :sem-vinculo="filasSemVinculo" :empreendimentos="filaEmpreendimentos" />
         </template>
       </PageHeader>
 

@@ -32,6 +32,12 @@ export const useLeadsStore = defineStore('leads', () => {
     const count = ref(0)
     const periodo = ref({ data_inicio: null, data_fim: null })
     const filas = ref([])
+    // Empreendimentos sem fila vinculada. Não é detalhe de tela: sem fila o
+    // retorno automático de lead não age, e o CV represaria o lead em silêncio.
+    const filasSemVinculo = ref([])
+    // Todos os empreendimentos com a fila atual. É a lista de edição do vínculo:
+    // sem ela só daria para vincular o que ainda não tem fila.
+    const filaEmpreendimentos = ref([])
     const error = ref(null)
     const carregamento = useCarregamentoStore();
 
@@ -282,10 +288,35 @@ export const useLeadsStore = defineStore('leads', () => {
             }
             const data = await resp.json();
             if (!resp.ok) throw new Error(data?.error || 'Erro ao carregar filas');
-            filas.value = data.filas || data?.results || data || [];
+            filas.value = data.filas || data?.results?.filas || data?.results || data || [];
+            filasSemVinculo.value = data.sem_fila || data?.results?.sem_fila || [];
+            filaEmpreendimentos.value = data.empreendimentos || data?.results?.empreendimentos || [];
         } catch (e) {
             error.value = e.message;
         }
+    }
+
+    // Ressincroniza as filas com o CV e recalcula os vínculos automáticos.
+    async function sincronizarFilas() {
+        const resp = await fetch(`${API_URL}/marketing/lead-queues/refresh`, {
+            method: 'POST', headers: authHeaders(),
+        });
+        const data = await resp.json();
+        if (!resp.ok || data?.ok === false) throw new Error(data?.error || 'Erro ao sincronizar filas');
+        await fetchFilas();
+        return data;
+    }
+
+    // Escolha manual de fila para um empreendimento. `idfila = null` desfaz.
+    async function vincularFila(idempreendimento, idfila) {
+        const resp = await fetch(`${API_URL}/marketing/lead-queues/binding/${idempreendimento}`, {
+            method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idfila }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || data?.ok === false) throw new Error(data?.error || 'Erro ao vincular fila');
+        await fetchFilas();
+        return data;
     }
 
     // ---------- KPIs dinâmicos por situação ----------
@@ -342,6 +373,7 @@ export const useLeadsStore = defineStore('leads', () => {
         // getters
         kpiPorSituacao, kpiSituacoes, situationsList, leadsByEnterprise,
         // actions
-        fetchLeads, fetchLeadById, fetchRecentLeads, fetchFilas, applyDefaultSituacoes, applyDefaultOrigens,
+        fetchLeads, fetchLeadById, fetchRecentLeads, fetchFilas, sincronizarFilas, vincularFila,
+        filasSemVinculo, filaEmpreendimentos, applyDefaultSituacoes, applyDefaultOrigens,
     }
 })
