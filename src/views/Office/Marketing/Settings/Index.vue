@@ -25,8 +25,14 @@ const draft = ref({
     dry_run: true,
     retry_max_attempts: 6,
     form_rate_limit_per_min: 10,
+    lead_return_auto: true,
+    lead_return_ordem_blindada: 4,
     alert_recipient_user_ids: [],
 });
+
+// Situações de lead do CV, para a régua ser escolhida por etapa e não por um
+// número solto. Vem do próprio CV, então acompanha situação nova que criarem lá.
+const situacoesCv = ref([]);
 
 function resetDraft() {
     const c = store.config || {};
@@ -34,6 +40,8 @@ function resetDraft() {
         dry_run: !!c.dry_run,
         retry_max_attempts: c.retry_max_attempts ?? 6,
         form_rate_limit_per_min: c.form_rate_limit_per_min ?? 10,
+        lead_return_auto: c.lead_return_auto !== false,
+        lead_return_ordem_blindada: c.lead_return_ordem_blindada ?? 4,
         alert_recipient_user_ids: Array.isArray(c.alert_recipient_user_ids) ? [...c.alert_recipient_user_ids] : [],
     };
 }
@@ -43,6 +51,7 @@ onMounted(async () => {
     resetDraft();
     // Lista de usuários pro seletor de destinatários (não bloqueia a tela).
     authStore.getAllUsers().catch(() => {});
+    store.fetchSituacoesCv().then(l => { situacoesCv.value = l; }).catch(() => {});
 });
 
 // ── Destinatários dos alertas ────────────────────────────────────────────────
@@ -82,6 +91,8 @@ async function save() {
         dry_run: draft.value.dry_run,
         retry_max_attempts: Number(draft.value.retry_max_attempts) || 6,
         form_rate_limit_per_min: Number(draft.value.form_rate_limit_per_min) || 10,
+        lead_return_auto: draft.value.lead_return_auto,
+        lead_return_ordem_blindada: Number(draft.value.lead_return_ordem_blindada) ?? 4,
         alert_recipient_user_ids: draft.value.alert_recipient_user_ids,
     };
     const ok = await store.updateConfig(patch);
@@ -141,6 +152,42 @@ async function save() {
             <i class="fas fa-triangle-exclamation mr-1"></i>
             <strong>Atenção:</strong> entrega real ligada. Próximos leads vão pro CV de verdade.
           </p>
+        </Surface>
+
+        <Surface variant="raised" padding="md">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-ink mb-1">Retorno de lead com interesse novo</h3>
+              <p class="text-xs text-ink-muted">
+                Quando alguém que já é lead no CV converte num empreendimento que ainda não era
+                interesse dela, o lead perde o corretor atual, volta para a etapa inicial e entra
+                na fila daquele empreendimento. A fila de cada empreendimento é escolhida em
+                <strong>Marketing &gt; Leads &gt; Filas &gt; Vínculos</strong>; sem fila escolhida,
+                nada acontece.
+              </p>
+            </div>
+            <Switch v-model="draft.lead_return_auto" size="sm" class="shrink-0" />
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-line">
+            <label class="block text-xs font-medium text-ink mb-1">Não mexer a partir de</label>
+            <p class="text-xs text-ink-muted mb-2">
+              Da etapa escolhida em diante o lead não é devolvido para fila nenhuma: quem já
+              qualificou está sendo trabalhado, e tirar da corretora nessa altura é tirar de quem
+              está fechando. A ordem das etapas vem do próprio CV.
+            </p>
+            <select v-model.number="draft.lead_return_ordem_blindada"
+              :disabled="!draft.lead_return_auto"
+              class="w-full h-9 px-3 text-sm rounded-lg bg-surface-sunken border border-line text-ink
+                     outline-none focus:border-accent focus:ring-2 focus:ring-accent-ring/20 disabled:opacity-50">
+              <option v-for="s in situacoesCv" :key="s.idsituacao" :value="s.ordem">
+                {{ s.nome }}
+              </option>
+              <option v-if="!situacoesCv.length" :value="draft.lead_return_ordem_blindada">
+                Ordem {{ draft.lead_return_ordem_blindada }} (não consegui ler as etapas do CV)
+              </option>
+            </select>
+          </div>
         </Surface>
 
         <Surface variant="raised" padding="md">

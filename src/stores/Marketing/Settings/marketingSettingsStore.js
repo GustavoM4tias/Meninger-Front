@@ -53,6 +53,15 @@ export const useMarketingSettingsStore = defineStore('marketingSettings', () => 
         }
     }
 
+    // Etapas de lead do CV (ordem + nome). A régua do retorno de lead é escolhida
+    // por etapa, e a lista tem que vir do CV para acompanhar etapa nova criada lá.
+    async function fetchSituacoesCv() {
+        const d = await apiFetch('/lead-return/workflow');
+        return (d.situacoes || [])
+            .map(s => ({ idsituacao: s.idsituacao, nome: s.nome, ordem: Number(s.ordem) }))
+            .sort((a, b) => a.ordem - b.ordem);
+    }
+
     async function updateConfig(patch) {
         saving.value = true;
         error.value = null;
@@ -86,6 +95,6 @@ export const useMarketingSettingsStore = defineStore('marketingSettings', () => 
 
     return {
         config, webhookUrl, loading, saving, testing, error, testResult,
-        fetchConfig, updateConfig, testMeta,
+        fetchConfig, updateConfig, fetchSituacoesCv, testMeta,
     };
 });
