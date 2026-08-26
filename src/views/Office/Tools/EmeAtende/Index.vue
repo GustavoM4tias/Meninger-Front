@@ -71,12 +71,22 @@ async function openConv(c) {
   try { convDetail.value = await api.getConversation(c.id) }
   catch (e) { notify(e.message, 'err') }
 }
-async function changeConvState(c, state) {
+// Encerrar pede o motivo: é ele que define se a equipe volta a procurar essa
+// pessoa e quando. Sem escolha, o servidor usa o padrão do que aconteceu.
+const encerrar = reactive({ conv: null, motivo: '' })
+function pedirEncerrar(c) {
+  encerrar.conv = c.id
+  encerrar.motivo = ''
+  if (!leadVocab.value) loadLeadMeta()
+}
+async function changeConvState(c, state, motivo = null) {
   try {
-    await api.setConversationState(c.id, state)
+    await api.setConversationState(c.id, state, motivo)
     c.state = state
     if (convDetail.value?.id === c.id) convDetail.value.state = state
-    notify(state === 'bot' ? 'Conversa devolvida pra Eme.' : 'Conversa encerrada.')
+    encerrar.conv = null
+    encerrar.motivo = ''
+    notify(state === 'bot' ? 'Conversa devolvida pra Eme.' : 'Conversa encerrada e lead registrado como perdido.')
   } catch (e) { notify(e.message, 'err') }
 }
 watch(convFilter, loadConversations)
@@ -389,6 +399,9 @@ async function loadLeadMeta() {
     leadVocab.value = v; leadPanorama.value = p
   } catch (e) { notify(e.message, 'err') }
 }
+const motivoOpts = computed(() => (leadVocab.value?.motivos_perda || [])
+  .filter(m => m.valor !== 'opt_out')
+  .map(m => ({ value: m.valor, label: m.rotulo })))
 const tempOpts = computed(() => [
   { value: '', label: 'Qualquer temperatura' },
   ...(leadVocab.value?.temperaturas || []).map(t => ({ value: t, label: t[0].toUpperCase() + t.slice(1) })),
@@ -570,9 +583,26 @@ onMounted(loadConversations)
                   </div>
                   <EmptyState v-if="!convDetail.messages?.length" size="sm" icon="fas fa-comments" title="Sem mensagens" description="Nenhuma troca registrada ainda." />
                 </div>
-                <div class="mt-3 flex items-center gap-2 flex-wrap justify-end">
+                <!-- Encerrar pede o motivo: é ele que decide se a equipe volta a
+                     procurar essa pessoa, e quando. -->
+                <div v-if="encerrar.conv === c.id"
+                  class="mt-3 rounded-lg border border-line bg-surface-sunken px-3 py-3">
+                  <p class="text-xs text-ink-muted mb-2">Por que esta conversa não vai adiante?</p>
+                  <div class="flex items-end gap-2 flex-wrap">
+                    <div class="flex-1 min-w-[200px]">
+                      <Select :model-value="encerrar.motivo" :options="motivoOpts"
+                        @change="(v) => encerrar.motivo = v" />
+                    </div>
+                    <Button variant="danger" size="sm" :disabled="!encerrar.motivo" @click="changeConvState(c, 'closed', encerrar.motivo)">Encerrar</Button>
+                    <Button variant="ghost" size="sm" @click="encerrar.conv = null">Cancelar</Button>
+                  </div>
+                  <p class="mt-2 text-[11px] text-ink-subtle">
+                    O motivo define a chance de reconversão e a data de retomada do lead.
+                  </p>
+                </div>
+                <div v-else class="mt-3 flex items-center gap-2 flex-wrap justify-end">
                   <Button v-if="c.state === 'closed'" variant="primary" size="sm" icon="fas fa-robot" @click="changeConvState(c, 'bot')">Reabrir pra Eme</Button>
-                  <Button v-if="c.state !== 'closed'" variant="ghost" size="sm" icon="fas fa-box-archive" @click="changeConvState(c, 'closed')">Encerrar</Button>
+                  <Button v-if="c.state !== 'closed'" variant="ghost" size="sm" icon="fas fa-box-archive" @click="pedirEncerrar(c)">Encerrar</Button>
                 </div>
               </template>
             </div>
