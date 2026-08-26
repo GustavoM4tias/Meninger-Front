@@ -141,7 +141,7 @@
               </div>
               <div>
                 <h2 class="font-semibold text-sm">Configurações do CV</h2>
-                <p class="text-ink-muted">Mapeamentos de série, tipo de documento e situações de workflow.</p>
+                <p class="text-ink-muted">Mapeamentos de série e tipo de documento do anexo.</p>
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -182,22 +182,6 @@
               <p class="text-ink font-mono">{{ form.cv_idtipo_documento ?? '—' }}</p>
             </div>
             <div>
-              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Sucesso</p>
-              <p class="text-ink font-mono">{{ form.situacao_sucesso_id ?? '—' }}</p>
-            </div>
-            <div>
-              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Erro</p>
-              <p class="text-ink font-mono">{{ form.situacao_erro_id ?? '—' }}</p>
-            </div>
-            <div>
-              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Pago</p>
-              <p class="text-ink font-mono">{{ form.situacao_pago_id ?? '—' }}</p>
-            </div>
-            <div>
-              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Situação — Baixado</p>
-              <p class="text-ink font-mono">{{ form.situacao_baixado_id ?? '—' }}</p>
-            </div>
-            <div>
               <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Tolerância (dias úteis)</p>
               <p class="text-ink font-mono">{{ form.tolerancia_dias_uteis ?? '—' }}</p>
             </div>
@@ -210,10 +194,6 @@
               <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Revalidar baixa (dias)</p>
               <p class="text-ink font-mono">{{ form.revalidacao_baixado_dias ?? '—' }}</p>
               <p class="text-ink-subtle mt-0.5">Boleto baixado segue sendo reconsultado por este prazo. 0 desliga.</p>
-            </div>
-            <div>
-              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Safety lote Sienge (min)</p>
-              <p class="text-ink font-mono">{{ form.delay_situacao_sucesso_min ?? '—' }}</p>
             </div>
             <div>
               <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Máx. dias vencimento (geral)</p>
@@ -268,30 +248,6 @@
               placeholder="Ex: 14"
               hint="Obtido nos tipos de arquivo do CV." />
             <Input
-              v-model.number="form.situacao_sucesso_id"
-              type="number"
-              label="ID Situação CV — Sucesso"
-              placeholder="ID da situação"
-              hint="Etapa de Sucesso CV." />
-            <Input
-              v-model.number="form.situacao_erro_id"
-              type="number"
-              label="ID Situação CV — Erro"
-              placeholder="ID da situação"
-              hint="Etapa de Erro CV." />
-            <Input
-              v-model.number="form.situacao_pago_id"
-              type="number"
-              label="ID Situação CV — Pago"
-              placeholder="Ex: 28"
-              hint="Quando o boleto é detectado como LIQUIDADO no Ecobrança." />
-            <Input
-              v-model.number="form.situacao_baixado_id"
-              type="number"
-              label="ID Situação CV — Baixado"
-              placeholder="Ex: 29"
-              hint="Quando o boleto vencido é baixado por devolução." />
-            <Input
               v-model.number="form.tolerancia_dias_uteis"
               type="number"
               label="Tolerância (dias úteis)"
@@ -334,12 +290,6 @@
               label="Revalidar baixa (dias)"
               placeholder="Ex: 5"
               hint="O banco já devolveu &quot;baixado por devolução&quot; em boleto que dias depois constava pago. Por este prazo a rodada diária reconsulta o boleto baixado (só leitura) e promove para pago se o pagamento aparecer. 0 desliga." />
-            <Input
-              v-model.number="form.delay_situacao_sucesso_min"
-              type="number"
-              label="Safety lote Sienge (min)"
-              placeholder="Ex: 2"
-              hint="Se faltam menos que isto pro próximo lote (5/5min), pula pro seguinte. Default 2 → delay efetivo 3-7 min." />
             <Input
               v-model.number="form.max_dias_vencimento"
               type="number"
@@ -994,14 +944,9 @@ const form = ref({
   eco_senha: '',
   idserie_ra: [21],
   cv_idtipo_documento: null,
-  situacao_sucesso_id: null,
-  situacao_erro_id: null,
-  situacao_pago_id: 28,
-  situacao_baixado_id: 29,
   tolerancia_dias_uteis: 1,
   revalidacao_baixado_dias: 5,
   cv_situacoes_reserva_morta: [4],
-  delay_situacao_sucesso_min: 2,
   max_dias_vencimento: 10,
   valor_maximo: 300000,
   janela_ativa: true,
@@ -1033,14 +978,9 @@ function snapshotCvFields() {
   return {
     idserie_ra: Array.isArray(form.value.idserie_ra) ? [...form.value.idserie_ra] : [],
     cv_idtipo_documento: form.value.cv_idtipo_documento,
-    situacao_sucesso_id: form.value.situacao_sucesso_id,
-    situacao_erro_id: form.value.situacao_erro_id,
-    situacao_pago_id: form.value.situacao_pago_id,
-    situacao_baixado_id: form.value.situacao_baixado_id,
     tolerancia_dias_uteis: form.value.tolerancia_dias_uteis,
     revalidacao_baixado_dias: form.value.revalidacao_baixado_dias,
     cv_situacoes_reserva_morta: [...(form.value.cv_situacoes_reserva_morta || [])],
-    delay_situacao_sucesso_min: form.value.delay_situacao_sucesso_min,
     max_dias_vencimento: form.value.max_dias_vencimento,
     valor_maximo: form.value.valor_maximo,
   };
@@ -1411,14 +1351,9 @@ onMounted(async () => {
       form.value.idserie_ra = Array.isArray(rawSerie) ? rawSerie
         : rawSerie ? [Number(rawSerie)] : [21];
       form.value.cv_idtipo_documento = store.settings.cv_idtipo_documento || null;
-      form.value.situacao_sucesso_id = store.settings.situacao_sucesso_id || null;
-      form.value.situacao_erro_id = store.settings.situacao_erro_id || null;
-      form.value.situacao_pago_id    = store.settings.situacao_pago_id ?? 28;
-      form.value.situacao_baixado_id = store.settings.situacao_baixado_id ?? 29;
       form.value.tolerancia_dias_uteis = store.settings.tolerancia_dias_uteis ?? 1;
       form.value.revalidacao_baixado_dias = store.settings.revalidacao_baixado_dias ?? 5;
       form.value.cv_situacoes_reserva_morta = [...(store.settings.cv_situacoes_reserva_morta || [4])];
-      form.value.delay_situacao_sucesso_min = store.settings.delay_situacao_sucesso_min ?? 2;
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
       form.value.janela_ativa = store.settings.janela_ativa ?? true;
