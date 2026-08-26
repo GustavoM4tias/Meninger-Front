@@ -180,6 +180,10 @@ export const navRegistry = [
                     // /financeiro/boleto-caixa e /financeiro/link-cartao seguem
                     // redirecionando para ela, e as alçadas já migraram pelo
                     // lib/ensurePermissionRouteRenames.js. A ROTA não mudou aqui.
+                    // A conciliação (recebimento AVC do Sienge x ato cobrado)
+                    // é a aba Conciliação DESTA tela, não um item próprio:
+                    // cobrar a entrada e conferir se ela entrou é a mesma
+                    // conversa. /financeiro/recebimentos-ato virou redirect.
                     { route: '/financeiro/cobranca/ato', name: 'Ato', icon: 'fas fa-file-invoice-dollar' },
                 ],
             },

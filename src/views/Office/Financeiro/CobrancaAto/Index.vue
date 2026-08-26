@@ -27,19 +27,26 @@
           </div>
           <PageHelp
             storage-key="cobranca-ato"
-            title="Como usar o Boleto Caixa"
-            intro="Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto do ato no Ecobrança, anexa na reserva e devolve a situação. Esta tela mostra o que já foi emitido e deixa ajustar como a automação se comporta."
+            title="Como usar - Ato"
+            intro="Esta tela cuida da entrada (o ato) de ponta a ponta: cobra, acompanha e confere. Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto Caixa ou o link de cartão, anexa na reserva e devolve a situação. Depois, a aba Conciliação mostra se aquilo que o cliente pagou já foi lançado no Sienge."
             :steps="[
-              { title: 'Acompanhe as emissões', text: 'A aba Histórico lista os boletos do período. Os cartões do topo contam quantos foram pagos, quantos ainda esperam e quantos falharam.' },
-              { title: 'Recorte pelo cartão', text: 'Clique em Com erro para deixar na tabela só o que falhou, ou em Pagos para o contrário. Clicar de novo desfaz.' },
-              { title: 'Abra um boleto', text: 'Clique na linha para ver o resumo, a linha do tempo da emissão e o PDF. Dali dá para reprocessar, reenviar ao cliente ou marcar como baixado.' },
-              { title: 'Ajuste a automação', text: 'A aba Configurações guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o percentual de comissão por empreendimento e o envio ao cliente.' },
+              { title: 'Histórico: acompanhe as cobranças', text: 'Lista o que foi emitido no período. Os cartões do topo contam quantos foram pagos, quantos ainda esperam e quantos falharam. Clique em um cartão para recortar a tabela (clicar de novo desfaz) e na linha para abrir o detalhe, com a linha do tempo e o PDF.' },
+              { title: 'Conciliação: confira o que entrou', text: 'É o relatório “Contas Recebidas” do Sienge no documento AVC, lido ao vivo da API, com filtro de período (data do recebimento), empresa e empreendimento. Serve para bater com o ERP sem abrir o ERP.' },
+              { title: 'Leia os quatro grupos', text: 'O confronto com o ato já vem ligado e separa tudo em: conciliados, o que falta lançar no Sienge, o que foi abatido sem ato correspondente, e os que bateram mas com valor diferente. Passe o mouse no selo da coluna Ato, ou abra a linha, para ver de quanto é a diferença.' },
+              { title: 'Ataque a lista “Falta lançar”', text: 'É o ato que o cliente já pagou e que ninguém lançou no Sienge ainda - a fila do administrativo. Ela traz cliente, unidade, valor e reserva, e vai junto no CSV do botão Exportar.' },
+              { title: 'Configurações: ajuste a automação', text: 'Guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o percentual de comissão por empreendimento e o envio ao cliente.' },
             ]"
             :tips="[
               'A automação pode ser pausada sem perder nada: os webhooks que chegarem ficam registrados e voltam a ser processados quando ela for religada.',
               'A comissão embutida multiplica o valor da série antes de emitir. Série de R$ 10.000 com 20% vira um boleto de R$ 2.000.',
               'Boleto fora da janela de horário não falha: fica agendado, e a tabela mostra a hora em que vai sair.',
               'O selo com um número ao lado da reserva quer dizer que já houve mais de um boleto para ela.',
+              'A Conciliação lê a API do Sienge AO VIVO, não o backup diário: um recebimento lançado há cinco minutos já aparece. O rodapé da aba diz a fonte e a hora exata da consulta.',
+              'Por ser ao vivo, a consulta leva alguns segundos - mais ainda sem filtrar a empresa, porque aí vem o grupo inteiro.',
+              'O confronto casa os dois lados pelo NOME do cliente, dentro do empreendimento. Onde aparecer o triângulo de aviso, havia mais de um ato com o mesmo nome - vale conferir na mão.',
+              'O campo “Olhar p/ trás” (90 dias por padrão) evita acusar de pendente um ato que já foi lançado antes do período consultado. Se o administrativo estiver muito atrasado, aumente esse número.',
+              'Ato de empreendimento ainda não pareado com o ERP fica de fora do confronto, e a aba avisa quantos foram. O pareamento é feito em Configurações > Empresas.',
+              'Em AVC as colunas acréscimo, seguro, taxa adm e desconto são sempre zero, então o líquido é igual ao valor da baixa. Elas ficam na aba Acessórios do detalhe.',
             ]"
           />
         </template>
@@ -717,6 +724,12 @@
       </div>
 
       <!-- ── TAB: Histórico ───────────────────────────────────────────────────── -->
+      <!-- ── TAB: Conciliação ─────────────────────────────────────────────────
+           Confronto do que foi COBRADO aqui com o que foi LANÇADO no Sienge
+           (documento AVC). Fica nesta tela porque é a mesma conversa do
+           Histórico, só do outro lado do balcão. -->
+      <Conciliacao v-if="activeTab === 'conciliacao'" />
+
       <div v-if="activeTab === 'history'" class="space-y-4">
 
         <!-- Filtros (componente dedicado, padrão DashboardFilters) -->
@@ -874,6 +887,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
 import { useCan } from '@/composables/useCan';
 import UseredeSettings from './components/UseredeSettings.vue';
@@ -891,6 +905,7 @@ import Modal from '@/components/UI/Modal.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import StatRow from '@/components/UI/StatRow.vue';
 import DataTable from '@/components/UI/DataTable.vue';
+import Conciliacao from './components/Conciliacao.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import Spinner from '@/components/UI/Spinner.vue';
@@ -908,18 +923,33 @@ const store = useBoletoStore();
 const can = useCan('/financeiro/cobranca/ato');
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-// Sempre abre no Histórico. A aba "Configurações" só aparece para quem tem a
-// ação `configure` — o backend cobra a mesma regra nas rotas de config.
-const activeTab = ref('history');
+// Abre no Histórico. A aba "Configurações" só aparece para quem tem a ação
+// `configure` — o backend cobra a mesma regra nas rotas de config. A aba
+// "Conciliação" é leitura, então segue o `view` da própria tela.
+const route = useRoute();
+const router = useRouter();
+
+const ABAS_VALIDAS = ['history', 'conciliacao', 'settings'];
+const activeTab = ref(ABAS_VALIDAS.includes(route.query.tab) ? route.query.tab : 'history');
 
 const tabOptions = computed(() => {
   const base = [
     { value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' },
+    { value: 'conciliacao', label: 'Conciliação', icon: 'fas fa-code-compare' },
   ];
   if (can('configure')) {
     base.push({ value: 'settings', label: 'Configurações', icon: 'fas fa-gear' });
   }
   return base;
+});
+
+/* A aba vive na URL (?tab=): é o que faz o link antigo
+   /financeiro/recebimentos-ato cair direto na Conciliação, e o que deixa
+   alguém mandar "olha a conciliação" com um link em vez de instruções.
+   `replace` para não encher o botão voltar a cada clique de aba. */
+watch(activeTab, (v) => {
+  if (route.query.tab === v) return;
+  router.replace({ query: { ...route.query, tab: v } });
 });
 
 // ── Modal de detalhes (Resumo / Timeline / PDF) ──────────────────────────────

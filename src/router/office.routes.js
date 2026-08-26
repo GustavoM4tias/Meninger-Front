@@ -395,6 +395,13 @@ export default [
                     // preservam links antigos (notificações, favoritos, atalhos).
                     { path: 'gastos-departamento', redirect: to => ({ path: '/marketing/viabilidade', query: to.query }) },
                     { path: 'gastos-departamento/:key', redirect: to => ({ path: `/marketing/viabilidade/${to.params.key}`, query: to.query }) },
+                    // "Recebimentos do Ato" virou a aba Conciliação da tela Ato
+                    // (2026-08-26). O redirect mantém de pé quem já tinha o link
+                    // salvo enquanto a tela existiu separada.
+                    {
+                        path: 'recebimentos-ato',
+                        redirect: to => ({ path: '/financeiro/cobranca/ato', query: { ...to.query, tab: 'conciliacao' } }),
+                    },
                     {
                         path: 'consulta-cef',
                         name: 'Consulta de nº CEF',
