@@ -74,8 +74,12 @@ const TONES = {
 </script>
 
 <template>
+  <!-- z acima do Modal comum (9999) e do overlay do MultiSelector (10000):
+       confirmação quase sempre nasce de dentro de outro modal, e empatada no z
+       ela ficava ATRÁS dele - invisível, com a pessoa clicando no modal de
+       baixo achando que o botão não respondia. -->
   <Modal :open="open" size="sm" hide-close :close-on-backdrop="!loading"
-    @close="cancelar">
+    :z-index="10010" @close="cancelar">
     <div class="flex items-start gap-3">
       <span class="h-10 w-10 rounded-xl grid place-items-center shrink-0"
         :class="(TONES[tone] || TONES.danger).box">

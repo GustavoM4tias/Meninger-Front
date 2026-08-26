@@ -428,11 +428,12 @@ function closeResendConfirm() {
 }
 
 async function doResend() {
-  if (!live.value || resendConfirm.value.sending) return;
+  const alvo = live.value;   // mesmo motivo do handleRetry
+  if (!alvo || resendConfirm.value.sending) return;
   resendConfirm.value.sending = true;
   actionState.value.resending = true;
   try {
-    const res = await store.resendHistoryItem(live.value.id, live.value);
+    const res = await store.resendHistoryItem(alvo.id, alvo);
     if (res.ok) {
       const e = res.data?.email; const w = res.data?.whatsapp;
       const msgE = e?.ok ? `✓ E-mail enviado pra ${e.to}` : `✗ E-mail: ${e?.error || 'não enviado'}`;
@@ -441,7 +442,7 @@ async function doResend() {
       resendConfirm.value.open = false;
       await Promise.all([
         store.fetchHistory({ silent: true }),
-        store.fetchTimeline(live.value.id, { silent: true }, live.value.idreserva),
+        store.fetchTimeline(alvo.id, { silent: true }, alvo.idreserva),
       ]);
       emit('changed');
     } else {
@@ -464,15 +465,24 @@ function formatPhoneBr(e164) {
 }
 
 async function handleRetry() {
-  if (!live.value) return;
+  // Congela o alvo ANTES de perguntar.
+  //
+  // `live` sai de props.item, e o await da confirmação é uma janela larga: a
+  // lista recarrega, o modal fecha, e `live.value` vira null no meio do
+  // caminho. Era o "Cannot read properties of null (reading 'id')" que a
+  // reemissão jogava no console - e acontecia sempre, porque o diálogo
+  // aparecia ATRÁS deste modal e a pessoa clicava aqui tentando achá-lo,
+  // fechando o modal e zerando o item.
+  const alvo = live.value;
+  if (!alvo) return;
   // Reemissão manual pelo modal: emite e ENVIA ao cliente, sem mexer na etapa do
   // CV.
   //   • pending   → se a condição do RPV mudou, baixa o boleto atual e emite o
   //                 atualizado; se nada mudou, backend não faz nada.
   //   • cancelled → boleto anterior já baixado; só emite um novo.
   //   • error     → reprocessamento normal (fluxo completo do webhook).
-  const isPending = live.value.status === 'success' && live.value.payment_status === 'pending';
-  const isCancelled = live.value.status === 'success' && live.value.payment_status === 'cancelled';
+  const isPending = alvo.status === 'success' && alvo.payment_status === 'pending';
+  const isCancelled = alvo.status === 'success' && alvo.payment_status === 'cancelled';
   const isRegenerate = isPending || isCancelled;
 
   let pergunta;
@@ -492,7 +502,7 @@ async function handleRetry() {
     };
   } else {
     pergunta = {
-      title: `Re-disparar a emissao do boleto da reserva ${live.value.idreserva}?`,
+      title: `Re-disparar a emissao do boleto da reserva ${alvo.idreserva}?`,
       consequence: 'Refaz o fluxo completo de emissao e envia o boleto ao cliente.',
       confirmLabel: 'Re-disparar',
     };
@@ -502,8 +512,8 @@ async function handleRetry() {
   actionState.value.retrying = true;
   try {
     const ok = isRegenerate
-      ? await store.regenerateHistoryItem(live.value.id, live.value)
-      : await store.retryHistoryItem(live.value.id, live.value);
+      ? await store.regenerateHistoryItem(alvo.id, alvo)
+      : await store.retryHistoryItem(alvo.id, alvo);
     if (ok) {
       actionMsg.value = {
         variant: 'success',
@@ -528,22 +538,23 @@ async function handleRetry() {
 // automática no Ecobrança falha e o admin já baixou o título no portal. Depois
 // disso, "Gerar novo boleto" emite a nova via sem tentar a baixa automática.
 async function handleMarkCancelled() {
-  if (!live.value) return;
+  const alvo = live.value;   // mesmo motivo do handleRetry
+  if (!alvo) return;
   if (!await pedirConfirmacao({
     title: 'Marcar como baixado no sistema?',
-    consequence: `Isto NAO baixa o boleto no Ecobranca. Se o titulo ${live.value.nosso_numero || ''} ainda estiver ativo la, o cliente fica com dois boletos em aberto.`,
+    consequence: `Isto NAO baixa o boleto no Ecobranca. Se o titulo ${alvo.nosso_numero || ''} ainda estiver ativo la, o cliente fica com dois boletos em aberto.`,
     hint: 'So confirme se voce ja baixou o titulo direto no portal do Ecobranca.',
     confirmLabel: 'Ja baixei, marcar como cancelado',
   })) return;
   actionState.value.marking = true;
   actionMsg.value = null;
   try {
-    const res = await store.markCancelled(live.value.id, live.value);
+    const res = await store.markCancelled(alvo.id, alvo);
     if (res.ok) {
       actionMsg.value = { variant: 'success', text: 'Marcado como baixado. Agora use "Gerar novo boleto" para emitir a nova via.' };
       await Promise.all([
         store.fetchHistory({ silent: true }),
-        store.fetchTimeline(live.value.id, { silent: true }, live.value.idreserva),
+        store.fetchTimeline(alvo.id, { silent: true }, alvo.idreserva),
       ]);
       emit('changed');
     } else {
@@ -555,7 +566,8 @@ async function handleMarkCancelled() {
 }
 
 async function handleCheckPayment() {
-  if (!live.value) return;
+  const alvo = live.value;   // mesmo motivo do handleRetry
+  if (!alvo) return;
   if (!await pedirConfirmacao({
     title: 'Verificar o pagamento agora, sem esperar as 8h?',
     consequence: 'Consulta o Ecobranca na hora e atualiza a situacao deste boleto. Nada e enviado ao cliente.',
@@ -564,7 +576,7 @@ async function handleCheckPayment() {
   })) return;
   actionState.value.checking = true;
   try {
-    const r = await store.triggerPaymentCheck(live.value.id, live.value);
+    const r = await store.triggerPaymentCheck(alvo.id, alvo);
     if (r.ok) {
       actionMsg.value = { variant: 'success', text: 'Verificação disparada — acompanhando atualizações…' };
       // Backend retornou 202 (lock adquirido) e está processando em background.
