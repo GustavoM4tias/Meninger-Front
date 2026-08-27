@@ -12,7 +12,8 @@
 // A PRÉVIA TAMBÉM É CARTÃO. Confirmar reunião lendo "de 2026-08-26T15:00:00 a
 // 2026-08-26T15:30:00" numa frase é onde se confirma o horário errado.
 
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useToast } from 'vue-toastification';
 import ChatAtalhos from './ChatAtalhos.vue';
 
 const props = defineProps({ action: { type: Object, required: true } });
@@ -54,8 +55,40 @@ const duracao = computed(() => {
     return min >= 60 ? `${(min / 60).toFixed(min % 60 ? 1 : 0)}h` : `${min} min`;
 });
 
+const toast = useToast();
+const copiado = ref(false);
+
 function entrar() {
     if (props.action.linkEntrada) window.open(props.action.linkEntrada, '_blank', 'noopener');
+}
+
+/**
+ * Copia o link sem abrir a reunião.
+ *
+ * O caso real: a pessoa quer MANDAR o link para alguém, não entrar. Sem isto o
+ * único jeito era abrir o Teams e voltar para pegar a URL - ou selecionar à mão
+ * 300 caracteres no celular, que é onde ninguém acerta.
+ */
+async function copiar() {
+    const url = props.action.linkEntrada;
+    if (!url) return;
+    try {
+        await navigator.clipboard.writeText(url);
+    } catch {
+        // Sem permissão de área de transferência (http, navegador antigo): o
+        // caminho de sempre, que funciona em qualquer lugar.
+        const campo = document.createElement('textarea');
+        campo.value = url;
+        campo.setAttribute('readonly', '');
+        campo.style.position = 'fixed';
+        campo.style.opacity = '0';
+        document.body.appendChild(campo);
+        campo.select();
+        try { document.execCommand('copy'); } finally { document.body.removeChild(campo); }
+    }
+    copiado.value = true;
+    toast.success('Link copiado.');
+    setTimeout(() => { copiado.value = false; }, 2500);
 }
 </script>
 
@@ -100,13 +133,32 @@ function entrar() {
                 </div>
             </div>
 
-            <!-- O link, como botão -->
-            <button v-if="action.linkEntrada" type="button" @click="entrar"
-                class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2
-                       text-xs font-semibold text-white transition-all duration-200 ease-out-expo
-                       hover:brightness-110 hover:-translate-y-px">
-                <i class="fas fa-video"></i> Entrar na reunião
-            </button>
+            <!-- Entrar e copiar, lado a lado: quem vai participar clica no
+                 primeiro; quem vai REPASSAR o link precisa do segundo, e antes
+                 tinha que abrir a reunião só para pegar a URL. -->
+            <div v-if="action.linkEntrada" class="mt-3 flex items-stretch gap-2">
+                <button type="button" @click="entrar"
+                    class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2
+                           text-xs font-semibold text-white transition-all duration-200 ease-out-expo
+                           hover:brightness-110 hover:-translate-y-px">
+                    <i class="fas fa-video"></i> Entrar na reunião
+                </button>
+                <button type="button" @click="copiar" title="Copiar o link"
+                    class="flex shrink-0 items-center justify-center gap-1.5 rounded-lg border px-3 py-2
+                           text-xs font-medium transition-all duration-200 ease-out-expo"
+                    :class="copiado
+                        ? 'border-data-pos/40 bg-data-pos-soft text-data-pos'
+                        : 'border-line text-ink-muted hover:border-accent/40 hover:text-accent'">
+                    <i :class="copiado ? 'fas fa-check' : 'fas fa-copy'"></i>
+                    <span class="hidden sm:inline">{{ copiado ? 'Copiado' : 'Copiar' }}</span>
+                </button>
+            </div>
+
+            <!-- O link à vista, selecionável, para quem prefere pegar na mão. -->
+            <p v-if="action.linkEntrada"
+                class="mt-1.5 select-all break-all font-mono text-[0.65rem] leading-snug text-ink-subtle">
+                {{ action.linkEntrada }}
+            </p>
 
             <p v-else-if="action.previa" class="mt-3 text-micro text-ink-subtle">
                 Responda "sim" para eu agendar. O convite sai no seu nome.
