@@ -3,38 +3,41 @@
         <PageContainer size="full">
 
             <PageHeader icon="fas fa-store"
-                subtitle="Stands modelo com valor médio e itens, e os stands reais com o custo apurado do Sienge (Despesas com Stand).">
+                subtitle="Stands modelo com valor médio e itens, e os stands reais com o custo apurado do Sienge, separado entre construção e recorrência.">
                 <template #title>
                     Stand de Vendas
                     <Favorite :router="'/marketing/stand-vendas'" :section="'Stand de Vendas'" />
                 </template>
                 <template #actions>
                     <PageHelp storage-key="marketing-sales-stand" title="Como usar o Stand de Vendas"
-                        intro="Aqui o Marketing organiza os stands: primeiro os modelos (categorias com valor médio e itens), depois os stands reais vinculados aos centros de custo do Sienge."
+                        intro="Aqui o Marketing organiza os stands: os modelos (categorias com valor médio e itens), os stands reais vinculados aos centros de custo do Sienge, e a régua que separa o custo de construção do custo recorrente."
                         :steps="[
                             { title: 'Crie os modelos', text: 'Na aba Modelos, cadastre as categorias de stand com o valor médio e a lista de itens que cada padrão possui.' },
                             { title: 'Cadastre os stands', text: 'Na aba Stands, crie cada stand real, atribua um modelo e vincule 1 ou mais centros de custo.' },
-                            { title: 'Acompanhe o custo', text: 'O gasto soma automaticamente os pagamentos do plano Despesas com Stand (2.02.07) dos centros de custo vinculados.' },
-                            { title: 'Defina o stand', text: 'Quando a construção terminar, abra o stand e clique em Definir: o valor é congelado e o gasto posterior vira manutenção.' },
+                            { title: 'Abra o stand', text: 'Clique na linha para abrir o stand em tela cheia: lançamento a lançamento, mês a mês, itens e fotos.' },
+                            { title: 'Defina o stand', text: 'Quando a construção terminar, abra o stand e clique em Definir: o valor classificado como construção é congelado.' },
                         ]"
                         :tips="[
-                            'Um centro de custo pode ser vinculado a mais de um stand, mas o normal é 1 stand por empreendimento.',
-                            'No detalhe do stand você vê o gasto por conta (aluguel, energia, manutenção...) e por mês.',
+                            'Cada um enxerga os stands dos empreendimentos que estão na sua alçada, e o acesso é por inteiro: stand com um centro de custo fora da sua alçada não aparece.',
+                            'A aba Categorias diz, por conta do Sienge, o que é construção e o que é recorrência. Ela vale para todos os stands.',
                         ]" />
-                    <Button v-if="tab === 'modelos'" variant="primary" size="sm" icon="fas fa-plus" @click="openNewModel">
+                    <Button v-if="tab === 'modelos' && canConfigure" variant="primary" size="sm" icon="fas fa-plus"
+                        @click="openNewModel">
                         Novo modelo
                     </Button>
-                    <Button v-else variant="primary" size="sm" icon="fas fa-plus" @click="openNewStand">
+                    <Button v-else-if="tab === 'categorias' && canConfigure" variant="primary" size="sm"
+                        icon="fas fa-plus" @click="openNewCategory">
+                        Nova categoria
+                    </Button>
+                    <Button v-else-if="tab === 'stands' && canManage" variant="primary" size="sm" icon="fas fa-plus"
+                        @click="openNewStand">
                         Novo stand
                     </Button>
                 </template>
             </PageHeader>
 
             <div class="mb-5">
-                <SegmentedControl v-model="tab" :options="[
-                    { value: 'stands', label: 'Stands', icon: 'fas fa-store', count: store.stands.length },
-                    { value: 'modelos', label: 'Modelos', icon: 'fas fa-shapes', count: store.models.length },
-                ]" />
+                <SegmentedControl v-model="tab" :options="tabs" />
             </div>
 
             <Surface v-if="store.error" variant="raised" padding="sm" class="mb-5 border-data-neg/30 bg-data-neg/10">
@@ -51,88 +54,64 @@
             </Surface>
 
             <!-- ══ Aba Stands ══ -->
-            <Surface v-if="tab === 'stands'" variant="raised" padding="none" class="overflow-hidden">
-                <!-- Desktop: tabela -->
-                <div class="hidden md:block overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-line text-left">
-                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted">Stand</th>
-                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted">Modelo</th>
-                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted">Centros de custo</th>
-                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted text-right">Gasto total</th>
-                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted text-right">Construção</th>
-                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted text-right">Manutenção</th>
-                                <th class="px-4 py-3 text-micro font-mono uppercase tracking-wider text-ink-muted">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(s, i) in store.stands" :key="s.id"
-                                class="border-b border-line/60 hover:bg-surface-sunken/60 cursor-pointer transition-colors animate-fade-in [animation-fill-mode:backwards]"
-                                :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
-                                @click="openDetail(s)">
-                                <td class="px-4 py-3 font-semibold text-ink">{{ s.name }}</td>
-                                <td class="px-4 py-3 text-ink-muted">{{ s.model?.name || '-' }}</td>
-                                <td class="px-4 py-3 text-ink-muted">
-                                    <span class="line-clamp-1">{{ s.cost_center_names?.join(', ') || '-' }}</span>
-                                </td>
-                                <td class="px-4 py-3 text-right font-mono tabular-nums text-ink whitespace-nowrap">{{ fmtBRL(s.spend_total) }}</td>
-                                <td class="px-4 py-3 text-right font-mono tabular-nums text-ink-muted whitespace-nowrap">
-                                    {{ s.status === 'defined' ? fmtBRL(s.construction_value) : '-' }}
-                                </td>
-                                <td class="px-4 py-3 text-right font-mono tabular-nums text-ink-muted whitespace-nowrap">
-                                    {{ s.status === 'defined' ? fmtBRL(s.maintenance_value) : '-' }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <Badge :variant="statusMeta(s.status).variant" size="sm">
-                                        <i :class="statusMeta(s.status).icon" class="mr-1 text-[10px]"></i>
-                                        {{ statusMeta(s.status).label }}
-                                    </Badge>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div v-if="tab === 'stands'" class="flex flex-col gap-4">
+                <div class="flex items-center justify-end">
+                    <SegmentedControl v-model="standView" size="sm" :options="[
+                        { value: 'tabela', label: 'Tabela', icon: 'fas fa-table-list' },
+                        { value: 'cartoes', label: 'Cartões', icon: 'fas fa-grip' },
+                    ]" />
                 </div>
 
-                <!-- Mobile: cards -->
-                <div class="md:hidden divide-y divide-line">
-                    <button v-for="(s, i) in store.stands" :key="s.id" type="button"
-                        class="w-full text-left p-4 flex flex-col gap-2 hover:bg-surface-sunken/60 transition-colors animate-slide-up [animation-fill-mode:backwards]"
-                        :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
-                        @click="openDetail(s)">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="font-semibold text-ink truncate">{{ s.name }}</span>
-                            <Badge :variant="statusMeta(s.status).variant" size="sm">
-                                <i :class="statusMeta(s.status).icon" class="mr-1 text-[10px]"></i>
-                                {{ statusMeta(s.status).label }}
-                            </Badge>
-                        </div>
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-xs text-ink-muted truncate">{{ s.model?.name || 'Sem modelo' }}</span>
-                            <span class="font-mono font-bold tabular-nums text-ink whitespace-nowrap">{{ fmtBRL(s.spend_total) }}</span>
-                        </div>
-                        <div v-if="s.status === 'defined'" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
-                            <span>Construção: <span class="font-mono tabular-nums">{{ fmtBRL(s.construction_value) }}</span></span>
-                            <span>Manutenção: <span class="font-mono tabular-nums">{{ fmtBRL(s.maintenance_value) }}</span></span>
-                        </div>
-                        <div class="text-xs text-ink-subtle truncate">
-                            <i class="fas fa-building text-[10px] mr-1"></i>{{ s.cost_center_names?.join(', ') || '-' }}
-                        </div>
-                    </button>
+                <div v-if="standView === 'cartoes'" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                    <StandCard v-for="s in store.stands" :key="s.id" :stand="s" @open="abrir" />
+                    <div v-if="!store.loading && !store.stands.length" class="sm:col-span-2 xl:col-span-3 2xl:col-span-4">
+                        <Surface variant="raised" padding="none">
+                            <EmptyState icon="fas fa-store" title="Nenhum stand cadastrado"
+                                description="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo." />
+                        </Surface>
+                    </div>
                 </div>
 
-                <EmptyState v-if="!store.loading && !store.stands.length" icon="fas fa-store"
-                    title="Nenhum stand cadastrado"
-                    description="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo." />
-                <Skeleton v-if="store.loading" variant="card" :lines="3" />
-            </Surface>
+                <DataTable v-else :columns="colunasStand" :rows="store.stands" row-key="id"
+                clickable :loading="store.loading" density="comfortable"
+                sort-by="spend_total" sort-dir="desc"
+                empty-icon="fas fa-store" empty-title="Nenhum stand cadastrado"
+                empty-text="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo."
+                @row-click="abrir">
+                <template #cell-name="{ row }">
+                    <span class="font-semibold text-ink"
+                        :title="`${row.name}`
+                            + (row.unclassified_value > 0 ? ` - ${fmtBRL(row.unclassified_value)} sem classificação` : '')">
+                        {{ row.name }}
+                        <i v-if="row.unclassified_value > 0" class="fas fa-circle-question text-data-warn text-micro ml-1"></i>
+                    </span>
+                </template>
+                <!-- A coluna corta; o title abre a lista inteira de centros de custo. -->
+                <template #cell-cost_centers="{ row }">
+                    <span :title="(row.cost_center_names || []).join(', ') || 'Sem centro de custo'">
+                        {{ resumoCc(row) }}
+                    </span>
+                </template>
+                <template #cell-status="{ row }">
+                    <Badge :variant="statusMeta(row.status).variant" size="sm"
+                        :title="row.status === 'defined'
+                            ? 'Custo de construção congelado'
+                            : 'Em apuração: construção ainda soma ao vivo'">
+                        <i :class="statusMeta(row.status).icon" class="mr-1 text-micro"></i>
+                        {{ statusMeta(row.status).label }}
+                    </Badge>
+                </template>
+                </DataTable>
+            </div>
 
             <!-- ══ Aba Modelos ══ -->
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <Surface v-for="(m, i) in sortedModels" :key="m.id" variant="raised" padding="none" interactive
-                    class="cursor-pointer overflow-hidden flex flex-col animate-fade-in [animation-fill-mode:backwards]"
+            <div v-else-if="tab === 'modelos'" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                <Surface v-for="(m, i) in sortedModels" :key="m.id" variant="raised" padding="none"
+                    :interactive="canConfigure"
+                    class="overflow-hidden flex flex-col animate-fade-in [animation-fill-mode:backwards]"
+                    :class="canConfigure ? 'cursor-pointer' : ''"
                     :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
-                    @click="openEditModel(m)">
+                    @click="canConfigure && openEditModel(m)">
 
                     <div class="p-4 sm:p-5">
                         <div class="flex items-start justify-between gap-2">
@@ -147,7 +126,7 @@
                                     </p>
                                 </div>
                             </div>
-                            <i class="fas fa-pen text-[11px] text-ink-subtle mt-1 shrink-0"></i>
+                            <i v-if="canConfigure" class="fas fa-pen text-[11px] text-ink-subtle mt-1 shrink-0"></i>
                         </div>
                         <!-- Altura fixa (3 linhas) p/ as faixas de valor alinharem entre os cards. -->
                         <p class="text-xs text-ink-muted leading-relaxed mt-3 line-clamp-3 min-h-[3.75rem]">{{ m.description }}</p>
@@ -184,7 +163,7 @@
                     </div>
                 </Surface>
 
-                <div v-if="!store.models.length" class="sm:col-span-2 lg:col-span-3">
+                <div v-if="!store.models.length" class="sm:col-span-2 xl:col-span-4">
                     <Surface variant="raised" padding="none">
                         <EmptyState icon="fas fa-shapes" title="Nenhum modelo cadastrado"
                             description="Cadastre os stands modelo (categorias) com o valor médio e os itens de cada padrão." />
@@ -192,18 +171,71 @@
                 </div>
             </div>
 
+            <!-- ══ Aba Categorias de gasto ══ -->
+            <div v-else-if="tab === 'categorias'" class="flex flex-col gap-5">
+                <SourceSettingsCard :can-configure="canConfigure" />
+
+                <Surface variant="raised" padding="sm">
+                    <p class="text-sm text-ink-muted">
+                        Cada conta do plano <span class="font-mono text-ink">2.02.07 - Despesas com Stand</span> cai numa
+                        categoria, e a categoria PUXA o tipo do gasto: <span class="text-series-1 font-medium">construção</span>,
+                        <span class="text-series-2 font-medium">recorrência</span> ou
+                        <span class="text-series-3 font-medium">esporádica</span>. É o padrão de todos os stands, e o tipo
+                        se edita aqui — dentro de cada stand ainda dá para reclassificar um lançamento específico.
+                    </p>
+                </Surface>
+
+                <DataTable :columns="colunasCategoria" :rows="store.categories" row-key="id"
+                    :clickable="canConfigure" density="comfortable" sort-by="sort_order" sort-dir="asc"
+                    empty-icon="fas fa-tags" empty-title="Nenhuma categoria"
+                    empty-text="Sem categoria, todo lançamento fica sem tipo até alguém marcar um a um."
+                    @row-click="(row) => canConfigure && openEditCategory(row)">
+                    <template #cell-name="{ row }">
+                        <span class="inline-flex items-center gap-2 min-w-0" :title="row.description || row.name">
+                            <span class="w-2 h-2 rounded-full shrink-0" :class="kindMeta(row.kind).dot"></span>
+                            <span class="truncate font-medium text-ink">{{ row.name }}</span>
+                        </span>
+                    </template>
+                    <template #cell-kind="{ row }">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-micro font-medium"
+                            :class="[kindMeta(row.kind).bg, kindMeta(row.kind).border, kindMeta(row.kind).text]"
+                            :title="kindMeta(row.kind).hint">
+                            <i :class="kindMeta(row.kind).icon" class="text-micro"></i>{{ kindMeta(row.kind).label }}
+                        </span>
+                    </template>
+                    <template #cell-conta_codes="{ row }">
+                        <span class="inline-flex flex-wrap gap-1"
+                            :title="`Contas do Sienge nesta categoria: ${(row.conta_codes || []).join(', ') || 'nenhuma'}`">
+                            <span v-for="code in row.conta_codes" :key="code"
+                                class="px-1.5 py-0.5 rounded-md bg-surface-sunken border border-line text-micro font-mono text-ink-muted">
+                                {{ code }}
+                            </span>
+                            <span v-if="!row.conta_codes?.length" class="text-micro text-ink-subtle">Sem conta</span>
+                        </span>
+                    </template>
+                    <template v-if="canConfigure" #actions="{ row }">
+                        <IconButton icon="fas fa-pen" size="sm" variant="ghost" label="Editar categoria"
+                            @click="openEditCategory(row)" />
+                    </template>
+                </DataTable>
+            </div>
+
+            <!-- ══ Aba Conferência (departamento × plano do stand) ══ -->
+            <AuditTab v-else :can-manage="canManage" />
+
         </PageContainer>
 
         <ModelFormModal :open="modelModalOpen" :model="editingModel" @close="modelModalOpen = false" />
         <StandFormModal :open="standModalOpen" :stand="editingStand" @close="standModalOpen = false" />
-        <StandDetailModal :open="detailModalOpen" :stand="detailStand"
-            @close="closeDetail" @edit="editFromDetail" />
+        <CategoryFormModal :open="categoryModalOpen" :category="editingCategory" @close="categoryModalOpen = false" />
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useSalesStandStore, STATUS_META } from '@/stores/Marketing/SalesStand/salesStandStore';
+import { useRouter } from 'vue-router';
+import { useSalesStandStore, STATUS_META, kindMeta } from '@/stores/Marketing/SalesStand/salesStandStore';
+import { useCan } from '@/composables/useCan';
 import { fmtBRL, fmtValueRange, fmtAreaRange, sortModelsByTier } from './standFormat';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -214,41 +246,111 @@ import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
-import Spinner from '@/components/UI/Spinner.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import IconButton from '@/components/UI/IconButton.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
 import ModelFormModal from './ModelFormModal.vue';
 import StandFormModal from './StandFormModal.vue';
-import StandDetailModal from './StandDetailModal.vue';
+import CategoryFormModal from './CategoryFormModal.vue';
+import SourceSettingsCard from './components/SourceSettingsCard.vue';
+import StandCard from './components/StandCard.vue';
+import AuditTab from './components/AuditTab.vue';
 
-import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useSalesStandStore();
-const tab = ref('stands');
+const router = useRouter();
+const can = useCan('/marketing/stand-vendas');
 
+const tab = ref('stands');
+const standView = ref('tabela');
 const modelModalOpen = ref(false);
 const editingModel = ref(null);
 const standModalOpen = ref(false);
 const editingStand = ref(null);
-const detailModalOpen = ref(false);
-const detailStand = ref(null);
+const categoryModalOpen = ref(false);
+const editingCategory = ref(null);
+
+const canManage = computed(() => can('manage'));
+const canConfigure = computed(() => can('configure'));
+
+const tabs = computed(() => [
+    { value: 'stands', label: 'Stands', icon: 'fas fa-store', count: store.stands.length },
+    { value: 'modelos', label: 'Modelos', icon: 'fas fa-shapes', count: store.models.length },
+    { value: 'categorias', label: 'Categorias', icon: 'fas fa-tags', count: store.categories.length },
+    { value: 'conferencia', label: 'Conferência', icon: 'fas fa-clipboard-check' },
+]);
 
 const statusMeta = (s) => STATUS_META[s] || STATUS_META.draft;
 // Modelos por porte (Standard → Premium), não alfabético.
 const sortedModels = computed(() => sortModelsByTier(store.models));
 
+// Stand com muitos centros de custo não pode esticar a coluna (o title da
+// célula, que a DataTable põe sozinha, mostra a lista inteira).
+function resumoCc(s) {
+    const nomes = s.cost_center_names || [];
+    if (!nomes.length) return '-';
+    if (nomes.length <= 2) return nomes.join(', ');
+    return `${nomes[0]} e mais ${nomes.length - 1}`;
+}
+
+const colunasStand = computed(() => [
+    { key: 'name', label: 'Stand', priority: 1, sortable: true },
+    {
+        key: 'model', label: 'Modelo', priority: 2, sortable: true,
+        value: (r) => r.model?.name || '-',
+    },
+    {
+        key: 'cost_centers', label: 'Centros de custo', priority: 2, sortable: true,
+        value: (r) => resumoCc(r),
+    },
+    {
+        key: 'spend_total', label: 'Gasto total', priority: 1, numeric: true, sortable: true,
+        format: (v) => fmtBRL(v),
+    },
+    {
+        key: 'construction_value', label: 'Construção', priority: 1, numeric: true, sortable: true,
+        format: (v) => fmtBRL(v), class: 'text-series-1',
+    },
+    {
+        key: 'maintenance_value', label: 'Recorrência', priority: 2, numeric: true, sortable: true,
+        format: (v) => fmtBRL(v), class: 'text-series-2',
+    },
+    {
+        key: 'sporadic_value', label: 'Esporádico', priority: 3, numeric: true, sortable: true,
+        format: (v) => fmtBRL(v), class: 'text-series-3',
+    },
+    {
+        key: 'recurring_monthly', label: 'Por mês', priority: 2, numeric: true, sortable: true,
+        format: (v) => fmtBRL(v),
+    },
+    {
+        key: 'unclassified_value', label: 'Sem classificação', priority: 3, numeric: true, sortable: true,
+        format: (v) => fmtBRL(v),
+    },
+    { key: 'status', label: 'Status', priority: 1, sortable: true, truncate: false },
+]);
+
+const colunasCategoria = computed(() => [
+    { key: 'name', label: 'Categoria', priority: 1, sortable: true },
+    {
+        key: 'kind', label: 'Tipo', priority: 1, sortable: true, truncate: false,
+        sortValue: (r) => kindMeta(r.kind).label,
+    },
+    { key: 'conta_codes', label: 'Contas do Sienge', priority: 2, truncate: false },
+    { key: 'description', label: 'O que entra aqui', priority: 2 },
+    { key: 'sort_order', label: 'Ordem', priority: 3, numeric: true, sortable: true },
+]);
+
+const abrir = (s) => router.push(`/marketing/stand-vendas/${s.id}`);
+
 function openNewModel() { editingModel.value = null; modelModalOpen.value = true; }
 function openEditModel(m) { editingModel.value = m; modelModalOpen.value = true; }
 function openNewStand() { editingStand.value = null; standModalOpen.value = true; }
-function openDetail(s) { detailStand.value = s; detailModalOpen.value = true; }
-function closeDetail() { detailModalOpen.value = false; detailStand.value = null; }
-function editFromDetail(s) {
-    detailModalOpen.value = false;
-    editingStand.value = s;
-    standModalOpen.value = true;
-}
+function openNewCategory() { editingCategory.value = null; categoryModalOpen.value = true; }
+function openEditCategory(c) { editingCategory.value = c; categoryModalOpen.value = true; }
 
 onMounted(async () => {
     await store.fetchMeta();
-    await store.fetchStands();
+    await Promise.all([store.fetchStands(), store.fetchSettings()]);
 });
 </script>

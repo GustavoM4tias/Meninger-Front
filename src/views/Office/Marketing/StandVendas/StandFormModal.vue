@@ -5,17 +5,36 @@
         <div class="flex flex-col gap-4">
             <Input v-model="form.name" label="Nome do stand" placeholder="Ex.: Stand Três Marias" required />
 
+            <Surface v-if="travado" variant="flat" padding="sm" bordered class="border-data-warn/30 bg-data-warn/10">
+                <p class="text-xs text-data-warn flex items-start gap-2">
+                    <i class="fas fa-lock mt-0.5"></i>
+                    <span>
+                        Este stand está <b>definido</b>: o custo de construção já foi congelado sobre estes centros de
+                        custo. Para trocar o modelo ou mexer nos centros de custo, reabra o stand antes.
+                    </span>
+                </p>
+            </Surface>
+
             <div>
                 <label class="text-micro font-medium text-ink-muted mb-1.5 block">Stand modelo (categoria)</label>
                 <Select v-model="form.model_id" :options="[{ value: '', label: '(Sem modelo)' }, ...store.modelOptions]"
-                    placeholder="(Sem modelo)" />
+                    placeholder="(Sem modelo)" :disabled="travado"
+                    :title="travado ? 'Stand definido: reabra para trocar o modelo' : 'Categoria de stand que serve de referência de valor e de itens'" />
             </div>
 
             <div>
                 <label class="text-micro font-medium text-ink-muted mb-1.5 block">Centros de custo (1 ou mais)</label>
-                <MultiSelector v-model="ccSelection" :options="store.costCenterOptions"
+                <MultiSelector v-if="!travado" v-model="ccSelection" :options="store.costCenterOptions"
                     placeholder="Selecione os centros de custo" :page-size="200" overlay />
-                <p class="text-xs text-ink-subtle mt-1.5">O gasto do stand é a soma dos centros de custo selecionados.</p>
+                <div v-else class="flex flex-wrap gap-1.5 px-3 py-2 rounded-lg border border-line bg-surface-sunken">
+                    <span v-for="cc in ccSelection" :key="cc" :title="cc"
+                        class="px-2 py-0.5 rounded-md bg-surface border border-line text-micro text-ink-muted">{{ cc }}</span>
+                </div>
+                <p class="text-xs text-ink-subtle mt-1.5">
+                    {{ travado
+                        ? 'Travados enquanto o stand estiver definido.'
+                        : 'O gasto do stand é a soma dos centros de custo selecionados. Dá para acrescentar e remover à vontade enquanto ele é rascunho.' }}
+                </p>
             </div>
 
             <div v-if="stand">
@@ -49,9 +68,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useSalesStandStore } from '@/stores/Marketing/SalesStand/salesStandStore';
 import Modal from '@/components/UI/Modal.vue';
+import Surface from '@/components/UI/Surface.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
@@ -62,10 +82,13 @@ const props = defineProps({
     // Stand em edição (objeto) ou null p/ criação.
     stand: { type: Object, default: null },
 });
-const emit = defineEmits(['close', 'saved']);
+const emit = defineEmits(['close', 'saved', 'deleted']);
 
 const store = useSalesStandStore();
 const errorMsg = ref('');
+// Stand definido: modelo e centros de custo travam (a API cobra o mesmo). O
+// número congelado fala daquele conjunto — trocar sem reabrir seria mentira.
+const travado = computed(() => props.stand?.status === 'defined');
 const ccSelection = ref([]);
 const form = ref({ name: '', model_id: '', notes: '', maintenance_percent: '' });
 
@@ -117,7 +140,7 @@ async function removeStand() {
     errorMsg.value = '';
     try {
         await store.deleteStand(props.stand.id);
-        emit('saved');
+        emit('deleted', props.stand.id);
         emit('close');
     } catch (e) {
         errorMsg.value = e.message || 'Erro ao excluir o stand.';
