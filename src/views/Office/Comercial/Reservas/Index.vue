@@ -475,7 +475,7 @@ onMounted(async () => {
           @update:modelValue="v => filtros.lead_origem = Array.isArray(v) ? v : []"
           :options="store.leadOrigensOptions" />
 
-        <div class="sm:col-span-2 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2
+        <div class="sm:col-span-2 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2
                     pt-3 border-t border-line-subtle">
           <Switch v-model="filtros.only_active" size="sm" label="Em curso (ativa)" />
           <Switch v-model="filtros.only_vendida" size="sm" label="Só etapa Vendida (CRM)"
@@ -484,7 +484,7 @@ onMounted(async () => {
           <Switch v-model="filtros.excluir_painel" size="sm" label="Excluir leads de painel"
             description="Só leads externos ao CV" />
           <Switch v-model="filtros.only_alerta_erp" size="sm" label="Travadas para o ERP"
-            description="Em Envio Sienge além do prazo do lote, sem contrato no Sienge" />
+            description="Sem contrato no Sienge" />
         </div>
       </FilterBar>
     </div>
