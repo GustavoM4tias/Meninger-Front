@@ -43,6 +43,9 @@ export const useReservasStore = defineStore('reservas', () => {
         empresa_correspondente: [],
         lead_origem: [],
         only_active: false, only_vendida: false, with_lead: false, excluir_painel: false,
+        // Travada para o ERP: entrou em Envio Sienge e não virou contrato no
+        // Sienge dentro do prazo do lote (ver Meninger-Back/lib/alertaEnvioErp.js).
+        only_alerta_erp: false,
         data_inicio: '', data_fim: '',
     });
 

@@ -59,7 +59,7 @@ const filtros = toRef(store, 'filtros');
 /* ── Filtros do servidor (URL + API) ─────────────────────────────────────── */
 const ARRAY_FIELDS = ['empreendimento', 'etapa', 'bloco', 'unidade', 'situacao', 'status_repasse', 'tipovenda', 'imobiliaria', 'corretor', 'empresa_correspondente', 'lead_origem'];
 const STR_FIELDS = ['nome', 'documento', 'data_inicio', 'data_fim'];
-const BOOL_FIELDS = ['only_active', 'only_vendida', 'with_lead', 'excluir_painel'];
+const BOOL_FIELDS = ['only_active', 'only_vendida', 'with_lead', 'excluir_painel', 'only_alerta_erp'];
 
 function syncFiltersFromUrl() {
   const q = route.query;
@@ -172,6 +172,7 @@ function limpar() {
     imobiliaria: [], corretor: [], empresa_correspondente: [],
     lead_origem: [],
     only_active: false, only_vendida: false, with_lead: false, excluir_painel: false,
+    only_alerta_erp: false,
     data_inicio: '', data_fim: '',
   });
   recorte.value = '';
@@ -310,6 +311,17 @@ const unidadeDe = (r) => [r.bloco, r.unidade].filter(Boolean).join(' / ') || '-'
    ponta para responder "em que pe esta". No estreito a Etapa fica no titulo do
    card (prioridade 1) e o Repasse abre o corpo (prioridade 2), que e a posicao
    imediatamente ao lado. */
+/* Texto do triângulo: diz o que aconteceu e o que fazer, sem obrigar a abrir
+   outra tela. "Estimado" aparece quando a reserva nunca acionou o fluxo do ato -
+   aí a contagem cai na data da reserva e sai maior que a real. */
+function alertaErpTexto(row) {
+  const min = Number(row.alerta_erp_minutos) || 0;
+  const tempo = min < 120 ? `${min} min` : (min < 2880 ? `${Math.round(min / 60)} h` : `${Math.round(min / 1440)} dias`);
+  return `Travada para o ERP: ${tempo} em Envio Sienge sem virar contrato no Sienge`
+    + `${row.alerta_erp_estimado ? ' (tempo estimado)' : ''}.`
+    + ' O lote do CV roda de 5 em 5 min. Abra a reserva no CV, corrija o que ele apontar e devolva a etapa.';
+}
+
 const COLUNAS = [
   { key: 'titular', label: 'Cliente', priority: 1, sortable: true,
     value: (r) => r.titular?.nome || '-' },
@@ -471,6 +483,8 @@ onMounted(async () => {
           <Switch v-model="filtros.with_lead" size="sm" label="Veio de lead" />
           <Switch v-model="filtros.excluir_painel" size="sm" label="Excluir leads de painel"
             description="Só leads externos ao CV" />
+          <Switch v-model="filtros.only_alerta_erp" size="sm" label="Travadas para o ERP"
+            description="Em Envio Sienge além do prazo do lote, sem contrato no Sienge" />
         </div>
       </FilterBar>
     </div>
@@ -544,6 +558,11 @@ onMounted(async () => {
               <i v-if="cvLink(row)" class="fas fa-arrow-up-right-from-square text-micro opacity-50"></i>
             </Badge>
           </component>
+          <!-- Travada para o ERP: o lote do CV roda de 5 em 5 min, então passar
+               do prazo é erro, não demora. -->
+          <i v-if="row.alerta_erp"
+            class="fas fa-triangle-exclamation text-data-neg ml-1.5 shrink-0"
+            v-tippy="alertaErpTexto(row)"></i>
         </template>
 
         <template #cell-status_repasse="{ row }">
