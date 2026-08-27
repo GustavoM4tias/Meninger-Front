@@ -400,6 +400,7 @@ export const navRegistry = [
             { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack', hiddenInNav: true },
             { route: '/tools/bucket-upload', section: 'Looqbox', name: 'Looqbox', icon: 'fas fa-cloud-arrow-up', iconImg: '/icons/looqbox.png' },
             { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
+            { route: '/settings/envio-sienge', section: 'Envio ao ERP', name: 'Vendas sem contrato no ERP', icon: 'fas fa-triangle-exclamation', adminOnly: true },
             { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.png', adminOnly: true },
             { route: '/tools/eme-brain', section: 'Cérebro da Eme', name: 'Cérebro da Eme', icon: 'fas fa-brain', adminOnly: true },
             { route: '/tools/eme-atende', section: 'Eme Atende', name: 'Eme Atende', icon: 'fas fa-headset', adminOnly: true },

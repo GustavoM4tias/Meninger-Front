@@ -118,6 +118,14 @@ export default [
                 meta: { requiresAuth: true, searchable: true, content: 'Checklists de lançamento: visualização, gestão, criação e cobrança de entregas e demandas' },
             },
             {
+                // Vigia do envio da venda ao ERP. Administração do próprio
+                // sistema: admin nos três níveis (rota, meta e navRegistry).
+                path: 'settings/envio-sienge',
+                name: 'Vendas sem contrato no ERP',
+                component: () => import('@/views/Office/Settings/EnvioSienge/Index.vue'),
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Vendas paradas em Envio Sienge que não viraram contrato no Sienge: acompanhamento, prazos e aviso' },
+            },
+            {
                 path: 'checklists/cobranca',
                 name: 'Cobrança do Checklist',
                 component: () => import('@/views/Office/Checklist/Cobranca.vue'),
@@ -232,6 +240,15 @@ export default [
                         name: 'Stand de Vendas',
                         component: () => import('@/views/Office/Marketing/StandVendas/Index.vue'),
                         meta: { requiresAuth: true, searchable: true, content: 'Stands de vendas: modelos com valor médio e itens, cadastro dos stands reais, custo de construção e manutenção apurado do Sienge (Despesas com Stand)' },
+                    },
+                    {
+                        // Detalhe do stand em tela cheia (era um modal): custo
+                        // lancamento a lancamento, itens e fotos. Herda a alcada
+                        // da tela pai pelo prefixo da rota.
+                        path: 'stand-vendas/:id',
+                        name: 'Stand de Vendas Detalhe',
+                        component: () => import('@/views/Office/Marketing/StandVendas/Detail.vue'),
+                        meta: { requiresAuth: true, permissionRoute: '/marketing/stand-vendas', searchable: false, content: 'Detalhe do stand de vendas: custo de construcao e recorrencia, itens e fotos' },
                     },
                     // Viabilidade (ex "Gastos por Departamento" do Financeiro):
                     // orçamento por empreendimento (VGV × %), gasto real e saldo.
