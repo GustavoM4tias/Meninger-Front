@@ -14,6 +14,7 @@ import EmptyState from '@/components/UI/EmptyState.vue'
 import BackupFilters from './components/BackupFilters.vue'
 import DataTable from '@/components/UI/DataTable.vue'
 import RunningPipeline from './components/RunningPipeline.vue'
+import BackupSettingsModal from './components/BackupSettingsModal.vue'
 import { pedirConfirmacao } from '@/composables/useConfirm';
 import {
     formatBytes, formatDate, formatDuration, formatTime,
@@ -224,12 +225,59 @@ const kpiChips = computed(() => {
     ].filter(c => c.total > 0)
 })
 
+// ─── Idade do espelho ───────────────────────────────────────────────────────
+// A pergunta que nenhuma tela respondia: de quando é o dado que Custos/Títulos,
+// Recebimentos do Ato, Inadimplência e Stand de Vendas estão mostrando? Quando
+// a carga falhava, todas seguiam exibindo o número antigo em silêncio.
+
+/* `lastChange` vem SEM fuso, de propósito: é a hora de parede que o Sienge
+   gravou. Anexar 'Z' ou deixar o servidor converter jogaria a data 3 h, porque
+   o Railway roda em UTC. */
+const espelhoData = computed(() => {
+    const iso = store.freshness?.lastChange
+    if (!iso) return null
+    const d = new Date(iso)
+    return Number.isNaN(d.getTime()) ? null : d
+})
+
+const espelhoIdade = computed(() => {
+    const h = store.freshness?.ageHours
+    if (h == null) return null
+    if (h < 1) return `${Math.round(h * 60)} min`
+    if (h < 48) return `${h.toFixed(1).replace('.', ',')} h`
+    return `${Math.floor(h / 24)} dias`
+})
+
+const espelhoVelho = computed(() => store.freshness?.stale === true)
+
+// ─── Configuração ───────────────────────────────────────────────────────────
+const settingsOpen = ref(false)
+
+async function abrirConfiguracao() {
+    if (!store.settings) await store.fetchSettings()
+    settingsOpen.value = true
+}
+
+async function salvarConfiguracao(patch) {
+    try {
+        await store.saveSettings(patch)
+        settingsOpen.value = false
+        toast.success('Configuração salva. O agendamento já está valendo.')
+        await store.fetchFreshness({ force: true })
+    } catch (err) {
+        toast.error(err.message || 'Falha ao salvar a configuração')
+    }
+}
+
 // ─── Polling ────────────────────────────────────────────────────────────────
 let pollTimer = null
 
 function startPolling() {
     stopPolling()
-    pollTimer = setInterval(() => { fetchRange() }, isRunning.value ? 5000 : 30000)
+    pollTimer = setInterval(() => {
+        fetchRange()
+        store.fetchFreshness()
+    }, isRunning.value ? 5000 : 30000)
 }
 
 function stopPolling() {
@@ -248,7 +296,10 @@ const carregandoLista = computed(() => (filtering.value || refreshing.value) && 
 async function refresh() {
     refreshing.value = true
     try {
-        await fetchRange({ withSpinner: true })
+        await Promise.all([
+            fetchRange({ withSpinner: true }),
+            store.fetchFreshness({ force: true }),
+        ])
         startPolling()
     } finally {
         refreshing.value = false
@@ -300,6 +351,7 @@ onMounted(async () => {
     // Carregamento inicial usa o overlay global (logo animada). Só depois de
     // `store.loaded` a tela desenha status/KPIs/histórico, pra não piscar vazio.
     await fetchRange({ withSpinner: true })
+    store.fetchFreshness()
     startPolling()
 })
 onBeforeUnmount(stopPolling)
@@ -315,20 +367,29 @@ onBeforeUnmount(stopPolling)
                     <PageHelp storage-key="backup-sienge"
                         intro="Esta tela acompanha o backup diário do banco do Sienge, que alimenta as telas de Custos, Faturamento, Contas a Receber e os relatórios da Eme."
                         :steps="[
-                            { title: 'Confira o status do dia', text: 'O cartão no topo mostra se há backup rodando agora ou os dados do último backup concluído com sucesso (horário, duração e tamanho).' },
+                            { title: 'Veja de quando é o dado', text: 'O primeiro cartão mostra a data do espelho: é o que as telas de Custos/Títulos, Recebimentos do Ato, Inadimplência e Stand de Vendas estão exibindo. Vermelho significa que passou do limite de idade configurado.' },
+                            { title: 'Confira o status do dia', text: 'O cartão seguinte mostra se há backup rodando agora ou os dados do último backup concluído com sucesso (horário, duração e tamanho).' },
                             { title: 'Acompanhe as etapas', text: 'Durante a execução, use Ver etapas para ver em que ponto do pipeline o backup está, com progresso do download e das cinco fases do restore.' },
                             { title: 'Consulte outro período', text: 'O histórico abre no mês atual. Abra Filtros, ajuste as datas e clique em Filtrar - a consulta traz todas as execuções do período, sem limite de quantidade.' },
                             { title: 'Refine e ordene', text: 'Nos mesmos filtros dá para restringir por status, restore, tipo de disparo, etapa ou texto livre. Na tabela, clique no título de uma coluna para ordenar por ela e de novo para inverter.' },
                             { title: 'Rode manualmente', text: 'Rodar backup agora dispara o pipeline completo fora do horário do cron. Leva de 20 a 50 minutos.' },
                             { title: 'Destrave um backup travado', text: 'Se um backup ficou marcado como em execução mas o processo morreu (deploy, queda do servidor), use Forçar cancelar para liberar e disparar de novo.' },
+                            { title: 'Ajuste a regra', text: 'Em Configurar ficam o horário da carga, quantas vezes ela tenta de novo num dia ruim, o limite de idade do espelho e quem recebe o aviso quando o dia acaba sem carga. Vale na hora, sem deploy.' },
                         ]" :tips="[
                             'Forçar cancelar não mata processo nenhum - só marca o log como falho para liberar um novo disparo.',
                             'Enquanto um backup roda, a tela se atualiza sozinha a cada 5 segundos.',
+                            'Rodada com status Ignorado e etapa Dispensada não é falha: outra instância já estava com a carga, e esta foi barrada antes de poder atrapalhar.',
+                            'Se a carga falhar, ela tenta de novo sozinha. Só depois de esgotar as tentativas do dia é que o aviso sai.',
                         ]" />
 
                     <Button variant="secondary" size="md" icon="fas fa-rotate" :loading="refreshing"
                         @click="refresh">
                         <span class="hidden sm:inline">Atualizar</span>
+                    </Button>
+
+                    <Button variant="secondary" size="md" icon="fas fa-sliders"
+                        :loading="store.settingsLoading" @click="abrirConfiguracao">
+                        <span class="hidden sm:inline">Configurar</span>
                     </Button>
 
                     <Button v-if="isRunning" variant="danger" size="md" icon="fas fa-circle-stop"
@@ -352,6 +413,39 @@ onBeforeUnmount(stopPolling)
 
             <!-- Só desenha depois da 1ª resposta (evita piscar valores vazios) -->
             <div v-if="store.loaded" class="space-y-4">
+
+                <!-- Idade do espelho. Fica ACIMA do status da rodada de propósito:
+                     "a última carga deu certo" não é a mesma pergunta que "de
+                     quando é o dado que as telas estão mostrando", e é a segunda
+                     que interessa a quem abre esta tela. -->
+                <Surface v-if="store.freshness" padding="none"
+                    :class="espelhoVelho ? 'border-data-neg/30 bg-data-neg/[0.06]' : 'border-line'">
+                    <div class="p-4 flex items-start gap-3 sm:gap-4">
+                        <div class="text-xl sm:text-2xl shrink-0"
+                            :class="espelhoVelho ? 'text-data-neg' : 'text-ink-muted'">
+                            <i :class="espelhoVelho ? 'fas fa-clock-rotate-left' : 'fas fa-database'"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="font-semibold text-ink text-sm sm:text-base">
+                                <span v-if="espelhoData">
+                                    Espelho com dado de {{ formatDate(espelhoData) }}
+                                </span>
+                                <span v-else>Não foi possível ler a data do espelho</span>
+                            </p>
+                            <p class="text-micro sm:text-xs text-ink-muted mt-0.5">
+                                <span v-if="espelhoIdade">{{ espelhoIdade }} atrás</span>
+                                <span v-if="espelhoIdade"> • </span>
+                                limite de {{ store.freshness.staleLimitHours }} h
+                            </p>
+                            <p v-if="espelhoVelho" class="text-xs text-data-neg mt-1.5">
+                                Custos/Títulos, Recebimentos do Ato, Inadimplência e Stand de Vendas
+                                estão mostrando esse dado, não o de agora.
+                            </p>
+                        </div>
+                        <Badge v-if="espelhoVelho" variant="danger" size="sm">Velho</Badge>
+                        <Badge v-else variant="success" size="sm">Em dia</Badge>
+                    </div>
+                </Surface>
 
                 <!-- Status atual (some quando a consulta é de um período passado) -->
                 <RunningPipeline v-if="isRunning" :log="store.runningBackup" />
@@ -382,7 +476,11 @@ onBeforeUnmount(stopPolling)
                         description="Dispare manualmente em Rodar backup agora ou aguarde o cron das 5h." />
                 </Surface>
 
-                <!-- Histórico -->
+                <BackupSettingsModal :open="settingsOpen" :settings="store.settings"
+                :saving="store.settingsSaving" @close="settingsOpen = false"
+                @save="salvarConfiguracao" />
+
+            <!-- Histórico -->
                 <section class="space-y-3 pt-2">
                     <div class="flex items-end justify-between gap-3 flex-wrap">
                         <div>

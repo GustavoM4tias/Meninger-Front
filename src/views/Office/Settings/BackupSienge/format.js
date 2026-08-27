@@ -42,6 +42,10 @@ export const STATUS_LABELS = {
 }
 
 export const STAGE_LABELS = {
+    starting: 'Inicializando',
+    // Prova o pg_restore e a conexão ANTES de tocar no staging. Falhar aqui é
+    // inofensivo: nada foi criado nem dropado ainda.
+    preflight: 'Conferindo pré-requisitos',
     fetching_md5: 'Validação inicial (MD5)',
     downloading: 'Download do Sienge',
     decompressing: 'Descompactação local',
@@ -50,7 +54,10 @@ export const STAGE_LABELS = {
     validating: 'Validando staging',
     swapping: 'Swap atômico',
     applying_grants: 'Reaplicando permissões',
-    starting: 'Inicializando',
+    applying_views: 'Recriando views',
+    // Não é falha: outra rodada estava com a trava e esta foi dispensada antes
+    // de poder atrapalhar.
+    lock_busy: 'Dispensada (outra rodada em andamento)',
     done: 'Concluído',
 }
 
@@ -62,13 +69,22 @@ export function stageLabel(v) {
     return STAGE_LABELS[v] || v || '-'
 }
 
-/** `triggered_by` é 'cron' ou 'manual:<userId>'. A tela agrupa nos dois casos. */
+/** `triggered_by` é 'cron', 'watchdog' ou 'manual:<userId>'. */
 export function triggerKind(v) {
-    return String(v || '').startsWith('manual') ? 'manual' : 'cron'
+    const s = String(v || '')
+    if (s.startsWith('manual')) return 'manual'
+    if (s === 'watchdog') return 'watchdog'
+    return 'cron'
 }
 
 export function triggerLabel(v) {
-    return triggerKind(v) === 'manual' ? 'Manual' : 'Automático (5h)'
+    switch (triggerKind(v)) {
+        case 'manual': return 'Manual'
+        // Disparo do vigia: o espelho passou do limite de idade e ninguém
+        // estava rodando, então ele mesmo puxou a carga.
+        case 'watchdog': return 'Vigia de frescor'
+        default: return 'Automático (cron)'
+    }
 }
 
 export function statusVariant(status) {

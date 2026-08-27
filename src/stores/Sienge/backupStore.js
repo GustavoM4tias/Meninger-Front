@@ -19,12 +19,25 @@ export const useSiengeBackupStore = defineStore('siengeBackup', {
         loaded: false,
         error: null,
         triggering: false,
+
+        // Idade do espelho: de quando é o dado que as telas de Custos/Títulos,
+        // Recebimentos do Ato, Inadimplência e Stand de Vendas estão mostrando.
+        freshness: null,
+        freshnessLoading: false,
+
+        // Regra de operação da carga (tabela sienge_backup_settings).
+        settings: null,
+        settingsLoading: false,
+        settingsSaving: false,
     }),
 
     getters: {
         runningBackup: (state) => state.items.find((i) => i.status === 'running') || null,
         latestSuccess: (state) => state.items.find((i) => i.status === 'success') || null,
         hasError: (state) => !!state.error,
+        // Rodada dispensada pela trava: não é falha, é a segunda instância
+        // sendo barrada antes de estragar a rodada de quem está com a trava.
+        skippedRuns: (state) => state.items.filter((i) => i.status === 'skipped'),
     },
 
     actions: {
@@ -101,6 +114,68 @@ export const useSiengeBackupStore = defineStore('siengeBackup', {
             } catch (err) {
                 this.error = err.message
                 throw err
+            }
+        },
+
+        /**
+         * Idade do espelho. `force` pula o cache de 5 min do servidor — use no
+         * fim de uma carga, quando o dado acabou de mudar.
+         */
+        async fetchFreshness({ force = false } = {}) {
+            this.freshnessLoading = true
+            try {
+                const qs = force ? '?force=true' : ''
+                const res = await fetch(`${API_URL}/sienge/backups/freshness${qs}`, {
+                    headers: authHeaders(),
+                })
+                if (!res.ok) throw new Error('Erro ao ler a data do espelho')
+                this.freshness = await res.json()
+                return this.freshness
+            } catch (err) {
+                this.error = err.message
+                return null
+            } finally {
+                this.freshnessLoading = false
+            }
+        },
+
+        async fetchSettings() {
+            this.settingsLoading = true
+            try {
+                const res = await fetch(`${API_URL}/sienge/backups/settings`, {
+                    headers: authHeaders(),
+                })
+                if (!res.ok) throw new Error('Erro ao buscar a configuração da carga')
+                this.settings = await res.json()
+                return this.settings
+            } catch (err) {
+                this.error = err.message
+                return null
+            } finally {
+                this.settingsLoading = false
+            }
+        },
+
+        async saveSettings(patch) {
+            this.error = null
+            this.settingsSaving = true
+            try {
+                const res = await fetch(`${API_URL}/sienge/backups/settings`, {
+                    method: 'PUT',
+                    headers: authHeaders(),
+                    body: JSON.stringify(patch),
+                })
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}))
+                    throw new Error(body.error || 'Erro ao salvar a configuração')
+                }
+                this.settings = await res.json()
+                return this.settings
+            } catch (err) {
+                this.error = err.message
+                throw err
+            } finally {
+                this.settingsSaving = false
             }
         },
     },
