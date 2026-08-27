@@ -238,8 +238,10 @@ const standId = computed(() => Number(route.params.id));
 const stand = computed(() => store.detail);
 const canManage = computed(() => can('manage'));
 // Quem abre o stand tem alçada em TODOS os centros de custo dele (o acesso é
-// tudo ou nada), então cuidar do stand depende só da capacidade da tela.
-const podeCuidar = canManage;
+// tudo ou nada), então cuidar do stand depende só da capacidade da tela. O
+// `!!stand` não é detalhe: o cabeçalho renderiza antes de o stand chegar, e
+// sem ele os botões leem `stand.status` de um nulo.
+const podeCuidar = computed(() => canManage.value && !!stand.value);
 const statusMeta = computed(() => STATUS_META[stand.value?.status] || STATUS_META.draft);
 
 // Modelo e centros de custo mudam o que o stand É. Com o custo de construção
