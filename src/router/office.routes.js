@@ -121,9 +121,9 @@ export default [
                 // Vigia do envio da venda ao ERP. Administração do próprio
                 // sistema: admin nos três níveis (rota, meta e navRegistry).
                 path: 'settings/envio-sienge',
-                name: 'Vendas sem contrato no ERP',
+                name: 'Vendas travadas para o ERP',
                 component: () => import('@/views/Office/Settings/EnvioSienge/Index.vue'),
-                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Vendas paradas em Envio Sienge que não viraram contrato no Sienge: acompanhamento, prazos e aviso' },
+                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Vendas que entraram em Envio Sienge e não chegaram ao Sienge no prazo do lote: lista, limite em minutos e aviso' },
             },
             {
                 path: 'checklists/cobranca',
