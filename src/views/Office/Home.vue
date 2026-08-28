@@ -166,7 +166,7 @@ async function confirmFeedback({ comment }) {
         class="h-full overflow-y-auto">
         <div class="relative min-h-full flex flex-col items-center px-4 py-8 sm:py-10">
 
-          <div v-if="authStore.user" class="absolute top-4 right-4 z-10">
+          <div v-if="authStore.user" class="absolute top-4 right-4 z-40">
             <WeatherInfo :weather="buildingStore.weather?.current_weather ?? buildingStore.weather"
               :city="authStore.user.city" />
           </div>
