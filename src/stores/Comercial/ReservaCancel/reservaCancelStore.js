@@ -45,6 +45,7 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
     const historyPage = ref(1);
     const historyLimit = ref(20);
     const historyLoading = ref(false);
+    const historyLoadingMore = ref(false);
     const historyError = ref(null);
 
     const historyFilter = ref({
@@ -86,11 +87,21 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
         if (!silent) {
             historyLoading.value = true;
             historyError.value = null;
+            // Busca nova (filtro, ordenação, ação concluída) recomeça do topo: com
+            // rolagem infinita no lugar da paginação, ficar na página 3 devolveria
+            // 20 linhas do meio da lista e a tela pareceria vazia.
+            if (!opts.keepPage) historyPage.value = 1;
         }
+        // Atualização silenciosa NÃO pode encolher a lista embaixo de quem está
+        // rolando: relê de uma vez tudo o que já estava carregado. Mesmo recurso
+        // do Boleto do Ato.
+        const carregadas = history.value.length;
+        const paginacao = silent && carregadas > historyLimit.value
+            ? { page: 1, limit: carregadas }
+            : { page: historyPage.value, limit: historyLimit.value };
         try {
             const params = buildParams({
-                page: historyPage.value,
-                limit: historyLimit.value,
+                ...paginacao,
                 sortBy: sortBy.value,
                 sortDir: sortDir.value,
             });
@@ -101,6 +112,39 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
             if (!silent) historyError.value = err.message || 'Erro ao carregar histórico.';
         } finally {
             if (!silent) historyLoading.value = false;
+        }
+    }
+
+    /**
+     * Próxima página, concatenada no fim da lista - o que a rolagem infinita
+     * chama quando a memória acaba e o servidor ainda tem registro.
+     *
+     * Concatena por id porque o webhook grava enquanto a pessoa rola: sem o
+     * filtro, a linha que entrou entre uma página e outra apareceria duas vezes.
+     */
+    async function loadMoreHistory() {
+        if (historyLoadingMore.value || historyLoading.value) return;
+        if (history.value.length >= historyTotal.value) return;
+
+        historyLoadingMore.value = true;
+        const proxima = historyPage.value + 1;
+        try {
+            const params = buildParams({
+                page: proxima,
+                limit: historyLimit.value,
+                sortBy: sortBy.value,
+                sortDir: sortDir.value,
+            });
+            const data = await requestWithAuth(`/cancelamento-reservas/history?${params}`);
+            const vistos = new Set(history.value.map(r => r.id));
+            const novas = (data.rows || []).filter(r => !vistos.has(r.id));
+            history.value = [...history.value, ...novas];
+            historyTotal.value = data.total ?? historyTotal.value;
+            historyPage.value = proxima;
+        } catch (err) {
+            historyError.value = err.message || 'Erro ao carregar mais registros.';
+        } finally {
+            historyLoadingMore.value = false;
         }
     }
 
@@ -233,8 +277,8 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
 
     return {
         settings, settingsLoading, settingsError, settingsSaved, fetchSettings, saveSettings,
-        history, historyTotal, historyPage, historyLimit, historyLoading, historyError,
-        historyFilter, groupByReserva, fetchHistory, setPage, setSort, applySort, sortBy, sortDir, totalPages, resetHistoryFilters,
+        history, historyTotal, historyPage, historyLimit, historyLoading, historyLoadingMore, historyError,
+        historyFilter, groupByReserva, fetchHistory, loadMoreHistory, setPage, setSort, applySort, sortBy, sortDir, totalPages, resetHistoryFilters,
         stats, fetchStats, facets, fetchFacets,
         timelineLoading, timelineError, timelineEvents, timelineHistory, timelineAttempts, timelineCv, fetchTimeline,
         retryHistoryItem, processManual, simulateWebhook,

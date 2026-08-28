@@ -14,12 +14,12 @@
               { title: 'Acompanhe o Histórico', text: 'A lista mostra uma linha por RESERVA, com a situação mais recente: Sucesso (executado), Pendência (validação barrou, nada foi alterado - trate manualmente), Retido (rajada), Não aplicável, Duplicado ou Erro. Quando a reserva passou mais de uma vez pela automação, aparece o total de ocorrências ao lado do número do caso.' },
               { title: 'Confira a etapa no CV', text: 'A coluna Etapa CV mostra a etapa atual da reserva e a do repasse, nas cores do workflow do CV. Clique na etapa para abrir a tela correspondente no CV.' },
               { title: 'Abra o detalhe', text: 'Clique em uma linha para ver as validações executadas (contrato, unidade, cliente, ato), a lista de ocorrências da reserva e a linha do tempo consolidada de todas elas.' },
-              { title: 'Resolva pendências', text: 'Casos barrados movem a reserva para a etapa Pendência no CV. Resolva a causa e use Reprocessar (ou retorne a reserva para Cancelada no CV) - a automação refaz todas as conferências do zero antes de agir.' },
-              { title: 'Configurações', text: 'Copie o endereço do webhook para o CV, confira os IDs das etapas Pendência/Cancelada, regule o freio de rajada (teto, janela e espera), ative a automação e, se precisar, processe uma reserva manualmente pelo ID.' },
+              { title: 'Resolva pendências', text: 'Casos barrados não mudam a reserva de etapa: a pendência é registrada na primeira linha da mensagem da reserva no CV (STATUS DO CANCELAMENTO: PENDENTE) e o acompanhamento é aqui. Resolva a causa e use Reprocessar - a automação refaz todas as conferências do zero antes de agir.' },
+              { title: 'Configurações', text: 'Copie o endereço do webhook para o CV, confira o ID da etapa Cancelada, regule o freio de rajada (teto, janela e espera), ative a automação e, se precisar, processe uma reserva manualmente pelo ID.' },
             ]"
             :tips="[
               'A automação NUNCA exclui contrato emitido, com parcela paga ou com boleto de ato pendente/pago - esses casos viram pendência.',
-              'Sucesso mantém a reserva em Cancelada; bloqueio/erro move para Pendência no CV. Assim, Cancelada só contém o que foi realmente cancelado nos dois sistemas.',
+              'A reserva não muda de etapa no CV: o desfecho vai na primeira linha da mensagem postada nela - CONCLUÍDO, PENDENTE ou ERRO. Quem acompanha e reprocessa é esta tela.',
               'Com a automação pausada, os webhooks continuam sendo registrados e podem ser reprocessados depois.',
               'Cancelamento em massa no CV aciona o freio de rajada: NENHUM caso da rajada roda, todos ficam Retido até você conferir a origem e reprocessar o que for legítimo.',
             ]" />
@@ -78,7 +78,7 @@
              botões estavam presos ao monitor. -->
         <DataTable
           :columns="histColumns"
-          :rows="store.history"
+          :rows="inc.visiveis.value"
           row-key="id"
           :loading="store.historyLoading"
           manual-sort
@@ -121,7 +121,7 @@
           </template>
 
           <!-- Reserva e repasse são workflows diferentes no CV: a reserva pode
-               estar em Pendência enquanto o repasse segue noutra etapa. -->
+               estar em Cancelada enquanto o repasse segue noutra etapa. -->
           <template #cell-_etapa="{ row }">
             <span class="flex flex-wrap gap-1">
               <a v-if="row.cv_situacao" :href="cvReservaUrl(row)" target="_blank" rel="noopener" @click.stop
@@ -162,20 +162,28 @@
           </template>
         </DataTable>
 
-        <!-- Paginação -->
-        <div v-if="store.totalPages > 1"
-          class="flex items-center justify-between gap-3 mt-3 px-1">
+        <!-- Rolagem infinita: mais 50 em memória e, quando ela acaba, a próxima
+             página do servidor. Substituiu a lista de botões de página, que no
+             celular virava uma faixa de números e obrigava a caçar o caso entre
+             páginas. Mesmo recurso da tela do Ato. -->
+        <div v-if="!store.historyLoading" class="flex items-center justify-between gap-3 mt-3 px-1">
           <span class="text-xs text-ink-muted">
-            <span class="font-mono tabular-nums">{{ store.historyTotal }}</span> registros
+            <span class="font-mono tabular-nums">{{ inc.visiveis.value.length }}</span>
+            de <span class="font-mono tabular-nums">{{ store.historyTotal }}</span>
+            registro{{ store.historyTotal === 1 ? '' : 's' }}
           </span>
-          <div class="flex gap-1 flex-wrap justify-end">
-            <button v-for="p in store.totalPages" :key="p" type="button"
-              @click="store.setPage(p)"
-              class="h-10 min-w-10 px-2.5 rounded-lg text-sm font-medium transition-colors focus-ring"
-              :class="store.historyPage === p ? 'bg-accent text-white' : 'text-ink-muted hover:bg-surface-hover'">
-              {{ p }}
-            </button>
-          </div>
+        </div>
+
+        <div v-if="!store.historyLoading && (!inc.acabou.value || faltaNoServidor)" ref="sentinela"
+          class="py-6 flex items-center justify-center gap-2 text-micro text-ink-subtle">
+          <Spinner v-if="!inc.acabou.value || store.historyLoadingMore" size="sm" />
+          <span v-if="!inc.acabou.value">
+            carregando mais {{ Math.min(inc.step, inc.restantes.value) }} de {{ inc.restantes.value }} restantes
+          </span>
+          <span v-else-if="store.historyLoadingMore">buscando mais {{ faltaNoServidor }} no servidor</span>
+          <button v-else type="button" class="underline hover:text-ink" @click="store.loadMoreHistory()">
+            carregar mais {{ faltaNoServidor }} registros
+          </button>
         </div>
       </div>
 
@@ -309,17 +317,15 @@
               <i class="fas fa-diagram-project"></i>
             </div>
             <div>
-              <h2 class="font-semibold text-ink text-sm">Etapas do workflow CV</h2>
+              <h2 class="font-semibold text-ink text-sm">Etapa do workflow CV</h2>
               <p class="text-xs text-ink-muted">
-                Sucesso mantém/devolve a reserva para <strong>Cancelada</strong>; bloqueio ou erro move para
-                <strong>Pendência</strong>. Mover Pendência de volta para Cancelada no CV re-dispara a automação.
+                A reserva fica em <strong>Cancelada</strong> em qualquer desfecho. O que muda é a primeira linha
+                da mensagem postada na reserva: <strong>CONCLUÍDO</strong>, <strong>PENDENTE</strong> ou
+                <strong>ERRO</strong>. O acompanhamento e o reprocesso são por esta tela.
               </p>
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input v-model="situacaoForm.situacao_pendencia_id" type="number"
-              label="ID da etapa Pendência" placeholder="30"
-              hint="Etapa aplicada quando o cancelamento é barrado ou falha." />
             <Input v-model="situacaoForm.situacao_cancelada_id" type="number"
               label="ID da etapa Cancelada" placeholder="4"
               hint="Etapa de cancelamento concluído (mantida no sucesso)." />
@@ -381,7 +387,7 @@
             <li>Nenhum outro contrato ativo na mesma unidade no Sienge.</li>
             <li>Exclusão confirmada por releitura (por reserva e por unidade) antes de liberar a unidade no CV.</li>
             <li>Sem contrato no Sienge: a unidade só é liberada após cruzar todas as referências (reserva, unidade, número de integração e documento do cliente) sem achar contrato ativo - e o gate do ato vale aqui também (boleto pendente, pago ou em processamento bloqueia a liberação).</li>
-            <li>Sucesso mantém a reserva em <strong>Cancelada</strong>; bloqueio ou erro move para <strong>Pendência</strong> no CV, com mensagem orientando o e-mail ao administrativo interno.</li>
+            <li>A reserva permanece em <strong>Cancelada</strong> em qualquer desfecho; o resultado é registrado na mensagem da reserva (<strong>CONCLUÍDO</strong>, <strong>PENDENTE</strong> ou <strong>ERRO</strong> na primeira linha), com orientação de e-mail ao administrativo interno quando fica pendente.</li>
           </ul>
         </Surface>
 
@@ -665,6 +671,8 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import DataTable from '@/components/UI/DataTable.vue';
+import Spinner from '@/components/UI/Spinner.vue';
+import { useIncrementalList } from '@/composables/useIncrementalList';
 import ReservaCancelFilters from './components/ReservaCancelFilters.vue';
 
 const store = useReservaCancelStore();
@@ -715,7 +723,7 @@ function resumoCaso(item) {
         ? 'Contrato excluído no Sienge (exclusão confirmada por releitura) e unidade disponibilizada no CV.'
         : 'Sem contrato ativo no Sienge - unidade disponibilizada no CV após o cruzamento de todas as referências.';
     case 'blocked':
-      return 'Uma validação de segurança barrou o cancelamento. Nada foi alterado no Sienge e a reserva foi movida para Pendência no CV.';
+      return 'Uma validação de segurança barrou o cancelamento. Nada foi alterado no Sienge e a pendência foi registrada na mensagem da reserva no CV.';
     case 'held':
       return 'O freio de rajada segurou este caso: o CV disparou cancelamentos em massa. Nada foi alterado no Sienge nem no CV. Confira o que originou a rajada e reprocesse aqui o que for legítimo.';
     case 'error':
@@ -750,9 +758,13 @@ function heroIconClass(status) {
   }[status] || 'bg-surface text-ink-muted border-line';
 }
 
+/* A etapa do CV saiu de cena (o workflow não libera Cancelada -> Pendência para
+   o usuário do token). O que a automação escreve no CV é a MENSAGEM, e a primeira
+   linha dela é o status - é isso que o gestor lê na timeline sem abrir. */
+const STATUS_NA_MENSAGEM = { success: 'CONCLUÍDO', blocked: 'PENDENTE', error: 'ERRO' };
+
 function acoesCaso(item) {
-  const pendencia = item.situacao_aplicada_id != null
-    && item.situacao_aplicada_id === store.settings?.situacao_pendencia_id;
+  const naMensagem = STATUS_NA_MENSAGEM[item.status] || null;
   return [
     {
       icon: 'fas fa-file-circle-xmark',
@@ -767,19 +779,13 @@ function acoesCaso(item) {
       text: item.cv_unidade_disponibilizada ? 'Disponibilizada' : 'Sem alteração',
     },
     {
-      icon: 'fas fa-diagram-project',
-      label: 'Etapa aplicada pela automação',
-      done: !!item.cv_situacao_alterada,
-      warn: pendencia,
-      text: item.cv_situacao_alterada
-        ? (pendencia ? 'Movida para Pendência' : `Etapa ID ${item.situacao_aplicada_id} aplicada`)
-        : 'Sem alteração',
-    },
-    {
       icon: 'fas fa-message',
-      label: 'Mensagem na reserva',
+      label: 'Status na reserva do CV',
       done: !!item.cv_mensagem_enviada,
-      text: item.cv_mensagem_enviada ? 'Registrada no CV' : 'Não registrada',
+      warn: !!item.cv_mensagem_enviada && (item.status === 'blocked' || item.status === 'error'),
+      text: item.cv_mensagem_enviada
+        ? (naMensagem ? `Mensagem registrada: ${naMensagem}` : 'Mensagem registrada')
+        : 'Não registrada',
     },
   ];
 }
@@ -843,9 +849,27 @@ const ordenarDir = computed({
   set: (v) => store.applySort(store.sortBy, v),
 });
 
+/* ── Rolagem infinita ────────────────────────────────────────────────────────
+   A lista cresce de 50 em 50 dentro do que já está em memória e, quando essa
+   memória acaba, pede a próxima página ao servidor (`onEsgotado`). Sem esse
+   gancho o rodapé anunciaria "buscando mais no servidor" e ninguém buscaria. */
+const faltaNoServidor = computed(() =>
+  Math.max(0, (store.historyTotal || 0) - (store.history?.length || 0)));
+
+const listaHistorico = computed(() => store.history || []);
+const inc = useIncrementalList(listaHistorico, {
+  step: 50,
+  onEsgotado: () => { if (faltaNoServidor.value) store.loadMoreHistory(); },
+});
+
+/* Ref de template, não `:ref` inline: a arrow function é recriada a cada render
+   e o Vue religaria o IntersectionObserver a cada atualização da store. */
+const sentinela = ref(null);
+watch(sentinela, (el) => inc.observar(el));
+
 // ── Etapa CV: badge na cor do workflow do CV, clicável ────────────────────────
 // Reserva e repasse são workflows diferentes no CV: a reserva pode estar em
-// Pendência enquanto o repasse segue em outra etapa, então mostramos os dois.
+// uma etapa enquanto o repasse segue em outra, então mostramos os dois.
 const cvRepasseUrl = (item) => item.cv_idrepasse
   ? `https://menin.cvcrm.com.br/gestor/financeiro/repasses/${item.cv_idrepasse}/administrar`
   : cvReservaUrl(item);
@@ -946,19 +970,17 @@ async function handleToggleActive(value) {
 }
 
 // ── Etapas do workflow CV ─────────────────────────────────────────────────────
-const situacaoForm = ref({ situacao_pendencia_id: '', situacao_cancelada_id: '' });
+const situacaoForm = ref({ situacao_cancelada_id: '' });
 
 watch(() => store.settings, (s) => {
   if (!s) return;
   situacaoForm.value = {
-    situacao_pendencia_id: s.situacao_pendencia_id ?? '',
     situacao_cancelada_id: s.situacao_cancelada_id ?? '',
   };
 }, { immediate: true });
 
 async function handleSaveSituacoes() {
   await store.saveSettings({
-    situacao_pendencia_id: Number(situacaoForm.value.situacao_pendencia_id) || null,
     situacao_cancelada_id: Number(situacaoForm.value.situacao_cancelada_id) || null,
   });
 }
