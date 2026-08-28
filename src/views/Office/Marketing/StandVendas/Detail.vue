@@ -183,7 +183,8 @@
                     :can-manage="podeCuidar" :saving="store.saving" @save="salvarItens" />
 
                 <PhotosTab v-else :images="stand.images" :can-manage="podeCuidar" :saving="store.saving"
-                    @upload="subirFotos" @remove="removerFoto" />
+                    :max="stand.images_max || 24"
+                    @upload="subirFoto" @remove="removerFoto" @caption="salvarLegenda" @reorder="reordenarFotos" />
             </template>
 
             <Surface v-else variant="raised" padding="none">
@@ -326,13 +327,30 @@ async function salvarItens(items) {
     }
 }
 
-async function subirFotos(files) {
-    for (const file of files) {
-        try {
-            await store.addImage(standId.value, file);
-        } catch (e) {
-            toast.error(e.message || `Não foi possível subir ${file.name}.`);
-        }
+// A aba manda uma foto por vez e espera a resposta: assim a barra de progresso
+// diz qual subiu e qual falhou, em vez de um "deu erro" geral no fim.
+async function subirFoto({ pronta, resolve, reject }) {
+    try {
+        await store.addImage(standId.value, pronta);
+        resolve();
+    } catch (e) {
+        reject(e);
+    }
+}
+
+async function salvarLegenda({ id, caption }) {
+    try {
+        await store.updateImage(standId.value, id, { caption });
+    } catch (e) {
+        toast.error(e.message || 'Não foi possível salvar a legenda.');
+    }
+}
+
+async function reordenarFotos(ids) {
+    try {
+        await store.reorderImages(standId.value, ids);
+    } catch (e) {
+        toast.error(e.message || 'Não foi possível salvar a ordem das fotos.');
     }
 }
 

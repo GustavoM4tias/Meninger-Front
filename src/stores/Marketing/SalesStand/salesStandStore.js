@@ -308,12 +308,33 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
         }
     }
 
-    async function addImage(id, file, caption = '') {
+    async function addImage(id, pronta, caption = '') {
         saving.value = true;
         try {
-            const img = await api.addImage(id, file, caption);
+            const img = await api.addImage(id, pronta, caption);
             await fetchDetail(id);
             return img;
+        } finally {
+            saving.value = false;
+        }
+    }
+
+    async function updateImage(id, imageId, payload) {
+        saving.value = true;
+        try {
+            await api.updateImage(id, imageId, payload);
+            await fetchDetail(id);
+        } finally {
+            saving.value = false;
+        }
+    }
+
+    async function reorderImages(id, ids) {
+        saving.value = true;
+        try {
+            await api.reorderImages(id, ids);
+            // A capa do stand muda junto, e ela aparece no cartao da listagem.
+            await Promise.all([fetchDetail(id), fetchStands()]);
         } finally {
             saving.value = false;
         }
@@ -364,6 +385,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
         saveModel, deleteModel,
         saveCategory, deleteCategory,
         saveStand, deleteStand, defineStand, undefineStand, fetchSpend,
-        fetchDetail, clearDetail, classify, saveItems, addImage, deleteImage,
+        fetchDetail, clearDetail, classify, saveItems,
+        addImage, updateImage, reorderImages, deleteImage,
     };
 });

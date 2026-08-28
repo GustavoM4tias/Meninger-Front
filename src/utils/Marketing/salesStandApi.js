@@ -64,12 +64,20 @@ export default {
 
     // Fotos
     images: (id) => req(`/${id}/images`),
-    addImage: (id, file, caption = '') => {
+    // A foto vai tratada pela tela: `file` e a imagem reduzida e `thumb` a
+    // miniatura da grade. O nome do arquivo precisa ir junto do Blob, senao o
+    // multer recebe um campo sem originalname.
+    addImage: (id, { full, thumb, width, height, ext = 'jpg' }, caption = '') => {
         const form = new FormData();
-        form.append('file', file);
+        const carimbo = Date.now();
+        form.append('file', full, `stand-${id}-${carimbo}.${ext}`);
+        if (thumb) form.append('thumb', thumb, `stand-${id}-${carimbo}-thumb.${ext}`);
         if (caption) form.append('caption', caption);
+        if (width) form.append('width', String(width));
+        if (height) form.append('height', String(height));
         return req(`/${id}/images`, { method: 'POST', body: form }, { json: false });
     },
+    reorderImages: (id, ids) => req(`/${id}/images/order`, { method: 'PATCH', ...body({ ids }) }),
     updateImage: (id, imageId, payload) => req(`/${id}/images/${imageId}`, { method: 'PATCH', ...body(payload) }),
     deleteImage: (id, imageId) => req(`/${id}/images/${imageId}`, { method: 'DELETE' }),
 };
