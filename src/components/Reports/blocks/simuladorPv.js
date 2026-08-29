@@ -97,17 +97,21 @@ export function indicadores(series, {
   const ateL = ate(liquido)
   const ateB = ate(bruto)
 
-  // "Recurso próprio até a entrega" tira A PARCELA DAS CHAVES, não o mês
-  // inteiro dela.
+  // RECURSO PRÓPRIO É O QUE NÃO É FINANCIAMENTO - não importa a data.
   //
-  // Descontar `fluxo[chaves]` levava junto a mensal que cai no mesmo mês da
-  // entrega, e o Verona aparecia com 28,91% quando o plano dele soma exatos
-  // 30,00%. Dois erros de R$ 3.100 viravam um diagnóstico errado: parecia
-  // tabela mal desenhada, quando o desenho está certo e o problema é só o
-  // cronograma da última mensal.
-  const valorDasChaves = (series || [])
-    .filter(x => x.papel === 'chaves' || /CHAVE/i.test(x.nome || ''))
+  // O 30 do 30/70 é a natureza do dinheiro, não o calendário: parcela de
+  // recurso próprio que cai depois da entrega continua compondo os 30%. Contar
+  // "o que caiu até a chave" tirava dos 30% a última mensal do Verona e dava
+  // 29,46% num plano que soma exatos 30,00%.
+  //
+  // O calendário vira uma regra à parte (quantos meses depois da chave a última
+  // parcela pode cair), que é onde ele de fato importa.
+  const somaSeries = (filtro) => (series || []).filter(filtro)
     .reduce((a, x) => a + (Number(x.valor) || 0) * Math.max(0, Math.round(Number(x.qtd) || 0)), 0)
+
+  const ehFinanciamento = (x) => x.papel === 'chaves' || x.papel === 'financiamento' || /CHAVE/i.test(x.nome || '')
+  const valorDasChaves = somaSeries(x => x.papel === 'chaves' || /CHAVE/i.test(x.nome || ''))
+  const valorFinanciado = somaSeries(ehFinanciamento)
 
   return {
     fluxo: liquido,
@@ -126,7 +130,13 @@ export function indicadores(series, {
     // O que entrou durante a obra, sem a parcela da entrega (que é o repasse
     // do banco). É o corte de caixa de obra - em Sinop, os 30% do 30/70.
     ateChavesSemChaves: ateL(chaves) - valorDasChaves,
+    // Os 30%: tudo que o cliente paga com o próprio dinheiro, fora o
+    // financiamento da entrega.
+    recursoProprio: total - valorFinanciado,
     valorDasChaves,
+    valorFinanciado,
+    // Quantos meses depois da entrega vai a última parcela do fluxo.
+    mesesAposChaves: chaves == null ? 0 : Math.max(0, bruto.length - 1 - chaves),
     aposChaves: chaves == null ? 0 : ateB(null) - ateB(chaves),
     ultimoMes: bruto.length - 1,
   }
@@ -176,7 +186,7 @@ export function avaliar({ tabela = [], proposta = [], mesBase, regras = {} } = {
       { chave: 'entrada6m', rotulo: 'Pago nos 6 primeiros meses', base: 'bruto', valor: fracao(bruto(ind.entrada6m), ind.total), minimo: regras.entrada6mMin },
       { chave: 'ano1', rotulo: 'Pago no 1º ano', base: 'bruto', valor: fracao(bruto(ind.ano1), ind.total), minimo: regras.primeiroAnoMin },
       { chave: 'ano2', rotulo: 'Pago no 2º ano', base: 'bruto', valor: fracao(bruto(ind.ano2), ind.total), minimo: regras.segundoAnoMin },
-      { chave: 'obra', rotulo: 'Recurso próprio até a entrega', base: 'bruto', valor: fracao(bruto(ind.ateChavesSemChaves), ind.total), minimo: regras.ateChavesSemChavesMin },
+      { chave: 'proprio', rotulo: 'Recurso próprio (fora o financiamento)', base: 'bruto', valor: fracao(ind.recursoProprio, ind.total), minimo: regras.recursoProprioMin },
       { chave: 'ateChaves', rotulo: 'Pago até as chaves', base: 'bruto', valor: fracao(bruto(ind.ateChaves), ind.total), minimo: regras.ateChavesMin },
     ]
       // Corte sem mínimo configurado não vira reprovação silenciosa: some da
@@ -200,16 +210,16 @@ export function avaliar({ tabela = [], proposta = [], mesBase, regras = {} } = {
   const difVp = p.vpl - t.vpl
   const vpOk = difVp >= -1e-6
 
-  // Parcela depois da entrega: reprova só acima de uma folga.
+  // A FOLGA É DE DATA, EM MESES - não de valor.
   //
-  // A própria tabela do Verona tem 24 mensais começando no mês 1 com as chaves
-  // no 23, então a última cai um mês depois - R$ 3.100 numa venda de R$ 568 mil,
-  // 0,5%. Reprovar por isso seria transformar um arredondamento de cronograma
-  // em impedimento; ignorar seria deixar passar uma proposta que empurra meio
-  // ano de parcela para depois da chave. A folga é a linha entre as duas.
-  const folgaAposChaves = p.total * (Number(regras.aposChavesTolerancia) || 0)
-  const chavesOk = !regras.semParcelaAposChaves || p.aposChaves <= folgaAposChaves + 1e-6
-  const chavesAviso = p.aposChaves > 1e-6 && chavesOk
+  // A tabela do Verona tem 24 mensais a partir do mês 1 com a chave no mês 23,
+  // então a última cai UM mês depois da entrega. Um mês é o padrão da casa e
+  // passa; dois ou mais é proposta empurrando parcela para depois da chave, e
+  // aí bloqueia. O dinheiro dessa parcela continua contando nos 30% - ela é
+  // recurso próprio, só está atrasada.
+  const folgaMeses = Number(regras.aposChavesMesesTolerancia ?? 0)
+  const chavesOk = !regras.semParcelaAposChaves || p.mesesAposChaves <= folgaMeses
+  const chavesAviso = p.mesesAposChaves > 0 && chavesOk
 
   return {
     tabela: t,
@@ -222,7 +232,7 @@ export function avaliar({ tabela = [], proposta = [], mesBase, regras = {} } = {
     vpOk,
     chavesOk,
     chavesAviso,
-    folgaAposChaves,
+    folgaMeses,
     fecha: cortes.every(c => c.ok) && vpOk && chavesOk,
   }
 }

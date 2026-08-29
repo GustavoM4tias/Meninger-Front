@@ -109,7 +109,7 @@ const marcos = computed(() => {
     linha('6 meses', p.entrada6m, t.entrada6m),
     linha('1º ano', p.ano1, t.ano1),
     linha('2º ano', p.ano2, t.ano2),
-    linha('Na obra, sem as chaves', p.ateChavesSemChaves, t.ateChavesSemChaves),
+    { rotulo: 'Recurso próprio (fora o financiamento)', prop: p.recursoProprio, tab: t.recursoProprio, bruto: p.recursoProprio },
     linha('Até as chaves', p.ateChaves, t.ateChaves),
     { rotulo: 'Total', prop: p.liquidoTotal, tab: t.liquidoTotal, bruto: p.total },
   ]
@@ -233,14 +233,16 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
                 class="fa-solid text-[10px]"
                 :class="r.chavesOk ? 'fa-triangle-exclamation text-amber-500' : 'fa-xmark text-rose-500'"
               />
-              Parcela depois das chaves
+              Última parcela depois da chave
             </span>
             <span
               class="tabular-nums text-right"
               :class="r.chavesOk ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400 font-medium'"
             >
-              {{ formatValue(r.proposta.aposChaves, 'currency') }}
-              <span class="text-ink-subtle">/ folga {{ formatValue(r.folgaAposChaves, 'currency') }}</span>
+              {{ r.proposta.mesesAposChaves }} {{ r.proposta.mesesAposChaves === 1 ? 'mês' : 'meses' }}
+              <span class="text-ink-subtle">
+                / folga {{ r.folgaMeses }} · {{ formatValue(r.proposta.aposChaves, 'currency') }}
+              </span>
             </span>
           </div>
         </div>
