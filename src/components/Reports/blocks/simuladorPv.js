@@ -142,6 +142,32 @@ export function indicadores(series, {
   }
 }
 
+/**
+ * A venda repartida em partes que somam 100%.
+ *
+ * É a leitura do 30/70 e NÃO tem nada a ver com o acumulado no tempo: aqui a
+ * pergunta é de que natureza é cada real do preço, não quando ele entra.
+ * Misturar as duas numa tabela só foi o que tornou o bloco ilegível - "recurso
+ * próprio 30%" ao lado de "2º ano 95,5%" convida a somar coisas que não somam.
+ */
+export function composicao(series, total) {
+  const linhas = (series || []).map((s) => {
+    const valor = (Number(s.valor) || 0) * Math.max(0, Math.round(Number(s.qtd) || 0))
+    const financia = s.papel === 'chaves' || s.papel === 'financiamento' || /CHAVE/i.test(s.nome || '')
+    return { nome: s.nome, qtd: s.qtd, unitario: Number(s.valor) || 0, valor, financia, pct: fracao(valor, total) }
+  })
+  const soma = (f) => linhas.filter(f).reduce((a, l) => a + l.valor, 0)
+  const proprio = soma(l => !l.financia)
+  const financiado = soma(l => l.financia)
+  return {
+    linhas,
+    proprio,
+    financiado,
+    pctProprio: fracao(proprio, total),
+    pctFinanciado: fracao(financiado, total),
+  }
+}
+
 const fracao = (parte, todo) => (todo > 0 ? parte / todo : 0)
 
 // Quanto um corte pode faltar em REAIS e ainda ser arredondamento, não desconto.

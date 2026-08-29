@@ -17,7 +17,7 @@
 // fluxo é coisa que precisa ser testada sem abrir tela.
 import { computed, ref, watch } from 'vue'
 import { formatValue } from '../format.js'
-import { avaliar } from './simuladorPv.js'
+import { avaliar, composicao } from './simuladorPv.js'
 import BlockEmpty from './BlockEmpty.vue'
 
 const props = defineProps({
@@ -105,15 +105,16 @@ const marcos = computed(() => {
   const c = p.comissao
   const linha = (rotulo, prop, tab) => ({ rotulo, prop, tab, bruto: prop + c })
   return [
-    linha('Ato', p.ato, t.ato),
-    linha('6 meses', p.entrada6m, t.entrada6m),
-    linha('1º ano', p.ano1, t.ano1),
-    linha('2º ano', p.ano2, t.ano2),
-    { rotulo: 'Recurso próprio (fora o financiamento)', prop: p.recursoProprio, tab: t.recursoProprio, bruto: p.recursoProprio },
+    linha('No ato', p.ato, t.ato),
+    linha('Até 6 meses', p.entrada6m, t.entrada6m),
+    linha('Até 1 ano', p.ano1, t.ano1),
+    linha('Até 2 anos', p.ano2, t.ano2),
     linha('Até as chaves', p.ateChaves, t.ateChaves),
-    { rotulo: 'Total', prop: p.liquidoTotal, tab: t.liquidoTotal, bruto: p.total },
+    { rotulo: 'Total da venda', prop: p.liquidoTotal, tab: t.liquidoTotal, bruto: p.total },
   ]
 })
+
+const comp = computed(() => composicao(proposta.value, r.value.proposta.total))
 
 const pct = (parte, todo) => (todo > 0 ? parte / todo : 0)
 const perc = (v) => `${((v || 0) * 100).toFixed(1).replace('.', ',')}%`
@@ -375,12 +376,58 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
         </div>
       </div>
 
-      <!-- Acumulado: proposta contra tabela nos marcos -->
+      <!-- 1) A venda repartida: soma 100%, é a leitura do 30/70 -->
+      <div>
+        <p class="mb-1.5 text-micro uppercase tracking-wider text-ink-subtle">
+          Como a venda se divide · soma 100%
+        </p>
+        <div class="overflow-x-auto rounded-lg border border-line">
+          <table class="w-full text-xs">
+            <thead class="bg-surface-sunken/60 text-ink-subtle">
+              <tr>
+                <th class="px-2 py-1.5 text-left font-medium">Parcela</th>
+                <th class="px-2 py-1.5 text-right font-medium">Valor</th>
+                <th class="px-2 py-1.5 text-right font-medium">% da venda</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(l, i) in comp.linhas.filter(x => !x.financia)" :key="'p' + i" class="border-t border-line">
+                <td class="px-2 py-1.5 text-ink-muted pl-4">
+                  {{ l.nome }}<span v-if="l.qtd > 1" class="text-ink-subtle"> ({{ l.qtd }}x)</span>
+                </td>
+                <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ formatValue(l.valor, 'currency') }}</td>
+                <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ perc(l.pct) }}</td>
+              </tr>
+              <tr class="border-t border-line bg-surface-sunken/40">
+                <td class="px-2 py-1.5 font-medium text-ink">Recurso próprio</td>
+                <td class="px-2 py-1.5 text-right font-medium text-ink tabular-nums">{{ formatValue(comp.proprio, 'currency') }}</td>
+                <td class="px-2 py-1.5 text-right font-medium tabular-nums text-ink">{{ perc(comp.pctProprio) }}</td>
+              </tr>
+              <tr v-for="(l, i) in comp.linhas.filter(x => x.financia)" :key="'f' + i" class="border-t border-line">
+                <td class="px-2 py-1.5 font-medium text-ink">{{ l.nome }}</td>
+                <td class="px-2 py-1.5 text-right font-medium text-ink tabular-nums">{{ formatValue(l.valor, 'currency') }}</td>
+                <td class="px-2 py-1.5 text-right font-medium tabular-nums text-ink">{{ perc(l.pct) }}</td>
+              </tr>
+              <tr class="border-t-2 border-line">
+                <td class="px-2 py-1.5 font-semibold text-ink">Preço da unidade</td>
+                <td class="px-2 py-1.5 text-right font-semibold text-ink tabular-nums">{{ formatValue(r.proposta.total, 'currency') }}</td>
+                <td class="px-2 py-1.5 text-right font-semibold text-ink tabular-nums">100,0%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-1 text-micro text-ink-subtle">
+          O 30/70: o de cima é o que o cliente paga do próprio bolso, o de baixo é o financiamento na entrega.
+          Aqui não há comissão - ela não muda a natureza do dinheiro, só sai depois.
+        </p>
+      </div>
+
+      <!-- 2) Acumulado no tempo: quanto já ENTROU em cada marco -->
       <div class="overflow-x-auto rounded-lg border border-line">
         <table class="w-full text-xs">
           <thead class="bg-surface-sunken/60 text-ink-subtle">
             <tr>
-              <th class="px-2 py-1.5 text-left font-medium">Acumulado</th>
+              <th class="px-2 py-1.5 text-left font-medium">Quanto entrou até</th>
               <th class="px-2 py-1.5 text-right font-medium">Cliente paga</th>
               <th class="px-2 py-1.5 text-right font-medium">Entra líquido</th>
               <th class="px-2 py-1.5 text-right font-medium">% da venda</th>
