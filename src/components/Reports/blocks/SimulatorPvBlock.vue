@@ -149,7 +149,7 @@ const comp = computed(() => composicao(proposta.value, r.value.proposta.total))
 // público. São dois porque respondem coisas diferentes - a barra mostra o
 // esforço de cada mês, a linha mostra se a proposta está atrás da tabela.
 const GL = 600
-const GA = 140
+const GA = 170
 
 const grafico = computed(() => {
   const p = r.value.proposta.fluxo || []
@@ -591,7 +591,7 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
           </p>
         </div>
 
-        <div class="grid gap-3 lg:grid-cols-2">
+        <div class="space-y-3">
           <!-- Por mês -->
           <div class="rounded-lg border border-line px-3 pt-2 pb-1">
             <p class="text-xs text-ink-muted">Quanto entra em cada mês</p>
