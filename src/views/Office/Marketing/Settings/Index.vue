@@ -28,6 +28,7 @@ const draft = ref({
     lead_return_auto: true,
     lead_return_ordem_blindada: 4,
     alert_recipient_user_ids: [],
+    meta_form_fallback_scope: 'no_campaign',
 });
 
 // Situações de lead do CV, para a régua ser escolhida por etapa e não por um
@@ -43,6 +44,7 @@ function resetDraft() {
         lead_return_auto: c.lead_return_auto !== false,
         lead_return_ordem_blindada: c.lead_return_ordem_blindada ?? 4,
         alert_recipient_user_ids: Array.isArray(c.alert_recipient_user_ids) ? [...c.alert_recipient_user_ids] : [],
+        meta_form_fallback_scope: c.meta_form_fallback_scope === 'always' ? 'always' : 'no_campaign',
     };
 }
 
@@ -94,6 +96,7 @@ async function save() {
         lead_return_auto: draft.value.lead_return_auto,
         lead_return_ordem_blindada: Number(draft.value.lead_return_ordem_blindada) ?? 4,
         alert_recipient_user_ids: draft.value.alert_recipient_user_ids,
+        meta_form_fallback_scope: draft.value.meta_form_fallback_scope,
     };
     const ok = await store.updateConfig(patch);
     if (ok) {
@@ -188,6 +191,31 @@ async function save() {
               </option>
             </select>
           </div>
+        </Surface>
+
+        <Surface variant="raised" padding="md">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-ink mb-1">Formulário cobre campanha sem vínculo</h3>
+              <p class="text-xs text-ink-muted">
+                O destino do lead vem do vínculo da <strong>campanha</strong>. Quando a campanha não tem
+                vínculo, o sistema pode usar o vínculo do <strong>formulário</strong> como reserva - mas o
+                mesmo formulário atende campanhas de produtos diferentes, e foi assim que leads de Avaré
+                foram parar em Ibitinga (ago/2026). <strong>Desligado</strong> (recomendado), lead de
+                campanha sem vínculo fica <em>represado</em> na Central de Vínculos até alguém vincular;
+                o formulário só decide quando o lead não tem campanha nenhuma.
+              </p>
+            </div>
+            <Switch :model-value="draft.meta_form_fallback_scope === 'always'"
+              @update:model-value="v => draft.meta_form_fallback_scope = v ? 'always' : 'no_campaign'"
+              size="sm" class="shrink-0" />
+          </div>
+          <p v-if="draft.meta_form_fallback_scope === 'always'"
+            class="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+            <i class="fas fa-triangle-exclamation mr-1"></i>
+            Ligado: campanha sem vínculo envia lead com o destino do formulário. Se o formulário for de
+            outro produto, o lead entra no CV no empreendimento errado, sem aviso.
+          </p>
         </Surface>
 
         <Surface variant="raised" padding="md">

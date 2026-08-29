@@ -115,6 +115,7 @@ const funnel = computed(() => ov.value?.funnel || {});
 const summary = computed(() => ov.value?.summary || {});
 const held = computed(() => ov.value?.held || { campaigns: [], forms: [] });
 const activeUnbound = computed(() => ov.value?.active_unbound_campaigns || []);
+const fallbackInUse = computed(() => ov.value?.fallback_in_use || []);
 const backlog = computed(() => ov.value?.backlog || null);
 
 /* Vazio é '0', não '—': aqui a ausência de represado significa zero mesmo. */
@@ -138,6 +139,9 @@ const temRecuperavel = computed(() => campanhasRecuperaveis.value.length > 0 || 
 const healthTone = computed(() => {
     const s = summary.value;
     if (s.leads_at_risk > 0 || s.unbound_campaigns_with_leads > 0) return 'danger';
+    // Lead ENTREGUE mas com destino decidido pelo formulário, não pela campanha:
+    // pode estar indo pro empreendimento errado (incidente Esmeralda×Três Marias).
+    if (fallbackInUse.value.length > 0) return 'warn';
     // Vínculo resolvido mas lead ainda parado: não é "tudo certo" — falta enviar.
     if (s.leads_recoverable > 0) return 'warn';
     if (s.active_unbound_campaigns > 0) return 'warn';
@@ -155,6 +159,13 @@ const healthCopy = computed(() => {
         };
     }
     if (healthTone.value === 'warn') {
+        if (fallbackInUse.value.length > 0) {
+            return {
+                title: `${fallbackInUse.value.length} campanha(s) entregando pelo vínculo do formulário`,
+                desc: 'Os leads estão chegando ao CV, mas o destino vem do formulário, não da campanha. '
+                    + 'Confira abaixo se o empreendimento aplicado é o certo e vincule a campanha.',
+            };
+        }
         if (s.leads_recoverable > 0) {
             return {
                 title: `${fmtInt(s.leads_recoverable)} lead(s) represado(s) prontos pra enviar`,
@@ -387,6 +398,51 @@ function statusBadge(s) {
               </tbody>
             </table>
           </Surface>
+        </section>
+
+        <!-- ══ Entregando pelo vínculo do FORMULÁRIO (destino pode estar errado) ══ -->
+        <section v-if="fallbackInUse.length" class="mb-5">
+          <div class="flex items-center gap-2 mb-2">
+            <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
+              <i class="fas fa-diamond-turn-right text-data-warn"></i>
+              Campanhas entregando pelo vínculo do formulário
+            </h2>
+            <span class="text-micro text-ink-subtle">últimos 30 dias — confira se o destino é o produto da campanha</span>
+          </div>
+          <Surface variant="raised" padding="none" class="overflow-hidden">
+            <ul class="divide-y divide-line/60">
+              <li v-for="c in fallbackInUse" :key="`fb-${c.campaign_id}-${c.form_id}`"
+                class="p-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-3 text-sm">
+                <div class="flex-1 min-w-0">
+                  <button @click="openCampaign(c.campaign_id)"
+                    class="text-ink font-medium leading-tight text-left hover:text-accent hover:underline break-words"
+                    :title="`Abrir campanha ${c.name || c.campaign_id}`">
+                    {{ c.name || `#${c.campaign_id}` }}
+                  </button>
+                  <div class="text-micro text-ink-subtle mt-0.5">
+                    {{ c.account_name || '—' }} · form "{{ c.form_name || c.form_id }}"
+                  </div>
+                </div>
+                <div class="md:text-right shrink-0">
+                  <div class="text-xs text-ink-muted">
+                    indo para
+                    <b class="text-data-warn">{{ (c.form_emp_names || []).join(', ') || 'sem empreendimento' }}</b>
+                  </div>
+                  <div class="text-micro text-ink-subtle">{{ fmtInt(c.lead_count) }} lead(s) no período</div>
+                </div>
+                <button @click="openCampaign(c.campaign_id)"
+                  class="h-10 md:h-auto rounded-lg md:rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium
+                         inline-flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity shrink-0">
+                  <i class="fas fa-link text-[9px]"></i>Vincular campanha
+                </button>
+              </li>
+            </ul>
+          </Surface>
+          <p class="mt-1.5 text-micro text-ink-subtle flex items-start gap-1.5">
+            <i class="fas fa-circle-info mt-0.5"></i>
+            <span>O formulário é da página e atende campanhas de produtos diferentes. Com o vínculo na
+            campanha, o destino fica explícito e este aviso some.</span>
+          </p>
         </section>
 
         <!-- ══ Represados recuperáveis (vínculo já resolve) ═════════════════ -->
