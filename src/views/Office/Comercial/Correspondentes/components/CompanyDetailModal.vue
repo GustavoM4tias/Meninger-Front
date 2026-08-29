@@ -54,7 +54,7 @@ const dados = computed(() => {
             <!-- Cabeçalho -->
             <div class="flex items-start gap-3 mb-4">
                 <div class="h-12 w-12 shrink-0 rounded-xl bg-accent-soft text-accent flex items-center justify-center text-sm font-semibold">
-                    {{ iniciais(e.nome) }}
+                    {{ e.sem_nome ? `#${e.cv_idempresa}` : iniciais(e.nome) }}
                 </div>
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-1.5 mb-1">
@@ -63,9 +63,14 @@ const dados = computed(() => {
                         <Badge v-else-if="e.origem === 'pendente'" variant="warning" size="sm">Falta código do CV</Badge>
                         <Badge v-else variant="neutral" size="sm" outlined>Só no CV</Badge>
                     </div>
-                    <p v-if="e.nome_inferido" class="text-xs text-ink-muted">
+                    <p v-if="e.sem_nome" class="text-xs text-ink-muted">
+                        <i class="fas fa-circle-question mr-1"></i>
+                        Correspondente novo no CV: ainda não passou por nenhum pré-cadastro ou reserva,
+                        então o nome não apareceu em lugar nenhum. Complete o cadastro para dar nome a ele.
+                    </p>
+                    <p v-else-if="e.nome_inferido" class="text-xs text-ink-muted">
                         <i class="fas fa-wand-magic-sparkles mr-1"></i>
-                        Nome deduzido dos pré-cadastros - o CV não permite ler o cadastro da empresa por integração.
+                        Nome deduzido dos pré-cadastros e reservas - o CV não permite ler o cadastro da empresa por integração.
                     </p>
                 </div>
             </div>
@@ -110,6 +115,22 @@ const dados = computed(() => {
                     Registrar aqui libera esses dados e permite cadastrar pessoas por esta tela.
                 </p>
                 <Button variant="secondary" size="sm" icon="fas fa-plus" @click="emit('registrar', e)">Registrar aqui</Button>
+            </div>
+
+            <!-- Trazida pelo sync: falta alguém dizer nome, praça e contato -->
+            <div v-else-if="e.origem === 'importada' && (e.sem_nome || !e.cidade || !e.endereco)"
+                class="rounded-lg border border-line bg-surface-sunken/50 p-3 mb-4 text-xs text-ink-muted">
+                <p class="mb-2">
+                    <template v-if="e.sem_nome">
+                        O sync achou esta empresa no CV pelo código, mas o CV não deixa ler o cadastro dela.
+                        Diga aqui o nome e a praça: é o que faz ela aparecer com nome e entrar na alçada de quem trabalha na região.
+                    </template>
+                    <template v-else>
+                        Cadastro incompleto: falta praça e contato. A cidade é o que recorta quem enxerga
+                        esta empresa nas alçadas.
+                    </template>
+                </p>
+                <Button variant="secondary" size="sm" icon="fas fa-pen" @click="emit('registrar', e)">Completar cadastro</Button>
             </div>
 
             <!-- Falta código -->
@@ -193,7 +214,9 @@ const dados = computed(() => {
         </template>
 
         <template #footer>
-            <a v-if="e" :href="cvEmpresasUrl(e.nome_inferido || e.origem !== 'cv' ? e.nome : '')" target="_blank" rel="noopener"
+            <!-- Sem nome de verdade, filtrar a listagem do CV pelo rótulo do
+                 sistema não acharia nada: abre a listagem inteira. -->
+            <a v-if="e" :href="cvEmpresasUrl(e.sem_nome ? '' : (e.nome_inferido || e.origem !== 'cv' ? e.nome : ''))" target="_blank" rel="noopener"
                 class="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm text-ink-muted hover:text-accent hover:border-accent/60">
                 <i class="fas fa-arrow-up-right-from-square"></i> Abrir no CV
             </a>

@@ -223,8 +223,10 @@ onMounted(() => { if (!store.empresas.length) store.fetchOverview(); });
                 <button type="button"
                     class="w-full px-4 py-3 flex items-center gap-3 text-left active:bg-surface-sunken/60 hover:bg-surface-sunken/40 transition-colors"
                     @click="selecionadaChave = chaveDe(e)">
+                    <!-- Sem nome, as iniciais do rótulo do sistema ("E#") não
+                         dizem nada: mostra o código do CV, que é o que existe. -->
                     <div class="h-10 w-10 shrink-0 rounded-xl bg-accent-soft text-accent flex items-center justify-center text-xs font-semibold">
-                        {{ iniciais(e.nome) }}
+                        {{ e.sem_nome ? `#${e.cv_idempresa}` : iniciais(e.nome) }}
                     </div>
 
                     <div class="min-w-0 flex-1">
@@ -246,6 +248,9 @@ onMounted(() => { if (!store.empresas.length) store.fetchOverview(); });
                                         <span class="text-ink-subtle"> +{{ e.cidades.length - 1 }}</span>
                                     </template>
                                 </span>
+                            </template>
+                            <template v-else-if="e.sem_nome">
+                                <i class="fas fa-circle-question mr-1"></i>Correspondente novo no CV - falta dar nome ao cadastro
                             </template>
                             <template v-else-if="e.nome_inferido">Cadastro não completado no Office</template>
                             <template v-else>Sem cidade informada</template>

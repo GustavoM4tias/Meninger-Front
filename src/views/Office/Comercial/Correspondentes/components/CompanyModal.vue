@@ -1,9 +1,16 @@
 <script setup>
 // Cadastro de empresa correspondente.
 //
-// Dois modos: criar no CV (POST) ou apenas registrar aqui uma empresa que já
-// existe lá. O segundo modo existe porque o GET de empresas do CV está fora
-// do ar - sem ele, não temos como puxar as empresas antigas automaticamente.
+// Três modos: criar no CV (POST), registrar aqui uma empresa que já existe lá,
+// ou completar o cadastro de uma empresa que o sync trouxe do CV. O segundo
+// existe porque o GET de empresas do CV está fora do ar - sem ele, não temos
+// como puxar as empresas antigas automaticamente.
+//
+// O terceiro entrou em 2026-08-28: o sync materializa a empresa com o que dá
+// para deduzir (às vezes só o código, quando o CCA acabou de nascer e ainda não
+// apareceu em pré-cadastro nenhum) e não havia caminho na tela para alguém
+// dizer o nome, a praça e o contato dela. Aqui só o Office é atualizado - o CV
+// não tem update por integração.
 
 import { computed, ref, watch } from 'vue';
 import { useToast } from 'vue-toastification';
@@ -55,6 +62,15 @@ const jaExiste = ref(false);      // empresa já cadastrada no CV
 const cvIdempresa = ref('');
 const enviado = ref(null);
 
+// Empresa que já tem linha no Office (veio do sync ou foi cadastrada aqui):
+// editar, não criar de novo. Sem isto, salvar tentaria criar uma segunda linha
+// com o mesmo código do CV - que o servidor recusa, e com razão.
+const editando = computed(() => !!props.prefill?.id);
+
+// Empresa que o sync trouxe sem nome nenhum: o campo abre vazio, porque
+// "Empresa #39" é rótulo de sistema e não serve como ponto de partida.
+const nomeInicial = (p) => (p?.sem_nome ? '' : (p?.nome || ''));
+
 watch(() => props.open, (aberto) => {
     if (!aberto) return;
     form.value = vazio();
@@ -63,14 +79,20 @@ watch(() => props.open, (aberto) => {
     codigo.value = '';
 
     const p = props.prefill;
-    jaExiste.value = !!p;
+    jaExiste.value = !!p && !p.id;
     cvIdempresa.value = p?.cv_idempresa ? String(p.cv_idempresa) : '';
     if (p) {
-        // Nome deduzido do pré-cadastro serve de ponto de partida, mas o
-        // operador confirma antes de virar cadastro oficial do Office.
-        form.value.nome = p.nome || '';
+        // Nome deduzido do CV serve de ponto de partida, mas o operador
+        // confirma antes de virar cadastro oficial do Office.
+        form.value.nome = nomeInicial(p);
         form.value.cidade = p.cidade || '';
         if (p.estado) form.value.estado = p.estado;
+    }
+    if (p && editando.value) {
+        form.value.endereco = p.endereco || '';
+        form.value.telefone = p.telefone || '';
+        form.value.email = p.email || '';
+        form.value.dias_agendamento = p.dias_agendamento ?? 5;
     }
 });
 
@@ -79,6 +101,10 @@ const regiao = computed(() => regiaoDaUf(form.value.estado));
 const podeSalvar = computed(() => {
     const f = form.value;
     if (!f.nome.trim()) return false;
+    // Completar cadastro é do Office para o Office: o que ainda não se sabe
+    // pode ficar em branco, senão a tela obriga a inventar endereço para poder
+    // gravar o nome.
+    if (editando.value) return true;
     if (jaExiste.value) return !!cvIdempresa.value;
     return !!(regiao.value && f.estado && f.cidade.trim() && f.endereco.trim());
 });
@@ -91,6 +117,12 @@ const vinculando = ref(false);
 
 async function salvar() {
     try {
+        if (editando.value) {
+            await store.updateCompany(props.prefill.id, { ...form.value, regiao: regiao.value });
+            toast.success('Cadastro da empresa atualizado.');
+            emit('close');
+            return;
+        }
         const data = await store.createCompany({
             ...form.value,
             regiao: regiao.value,
@@ -128,7 +160,9 @@ async function vincular() {
 
 <template>
     <Modal :open="open" size="lg"
-        :title="enviado ? 'Confirme o código da empresa' : 'Nova empresa correspondente'"
+        :title="enviado ? 'Confirme o código da empresa'
+            : (editando ? 'Completar cadastro da empresa' : 'Nova empresa correspondente')"
+        :subtitle="editando && prefill?.cv_idempresa ? `CV #${prefill.cv_idempresa}` : ''"
         @close="emit('close')">
 
         <!-- Depois do POST: o CV não devolve o id, então confirmamos o provável -->
@@ -156,8 +190,15 @@ async function vincular() {
         </template>
 
         <template v-else>
-            <Switch v-model="jaExiste" label="Esta empresa já existe no CV"
+            <Switch v-if="!editando" v-model="jaExiste" label="Esta empresa já existe no CV"
                 description="Use para trazer para o Office uma correspondente cadastrada antes. Nada é enviado ao CV." />
+
+            <p v-else class="rounded-lg border border-line bg-surface-sunken/50 p-3 text-xs text-ink-muted">
+                <i class="fas fa-circle-info mr-1"></i>
+                Esta empresa já existe no CV e o sync trouxe o que dava para deduzir. O que você
+                preencher aqui vale só no Office - o CV não aceita edição por integração.
+                Deixe em branco o que ainda não souber.
+            </p>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 <Input v-model="form.nome" label="Nome da empresa" placeholder="Ex.: Premium Créditos" required
@@ -170,13 +211,13 @@ async function vincular() {
                 </template>
 
                 <template v-else>
-                    <Select v-model="form.estado" :options="UF_OPTIONS" label="UF" required
-                        :hint="regiao ? `Região ${nomeDaRegiao(regiao)} (${regiao}), enviada automaticamente ao CV.` : ''" />
-                    <Input v-model="form.cidade" label="Cidade" placeholder="Ex.: Votuporanga" required
-                        hint="Precisa pertencer à UF escolhida." />
-                    <Input v-model="form.dias_agendamento" type="number" label="Dias de agendamento" required
+                    <Select v-model="form.estado" :options="UF_OPTIONS" label="UF" :required="!editando"
+                        :hint="regiao ? `Região ${nomeDaRegiao(regiao)} (${regiao})${editando ? '.' : ', enviada automaticamente ao CV.'}` : ''" />
+                    <Input v-model="form.cidade" label="Cidade" placeholder="Ex.: Votuporanga" :required="!editando"
+                        :hint="editando ? 'A cidade recorta quem enxerga esta empresa nas alçadas.' : 'Precisa pertencer à UF escolhida.'" />
+                    <Input v-model="form.dias_agendamento" type="number" label="Dias de agendamento" :required="!editando"
                         hint="A doc do CV diz opcional, mas o cadastro falha sem este campo." />
-                    <Input v-model="form.endereco" label="Endereço" placeholder="Rua, número - bairro" required
+                    <Input v-model="form.endereco" label="Endereço" placeholder="Rua, número - bairro" :required="!editando"
                         class="sm:col-span-2" />
                     <Input v-model="form.telefone" label="Telefone" placeholder="(17) 99999-9999" />
                     <Input v-model="form.email" type="email" label="E-mail"
@@ -197,7 +238,7 @@ async function vincular() {
                 <Button variant="ghost" @click="emit('close')">Cancelar</Button>
                 <Button variant="primary" icon="fas fa-check" :disabled="!podeSalvar"
                     :loading="store.saving" @click="salvar">
-                    {{ jaExiste ? 'Registrar aqui' : 'Cadastrar no CV' }}
+                    {{ editando ? 'Salvar cadastro' : (jaExiste ? 'Registrar aqui' : 'Cadastrar no CV') }}
                 </Button>
             </template>
         </template>
