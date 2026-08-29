@@ -215,7 +215,7 @@ export function avaliar({ tabela = [], proposta = [], mesBase, regras = {} } = {
   // líquido mais ela - não precisa de um segundo fluxo só para isso.
   const medir = (ind) => {
     return [
-      { chave: 'ato', rotulo: 'Ato, já sem a comissão', base: 'líquido', valor: fracao(ind.ato, ind.total), minimo: regras.atoMin },
+      { chave: 'ato', rotulo: 'Ato', base: 'líquido', valor: fracao(ind.ato, ind.total), minimo: regras.atoMin },
       { chave: 'entrada6m', rotulo: 'Entra nos 6 primeiros meses', base: 'líquido', valor: fracao(ind.entrada6m, ind.total), minimo: regras.entrada6mMin },
       { chave: 'ano1', rotulo: 'Entra no 1º ano', base: 'líquido', valor: fracao(ind.ano1, ind.total), minimo: regras.primeiroAnoMin },
       { chave: 'ano2', rotulo: 'Entra no 2º ano', base: 'líquido', valor: fracao(ind.ano2, ind.total), minimo: regras.segundoAnoMin },

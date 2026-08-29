@@ -116,6 +116,51 @@ const marcos = computed(() => {
 
 const comp = computed(() => composicao(proposta.value, r.value.proposta.total))
 
+// ── Gráficos ────────────────────────────────────────────────────────────────
+//
+// Desenhados à mão em SVG, sem biblioteca: o bloco viaja dentro do relatório
+// publicado, e um gráfico que depende de import externo não desenha no link
+// público. São dois porque respondem coisas diferentes - a barra mostra o
+// esforço de cada mês, a linha mostra se a proposta está atrás da tabela.
+const GL = 600
+const GA = 140
+
+const grafico = computed(() => {
+  const p = r.value.proposta.fluxo || []
+  const t = r.value.tabela.fluxo || []
+  const n = Math.max(p.length, t.length, 1)
+  const meses = Array.from({ length: n }, (_, i) => i)
+  const vp = meses.map(i => p[i] || 0)
+  const vt = meses.map(i => t[i] || 0)
+  const acumular = (a) => { let soma = 0; return a.map(v => (soma += v)) }
+  const ap = acumular(vp)
+  const at = acumular(vt)
+  // A ESCALA DAS BARRAS IGNORA O MÊS DAS CHAVES.
+  //
+  // O repasse é R$ 464 mil contra mensais de R$ 3,6 mil: numa escala única, as
+  // 24 barras da obra viram fiapos de meio pixel e o gráfico não mostra
+  // exatamente aquilo para que serve, que é o esforço mês a mês. A barra da
+  // chave sai do teto de propósito, recortada, com o valor escrito ao lado.
+  const chaves = r.value.chaves
+  const semChaves = (a) => a.filter((_, i) => i !== chaves)
+  return {
+    n, meses, vp, vt, ap, at, chaves,
+    maxMes: Math.max(...semChaves(vp), ...semChaves(vt), 1),
+    valorChaves: Math.max(vp[chaves] || 0, vt[chaves] || 0),
+    maxAcum: Math.max(ap[n - 1] || 0, at[n - 1] || 0, 1),
+    largura: (GL / n) * 0.38,
+  }
+})
+
+const xMes = (i) => (grafico.value.n > 1 ? (i / (grafico.value.n - 1)) * GL : GL / 2)
+const xBarra = (i) => (i / grafico.value.n) * GL
+const alturaDe = (v, max) => Math.min(GA, Math.max(0, (v / max) * GA))
+const linhaDe = (serie, max) => serie
+  .map((v, i) => `${xMes(i).toFixed(1)},${(GA - alturaDe(v, max)).toFixed(1)}`)
+  .join(' ')
+
+const marcasDeMes = computed(() => grafico.value.meses.filter(m => m % 6 === 0))
+
 const pct = (parte, todo) => (todo > 0 ? parte / todo : 0)
 const perc = (v) => `${((v || 0) * 100).toFixed(1).replace('.', ',')}%`
 const dataBr = (iso) => (iso ? String(iso).split('-').reverse().join('/') : '-')
@@ -262,13 +307,11 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
       </div>
 
       <!-- Dado da unidade -->
-      <div class="grid gap-2 grid-cols-2 sm:grid-cols-3">
+      <div class="grid gap-2 grid-cols-2 sm:grid-cols-4">
         <div
           v-for="s in [
             { l: 'Valor de tabela', v: formatValue(unidade.total, 'currency') },
-            { l: 'Proposta (o cliente paga)', v: formatValue(r.proposta.total, 'currency') },
-            { l: `Comissão (${perc(regras.comissaoPct || 0)})`, v: '-' + formatValue(r.proposta.comissao, 'currency') },
-            { l: 'Entra na companhia', v: formatValue(r.proposta.liquidoTotal, 'currency') },
+            { l: 'Proposta', v: formatValue(r.proposta.total, 'currency') },
             { l: 'Área privativa', v: unidade.area ? `${unidade.area} m²` : '-' },
             { l: 'Proposta por m²', v: formatValue(porM2, 'currency') },
           ]" :key="s.l"
@@ -280,10 +323,10 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
       </div>
 
       <!-- Tabela padrão x proposta -->
-      <div class="grid gap-4 lg:grid-cols-2">
+      <div class="space-y-4">
         <div>
           <p class="mb-1.5 text-micro uppercase tracking-wider text-ink-subtle">
-            Tabela padrão · {{ unidade.nome }} · {{ unidade.situacao }}
+            Tabela padrão · {{ unidade.nome }} · {{ unidade.situacao }} · não editável
           </p>
           <div class="overflow-x-auto rounded-lg border border-line">
             <table class="w-full text-xs">
@@ -429,23 +472,115 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
         </p>
       </div>
 
-      <!-- 2) Acumulado no tempo: quanto já ENTROU em cada marco -->
+      <!-- 2) Os dois gráficos: esforço de cada mês e corrida do acumulado -->
+      <div>
+        <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+          <p class="text-micro uppercase tracking-wider text-ink-subtle">Entrada de valor · proposta x tabela</p>
+          <p class="flex items-center gap-3 text-micro text-ink-subtle">
+            <span class="flex items-center gap-1">
+              <span class="inline-block h-2 w-3 rounded-sm bg-accent"></span> proposta
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="inline-block h-2 w-3 rounded-sm bg-ink-subtle/40"></span> tabela
+            </span>
+            <span v-if="r.chaves != null">· linha tracejada = chaves</span>
+          </p>
+        </div>
+
+        <div class="grid gap-3 lg:grid-cols-2">
+          <!-- Por mês -->
+          <div class="rounded-lg border border-line px-3 pt-2 pb-1">
+            <p class="text-xs text-ink-muted">Quanto entra em cada mês</p>
+            <svg :viewBox="`0 0 ${GL} ${GA + 16}`" class="mt-1 w-full h-auto" role="img"
+                 aria-label="Barras comparando a entrada mensal da proposta com a da tabela">
+              <g class="text-ink-subtle">
+                <line :x1="0" :y1="GA" :x2="GL" :y2="GA" stroke="currentColor" stroke-width="1" opacity="0.35" />
+                <line
+                  v-if="r.chaves != null" :x1="xMes(r.chaves)" :y1="0" :x2="xMes(r.chaves)" :y2="GA"
+                  stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"
+                />
+                <text
+                  v-for="m in marcasDeMes" :key="'m' + m" :x="xMes(m)" :y="GA + 13"
+                  fill="currentColor" font-size="11" text-anchor="middle" opacity="0.7"
+                >{{ m }}</text>
+              </g>
+              <g class="text-ink-subtle">
+                <rect
+                  v-for="(v, i) in grafico.vt" :key="'t' + i"
+                  :x="xBarra(i)" :y="GA - alturaDe(v, grafico.maxMes)"
+                  :width="grafico.largura" :height="alturaDe(v, grafico.maxMes)"
+                  fill="currentColor" opacity="0.35"
+                />
+              </g>
+              <g class="text-accent">
+                <rect
+                  v-for="(v, i) in grafico.vp" :key="'p' + i"
+                  :x="xBarra(i) + grafico.largura" :y="GA - alturaDe(v, grafico.maxMes)"
+                  :width="grafico.largura" :height="alturaDe(v, grafico.maxMes)"
+                  fill="currentColor"
+                />
+              </g>
+            </svg>
+            <p class="pb-1 text-micro text-ink-subtle">
+              Eixo em meses desde o ato. A barra da entrega sai do teto:
+              ela sozinha é {{ formatValue(grafico.valorChaves, 'currency') }}, contra
+              {{ formatValue(grafico.maxMes, 'currency') }} do maior mês de obra.
+            </p>
+          </div>
+
+          <!-- Acumulado -->
+          <div class="rounded-lg border border-line px-3 pt-2 pb-1">
+            <p class="text-xs text-ink-muted">Quanto já entrou, acumulado</p>
+            <svg :viewBox="`0 0 ${GL} ${GA + 16}`" class="mt-1 w-full h-auto" role="img"
+                 aria-label="Linhas comparando o acumulado da proposta com o da tabela">
+              <g class="text-ink-subtle">
+                <line :x1="0" :y1="GA" :x2="GL" :y2="GA" stroke="currentColor" stroke-width="1" opacity="0.35" />
+                <line
+                  v-if="r.chaves != null" :x1="xMes(r.chaves)" :y1="0" :x2="xMes(r.chaves)" :y2="GA"
+                  stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"
+                />
+                <text
+                  v-for="m in marcasDeMes" :key="'a' + m" :x="xMes(m)" :y="GA + 13"
+                  fill="currentColor" font-size="11" text-anchor="middle" opacity="0.7"
+                >{{ m }}</text>
+              </g>
+              <g class="text-ink-subtle">
+                <polyline
+                  :points="linhaDe(grafico.at, grafico.maxAcum)"
+                  fill="none" stroke="currentColor" stroke-width="4" opacity="0.35"
+                  stroke-linejoin="round" stroke-linecap="round"
+                />
+              </g>
+              <g class="text-accent">
+                <polyline
+                  :points="linhaDe(grafico.ap, grafico.maxAcum)"
+                  fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linejoin="round" stroke-linecap="round"
+                />
+              </g>
+            </svg>
+            <p class="pb-1 text-micro text-ink-subtle">
+              Linha da proposta abaixo da tabela quer dizer dinheiro entrando mais tarde.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3) Acumulado no tempo: quanto já ENTROU em cada marco -->
       <div class="overflow-x-auto rounded-lg border border-line">
         <table class="w-full text-xs">
           <thead class="bg-surface-sunken/60 text-ink-subtle">
             <tr>
               <th class="px-2 py-1.5 text-left font-medium">Quanto entrou até</th>
-              <th class="px-2 py-1.5 text-right font-medium">Cliente paga</th>
-              <th class="px-2 py-1.5 text-right font-medium">Entra líquido</th>
+              <th class="px-2 py-1.5 text-right font-medium">Proposta</th>
               <th class="px-2 py-1.5 text-right font-medium">% da venda</th>
-              <th class="px-2 py-1.5 text-right font-medium">Tabela (líquido)</th>
+              <th class="px-2 py-1.5 text-right font-medium">Tabela</th>
               <th class="px-2 py-1.5 text-right font-medium">Diferença</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="m in marcos" :key="m.rotulo" class="border-t border-line">
               <td class="px-2 py-1.5 text-ink">{{ m.rotulo }}</td>
-              <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ formatValue(m.bruto, 'currency') }}</td>
               <td class="px-2 py-1.5 text-right text-ink tabular-nums">{{ formatValue(m.prop, 'currency') }}</td>
               <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ perc(pct(m.prop, r.proposta.total)) }}</td>
               <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ formatValue(m.tab, 'currency') }}</td>
@@ -454,8 +589,7 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
               </td>
             </tr>
             <tr class="border-t border-line bg-surface-sunken/40">
-              <td class="px-2 py-1.5 font-medium text-ink">Valor presente do que entra</td>
-              <td class="px-2 py-1.5 text-right text-ink-subtle tabular-nums">{{ formatValue(r.proposta.vplBruto, 'currency') }}</td>
+              <td class="px-2 py-1.5 font-medium text-ink">Valor presente</td>
               <td class="px-2 py-1.5 text-right font-medium text-ink tabular-nums">{{ formatValue(r.proposta.vpl, 'currency') }}</td>
               <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ perc(pct(r.proposta.vpl, r.proposta.total)) }}</td>
               <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ formatValue(r.tabela.vpl, 'currency') }}</td>
@@ -468,9 +602,7 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
       </div>
 
       <p class="text-micro text-ink-subtle">
-        Comissão de {{ perc(regras.comissaoPct || 0) }} sobre a venda
-        ({{ formatValue(r.proposta.comissao, 'currency') }}) saindo no ato, como manda a regra ·
-        diferença nominal {{ sinal(r.difNominal) }}{{ formatValue(r.difNominal, 'currency') }} ·
+        Diferença nominal {{ sinal(r.difNominal) }}{{ formatValue(r.difNominal, 'currency') }} ·
         chaves no mês {{ r.chaves ?? '-' }} e última parcela no mês {{ r.proposta.ultimoMes }} do fluxo.
       </p>
     </div>
