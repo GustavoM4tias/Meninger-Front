@@ -429,6 +429,34 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
     }
 
     /**
+     * Reenvia ao CV leads JÁ ENTREGUES cujo destino difere do vínculo atual —
+     * a correção de "vinculei errado e os leads já foram". Sempre recortado
+     * por campanha/form (o backend recusa sem recorte).
+     */
+    async function redispatchDelivered({ preview = false, limit = 500, campaignIds = null, formIds = null } = {}) {
+        const camps = (campaignIds || []).map(String).filter(Boolean);
+        const forms = (formIds || []).map(String).filter(Boolean);
+        const label = preview ? 'Contar entregues com destino divergente' : 'Reenviar entregues com o vínculo atual';
+        return withOp({ type: 'redispatch', label, details: { preview, limit, campaignIds: camps, formIds: forms } }, async () => {
+            try {
+                const d = await apiFetch('/cv-binding/redispatch-delivered', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        preview, limit,
+                        ...(camps.length ? { campaign_ids: camps } : {}),
+                        ...(forms.length ? { form_ids: forms } : {}),
+                    }),
+                });
+                if (!preview) await fetchBindingOverview();
+                return d;
+            } catch (e) {
+                error.value = e.message;
+                return null;
+            }
+        });
+    }
+
+    /**
      * Só CONTA quantos represados de uma campanha sairiam agora — sem escrever,
      * sem entrar no log de operações (é leitura de apoio da tela de vínculo).
      */
@@ -477,6 +505,6 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         allAds, loadingAllAds, fetchAllAds,
         report, loadingReport, coverage,
         fetchReport, fetchCoverage, backfillDaily,
-        bindingOverview, loadingBinding, fetchBindingOverview, dispatchRecoverable, previewRecoverableForCampaign,
+        bindingOverview, loadingBinding, fetchBindingOverview, dispatchRecoverable, redispatchDelivered, previewRecoverableForCampaign,
     };
 });

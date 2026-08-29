@@ -110,6 +110,61 @@ async function enviarConfirmado() {
     }
 }
 
+// ── Reenviar entregues com destino divergente do vínculo atual ──────────────
+// "Vinculei errado e os leads já foram": corrige-se o vínculo na campanha e
+// esta ação reenvia os entregues com o destino novo (upsert no CV). O
+// interesse antigo permanece lá - só o painel do CV remove interesse.
+const resending = ref(false);
+const resendingKey = ref(null);
+const resendResult = ref(null);
+const pedindoReenvio = ref(false);
+const alvoReenvio = ref(null);       // { key, label, total, campaignIds, formIds }
+
+function reenviar(m) {
+    if (!m?.lead_count) return;
+    const isForm = m.kind === 'form';
+    alvoReenvio.value = {
+        key: isForm ? `form:${m.form_id}` : `campaign:${m.campaign_id}`,
+        label: isForm ? `do formulário "${m.name || '#' + m.form_id}"` : `da campanha "${m.name || '#' + m.campaign_id}"`,
+        destino: (m.target_emp_names || []).join(', '),
+        total: m.lead_count,
+        campaignIds: isForm ? [] : [m.campaign_id],
+        formIds: isForm ? [m.form_id] : [],
+    };
+    pedindoReenvio.value = true;
+}
+
+async function reenviarConfirmado() {
+    const alvo = alvoReenvio.value;
+    if (!alvo) return;
+    pedindoReenvio.value = false;
+    resending.value = true;
+    resendingKey.value = alvo.key;
+    resendResult.value = null;
+    try {
+        const d = await store.redispatchDelivered({
+            preview: false,
+            limit: 1000,
+            campaignIds: alvo.campaignIds,
+            formIds: alvo.formIds,
+        });
+        resendResult.value = d;
+        if (!d) {
+            toast.error(store.error || 'Não foi possível reenviar.');
+        } else if (d.failed) {
+            toast.warning(`${d.delivered} reenviado(s), ${d.failed} falha(s).`);
+        } else if (d.delivered) {
+            toast.success(`${d.delivered} lead(s) reenviado(s) ao CV com o destino atual.`);
+        } else {
+            toast.info('Nenhum lead reenviado: os destinos já batem com o vínculo atual.');
+        }
+    } finally {
+        resending.value = false;
+        resendingKey.value = null;
+        alvoReenvio.value = null;
+    }
+}
+
 const ov = computed(() => store.bindingOverview);
 const funnel = computed(() => ov.value?.funnel || {});
 const summary = computed(() => ov.value?.summary || {});
@@ -120,6 +175,8 @@ const fallbackInUse = computed(() => ov.value?.fallback_in_use || []);
 // 'always' (toggle em Configurações): o form cobre e o lead SAI — destino pode
 // estar errado. Os textos da tela dizem a consequência do modo vigente.
 const formCobre = computed(() => ov.value?.form_fallback_scope === 'always');
+const mismatched = computed(() => ov.value?.mismatched_delivered || []);
+const mismatchedLeads = computed(() => summary.value.mismatched_delivered_leads || 0);
 const backlog = computed(() => ov.value?.backlog || null);
 
 /* Vazio é '0', não '—': aqui a ausência de represado significa zero mesmo. */
@@ -143,6 +200,9 @@ const temRecuperavel = computed(() => campanhasRecuperaveis.value.length > 0 || 
 const healthTone = computed(() => {
     const s = summary.value;
     if (s.leads_at_risk > 0 || s.unbound_campaigns_with_leads > 0) return 'danger';
+    // Lead entregue no CV com destino DIFERENTE do vínculo atual: está no
+    // empreendimento errado lá dentro - reenviar corrige.
+    if (mismatchedLeads.value > 0) return 'danger';
     // Lead ENTREGUE mas com destino decidido pelo formulário, não pela campanha:
     // pode estar indo pro empreendimento errado (incidente Esmeralda×Três Marias).
     if (fallbackInUse.value.length > 0) return 'warn';
@@ -156,6 +216,12 @@ const healthTone = computed(() => {
 const healthCopy = computed(() => {
     const s = summary.value;
     if (healthTone.value === 'danger') {
+        if (!(s.leads_at_risk > 0 || s.unbound_campaigns_with_leads > 0) && mismatchedLeads.value > 0) {
+            return {
+                title: `${fmtInt(mismatchedLeads.value)} lead(s) no CV com destino diferente do vínculo atual`,
+                desc: 'O vínculo foi corrigido depois desses leads terem sido entregues - eles estão no empreendimento antigo lá no CV. Reenvie-os abaixo para aplicar o destino certo.',
+            };
+        }
         return {
             title: `${fmtInt(s.leads_at_risk)} lead(s) represado(s) por falta de vínculo`,
             desc: `${s.unbound_campaigns_with_leads} campanha(s) sem vínculo estão segurando leads que não chegam ao CV. Vincule-as abaixo.`
@@ -406,6 +472,69 @@ function statusBadge(s) {
           </Surface>
         </section>
 
+        <!-- ══ Entregues com destino DIFERENTE do vínculo atual (corrigir no CV) ══ -->
+        <section v-if="mismatched.length" class="mb-5">
+          <div class="flex items-center gap-2 mb-2">
+            <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
+              <i class="fas fa-arrows-rotate text-data-neg"></i>
+              Entregues com destino diferente do vínculo atual
+            </h2>
+            <span class="text-micro text-ink-subtle">últimos 90 dias - reenviar aplica o destino certo no CV</span>
+          </div>
+
+          <!-- Resultado do reenvio -->
+          <div v-if="resendResult" class="mb-2 rounded-lg border px-3 py-2.5 text-sm"
+            :class="resendResult.failed ? 'border-data-warn/30 bg-data-warn/5 text-data-warn'
+                                        : 'border-data-pos/20 bg-data-pos/5 text-data-pos'">
+            <i :class="resendResult.failed ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check'" class="mr-1.5"></i>
+            <b>{{ fmtInt(resendResult.delivered) }}</b> reenviado(s) com o destino atual
+            <template v-if="resendResult.unchanged"> · {{ fmtInt(resendResult.unchanged) }} já batiam</template>
+            <template v-if="resendResult.no_binding"> · {{ fmtInt(resendResult.no_binding) }} sem vínculo resolvível</template>
+            <template v-if="resendResult.failed"> · {{ fmtInt(resendResult.failed) }} falha(s)</template>
+            <template v-if="resendResult.reached_limit"> · atingiu o lote - clique de novo pra continuar</template>
+          </div>
+
+          <Surface variant="raised" padding="none" class="overflow-hidden">
+            <ul class="divide-y divide-line/60">
+              <li v-for="m in mismatched" :key="`mm-${m.kind}-${m.campaign_id || m.form_id}`"
+                class="p-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-3 text-sm">
+                <div class="flex-1 min-w-0">
+                  <button v-if="m.kind === 'campaign'" @click="openCampaign(m.campaign_id)"
+                    class="text-ink font-medium leading-tight text-left hover:text-accent hover:underline break-words"
+                    :title="`Abrir campanha ${m.name || m.campaign_id}`">
+                    {{ m.name || `#${m.campaign_id}` }}
+                  </button>
+                  <span v-else class="text-ink font-medium leading-tight break-words" :title="m.name">
+                    {{ m.name || `#${m.form_id}` }} <span class="text-micro text-ink-subtle">(formulário - leads sem campanha)</span>
+                  </span>
+                  <div class="text-micro text-ink-subtle mt-0.5">{{ m.account_name || '' }}</div>
+                </div>
+                <div class="md:text-right shrink-0">
+                  <div class="text-xs text-ink-muted">
+                    vínculo atual: <b class="text-ink">{{ (m.target_emp_names || []).join(', ') || '-' }}</b>
+                  </div>
+                  <div class="text-micro text-ink-subtle">{{ fmtInt(m.lead_count) }} lead(s) com destino antigo</div>
+                </div>
+                <button
+                  class="h-10 md:h-auto rounded-lg md:rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium
+                         inline-flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity shrink-0
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="resending"
+                  @click="reenviar(m)">
+                  <i :class="resending && resendingKey === (m.kind === 'form' ? `form:${m.form_id}` : `campaign:${m.campaign_id}`)
+                      ? 'fas fa-circle-notch fa-spin' : 'fas fa-paper-plane'" class="text-[9px]"></i>
+                  Reenviar {{ fmtInt(m.lead_count) }}
+                </button>
+              </li>
+            </ul>
+          </Surface>
+          <p class="mt-1.5 text-micro text-ink-subtle flex items-start gap-1.5">
+            <i class="fas fa-circle-info mt-0.5"></i>
+            <span>O reenvio é upsert: registra nova conversão, adiciona o interesse certo e re-enfileira o lead
+            (fora das etapas blindadas). O interesse antigo permanece no CV - remover interesse só pelo painel do CV.</span>
+          </p>
+        </section>
+
         <!-- ══ Entregando pelo vínculo do FORMULÁRIO (destino pode estar errado) ══ -->
         <section v-if="fallbackInUse.length" class="mb-5">
           <div class="flex items-center gap-2 mb-2">
@@ -620,6 +749,14 @@ function statusBadge(s) {
       <!-- Modal de campanha (vincular) -->
       <CampaignDetailModal v-model:open="detailOpen" :campaign-id="detailId" @saved="reload" />
   </div>
+
+  <ConfirmDialog :open="pedindoReenvio" tone="accent"
+    :title="`Reenviar ${alvoReenvio?.total || 0} lead(s) com o destino atual?`"
+    :consequence="`Os ${alvoReenvio?.total || 0} lead(s) ${alvoReenvio?.label || ''} são reenviados ao CV agora com o destino ${alvoReenvio?.destino || 'do vínculo atual'} - nova conversão em cada lead, e o retorno automático re-enfileira quem está fora das etapas blindadas.`"
+    hint="É upsert: nada duplica. O interesse antigo permanece no CV (remoção só pelo painel do CV)."
+    :confirm-label="`Reenviar ${alvoReenvio?.total || 0}`"
+    :loading="resending"
+    @confirm="reenviarConfirmado" @cancel="pedindoReenvio = false" />
 
   <ConfirmDialog :open="pedindoEnvio" tone="accent"
     :title="`Enviar ${alvoEnvio?.total || 0} lead(s) represado(s) ao CV?`"
