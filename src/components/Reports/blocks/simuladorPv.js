@@ -261,16 +261,23 @@ export function avaliar({ tabela = [], proposta = [], mesBase, regras = {} } = {
   const difVp = p.vpl - t.vpl
   const vpOk = difVp >= -1e-6
 
-  // A FOLGA É DE DATA, EM MESES - não de valor.
+  // NADA PODE SOBRAR PARA DEPOIS DA ENTREGA.
   //
-  // A tabela do Verona tem 24 mensais a partir do mês 1 com a chave no mês 23,
-  // então a última cai UM mês depois da entrega. Um mês é o padrão da casa e
-  // passa; dois ou mais é proposta empurrando parcela para depois da chave, e
-  // aí bloqueia. O dinheiro dessa parcela continua contando nos 30% - ela é
-  // recurso próprio, só está atrasada.
+  // O único perdão é o que a PRÓPRIA TABELA já deixa: a do Verona tem 24
+  // mensais a partir do mês 1 com a chave no mês 23, então a última cai um mês
+  // depois - a tabela inteira é assim, e reprovar por isso reprovaria toda
+  // unidade. Mas o perdão para no tamanho dela: a proposta não pode deixar para
+  // depois nem mais dinheiro nem mais tempo do que a tabela deixa.
+  //
+  // Escrito contra a TABELA, e não contra um número fixo, a regra se aperta
+  // sozinha: no dia em que a REV09 arrumar o cronograma, o teto vira zero sem
+  // ninguém precisar lembrar de mexer aqui.
   const folgaMeses = Number(regras.aposChavesMesesTolerancia ?? 0)
-  const chavesOk = !regras.semParcelaAposChaves || p.mesesAposChaves <= folgaMeses
-  const chavesAviso = p.mesesAposChaves > 0 && chavesOk
+  const tetoAposChaves = t.aposChaves
+  const dataOk = p.mesesAposChaves <= folgaMeses
+  const valorOk = p.aposChaves <= tetoAposChaves + TOLERANCIA_REAIS
+  const chavesOk = !regras.semParcelaAposChaves || (dataOk && valorOk)
+  const chavesAviso = p.aposChaves > 1e-6 && chavesOk
 
   return {
     tabela: t,
@@ -283,6 +290,9 @@ export function avaliar({ tabela = [], proposta = [], mesBase, regras = {} } = {
     vpOk,
     chavesOk,
     chavesAviso,
+    chavesDataOk: dataOk,
+    chavesValorOk: valorOk,
+    tetoAposChaves,
     folgaMeses,
     fecha: cortes.every(c => c.ok) && vpOk && chavesOk,
   }

@@ -234,19 +234,26 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
                 class="fa-solid text-[10px]"
                 :class="r.chavesOk ? 'fa-triangle-exclamation text-amber-500' : 'fa-xmark text-rose-500'"
               />
-              Última parcela depois da chave
+              Sobrando para depois da entrega
             </span>
             <span
               class="tabular-nums text-right"
               :class="r.chavesOk ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400 font-medium'"
             >
-              {{ r.proposta.mesesAposChaves }} {{ r.proposta.mesesAposChaves === 1 ? 'mês' : 'meses' }}
-              <span class="text-ink-subtle">
-                / folga {{ r.folgaMeses }} · {{ formatValue(r.proposta.aposChaves, 'currency') }}
+              {{ formatValue(r.proposta.aposChaves, 'currency') }}
+              <span :class="r.chavesDataOk ? 'text-ink-subtle' : 'text-rose-600 dark:text-rose-400'">
+                · {{ r.proposta.mesesAposChaves }} {{ r.proposta.mesesAposChaves === 1 ? 'mês' : 'meses' }} depois
               </span>
+              <span class="text-ink-subtle">/ teto {{ formatValue(r.tetoAposChaves, 'currency') }} em {{ r.folgaMeses }}</span>
             </span>
           </div>
         </div>
+
+        <p v-if="r.chavesAviso" class="mt-2 text-micro text-amber-600 dark:text-amber-400">
+          Nada pode ficar para depois da entrega. O que aparece aqui é o que a PRÓPRIA tabela
+          já deixa - a última mensal dela cai um mês depois da chave - e a proposta não pode
+          passar disso, nem em valor nem em prazo.
+        </p>
 
         <p v-if="r.cortes.some(c => !c.tabelaOk)" class="mt-2 text-micro text-amber-600 dark:text-amber-400">
           Os cortes marcados com "(tabela: …)" já não passam na própria tabela autorizada -
