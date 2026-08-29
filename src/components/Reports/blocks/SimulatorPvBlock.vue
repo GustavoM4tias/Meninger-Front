@@ -85,6 +85,32 @@ function removerLinha(i) {
   proposta.value.splice(i, 1)
 }
 
+// Duplicar é o gesto mais comum de quem monta proposta: a série nova quase
+// sempre nasce parecida com uma que já está lá (mesma data, outro valor).
+function duplicarLinha(i) {
+  proposta.value.splice(i + 1, 0, { ...proposta.value[i] })
+}
+
+// A ordem não muda conta nenhuma - muda a leitura. Uma proposta lida de cima
+// para baixo na ordem do vencimento é conferida em segundos; embaralhada, não.
+function moverLinha(i, passo) {
+  const j = i + passo
+  if (j < 0 || j >= proposta.value.length) return
+  const [linha] = proposta.value.splice(i, 1)
+  proposta.value.splice(j, 0, linha)
+}
+
+function ordenarPorData() {
+  proposta.value = [...proposta.value].sort((a, b) => String(a.vencimento || '').localeCompare(String(b.vencimento || '')))
+}
+
+const totalLinha = (s) => (Number(s.valor) || 0) * Math.max(0, Math.round(Number(s.qtd) || 0))
+
+// A diferença entre o que a proposta soma e o preço de tabela da unidade.
+// Sem isso dava para mexer numa parcela e sair R$ 20 mil abaixo sem perceber:
+// o veredito reclamaria do valor presente, e ninguém liga uma coisa na outra.
+const difTabela = computed(() => (unidade.value ? r.value.proposta.total - unidade.value.total : 0))
+
 // ── Veredito ────────────────────────────────────────────────────────────────
 
 const r = computed(() => avaliar({
@@ -160,6 +186,31 @@ const linhaDe = (serie, max) => serie
   .join(' ')
 
 const marcasDeMes = computed(() => grafico.value.meses.filter(m => m % 6 === 0))
+
+// A FAIXA ENTRE AS DUAS LINHAS É A COMPARAÇÃO.
+//
+// Duas linhas próximas num gráfico pequeno o olho não separa; a área pintada
+// entre elas, sim - e o sinal vira cor: verde onde a proposta já entregou mais
+// que a tabela naquele ponto, vermelho onde está devendo. É a mesma pergunta do
+// valor presente, respondida mês a mês em vez de num número só.
+const bandas = computed(() => {
+  const g = grafico.value
+  const largura = GL / Math.max(1, g.n - 1)
+  return g.meses.map((m, i) => {
+    const yProposta = GA - alturaDe(g.ap[i], g.maxAcum)
+    const yTabela = GA - alturaDe(g.at[i], g.maxAcum)
+    return {
+      x: xMes(i) - largura / 2,
+      largura,
+      y: Math.min(yProposta, yTabela),
+      altura: Math.max(0.5, Math.abs(yProposta - yTabela)),
+      acima: g.ap[i] >= g.at[i] - 0.01,
+    }
+  })
+})
+
+/** Área fechada sob uma linha, para dar peso visual à série da proposta. */
+const areaDe = (serie, max) => `0,${GA} ${linhaDe(serie, max)} ${GL},${GA}`
 
 const pct = (parte, todo) => (todo > 0 ? parte / todo : 0)
 const perc = (v) => `${((v || 0) * 100).toFixed(1).replace('.', ',')}%`
@@ -357,6 +408,13 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
               <button type="button" class="text-micro text-accent hover:underline" @click="adicionarLinha">
                 <i class="fas fa-plus" /> parcela
               </button>
+              <button
+                v-if="proposta.length > 1" type="button" class="text-micro text-ink-subtle hover:underline"
+                title="Reordena as linhas pela data do primeiro vencimento"
+                @click="ordenarPorData"
+              >
+                <i class="fas fa-arrow-down-1-9" /> por data
+              </button>
               <button v-if="editada" type="button" class="text-micro text-ink-subtle hover:underline" @click="restaurar">
                 <i class="fas fa-rotate-left" /> voltar à tabela
               </button>
@@ -370,9 +428,10 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
                   <th class="px-2 py-1.5 text-left font-medium">Parcela</th>
                   <th class="px-2 py-1.5 text-right font-medium">Qtde</th>
                   <th class="px-2 py-1.5 text-right font-medium">Valor</th>
+                  <th class="px-2 py-1.5 text-right font-medium">Total</th>
                   <th class="px-2 py-1.5 text-right font-medium">A cada</th>
                   <th class="px-2 py-1.5 text-right font-medium">1º em</th>
-                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5 text-right font-medium">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -395,6 +454,9 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
                       class="w-24 rounded border border-transparent bg-transparent px-1 py-0.5 text-right text-ink tabular-nums hover:border-line focus:border-accent focus:outline-none"
                     >
                   </td>
+                  <td class="px-2 py-1 text-right text-ink-muted tabular-nums whitespace-nowrap">
+                    {{ formatValue(totalLinha(s), 'currency') }}
+                  </td>
                   <td class="px-1.5 py-1">
                     <select
                       v-model.number="s.periodicidade" aria-label="Intervalo entre parcelas"
@@ -414,13 +476,49 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
                       class="w-full min-w-[7.5rem] rounded border border-transparent bg-transparent px-1 py-0.5 text-right text-ink tabular-nums hover:border-line focus:border-accent focus:outline-none"
                     >
                   </td>
-                  <td class="px-1 py-1 text-right">
-                    <button type="button" class="text-ink-subtle hover:text-rose-500" title="Remover parcela" @click="removerLinha(i)">
-                      <i class="fas fa-xmark" />
-                    </button>
+                  <td class="px-1 py-1 whitespace-nowrap text-right">
+                    <button
+                      type="button" class="px-1 text-ink-subtle hover:text-accent disabled:opacity-30"
+                      title="Subir" :disabled="i === 0" @click="moverLinha(i, -1)"
+                    ><i class="fas fa-arrow-up" /></button>
+                    <button
+                      type="button" class="px-1 text-ink-subtle hover:text-accent disabled:opacity-30"
+                      title="Descer" :disabled="i === proposta.length - 1" @click="moverLinha(i, 1)"
+                    ><i class="fas fa-arrow-down" /></button>
+                    <button
+                      type="button" class="px-1 text-ink-subtle hover:text-accent"
+                      title="Duplicar" @click="duplicarLinha(i)"
+                    ><i class="fas fa-clone" /></button>
+                    <button
+                      type="button" class="px-1 text-ink-subtle hover:text-rose-500"
+                      title="Remover" @click="removerLinha(i)"
+                    ><i class="fas fa-xmark" /></button>
                   </td>
                 </tr>
               </tbody>
+              <tfoot>
+                <tr class="border-t-2 border-line bg-surface-sunken/40">
+                  <td class="px-2 py-1.5 font-semibold text-ink" colspan="3">Soma da proposta</td>
+                  <td class="px-2 py-1.5 text-right font-semibold text-ink tabular-nums">
+                    {{ formatValue(r.proposta.total, 'currency') }}
+                  </td>
+                  <td class="px-2 py-1.5" colspan="3"></td>
+                </tr>
+                <tr class="border-t border-line">
+                  <td class="px-2 py-1.5 text-ink-muted" colspan="3">
+                    Diferença para o valor de tabela
+                  </td>
+                  <td
+                    class="px-2 py-1.5 text-right font-medium tabular-nums"
+                    :class="Math.abs(difTabela) < 1 ? 'text-ink-subtle' : corDif(difTabela)"
+                  >
+                    {{ Math.abs(difTabela) < 1 ? 'bate' : sinal(difTabela) + formatValue(difTabela, 'currency') }}
+                  </td>
+                  <td class="px-2 py-1.5 text-micro text-ink-subtle" colspan="3">
+                    {{ Math.abs(difTabela) < 1 ? '' : 'a proposta ' + (difTabela > 0 ? 'passou do' : 'ficou abaixo do') + ' preço de tabela' }}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -476,14 +574,20 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
       <div>
         <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
           <p class="text-micro uppercase tracking-wider text-ink-subtle">Entrada de valor · proposta x tabela</p>
-          <p class="flex items-center gap-3 text-micro text-ink-subtle">
+          <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-micro text-ink-subtle">
             <span class="flex items-center gap-1">
-              <span class="inline-block h-2 w-3 rounded-sm bg-accent"></span> proposta
+              <span class="inline-block h-2 w-3 rounded-sm bg-sky-500"></span> proposta
             </span>
             <span class="flex items-center gap-1">
-              <span class="inline-block h-2 w-3 rounded-sm bg-ink-subtle/40"></span> tabela
+              <span class="inline-block h-2 w-3 rounded-sm bg-amber-500"></span> tabela
             </span>
-            <span v-if="r.chaves != null">· linha tracejada = chaves</span>
+            <span class="flex items-center gap-1">
+              <span class="inline-block h-2 w-3 rounded-sm bg-emerald-500/60"></span> na frente
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="inline-block h-2 w-3 rounded-sm bg-rose-500/60"></span> atrás
+            </span>
+            <span v-if="r.chaves != null">· tracejado = chaves</span>
           </p>
         </div>
 
@@ -504,20 +608,20 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
                   fill="currentColor" font-size="11" text-anchor="middle" opacity="0.7"
                 >{{ m }}</text>
               </g>
-              <g class="text-ink-subtle">
+              <g class="text-amber-500">
                 <rect
                   v-for="(v, i) in grafico.vt" :key="'t' + i"
                   :x="xBarra(i)" :y="GA - alturaDe(v, grafico.maxMes)"
                   :width="grafico.largura" :height="alturaDe(v, grafico.maxMes)"
-                  fill="currentColor" opacity="0.35"
+                  fill="currentColor" opacity="0.7" rx="1"
                 />
               </g>
-              <g class="text-accent">
+              <g class="text-sky-500">
                 <rect
                   v-for="(v, i) in grafico.vp" :key="'p' + i"
                   :x="xBarra(i) + grafico.largura" :y="GA - alturaDe(v, grafico.maxMes)"
                   :width="grafico.largura" :height="alturaDe(v, grafico.maxMes)"
-                  fill="currentColor"
+                  fill="currentColor" rx="1"
                 />
               </g>
             </svg>
@@ -544,23 +648,40 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
                   fill="currentColor" font-size="11" text-anchor="middle" opacity="0.7"
                 >{{ m }}</text>
               </g>
-              <g class="text-ink-subtle">
+              <g>
+                <rect
+                  v-for="(b, i) in bandas" :key="'b' + i"
+                  :x="b.x" :y="b.y" :width="b.largura" :height="b.altura"
+                  :class="b.acima ? 'text-emerald-500' : 'text-rose-500'"
+                  fill="currentColor" opacity="0.28"
+                />
+              </g>
+              <g class="text-sky-500">
+                <polygon :points="areaDe(grafico.ap, grafico.maxAcum)" fill="currentColor" opacity="0.10" />
+              </g>
+              <g class="text-amber-500">
                 <polyline
                   :points="linhaDe(grafico.at, grafico.maxAcum)"
-                  fill="none" stroke="currentColor" stroke-width="4" opacity="0.35"
+                  fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 3"
                   stroke-linejoin="round" stroke-linecap="round"
                 />
               </g>
-              <g class="text-accent">
+              <g class="text-sky-500">
                 <polyline
                   :points="linhaDe(grafico.ap, grafico.maxAcum)"
                   fill="none" stroke="currentColor" stroke-width="2.5"
                   stroke-linejoin="round" stroke-linecap="round"
                 />
+                <circle
+                  v-for="m in marcasDeMes" :key="'pt' + m"
+                  :cx="xMes(m)" :cy="GA - alturaDe(grafico.ap[m] || 0, grafico.maxAcum)" r="3"
+                  fill="currentColor"
+                />
               </g>
             </svg>
             <p class="pb-1 text-micro text-ink-subtle">
-              Linha da proposta abaixo da tabela quer dizer dinheiro entrando mais tarde.
+              Faixa verde: a proposta já entregou mais que a tabela naquele ponto. Vermelha: está devendo.
+              A linha tracejada é a tabela.
             </p>
           </div>
         </div>
