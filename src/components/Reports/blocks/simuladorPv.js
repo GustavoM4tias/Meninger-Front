@@ -173,24 +173,28 @@ export function avaliar({ tabela = [], proposta = [], mesBase, regras = {} } = {
   //
   // E CADA CORTE DIZ SOBRE QUAL DINHEIRO ELE FALA.
   //
-  // O do ato é sobre o LÍQUIDO: a comissão sai dali, e um ato de 5% com 4% de
-  // comissão deixa 1% na companhia - é esse 1% que o corte sempre mediu.
-  // Os outros são sobre o que o CLIENTE PAGA, porque o desenho do produto é
-  // dito assim: em Sinop, 30% de recurso próprio até a entrega e 70% de
-  // financiamento na chave. Misturar as duas bases faria a mesma tabela passar
-  // ou reprovar dependendo de qual linha se olha.
+  // São duas perguntas diferentes, e cada corte responde uma:
+  //
+  //   CAIXA DA COMPANHIA (líquido) - ato, 6 primeiros meses, até as chaves.
+  //   A comissão sai do ato, então é o que sobra que interessa. No bruto esses
+  //   cortes dão 5%, 10,7% e 99,5% e passam com folga larga demais para servir
+  //   de corte; no líquido dão 1%, 6,7% e 95,5% contra mínimos de 1%, 6% e 90%,
+  //   que é onde eles de fato mordem.
+  //
+  //   COMPOSIÇÃO DA VENDA (bruto) - o 30 do 30/70. Ali a pergunta é quanto do
+  //   PREÇO é recurso próprio e quanto é financiamento; a comissão não entra
+  //   nessa conta porque ela não muda a natureza do dinheiro que o cliente paga.
   //
   // Como a comissão sai de uma vez no ato, o bruto de qualquer acumulado é o
   // líquido mais ela - não precisa de um segundo fluxo só para isso.
   const medir = (ind) => {
-    const bruto = (v) => v + ind.comissao
     return [
       { chave: 'ato', rotulo: 'Ato, já sem a comissão', base: 'líquido', valor: fracao(ind.ato, ind.total), minimo: regras.atoMin },
-      { chave: 'entrada6m', rotulo: 'Pago nos 6 primeiros meses', base: 'bruto', valor: fracao(bruto(ind.entrada6m), ind.total), minimo: regras.entrada6mMin },
-      { chave: 'ano1', rotulo: 'Pago no 1º ano', base: 'bruto', valor: fracao(bruto(ind.ano1), ind.total), minimo: regras.primeiroAnoMin },
-      { chave: 'ano2', rotulo: 'Pago no 2º ano', base: 'bruto', valor: fracao(bruto(ind.ano2), ind.total), minimo: regras.segundoAnoMin },
+      { chave: 'entrada6m', rotulo: 'Entra nos 6 primeiros meses', base: 'líquido', valor: fracao(ind.entrada6m, ind.total), minimo: regras.entrada6mMin },
+      { chave: 'ano1', rotulo: 'Entra no 1º ano', base: 'líquido', valor: fracao(ind.ano1, ind.total), minimo: regras.primeiroAnoMin },
+      { chave: 'ano2', rotulo: 'Entra no 2º ano', base: 'líquido', valor: fracao(ind.ano2, ind.total), minimo: regras.segundoAnoMin },
       { chave: 'proprio', rotulo: 'Recurso próprio (fora o financiamento)', base: 'bruto', valor: fracao(ind.recursoProprio, ind.total), minimo: regras.recursoProprioMin },
-      { chave: 'ateChaves', rotulo: 'Pago até as chaves', base: 'bruto', valor: fracao(bruto(ind.ateChaves), ind.total), minimo: regras.ateChavesMin },
+      { chave: 'ateChaves', rotulo: 'Entra até as chaves', base: 'líquido', valor: fracao(ind.ateChaves, ind.total), minimo: regras.ateChavesMin },
     ]
       // Corte sem mínimo configurado não vira reprovação silenciosa: some da
       // lista. É o que permite desligar um corte que não vale para o produto -
