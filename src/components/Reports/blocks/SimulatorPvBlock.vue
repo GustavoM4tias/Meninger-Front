@@ -94,21 +94,24 @@ const r = computed(() => avaliar({
   regras: regras.value,
 }))
 
-const comissao = computed(() => r.value.proposta.total * (Number(regras.value.comissaoPct) || 0))
 const porM2 = computed(() => (unidade.value?.area ? r.value.proposta.total / unidade.value.area : 0))
 
 // Marcos do acumulado, que é como a diretoria lê um fluxo.
+// A comissão sai de uma vez no ato, então o bruto de qualquer marco é o
+// líquido mais ela - não precisa de um segundo fluxo só para exibir.
 const marcos = computed(() => {
   const p = r.value.proposta
   const t = r.value.tabela
+  const c = p.comissao
+  const linha = (rotulo, prop, tab) => ({ rotulo, prop, tab, bruto: prop + c })
   return [
-    { rotulo: 'Ato', prop: p.ato, tab: t.ato },
-    { rotulo: '6 meses', prop: p.entrada6m, tab: t.entrada6m },
-    { rotulo: '1º ano', prop: p.ano1, tab: t.ano1 },
-    { rotulo: '2º ano', prop: p.ano2, tab: t.ano2 },
-    { rotulo: 'Até as chaves, sem as chaves', prop: p.ateChavesSemChaves, tab: t.ateChavesSemChaves },
-    { rotulo: 'Até as chaves', prop: p.ateChaves, tab: t.ateChaves },
-    { rotulo: 'Total nominal', prop: p.total, tab: t.total },
+    linha('Ato', p.ato, t.ato),
+    linha('6 meses', p.entrada6m, t.entrada6m),
+    linha('1º ano', p.ano1, t.ano1),
+    linha('2º ano', p.ano2, t.ano2),
+    linha('Na obra, sem as chaves', p.ateChavesSemChaves, t.ateChavesSemChaves),
+    linha('Até as chaves', p.ateChaves, t.ateChaves),
+    { rotulo: 'Total', prop: p.liquidoTotal, tab: t.liquidoTotal, bruto: p.total },
   ]
 })
 
@@ -224,13 +227,20 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
             </span>
           </div>
 
-          <div v-if="!r.chavesOk" class="flex items-center justify-between gap-2 text-xs">
+          <div v-if="!r.chavesOk || r.chavesAviso" class="flex items-center justify-between gap-2 text-xs">
             <span class="flex items-center gap-1.5 text-ink-muted">
-              <i class="fa-solid fa-xmark text-[10px] text-rose-500" />
+              <i
+                class="fa-solid text-[10px]"
+                :class="r.chavesOk ? 'fa-triangle-exclamation text-amber-500' : 'fa-xmark text-rose-500'"
+              />
               Parcela depois das chaves
             </span>
-            <span class="tabular-nums text-rose-600 dark:text-rose-400 font-medium">
+            <span
+              class="tabular-nums text-right"
+              :class="r.chavesOk ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400 font-medium'"
+            >
               {{ formatValue(r.proposta.aposChaves, 'currency') }}
+              <span class="text-ink-subtle">/ folga {{ formatValue(r.folgaAposChaves, 'currency') }}</span>
             </span>
           </div>
         </div>
@@ -242,11 +252,13 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
       </div>
 
       <!-- Dado da unidade -->
-      <div class="grid gap-2 grid-cols-2 sm:grid-cols-4">
+      <div class="grid gap-2 grid-cols-2 sm:grid-cols-3">
         <div
           v-for="s in [
             { l: 'Valor de tabela', v: formatValue(unidade.total, 'currency') },
-            { l: 'Proposta', v: formatValue(r.proposta.total, 'currency') },
+            { l: 'Proposta (o cliente paga)', v: formatValue(r.proposta.total, 'currency') },
+            { l: `Comissão (${perc(regras.comissaoPct || 0)})`, v: '-' + formatValue(r.proposta.comissao, 'currency') },
+            { l: 'Entra na companhia', v: formatValue(r.proposta.liquidoTotal, 'currency') },
             { l: 'Área privativa', v: unidade.area ? `${unidade.area} m²` : '-' },
             { l: 'Proposta por m²', v: formatValue(porM2, 'currency') },
           ]" :key="s.l"
@@ -367,15 +379,17 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
           <thead class="bg-surface-sunken/60 text-ink-subtle">
             <tr>
               <th class="px-2 py-1.5 text-left font-medium">Acumulado</th>
-              <th class="px-2 py-1.5 text-right font-medium">Proposta</th>
-              <th class="px-2 py-1.5 text-right font-medium">% da proposta</th>
-              <th class="px-2 py-1.5 text-right font-medium">Tabela</th>
+              <th class="px-2 py-1.5 text-right font-medium">Cliente paga</th>
+              <th class="px-2 py-1.5 text-right font-medium">Entra líquido</th>
+              <th class="px-2 py-1.5 text-right font-medium">% da venda</th>
+              <th class="px-2 py-1.5 text-right font-medium">Tabela (líquido)</th>
               <th class="px-2 py-1.5 text-right font-medium">Diferença</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="m in marcos" :key="m.rotulo" class="border-t border-line">
               <td class="px-2 py-1.5 text-ink">{{ m.rotulo }}</td>
+              <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ formatValue(m.bruto, 'currency') }}</td>
               <td class="px-2 py-1.5 text-right text-ink tabular-nums">{{ formatValue(m.prop, 'currency') }}</td>
               <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ perc(pct(m.prop, r.proposta.total)) }}</td>
               <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ formatValue(m.tab, 'currency') }}</td>
@@ -384,7 +398,8 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
               </td>
             </tr>
             <tr class="border-t border-line bg-surface-sunken/40">
-              <td class="px-2 py-1.5 font-medium text-ink">Valor presente (VPL)</td>
+              <td class="px-2 py-1.5 font-medium text-ink">Valor presente do que entra</td>
+              <td class="px-2 py-1.5 text-right text-ink-subtle tabular-nums">{{ formatValue(r.proposta.vplBruto, 'currency') }}</td>
               <td class="px-2 py-1.5 text-right font-medium text-ink tabular-nums">{{ formatValue(r.proposta.vpl, 'currency') }}</td>
               <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ perc(pct(r.proposta.vpl, r.proposta.total)) }}</td>
               <td class="px-2 py-1.5 text-right text-ink-muted tabular-nums">{{ formatValue(r.tabela.vpl, 'currency') }}</td>
@@ -397,8 +412,8 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
       </div>
 
       <p class="text-micro text-ink-subtle">
-        Comissão estimada em {{ perc(regras.comissaoPct || 0) }} do nominal:
-        {{ formatValue(comissao, 'currency') }} ·
+        Comissão de {{ perc(regras.comissaoPct || 0) }} sobre a venda
+        ({{ formatValue(r.proposta.comissao, 'currency') }}) saindo no ato, como manda a regra ·
         diferença nominal {{ sinal(r.difNominal) }}{{ formatValue(r.difNominal, 'currency') }} ·
         chaves no mês {{ r.chaves ?? '-' }} e última parcela no mês {{ r.proposta.ultimoMes }} do fluxo.
       </p>

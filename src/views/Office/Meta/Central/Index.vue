@@ -12,8 +12,9 @@
 // PageHeader próprios). Lazy + KeepAlive: só monta a aba visitada e preserva o
 // estado (filtros, drill, período) ao alternar.
 
-import { ref, computed, watch, defineAsyncComponent } from 'vue';
+import { ref, computed, watch, onMounted, defineAsyncComponent } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
@@ -38,6 +39,25 @@ const TABS = [
     { value: 'config',      label: 'Configurações', icon: 'fas fa-sliders' },
 ];
 const VALID_TABS = TABS.map(t => t.value);
+
+// Pendências de vínculo viram badge na própria aba: sem isso o problema só
+// aparecia pra quem ENTRAVA na aba Vínculos (incidente Esmeralda×Três Marias
+// rodou semanas invisível). Conta leads parados; sem lead parado, conta
+// campanhas ativas sem vínculo + campanhas entregando pelo form.
+const campaignsStore = useCampaignsStore();
+onMounted(() => { campaignsStore.fetchBindingOverview().catch(() => {}); });
+const vinculosPending = computed(() => {
+    const s = campaignsStore.bindingOverview?.summary;
+    if (!s) return undefined;
+    const leads = (s.leads_at_risk || 0) + (s.leads_recoverable || 0);
+    if (leads > 0) return leads;
+    const campanhas = (s.active_unbound_campaigns || 0) + (s.fallback_campaigns || 0);
+    return campanhas > 0 ? campanhas : undefined;
+});
+const tabOptions = computed(() => TABS.map(t =>
+    t.value === 'vinculos' && vinculosPending.value !== undefined
+        ? { ...t, count: vinculosPending.value }
+        : t));
 
 const tab = ref(VALID_TABS.includes(route.query.tab) ? route.query.tab : 'captacao');
 
@@ -104,7 +124,7 @@ const subtitle = computed(() => SUBTITLES[tab.value] || '');
 
       <!-- Abas (o SegmentedControl é scrollável no mobile) -->
       <div class="mb-4">
-        <SegmentedControl v-model="tab" :options="TABS" size="sm" />
+        <SegmentedControl v-model="tab" :options="tabOptions" size="sm" />
       </div>
 
       <KeepAlive>

@@ -116,6 +116,10 @@ const summary = computed(() => ov.value?.summary || {});
 const held = computed(() => ov.value?.held || { campaigns: [], forms: [] });
 const activeUnbound = computed(() => ov.value?.active_unbound_campaigns || []);
 const fallbackInUse = computed(() => ov.value?.fallback_in_use || []);
+// 'no_campaign' (default): campanha sem vínculo REPRESA os leads.
+// 'always' (toggle em Configurações): o form cobre e o lead SAI — destino pode
+// estar errado. Os textos da tela dizem a consequência do modo vigente.
+const formCobre = computed(() => ov.value?.form_fallback_scope === 'always');
 const backlog = computed(() => ov.value?.backlog || null);
 
 /* Vazio é '0', não '—': aqui a ausência de represado significa zero mesmo. */
@@ -175,7 +179,9 @@ const healthCopy = computed(() => {
         return {
             title: 'Atenção preventiva',
             desc: s.active_unbound_campaigns > 0
-                ? `${s.active_unbound_campaigns} campanha(s) ativa(s) sem vínculo — vão represar os próximos leads.`
+                ? `${s.active_unbound_campaigns} campanha(s) ativa(s) sem vínculo — ` + (formCobre.value
+                    ? 'os próximos leads sairão pelo vínculo do FORMULÁRIO e o destino pode ir errado.'
+                    : 'os próximos leads ficarão represados até vincular.')
                 : 'Cobertura de entrega abaixo de 90% no período.',
         };
     }
@@ -529,7 +535,9 @@ function statusBadge(s) {
               <i class="fas fa-shield-halved text-data-warn"></i>
               Campanhas ativas sem vínculo (preventivo)
             </h2>
-            <span class="text-micro text-ink-subtle">ainda sem leads represados, mas vão gerar</span>
+            <span class="text-micro text-ink-subtle">{{ formCobre
+                ? 'os próximos leads sairão pelo vínculo do formulário - destino pode ir errado'
+                : 'os próximos leads ficarão represados até vincular' }}</span>
           </div>
           <Surface variant="raised" padding="none" class="overflow-hidden">
             <div class="overflow-x-auto">
