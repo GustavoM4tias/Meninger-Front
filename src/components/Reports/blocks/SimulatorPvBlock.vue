@@ -24,6 +24,13 @@ const props = defineProps({
   // Pacote de services/comercial/simuladorPvService.js (montarSimulador).
   data: { type: Object, default: () => ({}) },
   title: { type: String, default: 'Simulador de proposta' },
+  // Mostrar os PISOS de cada corte ("mín 30,0%") ou só se passou.
+  //
+  // Falso por padrão, e o padrão importa: com os mínimos na tela, qualquer um
+  // monta a proposta raspando neles - o corte deixa de ser um piso e vira o
+  // alvo. Quem precisa do número (diretoria, quem discute alçada) abre a versão
+  // interna do relatório, que passa `mostrarCortes: true`.
+  mostrarCortes: { type: Boolean, default: false },
 })
 
 const pacote = computed(() => props.data || {})
@@ -234,7 +241,7 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
       <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h4 class="text-sm font-semibold text-ink">{{ title }}</h4>
         <p class="text-micro text-ink-subtle">
-          Mês base {{ mesBr(mesBase) }} · VPL {{ perc(regras.vplAnual || 0.06) }} a.a.
+          Mês base {{ mesBr(mesBase) }}<span v-if="mostrarCortes"> · VPL {{ perc(regras.vplAnual || 0.06) }} a.a.</span>
         </p>
       </div>
       <p class="mt-0.5 text-xs text-ink-muted">
@@ -301,7 +308,7 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
             {{ r.fecha ? 'O fluxo fecha' : 'O fluxo não fecha' }}
             <span v-if="!editada" class="font-normal text-ink-muted">· proposta ainda igual à tabela</span>
           </p>
-          <p class="text-xs text-ink-muted tabular-nums">
+          <p v-if="mostrarCortes" class="text-xs text-ink-muted tabular-nums">
             VP {{ formatValue(r.proposta.vpl, 'currency') }} ·
             <span :class="corDif(r.difVp)">{{ sinal(r.difVp) }}{{ formatValue(r.difVp, 'currency') }} vs tabela</span>
           </p>
@@ -313,7 +320,11 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
               <i class="fa-solid text-[10px]" :class="c.ok ? 'fa-check text-emerald-500' : 'fa-xmark text-rose-500'" />
               {{ c.rotulo }}
             </span>
-            <span class="tabular-nums text-right" :class="c.ok ? 'text-ink' : 'text-rose-600 dark:text-rose-400 font-medium'">
+            <span
+              v-if="mostrarCortes"
+              class="tabular-nums text-right"
+              :class="c.ok ? 'text-ink' : 'text-rose-600 dark:text-rose-400 font-medium'"
+            >
               {{ perc(c.valor) }}
               <span class="text-ink-subtle">/ mín {{ perc(c.minimo) }}</span>
               <!-- Quando a própria tabela não passa, o problema não é a
@@ -322,6 +333,10 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
                 (tabela: {{ perc(c.valorTabela) }})
               </span>
             </span>
+            <span
+              v-else class="text-xs font-medium"
+              :class="c.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'"
+            >{{ c.ok ? 'ok' : 'revisar' }}</span>
           </div>
 
           <div v-if="!r.chavesOk || r.chavesAviso" class="flex items-center justify-between gap-2 text-xs">
@@ -340,18 +355,20 @@ const corDif = (v) => (v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text
               <span :class="r.chavesDataOk ? 'text-ink-subtle' : 'text-rose-600 dark:text-rose-400'">
                 · {{ r.proposta.mesesAposChaves }} {{ r.proposta.mesesAposChaves === 1 ? 'mês' : 'meses' }} depois
               </span>
-              <span class="text-ink-subtle">/ teto {{ formatValue(r.tetoAposChaves, 'currency') }} em {{ r.folgaMeses }}</span>
+              <span v-if="mostrarCortes" class="text-ink-subtle">
+                / teto {{ formatValue(r.tetoAposChaves, 'currency') }} em {{ r.folgaMeses }}
+              </span>
             </span>
           </div>
         </div>
 
-        <p v-if="r.chavesAviso" class="mt-2 text-micro text-amber-600 dark:text-amber-400">
+        <p v-if="r.chavesAviso && mostrarCortes" class="mt-2 text-micro text-amber-600 dark:text-amber-400">
           Nada pode ficar para depois da entrega. O que aparece aqui é o que a PRÓPRIA tabela
           já deixa - a última mensal dela cai um mês depois da chave - e a proposta não pode
           passar disso, nem em valor nem em prazo.
         </p>
 
-        <p v-if="r.cortes.some(c => !c.tabelaOk)" class="mt-2 text-micro text-amber-600 dark:text-amber-400">
+        <p v-if="mostrarCortes && r.cortes.some(c => !c.tabelaOk)" class="mt-2 text-micro text-amber-600 dark:text-amber-400">
           Os cortes marcados com "(tabela: …)" já não passam na própria tabela autorizada -
           nesses, a proposta não é a causa.
         </p>
