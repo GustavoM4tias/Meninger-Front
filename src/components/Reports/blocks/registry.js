@@ -29,6 +29,7 @@ export const BLOCK_COMPONENTS = {
   'note': lazy(() => import('./NoteBlock.vue')),
   'footer': lazy(() => import('./FooterBlock.vue')),
   'custom-html': lazy(() => import('./CustomHtmlBlock.vue')),
+  'simulator-pv': lazy(() => import('./SimulatorPvBlock.vue')),
 }
 
 // Rótulos exibidos no outline da Eme flutuante e no painel admin.
@@ -56,6 +57,7 @@ export const BLOCK_LABELS = {
   'note': 'Nota',
   'footer': 'Rodapé',
   'custom-html': 'Bloco personalizado',
+  'simulator-pv': 'Simulador de proposta',
 }
 
 export function blockComponent(type) {
