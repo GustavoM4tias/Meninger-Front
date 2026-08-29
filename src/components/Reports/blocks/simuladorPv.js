@@ -144,6 +144,9 @@ export function indicadores(series, {
 
 const fracao = (parte, todo) => (todo > 0 ? parte / todo : 0)
 
+// Quanto um corte pode faltar em REAIS e ainda ser arredondamento, não desconto.
+const TOLERANCIA_REAIS = 1
+
 /**
  * O veredito. Devolve os cortes um a um (para a tela mostrar qual reprovou) e
  * o `fecha` só quando TODOS passam - inclusive o valor presente, que é o corte
@@ -197,7 +200,25 @@ export function avaliar({ tabela = [], proposta = [], mesBase, regras = {} } = {
       // que e pior do que reprovar - poluia a lista fingindo que foi conferido.
       .filter(c => c.minimo !== null && c.minimo !== undefined && c.minimo !== ''
         && Number.isFinite(Number(c.minimo)))
-      .map(c => ({ ...c, minimo: Number(c.minimo), ok: c.valor >= Number(c.minimo) - 1e-9 }))
+      // A TOLERÂNCIA É EM DINHEIRO, não um epsilon de ponto flutuante.
+      //
+      // As parcelas da tabela são arredondadas ao centavo, então o plano quase
+      // nunca cai exatamente no corte. A tabela do Verona soma R$ 199.137,97 de
+      // recurso próprio numa venda de R$ 663.793,24, e 30% seriam R$ 199.137,972:
+      // dois milésimos de centavo abaixo. Com `- 1e-9` isso reprovava, e a tela
+      // dizia "não fecha" numa proposta IDÊNTICA à tabela, sem nenhum número
+      // fora do lugar - foi o que o Gustavo viu na BL A - AP 153.
+      //
+      // Medido nas 140 unidades da REV08: o maior desvio de arredondamento é de
+      // R$ 0,12 (no ato) e o menor de R$ 0,001. Um real cobre todos com folga e
+      // ainda é 0,0002% de uma venda de R$ 600 mil - desconto de verdade é
+      // ordens de grandeza maior, e tirar R$ 400 de uma semestral continua
+      // reprovando.
+      .map((c) => {
+        const minimo = Number(c.minimo)
+        const folga = ind.total > 0 ? TOLERANCIA_REAIS / ind.total : 0
+        return { ...c, minimo, ok: c.valor >= minimo - folga }
+      })
   }
 
   const daTabela = medir(t)
