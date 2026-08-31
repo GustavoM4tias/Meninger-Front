@@ -6,9 +6,8 @@ import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
-import Button from '@/components/UI/Button.vue';
-import Badge from '@/components/UI/Badge.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
 
 // 'ready' avisa que os filtros já leram a URL e escreveram no store. Telas que
 // carregam dados sozinhas (as guias analíticas do Relatório Comercial) esperam
@@ -179,9 +178,9 @@ const clearFilters = () => {
   emit('filter-changed');
 };
 
-// ── Expandir / colapsar ──────────────────────────────
-const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
-function toggle() { isExpanded.value = !isExpanded.value; }
+// Abrir/fechar é do FilterBar, que nasce FECHADO em relatório: a tela serve
+// para ler o resultado, e quatro campos abertos empurram os números para baixo
+// da dobra. O selo "N ativos" já avisa que existe recorte aplicado.
 
 onMounted(async () => {
   // As listas do seletor (empresas, cidades, grupos) NÃO podem atrasar a busca
@@ -211,71 +210,44 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
-    <!-- Toolbar -->
-    <div class="filters-toolbar">
-      <button @click="toggle"
-        class="filters-toolbar-trigger">
-        <i class="fas fa-filter text-xs text-ink-muted"></i>
-        <span>Filtros</span>
-        <Badge v-if="activeFiltersCount" variant="accent" size="sm">
-          {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
-        </Badge>
-        <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
-          :class="{ 'rotate-180': isExpanded }"></i>
-      </button>
+  <FilterBar :active-count="activeFiltersCount" :cols="5"
+    @apply="applyFilters" @clear="clearFilters">
 
-      <div class="ml-auto flex items-center gap-1.5">
-        <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="clearFilters">
-          <span class="hidden sm:inline">Limpar</span>
-        </Button>
-        <Button size="sm" icon="fas fa-magnifying-glass" @click="applyFilters">
-          <span class="hidden sm:inline">Filtrar</span>
-        </Button>
-      </div>
+    <!-- Modo de valor fica FORA do painel: é modo de exibição, aplica na hora
+         e não conta como filtro - escondê-lo atrás do botão Filtros seria
+         esconder um controle que muda o número na tela. -->
+    <template #actions>
+      <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="sm" />
+    </template>
+
+    <Input v-model="localFilters.startDate" type="date" label="Data início" />
+    <Input v-model="localFilters.endDate" type="date" label="Data fim" />
+
+    <div v-if="groupsOptions.length">
+      <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <i class="fas fa-diagram-project text-micro mr-1 text-ink-subtle"></i>Grupos workflow (projeção)
+      </label>
+      <MultiSelector :model-value="localFilters.groupIds"
+        @update:modelValue="v => localFilters.groupIds = Array.isArray(v) ? v : []"
+        :options="groupsOptions" placeholder="Selecione grupos" :page-size="200" />
     </div>
 
-    <!-- Campos -->
-    <div v-show="isExpanded"
-      class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 animate-fade-in"
-      style="overflow:visible">
-
-      <Input v-model="localFilters.startDate" type="date" label="Data início" />
-      <Input v-model="localFilters.endDate" type="date" label="Data fim" />
-
-      <div v-if="groupsOptions.length">
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-diagram-project text-[10px] mr-1 text-ink-subtle"></i>Grupos workflow (projeção)
-        </label>
-        <MultiSelector :model-value="localFilters.groupIds"
-          @update:modelValue="v => localFilters.groupIds = Array.isArray(v) ? v : []"
-          :options="groupsOptions" placeholder="Selecione grupos" :page-size="200" />
-      </div>
-
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empresa(s)
-        </label>
-        <MultiSelector :model-value="localFilters.selectedCompanyNames"
-          @update:modelValue="v => localFilters.selectedCompanyNames = Array.isArray(v) ? v : []"
-          :options="companiesOptions" placeholder="Empresas" :page-size="150" :select-all="true" />
-      </div>
-
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-location-dot text-[10px] mr-1 text-ink-subtle"></i>Cidade(s)
-        </label>
-        <MultiSelector :model-value="localFilters.selectedCities"
-          @update:modelValue="v => localFilters.selectedCities = Array.isArray(v) ? v : []"
-          :options="citiesOptions" placeholder="Cidades" :page-size="150" :select-all="true" />
-      </div>
-
-      <div>
-        <label class="block cursor-pointer text-micro font-medium text-ink-muted mb-1.5" :title="`VGV+DC inclui despesas de comercialização. Aplica na hora, sem filtrar.`">
-          <i class="fas fa-coins text-[10px] mr-1 text-ink-subtle"></i>Modo de valor
-        </label>
-        <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="md" block /> 
-      </div>
+    <div>
+      <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <i class="fas fa-city text-micro mr-1 text-ink-subtle"></i>Empresa(s)
+      </label>
+      <MultiSelector :model-value="localFilters.selectedCompanyNames"
+        @update:modelValue="v => localFilters.selectedCompanyNames = Array.isArray(v) ? v : []"
+        :options="companiesOptions" placeholder="Empresas" :page-size="150" :select-all="true" />
     </div>
-  </section>
+
+    <div>
+      <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <i class="fas fa-location-dot text-micro mr-1 text-ink-subtle"></i>Cidade(s)
+      </label>
+      <MultiSelector :model-value="localFilters.selectedCities"
+        @update:modelValue="v => localFilters.selectedCities = Array.isArray(v) ? v : []"
+        :options="citiesOptions" placeholder="Cidades" :page-size="150" :select-all="true" />
+    </div>
+  </FilterBar>
 </template>

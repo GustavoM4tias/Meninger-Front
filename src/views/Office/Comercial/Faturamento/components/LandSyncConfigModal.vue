@@ -735,7 +735,7 @@ const closeModal = () => emit('close');
 </script>
 
 <template>
-  <Modal :open="open" size="xl" title="Configurações do dashboard"
+  <Modal :open="open" size="screen" title="Configurações do dashboard"
     subtitle="Configurações avançadas de exibição e integração de dados"
     @close="closeModal">
 

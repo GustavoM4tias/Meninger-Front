@@ -1,9 +1,8 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useCan } from '@/composables/useCan';
-import { useChartTheme } from '@/composables/useChartTheme';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
-import ChartActions from '@/components/config/ChartActions.vue';
+import { useIncrementalList } from '@/composables/useIncrementalList';
 import Export from '@/components/config/Export.vue';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -14,22 +13,17 @@ import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
+import Spinner from '@/components/UI/Spinner.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
 import ContractAdjustmentModal from './ContractAdjustmentModal.vue';
 
-import VChart from 'vue-echarts';
-import * as echarts from 'echarts/core';
-import { PieChart, BarChart } from 'echarts/charts';
-import { TooltipComponent, LegendComponent, GridComponent, DataZoomComponent, TitleComponent, ToolboxComponent } from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
 import { leadOf, reservaCorretorOf, reservaImobiliariaOf } from '@/utils/Comercial/saleAttribution';
-
-echarts.use([PieChart, BarChart, TooltipComponent, LegendComponent, GridComponent, DataZoomComponent, TitleComponent, ToolboxComponent, CanvasRenderer]);
 
 const props = defineProps({
   enterprise: { type: Object, required: true },
   sales: { type: Array, required: true },
-  initialMode: { type: String, default: 'list' },
   projectionRow: { type: Object, default: null },
   timeElapsedPct: { type: Number, default: 0 },
 });
@@ -39,17 +33,13 @@ const open = ref(false);
 
 const contractsStore = useContractsStore();
 
-const viewMode = ref(['list', 'pie', 'bar'].includes(props.initialMode) ? props.initialMode : 'list');
-
-// Helpers de Tema
-const t = useChartTheme();
-const isDark = t.isDark;
-const txt = t.ink;
-const sub = t.inkMuted;
-const gridLine = computed(() => t.token('--line'));
-// Barra e fatia PREENCHEM: rampa de área. (Este arquivo não tem série de
-// linha; se ganhar uma, ela usa `t.palette.value`, o tom de marca.)
-const palette = computed(() => t.fillPalette.value);
+// O alternador Listagem / Pizza / Colunas saiu em 2026-08-31 (DESIGN-LANGUAGE,
+// "Padroes de VISUALIZACAO"): o modal existe para chegar no REGISTRO, nunca
+// para mostrar agregado, e relatorio e uma leitura so, de cima para baixo.
+// Com ele foram os graficos e todo o ECharts deste arquivo.
+//
+// A comparacao Realizado x Projetado NAO era um "modo": e uma secao propria,
+// que agora aparece acima da lista quando existe projecao para o recorte.
 
 const statusLabel = (s) =>
 ({
@@ -350,13 +340,6 @@ const serieSelectOptions = computed(() => [
   ...seriesOptions.value.map(s => ({ value: s.id, label: s.label })),
 ]);
 
-const itemsPerPageOptions = [
-  { value: 10, label: '10 / pág.' },
-  { value: 25, label: '25 / pág.' },
-  { value: 50, label: '50 / pág.' },
-  { value: 100, label: '100 / pág.' },
-];
-
 const contractValueForSerie = (contract, serieId) => {
   if (!serieId) return contractValueByMode(contract);
 
@@ -384,11 +367,8 @@ const contractValueForSerie = (contract, serieId) => {
   return serieTotal;
 };
 
-/* ===================== busca/paginação ===================== */
+/* ===================== busca / lista ===================== */
 const searchTerm = ref('');
-const currentPage = ref(1);
-const itemsPerPage = ref(25);
-const expandedSales = ref(new Set());
 
 const normalizedSearch = computed(() => (searchTerm.value || '').toLowerCase());
 const filteredSales = computed(() => {
@@ -460,50 +440,62 @@ const uniqueCustomers = computed(
     ).size
 );
 
-const totalPages = computed(
-  () => Math.ceil(filteredSales.value.length / itemsPerPage.value) || 1
-);
-const startItem = computed(
-  () => (currentPage.value - 1) * itemsPerPage.value + 1
-);
-const endItem = computed(() =>
-  Math.min(currentPage.value * itemsPerPage.value, filteredSales.value.length)
-);
-const paginatedSales = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  return filteredSales.value.slice(start, start + Number(itemsPerPage.value));
-});
-const visiblePages = computed(() => {
-  const max = 5;
-  let start = Math.max(1, currentPage.value - Math.floor(max / 2));
-  let end = Math.min(totalPages.value, start + max - 1);
-  if (end - start + 1 < max) start = Math.max(1, end - max + 1);
-  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+/* ===================== ordenação + scroll incremental =====================
+ * `manual-sort` na DataTable é OBRIGATÓRIO aqui: a lista chega fatiada pelo
+ * scroll incremental, e a ordenação interna da tabela ordenaria só o pedaço
+ * montado - pior que não ordenar. A ordem correta é filtrar → ordenar →
+ * fatiar, e é o que acontece abaixo.
+ *
+ * A paginação (primeira/anterior/próxima/última + "itens por página") saiu:
+ * o padrão da casa é rolar, sem decidir tamanho de página nem caçar registro
+ * entre páginas.
+ */
+const sortBy = ref('valor');
+const sortDir = ref('desc');
+
+const sortValueOfSale = (sale) => {
+  switch (sortBy.value) {
+    case 'cliente': return (customerNameOf(sale) || '').toLowerCase();
+    case 'unidade': return (sale.unit_name || reservaUnitOf(sale) || '').toString();
+    case 'data': return sale.financial_institution_date || reservaDateOf(sale) || '';
+    default: return Number(getSaleValue(sale)) || 0;
+  }
+};
+
+const sortedSales = computed(() => {
+  const dir = sortDir.value === 'asc' ? 1 : -1;
+  return [...filteredSales.value].sort((a, b) => {
+    const av = sortValueOfSale(a);
+    const bv = sortValueOfSale(b);
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+    return String(av).localeCompare(String(bv), 'pt-BR', { numeric: true, sensitivity: 'base' }) * dir;
+  });
 });
 
+/* A linha precisa de uma chave estável: cliente + unidade é o que já
+ * identificava a venda na versão anterior; o índice desempata os raros casos
+ * de duas vendas do mesmo cliente na mesma unidade. */
+const saleRows = computed(() => sortedSales.value.map((sale, i) => ({
+  ...sale,
+  _key: `${sale.customer_id ?? 'x'}-${sale.unit_name ?? ''}-${i}`,
+})));
+
+/* O container que rola é o corpo do modal, não a janela. */
+const scrollRoot = ref(null);
+const inc = useIncrementalList(saleRows, { step: 50, root: scrollRoot });
+
 const hasRepasse = computed(() =>
-  paginatedSales.value.some(
+  inc.visiveis.value.some(
     (s) => s.contracts?.[0]?.repasse?.[0] || s.contracts?.[0]?.reserva
   )
 );
 
-watch([searchTerm, itemsPerPage, selectedSerie], () => {
-  currentPage.value = 1;
-});
-watch(
-  () => props.sales,
-  () => {
-    expandedSales.value.clear();
-    selectedSerie.value = '';
-  }
-);
+// Trocar de recorte volta a lista ao primeiro passo - quem cuida disso e o
+// proprio useIncrementalList, que reinicia quando a lista deixa de ser a mesma.
+watch(() => props.sales, () => { selectedSerie.value = ''; });
 
-const toggleDetails = (sale) => {
-  const key = `${sale.customer_id}-${sale.unit_name}`;
-  const next = new Set(expandedSales.value);
-  next.has(key) ? next.delete(key) : next.add(key);
-  expandedSales.value = next;
-};
+// Abrir/fechar a linha agora e da DataTable (`expandable` + slot #expanded),
+// que mantem a colecao de abertas e serve as duas larguras.
 
 const saleIsProjection = (sale) =>
   (sale.contracts || []).every((c) => c._projection);
@@ -854,135 +846,6 @@ const keyOf = (n) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const rowsByBroker = computed(() => {
-  const map = new Map();
-  for (const sale of filteredSales.value) {
-    const name = brokerNameOf(sale);
-    const key = keyOf(name);
-    const prev = map.get(key) ?? { name, count: 0, value: 0 };
-    const v = Number(getSaleValue(sale) || 0);
-    prev.count += 1;
-    prev.value += v;
-    map.set(key, prev);
-  }
-  return [...map.values()].sort((a, b) => b.value - a.value);
-});
-
-const baseTooltip = computed(() => ({
-  trigger: 'item',
-  confine: true,
-  appendToBody: true,
-  extraCssText: 'max-width:260px; white-space:normal; font-size:12px; line-height:1.2; padding:6px 8px;',
-}));
-
-const chartOption = computed(() => {
-  if (viewMode.value === 'pie') {
-    return {
-      color: palette.value,
-      tooltip: {
-        ...baseTooltip.value,
-        trigger: 'item',
-        formatter: (p) =>
-          `${p.name}<br/><b>${formatCurrency(p.value)}</b> (${p.percent}%)`,
-      },
-      legend: {
-        type: 'scroll',
-        orient: 'vertical',
-        left: 'left',
-        top: 'middle',
-        itemWidth: 10,
-        itemHeight: 10,
-        itemGap: 6,
-        textStyle: { fontSize: 11, color: txt.value },
-        pageTextStyle: { color: sub.value },
-        pageIconColor: sub.value,
-        pageIconInactiveColor: gridLine.value,
-      },
-      series: [
-        {
-          name: 'Vendas por Imobiliária',
-          type: 'pie',
-          radius: ['40%', '70%'],
-          padAngle: 1,
-          itemStyle: { borderRadius: 6, borderColor: 'transparent', borderWidth: 0 },
-          label: { show: false },
-          emphasis: { label: { show: true, fontWeight: 'bold', color: txt.value } },
-          data: rowsByBroker.value.map((r) => ({
-            name: r.name,
-            value: r.value,
-            _rawCount: r.count,
-          })),
-        },
-      ],
-    };
-  }
-
-  return {
-    color: palette.value,
-    tooltip: {
-      trigger: 'axis',
-      confine: true,
-      axisPointer: { type: 'shadow' },
-      valueFormatter: (v) => formatCurrency(v),
-      extraCssText: 'max-width:320px; white-space:normal; font-size:12px; line-height:1.2; padding:6px 8px;',
-    },
-    grid: { left: 32, right: 32, top: 42, bottom: 64, containLabel: true },
-    dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 20 }],
-    xAxis: {
-      type: 'category',
-      data: rowsByBroker.value.map((r) => r.name),
-      axisLabel: {
-        interval: 0,
-        rotate: 20,
-        fontSize: 10,
-        color: txt.value,
-        formatter: (val) => (val.length > 15 ? val.slice(0, 15) + '…' : val),
-      },
-      axisLine: { lineStyle: { color: sub.value } },
-    },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        fontSize: 10,
-        color: txt.value,
-        formatter: (v) =>
-          new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }).format(v),
-      },
-      splitLine: { lineStyle: { color: gridLine.value } },
-    },
-    series: [
-      {
-        name: `Valor (${valueModeLabel.value})`,
-        type: 'bar',
-        barWidth: '60%',
-        data: rowsByBroker.value.map((r) => ({
-          value: r.value,
-          count: r.count,
-        })),
-        itemStyle: { borderRadius: [6, 6, 0, 0] },
-        emphasis: { focus: 'series' },
-        label: {
-          show: true,
-          position: 'top',
-          fontSize: 10,
-          color: sub.value,
-          formatter: (p) => `${p.data.count}`,
-        },
-      },
-    ],
-  };
-});
-
-const onChartClick = (params) => {
-  if (params && params.name) {
-    searchTerm.value = params.name;
-  }
-};
 
 // ── Bridges para SegmentedControl ──────────────────────────
 const valueModeOptions = [
@@ -995,31 +858,80 @@ const valueModeProxy = computed({
   set: (v) => contractsStore.setValueMode(v),
 });
 
-const viewModeOptions = computed(() => {
-  const opts = [
-    { value: 'list', label: 'Listagem', icon: 'fas fa-list' },
-    { value: 'pie',  label: 'Pizza',    icon: 'fas fa-chart-pie' },
-    { value: 'bar',  label: 'Colunas',  icon: 'fas fa-chart-column' },
+
+/* KPIs no primitivo do sistema. `raw` + `format` (em vez de valor pronto)
+ * ligam o count-up: o número conta até o valor, que é o movimento de maior
+ * efeito e menor risco da linguagem visual. */
+const kpiItems = computed(() => [
+  {
+    key: 'total', label: 'Total de vendas', tone: 'accent', icon: 'fas fa-chart-line',
+    raw: totalSales.value, format: (n) => Math.round(n).toLocaleString('pt-BR'),
+    hint: 'no período',
+  },
+  {
+    key: 'value', label: `Valor total ${valueModeLabel.value}`, tone: 'pos',
+    icon: contractsStore.isNet ? 'fas fa-money-bill-wave' : 'fas fa-sack-dollar',
+    raw: totalValue.value, format: formatCurrency,
+    hint: showLandOnlyNote.value
+      ? 'Cálculo pelo "Observação"'
+      : (contractsStore.isNet ? 'VGV (descontos ignorados)' : 'VGV + DC (descontos somam)'),
+  },
+  {
+    key: 'ticket', label: `Ticket médio ${valueModeLabel.value}`, tone: 'accent',
+    icon: 'fas fa-receipt', raw: avgTicket.value, format: formatCurrency,
+    hint: 'valor médio por venda',
+  },
+  {
+    key: 'clients', label: 'Clientes únicos', tone: 'warn', icon: 'fas fa-users',
+    raw: uniqueCustomers.value, format: (n) => Math.round(n).toLocaleString('pt-BR'),
+    hint: 'pessoas distintas',
+  },
+]);
+
+/* ===================== COLUNAS DA LISTAGEM =====================
+ * Listagem é SEMPRE DataTable, inclusive dentro de modal: lista de cartões não
+ * ordena, e ordenar é o que se quer numa lista de vendas.
+ *
+ * A prioridade decide a ORDEM no celular, nunca o que existe - empreendimento,
+ * etapa e bloco ficam a um toque, em "Ver detalhes", e não sumiram.
+ */
+const columns = computed(() => {
+  const cols = [
+    { key: 'cliente', label: 'Cliente', priority: 1, sortable: true, truncate: false },
+    { key: 'unidade', label: 'Unidade', priority: 1, sortable: true, width: '9rem' },
+    { key: 'valor', label: `Valor (${valueModeLabel.value})`, priority: 1, numeric: true, sortable: true, width: '11rem' },
+    { key: 'data', label: 'Data', priority: 2, sortable: true, width: '8rem' },
   ];
-  if (props.projectionRow) {
-    opts.push({ value: 'comparison', label: 'Comparação', icon: 'fas fa-bullseye' });
+  if (hasRepasse.value) {
+    cols.push(
+      { key: 'imobiliaria', label: 'Imobiliária', priority: 2, width: '13rem' },
+      { key: 'repasse', label: 'Repasse', priority: 2, width: '11rem' },
+      { key: 'empreendimento', label: 'Empreendimento', priority: 3 },
+      { key: 'etapa', label: 'Etapa', priority: 3 },
+      { key: 'bloco', label: 'Bloco', priority: 3 },
+    );
   }
-  return opts;
+  return cols;
 });
 
-// KPI Strip
-const kpiCards = computed(() => [
-  { key: 'total',   label: 'Total de vendas',   value: totalSales.value,                   sub: 'no período',                              icon: 'fas fa-chart-line',     accent: 'text-accent bg-accent-soft', mono: true },
-  { key: 'value',   label: `Valor total ${valueModeLabel.value}`, value: formatCurrency(totalValue.value),     sub: showLandOnlyNote.value ? 'Cálculo pelo "Observação"' : (contractsStore.isNet ? 'VGV (descontos ignorados)' : 'VGV + DC (descontos somam)'),  icon: contractsStore.isNet ? 'fas fa-money-bill-wave' : 'fas fa-sack-dollar', accent: 'text-data-pos bg-data-pos/10' },
-  { key: 'ticket',  label: `Ticket médio ${valueModeLabel.value}`, value: formatCurrency(avgTicket.value),      sub: 'valor médio por venda',                   icon: 'fas fa-receipt',        accent: 'text-accent bg-accent/10' },
-  { key: 'clients', label: 'Clientes únicos',   value: uniqueCustomers.value,              sub: 'pessoas distintas',                       icon: 'fas fa-users',          accent: 'text-data-warn bg-data-warn/10', mono: true },
-]);
+const onSortBy = (key) => { sortBy.value = key || 'valor'; };
+const onSortDir = (dir) => { sortDir.value = dir; };
+
+/* Um caminho de filtro só: busca e série moram no mesmo painel, atrás do botão
+ * Filtros, com o selo de quantos estão ativos. */
+const filtrosAtivos = computed(() =>
+  (searchTerm.value ? 1 : 0) + (selectedSerie.value ? 1 : 0));
+
+const limparFiltros = () => { searchTerm.value = ''; selectedSerie.value = ''; };
 
 const closeModal = () => emit('close');
 </script>
 
 <template>
-  <Modal :open="true" size="full" hide-close @close="closeModal">
+  <!-- `screen`: listagem de registros toma a tela inteira. Um cartao flutuando
+       no meio da tela desperdica area justamente onde ha muita linha para ler;
+       e o padrao de todo modal de listagem do Office. -->
+  <Modal :open="true" size="screen" :padded="false" hide-close @close="closeModal">
     <template #header>
       <div class="flex items-center gap-3 min-w-0">
         <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
@@ -1028,72 +940,28 @@ const closeModal = () => emit('close');
         <div class="min-w-0">
           <h2 class="text-base font-semibold text-ink truncate">{{ enterprise.name }}</h2>
           <p class="text-xs text-ink-muted mt-0.5">
-            <span class="font-mono text-ink">{{ totalSales }}</span> venda(s) ·
-            <span class="font-mono text-ink">{{ formatCurrency(totalValue) }}</span> ·
-            <span class="font-mono text-ink">{{ uniqueCustomers }}</span> cliente(s)
+            <span class="tabular-nums text-ink">{{ totalSales }}</span> venda(s) &middot;
+            <span class="tabular-nums text-ink">{{ formatCurrency(totalValue) }}</span> &middot;
+            <span class="tabular-nums text-ink">{{ uniqueCustomers }}</span> cliente(s)
           </p>
         </div>
-        <IconButton icon="fas fa-download" size="sm" label="Exportar dados"
-          class="ml-auto shrink-0" @click="open = true" />
+        <div class="ml-auto shrink-0 flex items-center gap-2">
+          <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="sm" />
+          <IconButton icon="fas fa-download" size="sm" label="Exportar dados" @click="open = true" />
+        </div>
       </div>
     </template>
 
-    <div class="-m-4 sm:-m-5 flex flex-col">
+    <!-- Este e o container que rola, e e ele que o scroll incremental observa. -->
+    <div ref="scrollRoot" class="h-full overflow-y-auto">
 
-      <!-- Toolbar de modos -->
-      <div class="flex flex-col sm:flex-row sm:items-center gap-2 px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/40">
-        <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="sm" />
-        <SegmentedControl v-model="viewMode" :options="viewModeOptions" size="sm" class="overflow-x-auto" />
+      <div class="px-4 sm:px-5 pt-4">
+        <StatRow :items="kpiItems" :cols="{ sm: 2, md: 2, lg: 4 }" />
       </div>
 
-      <!-- Conteúdo scrollável -->
-      <div class="flex-1 overflow-y-auto max-h-[68vh]">
-
-        <!-- KPI Strip -->
-        <div class="px-4 sm:px-5 py-4 border-b border-line">
-          <div class="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto sm:overflow-visible no-scrollbar">
-            <div class="flex sm:grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4 min-w-max sm:min-w-0">
-              <div v-for="k in kpiCards" :key="k.key"
-                class="flex items-center gap-3 p-3 rounded-xl border border-line bg-surface-raised
-                       shadow-soft hover:shadow-elevated hover:border-accent/30 hover:-translate-y-0.5
-                       transition-all duration-200 ease-out-expo
-                       w-56 sm:w-auto shrink-0 surface-gradient">
-                <span class="h-10 w-10 rounded-lg grid place-items-center text-sm shrink-0" :class="k.accent">
-                  <i :class="k.icon"></i>
-                </span>
-                <div class="min-w-0 flex-1">
-                  <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
-                  <p class="text-xl font-semibold text-ink leading-tight tracking-tight mt-0.5 truncate"
-                    :class="k.mono ? 'tabular-nums' : 'tabular-nums'">
-                    {{ k.value }}
-                  </p>
-                  <p class="text-micro text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Search + filtros -->
-        <div class="px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/30">
-          <div class="grid grid-cols-1 lg:grid-cols-[1fr_14rem_10rem] gap-3 items-end">
-            <div>
-              <label class="block text-micro font-medium text-ink-muted mb-1.5">
-                <i class="fas fa-magnifying-glass text-[10px] mr-1 text-ink-subtle"></i>
-                Busca livre
-              </label>
-              <Input v-model="searchTerm"
-                placeholder="Cliente · imobiliária · repasse · empreendimento · etapa · bloco · unidade · data · valor"
-                iconLeft="fas fa-magnifying-glass" />
-            </div>
-            <Select v-model="selectedSerie" :options="serieSelectOptions" label="Série" />
-            <Select v-model="itemsPerPage" :options="itemsPerPageOptions" label="Itens" />
-          </div>
-        </div>
-
-        <!-- ── COMPARAÇÃO ─────────────────────────────────────────── -->
-        <div v-if="viewMode === 'comparison' && projectionRow"
-          class="p-4 sm:p-5 border-b border-line space-y-4">
+      <!-- Realizado x Projetado: era um "modo" no alternador; virou secao, na
+           mesma pagina, acima da lista que ela resume. -->
+      <div v-if="projectionRow" class="mt-4 border-t border-line">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <h4 class="text-sm font-semibold text-ink">Realizado × Projetado</h4>
             <span class="text-xs text-ink-subtle font-mono">
@@ -1166,281 +1034,207 @@ const closeModal = () => emit('close');
             <span class="flex-none">100%</span>
             <span class="flex-none text-accent font-semibold">{{ timeElapsedPct.toFixed(0) }}% do mês</span>
           </div>
-        </div>
+      </div>
 
-        <!-- ── CHARTS (pie / bar) ───────────────────────────────── -->
-        <div v-if="viewMode === 'pie' || viewMode === 'bar'"
-          class="p-4 sm:p-5 border-b border-line">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div>
-              <span v-if="searchTerm"
-                class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs bg-accent-soft text-accent border border-accent/20">
-                Filtro: {{ searchTerm }}
-                <button @click="searchTerm = ''" class="hover:text-accent-hover">
-                  <i class="fas fa-times text-[10px]"></i>
-                </button>
+      <!-- UM caminho de filtro: busca e serie no mesmo painel, fechado por
+           padrao e com o selo de quantos estao ativos. -->
+      <div class="px-4 sm:px-5 pt-4">
+        <FilterBar :active-count="filtrosAtivos" :cols="2" auto-apply @clear="limparFiltros">
+          <Input v-model="searchTerm" label="Busca livre"
+            placeholder="Cliente &middot; imobiliaria &middot; repasse &middot; empreendimento &middot; etapa &middot; bloco &middot; unidade &middot; data &middot; valor"
+            iconLeft="fas fa-magnifying-glass" />
+          <Select v-model="selectedSerie" :options="serieSelectOptions" label="Serie" />
+        </FilterBar>
+      </div>
+
+      <Export v-model="open" :source="filteredSales" title="Vendas"
+        :subtitle="enterprise?.name || ''"
+        initial-delimiter=";" initial-array-mode="join"
+        :filters="{
+          'Empreendimento': enterprise?.name || '',
+          'Modo de valor': valueModeLabel,
+          'Serie': selectedSerie || 'Todas',
+          'Busca': searchTerm || '-',
+        }"
+        :preselect="[
+          'customer_id', 'customer_name', 'unit_name', 'enterprise_name',
+          'financial_institution_date', 'total_value_gross', 'total_value_net',
+          'contracts.contract_id'
+        ]" />
+
+      <div class="px-4 sm:px-5 py-4">
+        <DataTable :columns="columns" :rows="inc.visiveis.value" row-key="_key" expandable manual-sort
+          :sort-by="sortBy" :sort-dir="sortDir"
+          empty-icon="fas fa-file-invoice" empty-title="Nenhuma venda encontrada"
+          empty-text="Ajuste a busca ou a serie para ver resultados."
+          @update:sortBy="onSortBy" @update:sortDir="onSortDir">
+
+          <template #cell-cliente="{ row }">
+            <span class="flex items-center gap-2 min-w-0 flex-wrap">
+              <span class="font-semibold text-ink">{{ customerNameOf(row) }}</span>
+              <span v-if="row.customer_id" class="text-micro text-ink-subtle tabular-nums">#{{ row.customer_id }}</span>
+              <a v-if="leadOf(row)" :href="leadLinkOf(row)" target="_blank" rel="noopener"
+                @click.stop v-tippy="leadTippyOf(row)"
+                class="shrink-0 inline-flex items-center gap-1 rounded-full border border-accent/25
+                       bg-accent-soft px-2 py-0.5 text-micro font-semibold uppercase tracking-wide
+                       text-accent transition-all duration-120 ease-out-expo
+                       hover:border-accent/60 hover:ring-2 hover:ring-accent-ring/25">
+                <i class="fas fa-bullhorn"></i>Lead
+              </a>
+              <Badge v-if="saleIsDistrato(row)" variant="warning" size="sm" v-tippy="distratoTooltipOf(row)">
+                <i class="fas fa-file-circle-xmark text-micro"></i>Distratada
+              </Badge>
+              <Badge v-if="saleIsAdjusted(row)" variant="info" size="sm" v-tippy="adjustmentTooltipOf(row)">
+                <i class="fas fa-wand-magic-sparkles text-micro"></i>Ajustada
+              </Badge>
+              <Badge v-if="saleIsProjection(row)" variant="success" size="sm">
+                <i class="fas fa-chart-line text-micro"></i>Projecao
+              </Badge>
+              <span v-if="row.contracts?.[0]?.associates?.[0]"
+                class="block w-full text-micro text-ink-subtle truncate">
+                {{ row.contracts[0].associates[0].name }} #{{ row.contracts[0].associates[0].customer_id }}
               </span>
-              <span v-else class="text-xs text-ink-subtle">Clique no gráfico para filtrar a lista abaixo.</span>
+            </span>
+          </template>
+
+          <template #cell-unidade="{ row }">
+            <span class="tabular-nums">{{ row.unit_name || reservaUnitOf(row) }}</span>
+          </template>
+
+          <template #cell-valor="{ row }">
+            <span class="font-semibold text-data-pos">{{ formatCurrency(getSaleValue(row)) }}</span>
+          </template>
+
+          <template #cell-data="{ row }">
+            <span class="tabular-nums">{{ formatDate(row.financial_institution_date || reservaDateOf(row)) }}</span>
+          </template>
+
+          <template #cell-imobiliaria="{ row }">
+            <span class="inline-flex items-center gap-1.5 min-w-0">
+              <i class="fas fa-store text-micro text-accent shrink-0"></i>
+              <span class="truncate">{{ imobiliariaOf(row) }}</span>
+            </span>
+          </template>
+
+          <template #cell-repasse="{ row }">
+            <a :href="repasseLinkOf(row)" target="_blank" rel="noopener" @click.stop
+              v-tippy="repasseTooltipOf(row)"
+              class="inline-flex items-center gap-1.5 min-w-0 hover:text-accent transition-colors duration-120">
+              <img src="/CVLogo.png" alt="CV CRM" class="h-3.5 grayscale hover:grayscale-0 shrink-0" />
+              <span class="truncate">{{ repasseStatusOf(row) || '-' }}</span>
+            </a>
+          </template>
+
+          <template #cell-empreendimento="{ row }">{{ empreendimentoOf(row) }}</template>
+          <template #cell-etapa="{ row }">{{ etapaOf(row) }}</template>
+          <template #cell-bloco="{ row }">{{ blocoOf(row) }}</template>
+
+          <!-- O registro inteiro abre NA PROPRIA LINHA: a ordenacao e as
+               colunas continuam valendo, e ninguem troca de tela para ver as
+               condicoes de pagamento. -->
+          <template #expanded="{ row }">
+            <div class="space-y-3 pt-3">
+        <div v-for="contract in row.contracts" :key="contract.contract_id" class="space-y-2">
+          <div class="rounded-lg border bg-surface-raised p-3"
+            :class="contract._projection ? 'border-l-4 border-l-data-pos border-y border-r border-line' : 'border-line'">
+            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <span class="text-xs font-mono text-ink-muted">
+                {{ contract._projection ? 'Reserva' : 'Contrato' }}
+                <span class="text-ink font-semibold">#{{ contract.contract_id }}</span>
+              </span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-ink-subtle font-mono">
+                  Participação: <span class="text-ink">{{ contract.participation_percentage || 100 }}%</span>
+                </span>
+                <!-- Ajuste contábil: admin corrige o dado sem tocar no Sienge -->
+                <template v-if="can('configure') && !contract._projection">
+                  <button type="button" v-tippy="'Corrigir a data da instituição financeira deste contrato'"
+                    class="text-micro text-ink-subtle hover:text-accent transition-colors"
+                    @click.stop="openAdjustment(contract, { type: 'FI_DATE' })">
+                    <i class="far fa-calendar-check text-[10px]"></i> Ajustar data
+                  </button>
+                  <button type="button" v-tippy="'Adicionar uma série que não veio do Sienge'"
+                    class="text-micro text-ink-subtle hover:text-accent transition-colors"
+                    @click.stop="openAdjustment(contract, { type: 'SERIE_ADD' })">
+                    <i class="fas fa-circle-plus text-[10px]"></i> Add série
+                  </button>
+                </template>
+              </div>
             </div>
-            <ChartActions :filename="`vendas-${viewMode}`" />
-          </div>
-          <div class="rounded-xl border border-line bg-surface-raised p-3 surface-gradient">
-            <VChart :option="chartOption" autoresize style="height:360px;width:100%;" @click="onChartClick" />
-          </div>
-        </div>
 
-        <!-- ── EXPORT MODAL ───────────────────────────────────── -->
-        <Export v-model="open" :source="filteredSales" title="Vendas"
-          :subtitle="enterprise?.name || ''"
-          initial-delimiter=";" initial-array-mode="join"
-          :filters="{
-            'Empreendimento': enterprise?.name,
-            'Busca': searchTerm,
-            'Série': selectedSerie,
-          }"
-          :preselect="[
-            'customer_id', 'customer_name', 'unit_name', 'enterprise_name',
-            'financial_institution_date', 'total_value_gross', 'total_value_net',
-            'contracts.contract_id'
-          ]" />
+            <!-- Data ajustada: mostra de onde veio, senão o número muda sem explicação -->
+            <div v-if="contract.original_financial_institution_date
+              && contract.original_financial_institution_date !== contract.financial_institution_date"
+              class="mb-3 text-micro text-accent font-mono">
+              <i class="fas fa-wand-magic-sparkles text-[9px]"></i>
+              Data ajustada: {{ formatDate(contract.original_financial_institution_date) }}
+              → {{ formatDate(contract.financial_institution_date) }}
+            </div>
 
-        <!-- ── LIST (sempre visível) ─────────────────────────── -->
-        <div class="p-4 sm:p-5">
-
-          <EmptyState v-if="!paginatedSales.length"
-            icon="fas fa-file-invoice" title="Nenhuma venda encontrada"
-            description="Ajuste os filtros, a busca ou a série para ver resultados." />
-
-          <div v-else class="space-y-2">
-            <article v-for="sale in paginatedSales" :key="`${sale.customer_id ?? ''}-${sale.unit_name}`"
-              class="rounded-xl border bg-surface-raised overflow-hidden transition-all duration-200 ease-out-expo
-                     hover:shadow-soft hover:border-accent/30"
-              :class="saleIsProjection(sale)
-                ? 'border-data-pos/30 bg-data-pos/5'
-                : 'border-line surface-gradient'">
-
-              <!-- Linha principal -->
-              <!-- Continua `div` porque tem <a> dentro, e link dentro de botao e
-                   HTML invalido. O teclado entra pelo tabindex + role. -->
-              <div class="px-3 sm:px-4 py-3 cursor-pointer focus-ring rounded-lg" role="button" tabindex="0"
-                :aria-expanded="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
-                @click="toggleDetails(sale)"
-                @keydown.enter.prevent="toggleDetails(sale)"
-                @keydown.space.prevent="toggleDetails(sale)">
-                <div class="flex items-start gap-3">
-                  <!-- Avatar/ícone -->
-                  <div class="h-9 w-9 shrink-0 rounded-lg grid place-items-center text-sm border"
-                    :class="saleIsProjection(sale)
-                      ? 'bg-data-pos/10 text-data-pos border-data-pos/20'
-                      : 'bg-accent-soft text-accent border-accent/20'">
-                    <i :class="saleIsProjection(sale) ? 'fas fa-chart-line' : 'fas fa-handshake'"></i>
-                  </div>
-
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-start justify-between gap-2 flex-wrap">
-                      <div class="min-w-0">
-                        <h4 class="text-sm font-semibold text-ink truncate">
-                          {{ customerNameOf(sale) }}
-                          <span v-if="sale.customer_id" class="ml-1 text-micro text-ink-subtle font-mono">
-                            #{{ sale.customer_id }}
-                          </span>
-                        </h4>
-                        <p v-if="sale.contracts?.[0]?.associates?.[0]"
-                          class="text-micro text-ink-subtle truncate font-mono">
-                          {{ sale.contracts[0].associates[0].name }} #{{ sale.contracts[0].associates[0].customer_id }}
-                        </p>
-                      </div>
-                      <div class="flex items-center gap-2 shrink-0">
-                        <a v-if="leadOf(sale)" :href="leadLinkOf(sale)" target="_blank" rel="noopener"
-                          @click.stop v-tippy="leadTippyOf(sale)"
-                          class="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-accent/25
-                                 bg-accent-soft pl-1.5 pr-2 py-0.5 text-micro font-semibold uppercase tracking-wide
-                                 text-accent transition-all duration-200 ease-out-expo
-                                 hover:border-accent/60 hover:ring-2 hover:ring-accent-ring/25">
-                          <span class="grid place-items-center h-3.5 w-3.5 rounded-full bg-accent/15">
-                            <i class="fas fa-bullhorn text-[7px]"></i>
-                          </span>
-                          Lead
-                        </a>
-                        <Badge v-if="saleIsDistrato(sale)" variant="warning" size="sm"
-                          v-tippy="distratoTooltipOf(sale)">
-                          <i class="fas fa-file-circle-xmark text-[9px]"></i>Distratada
-                        </Badge>
-                        <Badge v-if="saleIsAdjusted(sale)" variant="info" size="sm"
-                          v-tippy="adjustmentTooltipOf(sale)">
-                          <i class="fas fa-wand-magic-sparkles text-[9px]"></i>Ajustada
-                        </Badge>
-                        <Badge v-if="saleIsProjection(sale)" variant="success" size="sm">
-                          <i class="fas fa-chart-line text-[9px]"></i>Projeção
-                        </Badge>
-                        <span class="text-sm font-semibold text-data-pos tabular-nums">
-                          {{ formatCurrency(getSaleValue(sale)) }}
-                        </span>
-                      </div>
-                    </div>
-
-                    <!-- Linha 2: metadados -->
-                    <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
-                      <span v-if="hasRepasse" class="inline-flex items-center gap-1.5 max-w-[200px] truncate">
-                        <i class="fas fa-store text-[10px] text-accent"></i>
-                        {{ imobiliariaOf(sale) }}
-                      </span>
-                      <a v-if="hasRepasse" :href="repasseLinkOf(sale)" target="_blank" rel="noopener"
-                        @click.stop
-                        class="inline-flex items-center gap-1.5 max-w-[180px] truncate hover:text-accent transition-colors"
-                        v-tippy="repasseTooltipOf(sale)">
-                        <img src="/CVLogo.png" alt="CV CRM" class="h-3.5 grayscale hover:grayscale-0" />
-                        <span class="truncate">{{ repasseStatusOf(sale) || '—' }}</span>
-                      </a>
-                      <span v-if="hasRepasse" class="inline-flex items-center gap-1.5 max-w-[200px] truncate">
-                        <i class="fas fa-building text-[10px] text-accent"></i>
-                        {{ empreendimentoOf(sale) }}
-                      </span>
-                      <span v-if="hasRepasse && etapaOf(sale) !== '—'" class="inline-flex items-center gap-1.5">
-                        <i class="fas fa-layer-group text-[10px] text-accent"></i>
-                        {{ etapaOf(sale) }}
-                      </span>
-                      <span v-if="hasRepasse && blocoOf(sale) !== '—'" class="inline-flex items-center gap-1.5">
-                        <i class="fas fa-cube text-[10px] text-data-warn"></i>
-                        {{ blocoOf(sale) }}
-                      </span>
-                      <span class="inline-flex items-center gap-1.5">
-                        <i class="fas fa-hashtag text-[10px] text-data-neg"></i>
-                        <span class="font-mono">{{ sale.unit_name || reservaUnitOf(sale) }}</span>
-                      </span>
-                      <span class="inline-flex items-center gap-1.5">
-                        <i class="far fa-calendar text-[10px] text-data-warn"></i>
-                        <span class="font-mono">{{ formatDate(sale.financial_institution_date || reservaDateOf(sale)) }}</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  <i class="fas fa-chevron-down text-xs text-ink-subtle mt-2 transition-transform"
-                    :class="{ 'rotate-180': expandedSales.has(`${sale.customer_id}-${sale.unit_name}`) }"></i>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5"
+              :key="`${contractsStore.valueMode}-${contract.contract_id}`">
+              <div v-for="(condition, idx) in displayedConditions(contract)"
+                :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'}-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode}`"
+                class="rounded-lg p-2.5 border bg-surface-sunken transition-opacity"
+                :class="[
+                  isDiscount(condition)
+                    ? 'border-l-4 border-l-data-neg border-y border-r border-line'
+                    : 'border-l-4 border-l-data-pos border-y border-r border-line',
+                  condition._isCommission ? '!border-l-data-warn' : '',
+                  condition._adjusted ? '!border-l-accent' : '',
+                  condition._dimmed ? 'opacity-30' : '',
+                ]">
+                <div class="text-xs font-medium text-ink mb-0.5 flex items-center gap-1.5 flex-wrap">
+                  <span class="truncate">{{ condition.condition_type_name || 'Não informado' }}</span>
+                  <Badge v-if="condition.synthetic" variant="warning" size="sm">Observação</Badge>
+                  <Badge v-if="condition._adjusted === 'added'" variant="info" size="sm"
+                    v-tippy="`Série adicionada manualmente — ${condition._adjustment_reason || 'sem motivo registrado'}`">
+                    Adicionada
+                  </Badge>
+                  <Badge v-else-if="condition._adjusted === 'edited'" variant="info" size="sm"
+                    v-tippy="`Série editada — ${condition._adjustment_reason || 'sem motivo registrado'}`">
+                    Editada
+                  </Badge>
+                  <button v-if="condition.synthetic" class="text-ink-subtle hover:text-ink transition-colors"
+                    v-tippy="'Atualização D-1 às 07h'">
+                    <i class="fas fa-circle-info text-[10px]"></i>
+                  </button>
+                  <button v-if="canAdjustCondition(contract, condition)"
+                    class="ml-auto text-ink-subtle hover:text-accent transition-colors"
+                    v-tippy="'Ajustar esta série (contábil)'"
+                    @click.stop="openAdjustment(contract, { type: 'SERIE_EDIT', conditionIndex: idx })">
+                    <i class="fas fa-pen text-[10px]"></i>
+                  </button>
+                </div>
+                <div class="text-base font-semibold tabular-nums"
+                  :class="isDiscount(condition) ? 'text-data-neg' : 'text-data-pos'">
+                  {{ formatCurrency(condition.total_value) }}
+                  <span v-if="isDiscount(condition)" class="text-micro ml-1 text-ink-subtle font-normal">(desconto)</span>
+                </div>
+                <div v-if="condition._adjustment_before
+                  && Number(condition._adjustment_before.total_value) !== Number(condition.total_value)"
+                  class="text-micro text-ink-subtle tabular-nums line-through">
+                  {{ formatCurrency(condition._adjustment_before.total_value) }}
+                </div>
+                <div class="flex items-center gap-2 mt-0.5 text-micro font-mono text-ink-subtle">
+                  <span>Cód: {{ condition.condition_type_id || '—' }}</span>
+                  <span v-if="condition.installments_number">· {{ condition.installments_number }}x parcelas</span>
                 </div>
               </div>
-
-              <!-- Linha expandida: contratos + condições -->
-              <div v-if="expandedSales.has(`${sale.customer_id}-${sale.unit_name}`)"
-                class="border-t border-line bg-surface-sunken/40 px-3 sm:px-4 py-3 space-y-3 animate-fade-in">
-                <div v-for="contract in sale.contracts" :key="contract.contract_id" class="space-y-2">
-                  <div class="rounded-lg border bg-surface-raised p-3"
-                    :class="contract._projection ? 'border-l-4 border-l-emerald-500 border-y border-r border-line' : 'border-line'">
-                    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-                      <span class="text-xs font-mono text-ink-muted">
-                        {{ contract._projection ? 'Reserva' : 'Contrato' }}
-                        <span class="text-ink font-semibold">#{{ contract.contract_id }}</span>
-                      </span>
-                      <div class="flex items-center gap-2">
-                        <span class="text-xs text-ink-subtle font-mono">
-                          Participação: <span class="text-ink">{{ contract.participation_percentage || 100 }}%</span>
-                        </span>
-                        <!-- Ajuste contábil: admin corrige o dado sem tocar no Sienge -->
-                        <template v-if="can('configure') && !contract._projection">
-                          <button type="button" v-tippy="'Corrigir a data da instituição financeira deste contrato'"
-                            class="text-micro text-ink-subtle hover:text-accent transition-colors"
-                            @click.stop="openAdjustment(contract, { type: 'FI_DATE' })">
-                            <i class="far fa-calendar-check text-[10px]"></i> Ajustar data
-                          </button>
-                          <button type="button" v-tippy="'Adicionar uma série que não veio do Sienge'"
-                            class="text-micro text-ink-subtle hover:text-accent transition-colors"
-                            @click.stop="openAdjustment(contract, { type: 'SERIE_ADD' })">
-                            <i class="fas fa-circle-plus text-[10px]"></i> Add série
-                          </button>
-                        </template>
-                      </div>
-                    </div>
-
-                    <!-- Data ajustada: mostra de onde veio, senão o número muda sem explicação -->
-                    <div v-if="contract.original_financial_institution_date
-                      && contract.original_financial_institution_date !== contract.financial_institution_date"
-                      class="mb-3 text-micro text-accent font-mono">
-                      <i class="fas fa-wand-magic-sparkles text-[9px]"></i>
-                      Data ajustada: {{ formatDate(contract.original_financial_institution_date) }}
-                      → {{ formatDate(contract.financial_institution_date) }}
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5"
-                      :key="`${contractsStore.valueMode}-${contract.contract_id}`">
-                      <div v-for="(condition, idx) in displayedConditions(contract)"
-                        :key="`${contract.contract_id}-${condition.synthetic ? 'SYNTH' : 'REAL'}-${condition.condition_type_id || 'NA'}-${idx}-${contractsStore.valueMode}`"
-                        class="rounded-lg p-2.5 border bg-surface-sunken transition-opacity"
-                        :class="[
-                          isDiscount(condition)
-                            ? 'border-l-4 border-l-red-500 border-y border-r border-line'
-                            : 'border-l-4 border-l-emerald-500 border-y border-r border-line',
-                          condition._isCommission ? '!border-l-orange-500' : '',
-                          condition._adjusted ? '!border-l-sky-500' : '',
-                          condition._dimmed ? 'opacity-30' : '',
-                        ]">
-                        <div class="text-xs font-medium text-ink mb-0.5 flex items-center gap-1.5 flex-wrap">
-                          <span class="truncate">{{ condition.condition_type_name || 'Não informado' }}</span>
-                          <Badge v-if="condition.synthetic" variant="warning" size="sm">Observação</Badge>
-                          <Badge v-if="condition._adjusted === 'added'" variant="info" size="sm"
-                            v-tippy="`Série adicionada manualmente — ${condition._adjustment_reason || 'sem motivo registrado'}`">
-                            Adicionada
-                          </Badge>
-                          <Badge v-else-if="condition._adjusted === 'edited'" variant="info" size="sm"
-                            v-tippy="`Série editada — ${condition._adjustment_reason || 'sem motivo registrado'}`">
-                            Editada
-                          </Badge>
-                          <button v-if="condition.synthetic" class="text-ink-subtle hover:text-ink transition-colors"
-                            v-tippy="'Atualização D-1 às 07h'">
-                            <i class="fas fa-circle-info text-[10px]"></i>
-                          </button>
-                          <button v-if="canAdjustCondition(contract, condition)"
-                            class="ml-auto text-ink-subtle hover:text-accent transition-colors"
-                            v-tippy="'Ajustar esta série (contábil)'"
-                            @click.stop="openAdjustment(contract, { type: 'SERIE_EDIT', conditionIndex: idx })">
-                            <i class="fas fa-pen text-[10px]"></i>
-                          </button>
-                        </div>
-                        <div class="text-base font-semibold tabular-nums"
-                          :class="isDiscount(condition) ? 'text-data-neg' : 'text-data-pos'">
-                          {{ formatCurrency(condition.total_value) }}
-                          <span v-if="isDiscount(condition)" class="text-micro ml-1 text-ink-subtle font-normal">(desconto)</span>
-                        </div>
-                        <div v-if="condition._adjustment_before
-                          && Number(condition._adjustment_before.total_value) !== Number(condition.total_value)"
-                          class="text-micro text-ink-subtle tabular-nums line-through">
-                          {{ formatCurrency(condition._adjustment_before.total_value) }}
-                        </div>
-                        <div class="flex items-center gap-2 mt-0.5 text-micro font-mono text-ink-subtle">
-                          <span>Cód: {{ condition.condition_type_id || '—' }}</span>
-                          <span v-if="condition.installments_number">· {{ condition.installments_number }}x parcelas</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
+            </div>
           </div>
         </div>
+            </div>
+          </template>
+        </DataTable>
 
-        <!-- Paginação -->
-        <div v-if="totalPages > 1"
-          class="px-4 sm:px-5 py-3 border-t border-line bg-surface-sunken/40 flex flex-wrap items-center justify-between gap-2">
-          <div class="text-xs text-ink-muted font-mono">
-            {{ startItem }}–{{ endItem }} de {{ filteredSales.length }}
-          </div>
-          <div class="flex items-center gap-1">
-            <IconButton icon="fas fa-angles-left" size="sm" label="Primeira"
-              :disabled="currentPage === 1" @click="currentPage = 1" />
-            <IconButton icon="fas fa-chevron-left" size="sm" label="Anterior"
-              :disabled="currentPage === 1" @click="currentPage--" />
-            <button v-for="page in visiblePages" :key="page" @click="currentPage = page"
-              class="min-w-[32px] h-8 px-2 rounded-md text-xs font-mono transition-colors"
-              :class="page === currentPage
-                ? 'bg-accent text-white'
-                : 'text-ink-muted hover:bg-surface-hover'">
-              {{ page }}
-            </button>
-            <IconButton icon="fas fa-chevron-right" size="sm" label="Próxima"
-              :disabled="currentPage === totalPages" @click="currentPage++" />
-            <IconButton icon="fas fa-angles-right" size="sm" label="Última"
-              :disabled="currentPage === totalPages" @click="currentPage = totalPages" />
-          </div>
+        <!-- Gatilho do scroll incremental: nada de paginação. A sentinela é
+             registrada por `observar`, não por um ref nomeado - é assim que o
+             composable enxerga o elemento. -->
+        <div v-if="!inc.acabou.value" :ref="el => inc.observar(el)"
+          class="py-6 flex items-center justify-center gap-2 text-micro text-ink-subtle">
+          <Spinner size="sm" />
+          carregando mais {{ Math.min(inc.step, inc.restantes.value) }} de {{ inc.restantes.value }} restantes
         </div>
       </div>
     </div>
@@ -1450,7 +1244,7 @@ const closeModal = () => emit('close');
     </template>
   </Modal>
 
-  <!-- Ajuste contábil (admin) — sobreposto ao detalhe -->
+  <!-- Ajuste contabil (admin) - sobreposto ao detalhe -->
   <ContractAdjustmentModal
     :open="adjustmentModalOpen"
     :contract-id="adjustmentTarget.contractId"

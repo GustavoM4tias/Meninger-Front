@@ -6,9 +6,12 @@ import EnterpriseDetailModal from './EnterpriseDetailModal.vue';
 import Export from '@/components/config/Export.vue';
 
 import IconButton from '@/components/UI/IconButton.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Badge from '@/components/UI/Badge.vue';
+import Button from '@/components/UI/Button.vue';
+import Panel from '@/components/UI/Panel.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import ActionBar from '@/components/UI/ActionBar.vue';
 
 const props = defineProps({ data: { type: Array, required: true } });
 const emit = defineEmits(['open-land-sync', 'open-closing', 'selection-metrics']);
@@ -24,7 +27,6 @@ const selectedKeys = ref(new Set());
 const showModal = ref(false);
 const modalSales = ref([]);
 const modalTitle = ref('');
-const initialMode = ref('list');
 const modalEnterprise = ref({ name: '' });
 
 const valueModeLabel = computed(() => contractsStore.valueModeLabel);
@@ -39,26 +41,22 @@ const groupByOptions = [
   { value: 'company', label: 'Empresa', icon: 'fas fa-city' },
 ];
 
-const viewOptions = [
-  { value: 'list', label: 'Listagem', icon: 'fas fa-list' },
-  { value: 'pie', label: 'Pizza', icon: 'fas fa-chart-pie' },
-  { value: 'bar', label: 'Colunas', icon: 'fas fa-chart-column' },
-];
+// O alternador Listagem / Pizza / Colunas saiu em 2026-08-31: relatório é uma
+// leitura só, de cima para baixo (DESIGN-LANGUAGE, "Padrões de VISUALIZAÇÃO").
+// A comparação entre linhas que a pizza dava agora está na coluna
+// Participação, dentro da própria linha.
+//
+// A paleta fixa de dez hex também saiu. A cor de dado é `series-1..8` e segue a
+// ENTIDADE; aqui ela era escolhida pelo índice da linha, então mudava de cor a
+// cada reordenação - era enfeite, não informação.
 
-// Colunas ordenáveis — usadas no cabeçalho (desktop) e nos chips (mobile).
+// Colunas ordenáveis, na ordem em que aparecem.
 const sortColumns = [
   { key: 'name', label: 'Nome' },
   { key: 'count', label: 'Vendas' },
   { key: 'value', label: 'Valor total' },
   { key: 'ticket', label: 'Ticket médio' },
 ];
-
-const colors = [
-  '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-  '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1',
-];
-
-const getColor = (i) => colors[i % colors.length];
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', {
@@ -281,7 +279,7 @@ const salesForModalRowFrom = (sales, row, ctx = {}) => {
 };
 
 /* ===================== MODAL - SINGLE ===================== */
-const openSingle = async (row, mode = 'list') => {
+const openSingle = async (row) => {
   const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : [];
   const targetSales = salesForRowFrom(dashboardSalesSnapshot, row);
 
@@ -312,7 +310,6 @@ const openSingle = async (row, mode = 'list') => {
     (contractsStore.groupBy === 'company' ? `Empresa: ${row.name}` : row.name) +
     (row.onlyProjectionRow ? ' • Projeções' : '');
 
-  initialMode.value = mode;
   modalEnterprise.value = { ...row, name: modalTitle.value };
   showModal.value = true;
 };
@@ -393,7 +390,7 @@ watchEffect(() => {
 });
 
 /* ===================== MODAL - GROUP ===================== */
-const openGroup = async (mode = 'list') => {
+const openGroup = async () => {
   const keysSet =
     selectedKeys.value.size > 0 ? new Set(selectedKeys.value) : new Set(props.data.map((e) => e.key));
 
@@ -443,10 +440,55 @@ const openGroup = async (mode = 'list') => {
       ? (contractsStore.groupBy === 'company' ? `Empresa: ${rows[0].name}` : rows[0].name)
       : `Conjunto de ${rows.length} ${contractsStore.groupBy === 'company' ? 'empresas' : 'empreendimentos'}`;
 
-  initialMode.value = mode;
   modalEnterprise.value = { name: modalTitle.value };
   showModal.value = true;
 };
+
+/* ===================== COLUNAS (padrão DataTable) =====================
+ * A prioridade decide a ORDEM no celular, nunca o que existe: as seis colunas
+ * continuam alcançáveis nas duas larguras.
+ */
+const columns = computed(() => [
+  { key: 'sel', label: 'Sel.', priority: 2, align: 'center', width: '3.25rem', truncate: false },
+  {
+    key: 'name', priority: 1, sortable: true, truncate: false,
+    label: contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento',
+  },
+  { key: 'count', label: 'Vendas', priority: 1, numeric: true, sortable: true, width: '7rem' },
+  { key: 'value', label: `Valor total (${valueModeLabel.value})`, priority: 1, numeric: true, sortable: true, width: '13rem' },
+  { key: 'share', label: 'Participação', priority: 2, width: '13rem', truncate: false },
+  { key: 'ticket', label: `Ticket médio (${valueModeLabel.value})`, priority: 2, numeric: true, sortable: true, width: '11rem' },
+]);
+
+/* Participação da linha no valor do período. É o que a pizza mostrava, agora
+ * presa à própria linha - a barra é proporcional ao MAIOR valor da lista e não
+ * ao total, senão numa cauda longa tudo vira um traço achatado. */
+const maiorValor = computed(() =>
+  props.data.reduce((m, r) => Math.max(m, totalCombined(r) || 0), 0));
+
+const sharePct = (row) =>
+  totalValueAll.value > 0 ? (totalCombined(row) / totalValueAll.value) * 100 : 0;
+
+const shareWidth = (row) =>
+  maiorValor.value > 0 ? `${Math.max(2, (totalCombined(row) / maiorValor.value) * 100)}%` : '0%';
+
+/* Ordenação CONTROLADA: a DataTable mostra os controles, mas quem ordena é esta
+ * tela - é a `sortedData` que alimenta a exportação e o rótulo de ordenação do
+ * cabeçalho da planilha. */
+const onSortBy = (key) => { if (key && key !== sortConfig.value.key) handleSort(key); };
+const onSortDir = (dir) => { sortConfig.value = { ...sortConfig.value, direction: dir }; };
+
+const someVisibleChecked = computed(
+  () => visibleKeys.value.some((k) => selectedKeys.value.has(k)) && !allVisibleChecked.value);
+
+const clearSelection = () => { selectedKeys.value = new Set(); };
+
+const selectionSummary = computed(() => {
+  const n = selectedRows.value.length;
+  const unidade = contractsStore.groupBy === 'company' ? 'empresa' : 'empreendimento';
+  const vendas = selectedSales.value.length;
+  return `${n} ${unidade}${n === 1 ? '' : 's'} · ${vendas} venda${vendas === 1 ? '' : 's'}`;
+});
 
 const closeModal = () => {
   showModal.value = false;
@@ -460,262 +502,131 @@ const groupByProxy = computed({
   get: () => contractsStore.groupBy,
   set: (v) => contractsStore.setGroupBy(v),
 });
-const lastView = ref('list');
-// @select (e não @change): abre o modal em QUALQUER clique, inclusive na opção
-// já ativa — antes "Listagem" (valor inicial) não respondia ao clique.
-const onViewChange = (mode) => {
-  lastView.value = mode;
-  openGroup(mode);
-};
 </script>
 
 <template>
-  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient overflow-hidden">
+  <!-- Painel (não Surface): o bloco tem assunto, ação e estado vazio próprios. -->
+  <Panel :padded="false" icon="fas fa-table-list"
+    :title="`Vendas por ${contractsStore.groupBy === 'company' ? 'empresa' : 'empreendimento'}`"
+    :subtitle="`${sortedData.length} ${contractsStore.groupBy === 'company' ? 'empresa(s)' : 'empreendimento(s)'} · ${totalCount} venda(s) · ${formatCurrency(totalValueAll)}`">
 
-    <!-- Header -->
-    <div class="flex flex-col gap-3 p-3 sm:p-4 border-b border-line">
-      <div class="flex items-start sm:items-center justify-between gap-3 flex-wrap">
-        <div class="flex items-center gap-2 min-w-0 w-full">
-          <h3 class="text-sm font-semibold text-ink">
-            Vendas por {{ contractsStore.groupBy === 'company' ? 'empresa' : 'empreendimento' }}
-          </h3>
-          <p class="text-xs text-ink-muted mt-0.5">
-            <span class="font-mono text-ink">{{ sortedData.length }}</span>
-            {{ contractsStore.groupBy === 'company' ? 'empresa(s)' : 'empreendimento(s)' }} ·
-            <span class="font-mono text-ink">{{ totalCount }}</span> venda(s) ·
-            <span class="font-mono text-ink">{{ formatCurrency(totalValueAll) }}</span>
-            <span v-if="selectedKeys.size" class="text-accent">
-              · <span class="font-mono">{{ selectedKeys.size }}</span> selecionado(s)
-            </span>
-          </p>
-        </div>
+    <template #actions>
+      <SegmentedControl v-model="groupByProxy" :options="groupByOptions" size="sm" />
+      <IconButton v-if="can('configure')" icon="fas fa-cog" size="sm" label="Configurar regras"
+        @click="emit('open-land-sync')" />
+      <IconButton v-if="can('configure')" icon="fas fa-file-shield" size="sm"
+        label="Consolidação (fechamento mensal)" @click="emit('open-closing')" />
+      <IconButton icon="fas fa-download" size="sm" label="Exportar dados" @click="open = true" />
+      <IconButton icon="fas fa-list" size="sm" label="Ver todas as vendas do período"
+        :disabled="disabledOpen" @click="openGroup()" />
+    </template>
 
-      </div>
-
-      <!-- Toolbar de toggles -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <SegmentedControl v-model="groupByProxy" :options="groupByOptions" size="sm" />
-        <IconButton v-if="can('configure')" icon="fas fa-cog" size="sm" label="Configurar regras" class="md:max-w-20"
-          @click="emit('open-land-sync')" />
-        <IconButton v-if="can('configure')" icon="fas fa-file-shield" size="sm" label="Consolidação (fechamento mensal)"
-          class="md:max-w-20" @click="emit('open-closing')" />
-        <IconButton icon="fas fa-download" size="md" label="Exportar dados" @click="open = true" />
-        <div class="ml-auto flex items-center gap-2 flex-wrap">
-          <SegmentedControl :model-value="lastView" :options="viewOptions" size="sm" @select="onViewChange" />
-        </div>
-      </div>
-
-      <!-- Ordenação no mobile (no desktop é o cabeçalho da tabela) -->
-      <div class="md:hidden flex items-center gap-1.5 flex-wrap">
-        <span class="text-micro text-ink-subtle uppercase tracking-wider font-mono mr-0.5">Ordenar</span>
-        <button v-for="col in sortColumns" :key="col.key" @click="handleSort(col.key)"
-          class="px-2 py-1 text-micro rounded-lg border transition-colors inline-flex items-center gap-1"
-          :class="sortConfig.key === col.key
-            ? 'border-accent/40 text-accent bg-accent-soft/40'
-            : 'border-line text-ink-muted hover:bg-surface-hover'">
-          {{ col.label }}
-          <i :class="sortIcon(col.key)" class="text-[9px]"></i>
-        </button>
-      </div>
+    <!-- Selecionar todos vive fora da tabela porque precisa existir nas DUAS
+         larguras: no celular não há cabeçalho de coluna onde encaixá-lo. -->
+    <div v-if="sortedData.length" class="px-3 sm:px-4 pt-3 flex items-center gap-2">
+      <input id="sel-todos" type="checkbox" class="checkbox checkbox-sm"
+        :checked="allVisibleChecked" :indeterminate.prop="someVisibleChecked"
+        @change="toggleAllVisible($event)" />
+      <label for="sel-todos" class="text-micro text-ink-muted cursor-pointer select-none">
+        Selecionar todos ({{ sortedData.length }})
+      </label>
     </div>
 
-    <!-- Empty -->
-    <EmptyState v-if="sortedData.length === 0" icon="fas fa-building" title="Nenhum empreendimento encontrado"
-      description="Ajuste os filtros para ver resultados." />
+    <div class="p-3 sm:p-4">
+      <DataTable :columns="columns" :rows="sortedData" row-key="key" clickable manual-sort
+        :sort-by="sortConfig.key" :sort-dir="sortConfig.direction"
+        empty-icon="fas fa-building" empty-title="Nenhum empreendimento encontrado"
+        empty-text="Ajuste os filtros para ver resultados."
+        @update:sortBy="onSortBy" @update:sortDir="onSortDir" @row-click="openSingle">
 
-    <!-- Mobile: cards -->
-    <div v-else class="md:hidden divide-y divide-line">
-      <article v-for="(enterprise, idx) in sortedData" :key="enterprise.key"
-        class="flex items-start gap-3 p-3 cursor-pointer hover:bg-surface-sunken/40 transition-colors"
-        :class="enterprise.onlyProjectionRow ? 'bg-data-pos/5' : ''" @click="openSingle(enterprise)">
-        <input type="checkbox" :checked="selectedKeys.has(enterprise.key)" @click.stop
-          @change="toggleOne(enterprise.key, $event)" class="mt-1 shrink-0 accent-accent" />
+        <!-- Seleção: o clique nunca chega na linha, então marcar não abre. -->
+        <template #cell-sel="{ row }">
+          <input type="checkbox" class="checkbox checkbox-sm" :checked="selectedKeys.has(row.key)"
+            :aria-label="`Selecionar ${row.name}`"
+            @click.stop @change="toggleOne(row.key, $event)" />
+        </template>
 
-        <div :style="{ backgroundColor: getColor(idx) }" class="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0"></div>
+        <template #cell-name="{ row }">
+          <span class="inline-flex items-center gap-2 min-w-0">
+            <span class="truncate font-medium text-ink" :title="rowTitle(row)">{{ row.name }}</span>
+            <span v-if="!row.onlyProjectionRow && row.proj_count > 0" v-tippy="'Projeção vinculada'"
+              class="h-2 w-2 rounded-full bg-data-pos shrink-0"></span>
+            <Badge v-if="isUnlinked(row)" variant="warning" size="sm"
+              v-tippy="'Esta projeção não achou o empreendimento correspondente no Sienge, por isso aparece em linha separada. Um admin resolve na engrenagem, aba Vínculo CV ↔ Sienge.'">
+              <i class="fas fa-link-slash text-micro"></i>Sem vínculo
+            </Badge>
+            <Badge v-else-if="row.onlyProjectionRow" variant="success" size="sm">
+              <i class="fas fa-chart-line text-micro"></i>Projeção
+            </Badge>
+            <Badge v-if="!row.onlyProjectionRow && adjustedCount(row) > 0" variant="info" size="sm"
+              v-tippy="'Venda(s) com ajuste contábil — o valor exibido já vem corrigido. Detalhe na linha da venda.'">
+              <i class="fas fa-wand-magic-sparkles text-micro"></i>{{ adjustedCount(row) }} ajustada(s)
+            </Badge>
+          </span>
+        </template>
 
-        <div class="min-w-0 flex-1">
-          <div class="flex items-start justify-between gap-2">
-            <p class="text-sm font-medium text-ink truncate flex items-center gap-1.5" :title="rowTitle(enterprise)">
-              {{ enterprise.name }}
-              <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0" v-tippy="'Projeção vinculada'"
-                class="h-1.5 w-1.5 rounded-full bg-data-pos animate-pulse shrink-0"></span>
-            </p>
-            <i class="fas fa-chevron-right text-xs text-ink-subtle mt-1 shrink-0"></i>
-          </div>
+        <template #cell-count="{ row }">
+          <span class="inline-flex items-baseline gap-1.5 justify-end">
+            <span class="font-semibold text-ink">{{ realizedCount(row) }}</span>
+            <span v-if="!row.onlyProjectionRow && row.proj_count" v-tippy="'Projeção'"
+              class="text-micro font-semibold text-data-pos">+{{ row.proj_count }}</span>
+            <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0"
+              v-tippy="'Distratada(s) depois da venda — contabilizadas no período'"
+              class="text-micro font-semibold text-data-warn">
+              <i class="fas fa-file-circle-xmark"></i>{{ distratoCount(row) }}</span>
+          </span>
+        </template>
 
-          <div class="flex items-center gap-3 mt-1.5 flex-wrap text-micro">
-            <span class="text-ink-muted font-mono">
-              <span class="text-ink font-semibold">{{ realizedCount(enterprise) }}</span> venda(s)
-              <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
-                class="text-data-pos font-semibold">+{{ enterprise.proj_count }}</span>
-              <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
-                class="text-data-warn font-semibold"
-                v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
-                <i class="fas fa-file-circle-xmark text-[10px]"></i>{{ distratoCount(enterprise) }}</span>
-              <span v-if="!enterprise.onlyProjectionRow && adjustedCount(enterprise) > 0"
-                class="text-accent font-semibold"
-                v-tippy="'Venda(s) com ajuste contábil — o valor exibido já vem corrigido'">
-                <i class="fas fa-wand-magic-sparkles text-[10px]"></i>{{ adjustedCount(enterprise) }}</span>
+        <template #cell-value="{ row }">
+          <span class="block font-semibold text-data-pos">{{ formatCurrency(baseValue(row)) }}</span>
+          <span v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
+            class="block text-micro text-data-pos">+{{ formatCurrency(appendedValue(row)) }}</span>
+          <span v-if="!row.onlyProjectionRow && distratoValue(row) > 0"
+            v-tippy="'Valor de vendas distratadas — incluído no total'"
+            class="block text-micro text-data-warn">
+            <i class="fas fa-file-circle-xmark"></i> {{ formatCurrency(distratoValue(row)) }}</span>
+        </template>
+
+        <!-- Participação: o que a pizza respondia, agora dentro da linha. -->
+        <template #cell-share="{ row }">
+          <span class="flex items-center gap-2">
+            <span class="flex-1 h-1.5 rounded-full bg-surface-sunken overflow-hidden">
+              <span class="block h-full rounded-full bg-accent/70 transition-all duration-420 ease-out-expo"
+                :style="{ width: shareWidth(row) }"></span>
             </span>
-          </div>
+            <span class="text-micro text-ink-muted tabular-nums w-11 text-right">
+              {{ sharePct(row).toFixed(1) }}%
+            </span>
+          </span>
+        </template>
 
-          <div class="flex items-baseline gap-2 mt-1">
-            <span class="text-sm font-bold text-data-pos tabular-nums">
-              {{ formatCurrency(baseValue(enterprise)) }}
-            </span>
-            <span v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
-              class="text-micro text-data-pos font-mono tabular-nums">
-              +{{ formatCurrency(appendedValue(enterprise)) }}
-            </span>
-          </div>
-          <p class="text-micro text-ink-subtle font-mono mt-0.5">
-            ticket {{ formatCurrency(ticketMedio(enterprise)) }}
-          </p>
-        </div>
-      </article>
+        <template #cell-ticket="{ row }">
+          <span class="text-ink-muted">{{ formatCurrency(ticketMedio(row)) }}</span>
+        </template>
+
+        <template #actions="{ row }">
+          <IconButton icon="fas fa-eye" size="sm" label="Ver as vendas" @click="openSingle(row)" />
+        </template>
+      </DataTable>
     </div>
+  </Panel>
 
-    <!-- Desktop: tabela -->
-    <div v-if="sortedData.length" class="hidden md:block overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="bg-surface-sunken/40 border-b border-line">
-          <tr>
-            <th class="px-4 py-2.5 w-10">
-              <input type="checkbox" :checked="allVisibleChecked" @change="toggleAllVisible($event)"
-                class="accent-accent" />
-            </th>
-            <th @click="handleSort('name')"
-              class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
-              <span class="inline-flex items-center gap-1">
-                {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
-                <i :class="sortIcon('name')"></i>
-              </span>
-            </th>
-            <th @click="handleSort('count')"
-              class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
-              <span class="inline-flex items-center gap-1">Vendas <i :class="sortIcon('count')"></i></span>
-            </th>
-            <th @click="handleSort('value')"
-              class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
-              <span class="inline-flex items-center gap-1">
-                Valor total
-                <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
-                <i :class="sortIcon('value')"></i>
-              </span>
-            </th>
-            <th @click="handleSort('ticket')"
-              class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer select-none hover:text-ink transition-colors">
-              <span class="inline-flex items-center gap-1">
-                Ticket médio
-                <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
-                <i :class="sortIcon('ticket')"></i>
-              </span>
-            </th>
-            <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Ações
-            </th>
-          </tr>
-        </thead>
+  <!-- Barra da seleção: o recorte já recalcula os cartões do topo; aqui ficam
+       as ações que valem para o conjunto inteiro. -->
+  <ActionBar v-if="selectedKeys.size > 0" :count="selectedKeys.size"
+    :unit="contractsStore.groupBy === 'company' ? 'empresas' : 'empreendimentos'"
+    :summary="selectionSummary" @clear="clearSelection">
+    <Button size="sm" icon="fas fa-list" @click="openGroup()">Ver as vendas</Button>
+  </ActionBar>
 
-        <tbody class="divide-y divide-line">
-          <tr v-for="(enterprise, idx) in sortedData" :key="enterprise.key" class="transition-colors" :class="enterprise.onlyProjectionRow
-            ? 'bg-data-pos/5 hover:bg-data-pos/10'
-            : 'hover:bg-surface-sunken/40'">
-            <td class="px-4 py-3">
-              <input type="checkbox" :checked="selectedKeys.has(enterprise.key)"
-                @change="toggleOne(enterprise.key, $event)" class="accent-accent" />
-            </td>
+  <Export v-model="open" :source="sortedData" title="Vendas por empreendimento"
+    initial-delimiter=";" initial-array-mode="join" :preselect="[]"
+    :filters="{
+      'Modo de valor': valueModeLabel,
+      'Ordenação': sortLabel,
+      'Total de empreendimentos': totalCount,
+    }" />
 
-            <!-- Nome -->
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <div :style="{ backgroundColor: getColor(idx) }" class="w-2.5 h-2.5 rounded-full shrink-0"></div>
-                <span class="text-sm font-medium text-ink truncate max-w-[28rem]" :title="rowTitle(enterprise)">
-                  {{ enterprise.name }}
-                </span>
-                <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count > 0" v-tippy="'Projeção vinculada'"
-                  class="h-2 w-2 rounded-full bg-data-pos animate-pulse shrink-0"></span>
-                <Badge v-if="isUnlinked(enterprise)" variant="warning" size="sm"
-                  v-tippy="'Esta projeção não achou o empreendimento correspondente no Sienge, por isso aparece em linha separada. Um admin resolve na engrenagem, aba Vínculo CV ↔ Sienge.'">
-                  <i class="fas fa-link-slash text-[9px]"></i>Sem vínculo
-                </Badge>
-                <Badge v-else-if="enterprise.onlyProjectionRow" variant="success" size="sm">
-                  <i class="fas fa-chart-line text-[9px]"></i>Projeção
-                </Badge>
-                <Badge v-if="!enterprise.onlyProjectionRow && adjustedCount(enterprise) > 0"
-                  variant="info" size="sm"
-                  v-tippy="'Venda(s) com ajuste contábil — o valor exibido já vem corrigido. Detalhe na linha da venda.'">
-                  <i class="fas fa-wand-magic-sparkles text-[9px]"></i>{{ adjustedCount(enterprise) }} ajustada(s)
-                </Badge>
-              </div>
-            </td>
-
-            <!-- Vendas -->
-            <td class="px-4 py-3 text-right">
-              <div class="text-sm font-semibold text-ink tabular-nums relative inline-block">
-                {{ realizedCount(enterprise) }}
-
-                <span v-if="!enterprise.onlyProjectionRow && enterprise.proj_count"
-                  class="absolute -top-3 -right-2 text-micro font-bold text-data-pos font-mono"
-                  v-tippy="'Projeção'">
-                  +{{ enterprise.proj_count }}
-                </span>
-
-                <span v-if="!enterprise.onlyProjectionRow && distratoCount(enterprise) > 0"
-                  class="absolute -bottom-3 -right-2 text-micro font-bold text-data-warn font-mono"
-                  v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
-                  <i class="fas fa-file-circle-xmark text-[9px]"></i>{{ distratoCount(enterprise) }}
-                </span>
-              </div>
-            </td>
-
-            <!-- Valor -->
-            <td class="px-4 py-3 text-right">
-              <div class="text-sm font-semibold text-data-pos tabular-nums">
-                {{ formatCurrency(baseValue(enterprise)) }}
-              </div>
-              <div v-if="!enterprise.onlyProjectionRow && appendedValue(enterprise) > 0"
-                class="text-micro text-data-pos font-mono tabular-nums">
-                +{{ formatCurrency(appendedValue(enterprise)) }}
-              </div>
-              <div v-if="!enterprise.onlyProjectionRow && distratoValue(enterprise) > 0"
-                class="text-micro text-data-warn font-mono tabular-nums"
-                v-tippy="'Valor de vendas distratadas — incluído no total'">
-                <i class="fas fa-file-circle-xmark text-[9px]"></i> {{ formatCurrency(distratoValue(enterprise)) }}
-              </div>
-            </td>
-
-            <!-- Ticket -->
-            <td class="px-4 py-3 text-right">
-              <span class="text-sm text-ink-muted tabular-nums font-mono">
-                {{ formatCurrency(ticketMedio(enterprise)) }}
-              </span>
-            </td>
-
-            <!-- Ações -->
-            <td class="px-4 py-3">
-              <div class="flex gap-1 justify-center">
-                <IconButton icon="fas fa-eye" size="sm" label="Relatório de vendas"
-                  @click.stop="openSingle(enterprise, 'list')" />
-                <IconButton icon="fas fa-chart-pie" size="sm" label="Pizza por imobiliária"
-                  @click.stop="openSingle(enterprise, 'pie')" />
-                <IconButton icon="fas fa-chart-column" size="sm" label="Colunas por imobiliária"
-                  @click.stop="openSingle(enterprise, 'bar')" />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <Export v-model="open" :source="sortedData" title="Vendas por empreendimento"
-      initial-delimiter=";" initial-array-mode="join" :preselect="[]"
-      :filters="{
-        'Modo de valor': valueModeLabel,
-        'Ordenação': sortLabel,
-        'Total de empreendimentos': totalCount,
-      }" />
-
-    <EnterpriseDetailModal v-if="showModal" :enterprise="modalEnterprise" :sales="modalSales"
-      :initial-mode="initialMode" @close="closeModal" />
-  </section>
+  <EnterpriseDetailModal v-if="showModal" :enterprise="modalEnterprise" :sales="modalSales"
+    @close="closeModal" />
 </template>

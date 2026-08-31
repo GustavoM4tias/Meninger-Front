@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
+import StatRow from '@/components/UI/StatRow.vue';
 
 const props = defineProps({
   metrics: { type: Object, required: true },
@@ -23,7 +24,7 @@ const formatCurrency = (value) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
 
 const formatNumber = (value) =>
-  new Intl.NumberFormat('pt-BR').format(value || 0);
+  new Intl.NumberFormat('pt-BR').format(Math.round(value) || 0);
 
 // ── Achievement % helpers ──────────────────────────────────
 const achievementStr = computed(() => {
@@ -60,20 +61,18 @@ const achievementLabel = computed(() => {
   return mode ? `${status} · base ${mode}` : status;
 });
 
-const achievementAccent = computed(() => {
+// Tom do cartão no vocabulário do StatCard. `data-pos/neg/warn` são cores de
+// JUÍZO e nunca viram série - é exatamente o uso aqui.
+const achievementTone = computed(() => {
   const pct = props.metrics.achievementPct;
   const elapsed = props.metrics.timeElapsedPct ?? 0;
-  if (pct == null) return 'text-ink-muted bg-surface-sunken';
-  if (elapsed === 0) {
-    return pct >= 100
-      ? 'text-data-pos bg-data-pos/10'
-      : 'text-data-warn bg-data-warn/10';
-  }
+  if (pct == null) return 'neutral';
+  if (elapsed === 0) return pct >= 100 ? 'pos' : 'warn';
   const ratio = pct / elapsed;
-  if (ratio >= 1.1) return 'text-data-pos bg-data-pos/10';
-  if (ratio >= 0.8) return 'text-accent bg-accent/10';
-  if (ratio >= 0.4) return 'text-data-warn bg-data-warn/10';
-  return 'text-data-neg bg-data-neg/10';
+  if (ratio >= 1.1) return 'pos';
+  if (ratio >= 0.8) return 'accent';
+  if (ratio >= 0.4) return 'warn';
+  return 'neg';
 });
 
 const achievementIcon = computed(() => {
@@ -88,112 +87,60 @@ const achievementIcon = computed(() => {
   return 'fas fa-skull';
 });
 
-// ── Cards ────────────────────────────────────────────────
+// ── Cartões ──────────────────────────────────────────────
+// `raw` + `format` ligam o count-up; `value` só onde contar não faz sentido
+// (a % atingida pode ser "—" quando não há projeção definida).
 const realizedCards = computed(() => [
   {
-    key: 'totalSales',
-    label: 'Total de vendas',
-    value: formatNumber(props.metrics.totalSales),
-    sub: 'realizadas no período',
-    icon: 'fas fa-chart-line',
-    accent: 'text-accent bg-accent-soft',
+    key: 'totalSales', label: 'Total de vendas', icon: 'fas fa-chart-line', tone: 'accent',
+    raw: Number(props.metrics.totalSales) || 0, format: formatNumber,
+    hint: 'realizadas no período',
   },
   {
-    key: 'realizedVgv',
-    label: `Realizado ${valueModeLabel.value}`,
-    value: formatCurrency(realizedVgv.value),
-    sub: isNet.value ? 'VGV (descontos ignorados)' : 'VGV + DC (descontos somam)',
+    key: 'realizedVgv', label: `Realizado ${valueModeLabel.value}`, tone: 'pos',
     icon: isNet.value ? 'fas fa-money-bill-wave' : 'fas fa-sack-dollar',
-    accent: isNet.value
-      ? 'text-data-pos bg-data-pos/10'
-      : 'text-data-warn bg-data-warn/10',
+    raw: Number(realizedVgv.value) || 0, format: formatCurrency,
+    hint: isNet.value ? 'VGV (descontos ignorados)' : 'VGV + DC (descontos somam)',
   },
   {
-    key: 'projectedUnits',
-    label: 'Vendas projetadas',
-    value: formatNumber(props.metrics.projectedUnits ?? 0),
-    sub: 'unidades projetadas no período',
-    icon: 'fas fa-key',
-    accent: 'text-accent bg-accent/10',
+    key: 'projectedUnits', label: 'Vendas projetadas', icon: 'fas fa-key', tone: 'accent',
+    raw: Number(props.metrics.projectedUnits) || 0, format: formatNumber,
+    hint: 'unidades projetadas no período',
   },
   {
-    key: 'projectedVgv',
-    label: 'Meta projetada',
-    value: formatCurrency(props.metrics.projectedVgv),
-    sub: 'VGV total projetado no período',
-    icon: 'fas fa-bullseye',
-    accent: 'text-accent bg-accent/10',
+    key: 'projectedVgv', label: 'Meta projetada', icon: 'fas fa-bullseye', tone: 'accent',
+    raw: Number(props.metrics.projectedVgv) || 0, format: formatCurrency,
+    hint: 'VGV total projetado no período',
   },
 ]);
 
 const ticketsCards = computed(() => [
   {
-    key: 'avgTicket',
-    label: `Ticket médio ${valueModeLabel.value}`,
-    value: formatCurrency(avgTicket.value),
-    sub: isNet.value ? 'VGV médio por venda' : 'VGV + DC médio por venda',
+    key: 'avgTicket', label: `Ticket médio ${valueModeLabel.value}`, tone: 'accent',
     icon: isNet.value ? 'fas fa-receipt' : 'fas fa-file-invoice-dollar',
-    accent: isNet.value
-      ? 'text-accent bg-accent/10'
-      : 'text-accent bg-accent/10',
+    raw: Number(avgTicket.value) || 0, format: formatCurrency,
+    hint: isNet.value ? 'VGV médio por venda' : 'VGV + DC médio por venda',
   },
   {
-    key: 'avgProjectedTicket',
-    label: 'Ticket médio proj.',
-    value: formatCurrency(props.metrics.avgProjectedTicket),
-    sub: 'VGV projetado ÷ unidades projetadas',
-    icon: 'fas fa-tag',
-    accent: 'text-teal-500 bg-teal-500/10',
+    // Era `text-teal-500`, cor crua fora da paleta. Série 4 é cor de DADO, que
+    // é o que este número é: o par projetado do ticket realizado.
+    key: 'avgProjectedTicket', label: 'Ticket médio proj.', icon: 'fas fa-tag', tone: 4,
+    raw: Number(props.metrics.avgProjectedTicket) || 0, format: formatCurrency,
+    hint: 'VGV projetado ÷ unidades projetadas',
   },
   {
-    key: 'achievement',
-    label: '% Atingida',
-    value: achievementStr.value,
-    sub: achievementLabel.value,
-    icon: achievementIcon.value,
-    accent: achievementAccent.value,
+    key: 'achievement', label: '% Atingida', icon: achievementIcon.value,
+    tone: achievementTone.value, value: achievementStr.value,
+    hint: achievementLabel.value,
   },
 ]);
 </script>
 
 <template>
   <section class="space-y-3">
-    <!-- Realizado vs projetado -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      <div v-for="k in realizedCards" :key="k.key"
-        class="flex items-center gap-3 p-4 rounded-xl border border-line bg-surface-raised
-               shadow-soft hover:shadow-elevated hover:border-accent/30 hover:-translate-y-0.5
-               transition-all duration-200 ease-out-expo surface-gradient">
-        <span class="h-11 w-11 rounded-xl grid place-items-center text-base shrink-0" :class="k.accent">
-          <i :class="k.icon"></i>
-        </span>
-        <div class="min-w-0 flex-1">
-          <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
-          <p class="text-2xl font-semibold text-ink tabular-nums tracking-tight leading-tight mt-0.5 truncate">
-            {{ k.value }}
-          </p>
-          <p class="text-micro text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tickets + % Atingida -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-      <div v-for="k in ticketsCards" :key="k.key"
-        class="flex items-center gap-3 p-4 rounded-xl border border-line bg-surface-raised
-               shadow-soft hover:shadow-elevated hover:border-accent/30 hover:-translate-y-0.5
-               transition-all duration-200 ease-out-expo surface-gradient">
-        <span class="h-11 w-11 rounded-xl grid place-items-center text-base shrink-0" :class="k.accent">
-          <i :class="k.icon"></i>
-        </span>
-        <div class="min-w-0 flex-1">
-          <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle">{{ k.label }}</p>
-          <p class="text-2xl font-semibold text-ink tabular-nums tracking-tight leading-tight mt-0.5 truncate">
-            {{ k.value }}
-          </p>
-          <p class="text-micro text-ink-muted mt-0.5 truncate" :title="k.sub">{{ k.sub }}</p>
-        </div>
-      </div>
-    </div>
+    <!-- Realizado x projetado -->
+    <StatRow :items="realizedCards" :cols="{ sm: 2, md: 2, lg: 4 }" />
+    <!-- Tickets + % atingida -->
+    <StatRow :items="ticketsCards" :cols="{ sm: 2, md: 3, lg: 3 }" />
   </section>
 </template>

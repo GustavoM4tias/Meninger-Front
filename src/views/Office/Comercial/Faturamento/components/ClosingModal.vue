@@ -402,7 +402,7 @@ const closeModal = () => emit('close');
 </script>
 
 <template>
-  <Modal :open="open" size="xl" title="Consolidação de vendas"
+  <Modal :open="open" size="screen" title="Consolidação de vendas"
     subtitle="Congele o resultado oficial de cada mês; mudanças posteriores viram divergências listadas aqui"
     @close="closeModal">
 

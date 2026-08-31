@@ -5,8 +5,7 @@ import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
-import Button from '@/components/UI/Button.vue';
-import Badge from '@/components/UI/Badge.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
 
 const emit = defineEmits(['filter-changed']);
 const contractsStore = useContractsStore();
@@ -59,8 +58,6 @@ const activeFiltersCount = computed(() => {
 });
 const hasActiveFilters = computed(() => activeFiltersCount.value > 0);
 
-const isExpanded = ref(typeof window !== 'undefined' && window.innerWidth >= 1024);
-function toggle() { isExpanded.value = !isExpanded.value; }
 
 function applyFilters() {
   if (!isValid.value) return;
@@ -105,57 +102,32 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
-    <!-- Toolbar -->
-    <div class="filters-toolbar">
-      <button @click="toggle"
-        class="filters-toolbar-trigger">
-        <i class="fas fa-filter text-xs text-ink-muted"></i>
-        <span>Filtros</span>
-        <Badge v-if="hasActiveFilters" variant="accent" size="sm">
-          {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
-        </Badge>
-        <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
-          :class="{ 'rotate-180': isExpanded }"></i>
-      </button>
+  <!-- Nasce FECHADO, como todo filtro de relatório: o assunto da tela é o
+       resultado; o recorte é o meio. O selo diz quantos estão ativos. -->
+  <FilterBar :active-count="activeFiltersCount" :cols="4" :loading="!isValid"
+    @apply="applyFilters" @clear="clearFilters">
 
-      <div class="ml-auto flex items-center gap-1.5">
-        <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="clearFilters">
-          <span class="hidden sm:inline">Limpar</span>
-        </Button>
-        <Button size="sm" icon="fas fa-magnifying-glass" :disabled="!isValid" @click="applyFilters">
-          <span class="hidden sm:inline">Filtrar</span>
-        </Button>
-      </div>
+    <Input v-model="localStart" type="month" label="Mês início" />
+    <Input v-model="localEnd" type="month" label="Mês fim" />
+
+    <div v-if="groupsOptions.length">
+      <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <i class="fas fa-diagram-project text-micro mr-1 text-ink-subtle"></i>Grupos workflow (projeção)
+      </label>
+      <MultiSelector
+        :model-value="localGroupIds"
+        @update:modelValue="v => localGroupIds = Array.isArray(v) ? v : []"
+        :options="groupsOptions" placeholder="Selecione grupos" :page-size="200" />
     </div>
 
-    <!-- Campos -->
-    <div v-show="isExpanded"
-      class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
-      style="overflow:visible">
-
-      <Input v-model="localStart" type="month" label="Mês início" />
-      <Input v-model="localEnd" type="month" label="Mês fim" />
-
-      <div v-if="groupsOptions.length">
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-diagram-project text-[10px] mr-1 text-ink-subtle"></i>Grupos workflow (projeção)
-        </label>
-        <MultiSelector
-          :model-value="localGroupIds"
-          @update:modelValue="v => localGroupIds = Array.isArray(v) ? v : []"
-          :options="groupsOptions" placeholder="Selecione grupos" :page-size="200" />
-      </div>
-
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-city text-[10px] mr-1 text-ink-subtle"></i>Empresa(s)
-        </label>
-        <MultiSelector
-          :model-value="localCompanyNames"
-          @update:modelValue="v => localCompanyNames = Array.isArray(v) ? v : []"
-          :options="companiesOptions" placeholder="Empresas" :page-size="150" :select-all="true" />
-      </div>
+    <div>
+      <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <i class="fas fa-city text-micro mr-1 text-ink-subtle"></i>Empresa(s)
+      </label>
+      <MultiSelector
+        :model-value="localCompanyNames"
+        @update:modelValue="v => localCompanyNames = Array.isArray(v) ? v : []"
+        :options="companiesOptions" placeholder="Empresas" :page-size="150" :select-all="true" />
     </div>
-  </section>
+  </FilterBar>
 </template>

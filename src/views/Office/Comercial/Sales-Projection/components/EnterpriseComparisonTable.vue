@@ -8,9 +8,10 @@ import Export from '@/components/config/Export.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Badge from '@/components/UI/Badge.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
+import Panel from '@/components/UI/Panel.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import ActionBar from '@/components/UI/ActionBar.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
-import Select from '@/components/UI/Select.vue';
 
 const props = defineProps({
   data:           { type: Array,  required: true },
@@ -21,7 +22,8 @@ const emit = defineEmits(['selection-metrics', 'open-detail', 'open-settings', '
 
 const contractsStore = useContractsStore();
 const goalStore = useProjectionGoalModeStore();
-const sortBy = ref('vgv-desc');
+const sortKey = ref('realizado');
+const sortDir = ref('desc');
 const open = ref(false);
 const valueModeLabel = computed(() => contractsStore.valueModeLabel);
 // Ações desta tela (lib/screenCapabilities.js no back): view segue a alçada,
@@ -173,22 +175,35 @@ function goalModeLabel(row) {
   return mode === 'units' ? 'Unidades' : 'VGV';
 }
 
-// ── Ordenação ────────────────────────────
-const sortedData = computed(() => {
-  const list = [...props.data];
-  switch (sortBy.value) {
-    case 'vgv-asc':
-      return list.sort((a, b) => a.realizedVgv - b.realizedVgv);
-    case 'achievement-desc':
-      return list.sort((a, b) => (effectiveAchievementPct(b) ?? -1) - (effectiveAchievementPct(a) ?? -1));
-    case 'achievement-asc':
-      return list.sort((a, b) => (effectiveAchievementPct(a) ?? 999) - (effectiveAchievementPct(b) ?? 999));
-    case 'name-asc':
-      return list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
-    default:
-      return list.sort((a, b) => b.realizedVgv - a.realizedVgv);
+/* ── Ordenação ────────────────────────────────────────────────────────────
+ * O seletor de ordenação saiu da barra: quem ordena agora é o cabeçalho da
+ * tabela, que é o padrão do sistema e existe nas duas larguras (no celular a
+ * DataTable mostra o próprio seletor). A ordenação continua CONTROLADA aqui
+ * porque é a `sortedData` que alimenta a exportação. */
+const sortValueOfRow = (r) => {
+  switch (sortKey.value) {
+    case 'name': return (r.name || '').toLowerCase();
+    case 'count': return combinedCount(r);
+    case 'metaUnid': return r.projectedUnits || 0;
+    case 'metaVgv': return r.projectedVgv || 0;
+    case 'atingida': return effectiveAchievementPct(r) ?? -1;
+    case 'status': return STATUS_LABEL[r.status] || '';
+    default: return combinedValue(r);
   }
+};
+
+const sortedData = computed(() => {
+  const dir = sortDir.value === 'asc' ? 1 : -1;
+  return [...props.data].sort((a, b) => {
+    const av = sortValueOfRow(a);
+    const bv = sortValueOfRow(b);
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+    return String(av).localeCompare(String(bv), 'pt-BR', { numeric: true, sensitivity: 'base' }) * dir;
+  });
 });
+
+const onSortBy = (key) => { sortKey.value = key || 'realizado'; };
+const onSortDir = (dir) => { sortDir.value = dir; };
 
 const totalCount = computed(() =>
   sortedData.value.reduce((s, e) => s + realizedCount(e), 0)
@@ -225,16 +240,19 @@ function achievementBarClass(row) {
   return 'bg-data-neg';
 }
 
-function dotColor(status) {
-  return {
-    ahead: '#10b981',
-    on_track: '#3b82f6',
-    behind: '#eab308',
-    at_risk: '#ef4444',
-    no_sales: '#9ca3af',
-    no_projection: '#d1d5db',
-  }[status] ?? '#d1d5db';
-}
+/* Ponto de status. Eram seis hex crus, fora da paleta e cegos ao tema escuro.
+ * Aqui a cor é de JUÍZO (data-pos/warn/neg), que é exatamente o que o status
+ * comunica - e por isso nunca vira série. Escrito por extenso de propósito: o
+ * Tailwind varre o texto do arquivo e não geraria `bg-${x}`. */
+const STATUS_DOT = {
+  ahead: 'bg-data-pos',
+  on_track: 'bg-accent',
+  behind: 'bg-data-warn',
+  at_risk: 'bg-data-neg',
+  no_sales: 'bg-ink-subtle',
+  no_projection: 'bg-line',
+};
+const dotClass = (status) => STATUS_DOT[status] || 'bg-line';
 
 const STATUS_VARIANT = {
   ahead:         'success',
@@ -289,270 +307,154 @@ const groupByOptions = [
   { value: 'company',    label: 'Empresa',        icon: 'fas fa-city' },
 ];
 
-const sortOptions = computed(() => [
-  { value: 'vgv-desc',         label: `${valueModeLabel.value} Real ↓` },
-  { value: 'vgv-asc',          label: `${valueModeLabel.value} Real ↑` },
-  { value: 'achievement-desc', label: '% Atingida ↓' },
-  { value: 'achievement-asc',  label: '% Atingida ↑' },
-  { value: 'name-asc',         label: 'Nome A→Z' },
+/* ── Colunas ──────────────────────────────────────────────────────────────
+ * Prioridade decide a ORDEM no celular, nunca o que existe: as metas ficam a
+ * um toque, em "Ver detalhes", e continuam ordenáveis. */
+const columns = computed(() => [
+  { key: 'sel', label: 'Sel.', priority: 2, align: 'center', width: '3.25rem', truncate: false },
+  {
+    key: 'name', priority: 1, sortable: true, truncate: false,
+    label: contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento',
+  },
+  { key: 'count', label: 'Vendas', priority: 2, numeric: true, sortable: true, width: '7rem' },
+  { key: 'realizado', label: `Realizado (${valueModeLabel.value})`, priority: 1, numeric: true, sortable: true, width: '12rem' },
+  { key: 'metaUnid', label: 'Meta unid.', priority: 3, numeric: true, sortable: true, width: '8rem' },
+  { key: 'metaVgv', label: 'Meta projetada', priority: 3, numeric: true, sortable: true, width: '11rem' },
+  { key: 'atingida', label: '% Atingida', priority: 1, numeric: true, sortable: true, width: '9rem' },
+  { key: 'status', label: 'Status', priority: 2, align: 'center', sortable: true, width: '8rem', truncate: false },
 ]);
+
+const someVisibleChecked = computed(
+  () => visibleKeys.value.some((k) => selectedKeys.value.has(k)) && !allVisibleChecked.value);
+
+const clearSelection = () => { selectedKeys.value = new Set(); };
 </script>
 
 <template>
-  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient overflow-hidden">
+  <Panel :padded="false" icon="fas fa-bullseye"
+    :title="`Vendas por ${contractsStore.groupBy === 'company' ? 'empresa' : 'empreendimento'}`"
+    :subtitle="`${sortedData.length} ${contractsStore.groupBy === 'company' ? 'empresa(s)' : 'empreendimento(s)'} · ${totalCount} venda(s) · ${formatCurrency(totalRealized)}`">
 
-    <!-- Header -->
-    <div class="flex flex-col gap-3 p-3 sm:p-4 border-b border-line">
-      <div class="flex items-start sm:items-center justify-between gap-3 flex-wrap">
-        <div class="min-w-0">
-          <h3 class="text-sm font-semibold text-ink">
-            Vendas por {{ contractsStore.groupBy === 'company' ? 'empresa' : 'empreendimento' }}
-          </h3>
-          <p class="text-xs text-ink-muted mt-0.5">
-            <span class="font-mono text-ink">{{ sortedData.length }}</span>
-            {{ contractsStore.groupBy === 'company' ? 'empresa(s)' : 'empreendimento(s)' }} ·
-            <span class="font-mono text-ink">{{ totalCount }}</span> venda(s) ·
-            <span class="font-mono text-ink">{{ formatCurrency(totalRealized) }}</span>
-            <span v-if="selectedKeys.size" class="text-accent">
-              · <span class="font-mono">{{ selectedKeys.size }}</span> selecionado(s)
-            </span>
-          </p>
-        </div>
+    <template #actions>
+      <SegmentedControl v-model="groupByProxy" :options="groupByOptions" size="sm" />
+      <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="sm" />
+      <Button variant="primary" size="sm" icon="fas fa-chart-pie" @click="emit('open-charts')">
+        <span class="hidden sm:inline">Análise</span>
+      </Button>
+      <IconButton v-if="can('configure')" icon="fas fa-cog" size="sm"
+        label="Configurar regras (ocultar empreend., comissão, LAND_VALUE_ONLY...)"
+        @click="emit('open-rules')" />
+      <IconButton v-if="can('configure')" icon="fas fa-sliders" size="sm"
+        label="Configurações de meta (unidades vs VGV)" @click="emit('open-settings')" />
+      <IconButton icon="fas fa-download" size="sm" label="Exportar dados" @click="open = true" />
+    </template>
 
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <Button variant="primary" size="sm" icon="fas fa-chart-pie"
-            @click="emit('open-charts')">
-            <span class="hidden sm:inline">Análise</span>
-          </Button>
-          <IconButton v-if="can('configure')" icon="fas fa-cog" size="sm"
-            label="Configurar regras (ocultar empreend., comissão, LAND_VALUE_ONLY...)"
-            @click="emit('open-rules')" />
-          <IconButton v-if="can('configure')" icon="fas fa-sliders" size="sm"
-            label="Configurações de meta (unidades vs VGV)"
-            @click="emit('open-settings')" />
-          <IconButton icon="fas fa-download" size="sm" label="Exportar dados"
-            @click="open = true" />
-        </div>
-      </div>
-
-      <!-- Toolbar de toggles -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <SegmentedControl v-model="groupByProxy" :options="groupByOptions" size="sm" />
-        <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="sm" />
-        <Select v-model="sortBy" :options="sortOptions" size="md" class="max-w-36" />
-      </div>
+    <!-- Selecionar todos fora da tabela: no celular não há cabeçalho de coluna
+         onde ele caberia, e esconder no monitor quebraria a paridade. -->
+    <div v-if="sortedData.length" class="px-3 sm:px-4 pt-3 flex items-center gap-2">
+      <input id="proj-sel-todos" type="checkbox" class="checkbox checkbox-sm"
+        :checked="allVisibleChecked" :indeterminate.prop="someVisibleChecked"
+        @change="toggleAllVisible($event)" />
+      <label for="proj-sel-todos" class="text-micro text-ink-muted cursor-pointer select-none">
+        Selecionar todos ({{ sortedData.length }})
+      </label>
     </div>
 
-    <!-- Empty -->
-    <EmptyState v-if="sortedData.length === 0"
-      icon="fas fa-bullseye" title="Nenhum empreendimento encontrado"
-      description="Ajuste os filtros para ver resultados." />
+    <div class="p-3 sm:p-4">
+      <DataTable :columns="columns" :rows="sortedData" row-key="_key" clickable manual-sort
+        :sort-by="sortKey" :sort-dir="sortDir"
+        empty-icon="fas fa-bullseye" empty-title="Nenhum empreendimento encontrado"
+        empty-text="Ajuste os filtros para ver resultados."
+        @update:sortBy="onSortBy" @update:sortDir="onSortDir"
+        @row-click="row => emit('open-detail', row)">
 
-    <!-- Mobile: cards -->
-    <div v-else class="md:hidden divide-y divide-line">
-      <article v-for="row in sortedData" :key="row._key"
-        class="flex items-start gap-3 p-3 cursor-pointer hover:bg-surface-sunken/40 transition-colors"
-        :class="row.onlyProjectionRow ? 'bg-data-pos/5' : ''"
-        @click="emit('open-detail', row)">
+        <template #cell-sel="{ row }">
+          <input type="checkbox" class="checkbox checkbox-sm" :checked="selectedKeys.has(row._key)"
+            :aria-label="`Selecionar ${row.name}`"
+            @click.stop @change="toggleOne(row._key, $event)" />
+        </template>
 
-        <input type="checkbox" :checked="selectedKeys.has(row._key)"
-          @click.stop @change="toggleOne(row._key, $event)"
-          class="mt-1 shrink-0 accent-accent" />
-
-        <div class="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0"
-          :style="{ backgroundColor: dotColor(row.status) }"></div>
-
-        <div class="min-w-0 flex-1">
-          <div class="flex items-start justify-between gap-2 flex-wrap">
-            <p class="text-sm font-medium text-ink truncate flex-1">{{ row.name }}</p>
-            <Badge :variant="STATUS_VARIANT[row.status] || 'neutral'" size="sm">
-              <i :class="STATUS_ICON[row.status]" class="text-[9px]"></i>
-              {{ STATUS_LABEL[row.status] || row.status }}
+        <template #cell-name="{ row }">
+          <span class="inline-flex items-center gap-2 min-w-0">
+            <span class="h-2.5 w-2.5 rounded-full shrink-0" :class="dotClass(row.status)"></span>
+            <span class="truncate font-medium text-ink" :title="row.name"
+              v-tippy="`Ver detalhes — meta por ${goalModeLabel(row)}`">{{ row.name }}</span>
+            <Badge v-if="isUnlinked(row)" variant="warning" size="sm"
+              v-tippy="'Esta projeção não achou o empreendimento correspondente no Sienge, por isso aparece em linha separada. Um admin resolve na engrenagem, aba Vínculo CV ↔ Sienge.'">
+              <i class="fas fa-link-slash text-micro"></i>Sem vínculo
             </Badge>
-          </div>
+            <Badge v-else-if="row.onlyProjectionRow" variant="success" size="sm">
+              <i class="fas fa-chart-line text-micro"></i>Projeção
+            </Badge>
+          </span>
+        </template>
 
-          <div class="flex items-center gap-3 mt-1.5 flex-wrap text-micro">
-            <span class="text-ink-muted font-mono">
-              <span class="text-ink font-semibold">{{ realizedCount(row) }}</span> venda(s)
-              <span v-if="!row.onlyProjectionRow && row.proj_count" class="text-data-pos font-semibold">
-                +{{ row.proj_count }}
-              </span>
-              <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0" class="text-data-warn font-semibold"
-                v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
-                <i class="fas fa-file-circle-xmark text-[10px]"></i>{{ distratoCount(row) }}
-              </span>
-            </span>
-          </div>
+        <template #cell-count="{ row }">
+          <span class="inline-flex items-baseline gap-1.5 justify-end">
+            <span class="font-semibold text-ink">{{ realizedCount(row) }}</span>
+            <span v-if="!row.onlyProjectionRow && row.proj_count" v-tippy="'Projeção'"
+              class="text-micro font-semibold text-data-pos">+{{ row.proj_count }}</span>
+            <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0"
+              v-tippy="'Distratada(s) depois da venda — contabilizadas no período'"
+              class="text-micro font-semibold text-data-warn">
+              <i class="fas fa-file-circle-xmark"></i>{{ distratoCount(row) }}</span>
+          </span>
+        </template>
 
-          <div class="flex items-baseline gap-2 mt-1">
-            <span class="text-sm font-bold text-data-pos tabular-nums">
-              {{ formatCurrency(baseValue(row)) }}
-            </span>
-            <span v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
-              class="text-micro text-data-pos font-mono tabular-nums">
-              +{{ formatCurrency(appendedValue(row)) }}
-            </span>
-          </div>
+        <template #cell-realizado="{ row }">
+          <span class="block font-semibold text-data-pos">{{ formatCurrency(baseValue(row)) }}</span>
+          <span v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
+            class="block text-micro text-data-pos">+{{ formatCurrency(appendedValue(row)) }}</span>
+          <span v-if="!row.onlyProjectionRow && distratoValue(row) > 0"
+            v-tippy="'Valor de vendas distratadas — incluído no total'"
+            class="block text-micro text-data-warn">
+            <i class="fas fa-file-circle-xmark"></i> {{ formatCurrency(distratoValue(row)) }}</span>
+        </template>
 
-          <div class="mt-1.5 flex items-center justify-between gap-2 text-micro flex-wrap">
-            <span class="text-ink-subtle font-mono">
-              meta {{ row.projectedUnits || '—' }}u · {{ formatCurrency(row.projectedVgv) }}
+        <template #cell-metaUnid="{ row }">
+          <span v-if="row.projectedUnits" class="font-semibold text-accent">{{ row.projectedUnits }}</span>
+          <span v-else class="text-ink-subtle">—</span>
+        </template>
+
+        <template #cell-metaVgv="{ row }">
+          <span v-if="row.projectedVgv" class="font-semibold text-accent">
+            {{ formatCurrency(row.projectedVgv) }}
+          </span>
+          <span v-else class="text-ink-subtle">—</span>
+        </template>
+
+        <template #cell-atingida="{ row }">
+          <span v-if="effectiveAchievementPct(row) != null" class="flex flex-col items-end gap-1.5">
+            <span class="font-bold" :class="achievementTextClass(row)"
+              v-tippy="`Meta por ${goalModeLabel(row)}`">
+              {{ effectiveAchievementPct(row).toFixed(1) }}%
             </span>
-            <div v-if="effectiveAchievementPct(row) != null" class="flex items-center gap-1.5">
-              <span class="font-mono font-bold tabular-nums" :class="achievementTextClass(row)">
-                {{ effectiveAchievementPct(row).toFixed(1) }}%
-              </span>
-              <div class="w-16 h-1.5 bg-surface-sunken rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-300"
-                  :class="achievementBarClass(row)"
-                  :style="{ width: Math.min(effectiveAchievementPct(row), 100) + '%' }"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </article>
+            <span class="w-20 h-1.5 bg-surface-sunken rounded-full overflow-hidden">
+              <span class="block h-full rounded-full transition-all duration-420 ease-out-expo"
+                :class="achievementBarClass(row)"
+                :style="{ width: Math.min(effectiveAchievementPct(row), 100) + '%' }"></span>
+            </span>
+          </span>
+          <span v-else class="text-ink-subtle">—</span>
+        </template>
+
+        <template #cell-status="{ row }">
+          <Badge :variant="STATUS_VARIANT[row.status] || 'neutral'" size="sm">
+            <i :class="STATUS_ICON[row.status]" class="text-micro"></i>
+            {{ STATUS_LABEL[row.status] || row.status }}
+          </Badge>
+        </template>
+      </DataTable>
     </div>
+  </Panel>
 
-    <!-- Desktop: tabela -->
-    <div v-if="sortedData.length" class="hidden md:block overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="bg-surface-sunken/40 border-b border-line">
-          <tr>
-            <th class="px-4 py-2.5 w-10">
-              <input type="checkbox" :checked="allVisibleChecked"
-                @change="toggleAllVisible($event)" class="accent-accent" />
-            </th>
-            <th class="px-4 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">
-              {{ contractsStore.groupBy === 'company' ? 'Empresa' : 'Empreendimento' }}
-            </th>
-            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Vendas</th>
-            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">
-              Realizado <span class="text-ink-subtle/70">({{ valueModeLabel }})</span>
-            </th>
-            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Meta unid.</th>
-            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Meta projetada</th>
-            <th class="px-4 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle"
-              v-tippy="`Modo padrão: ${goalStore.globalMode === 'units' ? 'Unidades' : 'VGV'}. Clique no nome para detalhes.`">
-              % Atingida
-            </th>
-            <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-          </tr>
-        </thead>
+  <ActionBar v-if="selectedKeys.size > 0" :count="selectedKeys.size"
+    :unit="contractsStore.groupBy === 'company' ? 'empresas' : 'empreendimentos'"
+    summary="Os cartões do topo já mostram só o que está marcado"
+    @clear="clearSelection" />
 
-        <tbody class="divide-y divide-line">
-          <tr v-for="row in sortedData" :key="row._key"
-            class="transition-colors"
-            :class="row.onlyProjectionRow
-              ? 'bg-data-pos/5 hover:bg-data-pos/10'
-              : 'hover:bg-surface-sunken/40'">
-
-            <td class="px-4 py-3">
-              <input type="checkbox" :checked="selectedKeys.has(row._key)"
-                @change="toggleOne(row._key, $event)" class="accent-accent" />
-            </td>
-
-            <!-- Nome -->
-            <td class="px-4 py-3 max-w-md">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-2.5 h-2.5 rounded-full shrink-0"
-                  :style="{ backgroundColor: dotColor(row.status) }"></div>
-                <button @click="emit('open-detail', row)"
-                  v-tippy="`Ver detalhes — meta por ${goalModeLabel(row)}`"
-                  class="text-sm font-medium text-ink hover:text-accent text-left truncate transition-colors">
-                  {{ row.name }}
-                </button>
-                <Badge v-if="isUnlinked(row)" variant="warning" size="sm"
-                  v-tippy="'Esta projeção não achou o empreendimento correspondente no Sienge, por isso aparece em linha separada. Um admin resolve na engrenagem, aba Vínculo CV ↔ Sienge.'">
-                  <i class="fas fa-link-slash text-[9px]"></i>Sem vínculo
-                </Badge>
-                <Badge v-else-if="row.onlyProjectionRow" variant="success" size="sm">
-                  <i class="fas fa-chart-line text-[9px]"></i>Projeção
-                </Badge>
-              </div>
-            </td>
-
-            <!-- Vendas -->
-            <td class="px-4 py-3 text-right">
-              <div class="text-sm font-semibold text-ink tabular-nums relative inline-block">
-                {{ realizedCount(row) }}
-                <span v-if="!row.onlyProjectionRow && row.proj_count"
-                  class="absolute -top-3 -right-2 text-micro font-bold text-data-pos font-mono"
-                  v-tippy="'Projeção'">
-                  +{{ row.proj_count }}
-                </span>
-                <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0"
-                  class="absolute -bottom-3 -right-2 text-micro font-bold text-data-warn font-mono"
-                  v-tippy="'Distratada(s) depois da venda — contabilizadas no período'">
-                  <i class="fas fa-file-circle-xmark text-[9px]"></i>{{ distratoCount(row) }}
-                </span>
-              </div>
-            </td>
-
-            <!-- Realizado -->
-            <td class="px-4 py-3 text-right">
-              <div class="text-sm font-semibold text-data-pos tabular-nums">
-                {{ formatCurrency(baseValue(row)) }}
-              </div>
-              <div v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
-                class="text-micro text-data-pos font-mono tabular-nums">
-                +{{ formatCurrency(appendedValue(row)) }}
-              </div>
-              <div v-if="!row.onlyProjectionRow && distratoValue(row) > 0"
-                class="text-micro text-data-warn font-mono tabular-nums"
-                v-tippy="'Valor de vendas distratadas — incluído no total'">
-                <i class="fas fa-file-circle-xmark text-[9px]"></i> {{ formatCurrency(distratoValue(row)) }}
-              </div>
-            </td>
-
-            <!-- Meta Unidades -->
-            <td class="px-4 py-3 text-right">
-              <span v-if="row.projectedUnits"
-                class="text-sm font-semibold text-accent tabular-nums">
-                {{ row.projectedUnits }}
-              </span>
-              <span v-else class="text-sm text-ink-subtle">—</span>
-            </td>
-
-            <!-- Meta Projetada -->
-            <td class="px-4 py-3 text-right">
-              <span v-if="row.projectedVgv"
-                class="text-sm font-semibold text-accent tabular-nums">
-                {{ formatCurrency(row.projectedVgv) }}
-              </span>
-              <span v-else class="text-sm text-ink-subtle">—</span>
-            </td>
-
-            <!-- % Atingida -->
-            <td class="px-4 py-3 text-right">
-              <div v-if="effectiveAchievementPct(row) != null" class="flex flex-col items-end gap-1.5">
-                <span class="text-sm font-bold tabular-nums" :class="achievementTextClass(row)"
-                  v-tippy="`Meta por ${goalModeLabel(row)}`">
-                  {{ effectiveAchievementPct(row).toFixed(1) }}%
-                </span>
-                <div class="w-20 h-1.5 bg-surface-sunken rounded-full overflow-hidden">
-                  <div class="h-full rounded-full transition-all duration-300"
-                    :class="achievementBarClass(row)"
-                    :style="{ width: Math.min(effectiveAchievementPct(row), 100) + '%' }"></div>
-                </div>
-              </div>
-              <span v-else class="text-sm text-ink-subtle">—</span>
-            </td>
-
-            <!-- Status -->
-            <td class="px-4 py-3 text-center">
-              <Badge :variant="STATUS_VARIANT[row.status] || 'neutral'" size="sm">
-                <i :class="STATUS_ICON[row.status]" class="text-[9px]"></i>
-                {{ STATUS_LABEL[row.status] || row.status }}
-              </Badge>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <Export v-model="open" :source="sortedData"
-      title="Vendas x Projeção"
-      initial-delimiter=";" initial-array-mode="join" :preselect="[]"
-      :filters="{ 'Ordenação': sortBy }" />
-  </section>
+  <Export v-model="open" :source="sortedData"
+    title="Vendas x Projeção"
+    initial-delimiter=";" initial-array-mode="join" :preselect="[]"
+    :filters="{ 'Ordenação': `${sortKey} ${sortDir}`, 'Modo de valor': valueModeLabel }" />
 </template>
