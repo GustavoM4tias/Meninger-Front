@@ -30,6 +30,10 @@ const erro = ref('');
 
 const retorno = ref(null); // { evento, assinado }
 
+// Fallback para `assinante` caso a API ainda seja a versão anterior.
+const assinantes = computed(() => doc.value?.assinantes
+    ?? (doc.value?.assinante ? [{ nome: doc.value.assinante, assinado: false }] : []));
+
 const cpfLimpo = computed(() => cpf.value.replace(/\D/g, ''));
 const podeAbrir = computed(() => cpfLimpo.value.length === 11 && !abrindo.value);
 
@@ -165,8 +169,19 @@ onMounted(async () => {
                         <h1 class="text-xl font-bold text-slate-900">{{ doc?.titulo }}</h1>
                         <p class="mt-1 text-sm text-slate-500">{{ doc?.documento }}</p>
                         <div class="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm">
-                            <p class="font-semibold text-slate-800">{{ doc?.assinante }}</p>
-                            <p class="mt-0.5 text-slate-500">
+                            <!-- O mesmo link atende todos os assinantes do documento:
+                                 quem abre se identifica pelo próprio CPF. -->
+                            <p v-for="a in assinantes" :key="a.nome" class="flex items-start gap-2 font-semibold text-slate-800">
+                                <i
+                                    class="mt-1 text-xs"
+                                    :class="a.assinado ? 'fas fa-circle-check text-emerald-500' : 'far fa-circle text-slate-300'"
+                                ></i>
+                                <span>
+                                    {{ a.nome }}
+                                    <span v-if="a.assinado" class="font-normal text-emerald-600">- já assinou</span>
+                                </span>
+                            </p>
+                            <p class="mt-1.5 text-slate-500">
                                 Unidade {{ doc?.unidade }}<template v-if="doc?.empreendimento"> · {{ doc.empreendimento }}</template>
                             </p>
                         </div>
@@ -176,6 +191,9 @@ onMounted(async () => {
                         <label for="cpf" class="block text-sm font-semibold text-slate-700">
                             Confirme o seu CPF para abrir o documento
                         </label>
+                        <p v-if="assinantes.length > 1" class="mt-1 text-xs text-slate-500">
+                            Este mesmo link serve para os dois: cada um digita o próprio CPF.
+                        </p>
                         <input
                             id="cpf"
                             :value="cpf"
