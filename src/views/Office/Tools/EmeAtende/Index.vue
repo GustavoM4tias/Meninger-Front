@@ -596,7 +596,7 @@ onMounted(loadConversations)
                     <Button variant="danger" size="sm" :disabled="!encerrar.motivo" @click="changeConvState(c, 'closed', encerrar.motivo)">Encerrar</Button>
                     <Button variant="ghost" size="sm" @click="encerrar.conv = null">Cancelar</Button>
                   </div>
-                  <p class="mt-2 text-[11px] text-ink-subtle">
+                  <p class="mt-2 text-micro text-ink-subtle">
                     O motivo define a chance de reconversão e a data de retomada do lead.
                   </p>
                 </div>
@@ -649,7 +649,7 @@ onMounted(loadConversations)
                 <Select :model-value="f.cv_enterprise_id || ''" :options="cadastroOpts"
                   label="Empreendimento no cadastro (identidade do lead)"
                   @change="(v) => f.cv_enterprise_id = v ? Number(v) : null" />
-                <p class="text-[11px] text-ink-subtle -mt-1">
+                <p class="text-micro text-ink-subtle -mt-1">
                   É por aqui que o lead da campanha chega neste fluxo: o mesmo id que
                   os formulários gravam. O de baixo é de onde vem o que ela FALA.
                 </p>

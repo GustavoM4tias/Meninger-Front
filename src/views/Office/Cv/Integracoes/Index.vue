@@ -367,7 +367,7 @@ onMounted(() => {
                         </div>
 
                         <code class="mt-2 block truncate rounded-lg border border-line bg-surface px-2.5 py-2
-                                     text-[11px] text-ink-muted">{{ w.endereco }}</code>
+                                     text-micro text-ink-muted">{{ w.endereco }}</code>
 
                         <!-- O cruzamento dos dois lados: é aqui que aparece o CV
                              chamando um endereço que o Office não reconhece. -->
@@ -433,7 +433,7 @@ onMounted(() => {
 
                         <div class="mt-2.5 flex flex-wrap items-center gap-2">
                             <code class="flex-1 min-w-0 truncate rounded-lg border border-line bg-surface
-                                         px-2.5 py-2 text-[11px] text-ink-muted">{{ e.url }}</code>
+                                         px-2.5 py-2 text-micro text-ink-muted">{{ e.url }}</code>
                             <Button variant="outline" size="sm" icon="fas fa-copy" @click="copiar(e.url)">Copiar</Button>
                         </div>
 
@@ -478,7 +478,7 @@ onMounted(() => {
                             <Button variant="ghost" size="sm" icon="fas fa-trash" class="ml-auto"
                                 :loading="ocupado === w.idwebhook" @click="apagar(w)">Apagar</Button>
                         </div>
-                        <code class="mt-1 block truncate text-[11px] text-ink-subtle">{{ w.endereco }}</code>
+                        <code class="mt-1 block truncate text-micro text-ink-subtle">{{ w.endereco }}</code>
                     </div>
                 </div>
                 <template #footer>
@@ -530,7 +530,7 @@ onMounted(() => {
                             </button>
                             <pre v-if="detalhe === ev.id"
                                 class="mt-1.5 overflow-x-auto rounded-lg border border-line bg-surface p-2.5
-                                       text-[11px] text-ink-muted">{{ JSON.stringify(ev.payload, null, 2) }}</pre>
+                                       text-micro text-ink-muted">{{ JSON.stringify(ev.payload, null, 2) }}</pre>
                         </template>
                     </div>
                 </div>
