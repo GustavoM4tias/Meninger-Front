@@ -84,7 +84,9 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-slate-900 flex p-4 sm:p-6 justify-center">
+    <!-- color-scheme fixo: sem ele o navegador em tema escuro pinta o input
+         (fundo, cursor e autofill) por conta própria, dentro do card branco. -->
+    <div class="min-h-screen bg-slate-900 flex p-4 sm:p-6 justify-center" style="color-scheme: light">
         <div class="w-full max-w-md my-auto">
             <div class="flex justify-center mb-5">
                 <img src="https://office.menin.com.br/Mlogotext.png" alt="Menin" class="h-9" />
@@ -180,7 +182,7 @@ onMounted(async () => {
                             inputmode="numeric"
                             autocomplete="off"
                             placeholder="000.000.000-00"
-                            class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-lg text-slate-900 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                            class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-lg text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                             @input="mascararCpf"
                         />
 
