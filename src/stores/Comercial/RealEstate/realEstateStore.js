@@ -189,6 +189,9 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         return data;
     }
 
+    // A integração por webhook (endpoints, tokens e histórico) tem store
+    // própria: stores/Cv/cvIntegrationStore.js, da tela CV CRM > Integrações.
+
     // Mesma lista do menu Configurações > Usuários (admin), usada para escolher
     // quem é avisado quando a credencial cai.
     async function fetchOfficeUsers() {

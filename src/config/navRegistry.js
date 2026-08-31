@@ -326,6 +326,7 @@ export const navRegistry = [
             { route: '/crm/buildings', name: 'Empreendimentos', icon: 'fas fa-building' },
             { route: '/crm/workflow/groups', section: 'Grupos Workflow', name: 'Grupos de Workflow', icon: 'fas fa-chart-diagram' },
             { route: '/crm/configuracoes', section: 'Configurações', name: 'Configurações', icon: 'fas fa-sliders', adminOnly: true },
+            { route: '/crm/integracoes', section: 'Integrações', name: 'Integrações', icon: 'fas fa-bolt', adminOnly: true },
         ],
     },
 

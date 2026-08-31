@@ -63,6 +63,7 @@ onMounted(() => {
                         { title: 'Quando o CV trocar a senha', text: 'O CV força troca de senha de tempos em tempos. Quando isso acontecer, quem estiver na lista de avisados recebe notificação e este painel mostra a falha - basta digitar a nova senha e salvar.' },
                         { title: 'Sincronização', text: 'O botão do cabeçalho força a leitura das imobiliárias na hora, depois de mexer em algo direto no CV. Os demais dados seguem o horário da lista abaixo.' },
                         { title: 'Sincronizações automáticas', text: 'Cada linha é um dado que o Office puxa do CV sozinho. O interruptor liga e desliga; o campo de horário usa formato cron e a tela traduz embaixo o que você digitou. Salvar reagenda na hora, sem reiniciar o sistema.' },
+                        { title: 'Entrada em tempo real', text: 'Os webhooks - o CV avisando o Office na hora em que algo muda - ficam na tela Integrações, ao lado no menu, junto do histórico da integração.' },
                     ]"
                     :tips="[
                         'Salvar já testa o login e diz na hora se funcionou.',
@@ -126,6 +127,7 @@ onMounted(() => {
             <div class="lg:col-span-2">
                 <CvJobsCard />
             </div>
+
         </div>
     </PageContainer>
 </template>

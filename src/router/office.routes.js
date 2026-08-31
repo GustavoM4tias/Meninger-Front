@@ -181,6 +181,18 @@ export default [
                         meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Painel do CV CRM: credencial da integração, quem é avisado quando ela cai e estado do espelho de imobiliárias e vínculos' },
                     },
                     {
+                        // Integracoes: webhooks do CV + endpoints do Office + historico.
+                        // admin-only por CODIGO (nao por cadeado da tela de Alcadas):
+                        // quem abre aqui enxerga os tokens que autenticam os endpoints
+                        // publicos. Os tres niveis exigidos pelo CLAUDE.md sao
+                        // adminOnly no navRegistry, requiresAdmin aqui e requireAdmin
+                        // em routes/cvIntegrationRoutes.js.
+                        path: 'integracoes',
+                        name: 'CV CRM - Integracoes',
+                        component: () => import('@/views/Office/Cv/Integracoes/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Webhooks do CV CRM: o que o CV avisa em tempo real, os endpoints que recebem no Office, tokens e historico da integracao' },
+                    },
+                    {
                         path: 'imobiliarias',
                         name: 'Imobiliárias',
                         component: () => import('@/views/Office/Comercial/Imobiliarias/Index.vue'),
