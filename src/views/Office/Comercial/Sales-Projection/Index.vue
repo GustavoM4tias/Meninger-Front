@@ -445,26 +445,11 @@ async function handleFilterChange(filters) {
 onMounted(async () => {
   contractsStore.groupBy = 'enterprise';
 
-  await Promise.all([
-    // Modo de meta é regra global do admin: precisa estar carregado antes do
-    // primeiro cálculo de % atingida.
-    goalStore.load(),
-    contractsStore.fetchCompanies(),
-    contractsStore.fetchEnterprises(),
-    contractsStore.fetchWorkflowGroups(),
-    projStore.fetchProjectionsList(),
-    projStore.fetchEnterprises(),
-    stageRulesStore.fetchAll(),
-    valueRulesStore.fetchAll(),
-    trSatelliteStore.fetchAll(),
-    // Ocultos valem para todos, não só para quem configurou.
-    hiddenStore.fetchAll(),
-  ]);
-
   // Abrir no mês corrente é o padrão da tela, mas só quando ainda NÃO existe
   // recorte escolhido. Como este relatório agora convive com os outros sob a
   // mesma casca, sobrescrever sempre apagava o período que o usuário tinha
-  // acabado de definir na outra guia (ou o que veio na URL).
+  // acabado de definir na outra guia (ou o que veio na URL). Fica ANTES da
+  // busca: é o recorte que a consulta usa.
   if (!contractsStore.filters.startDate && !contractsStore.filters.endDate) {
     contractsStore.setFilters({
       startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
@@ -474,13 +459,39 @@ onMounted(async () => {
       companyIds: [],
     });
   }
-  await loadData();
+
+  loading.value = true;
+  try {
+    // Uma onda só. Antes as dez requisições de apoio formavam uma barreira e a
+    // consulta pesada de contratos só COMEÇAVA depois que todas terminavam -
+    // era a maior parte da espera para a tela pintar. Nada aqui alimenta o
+    // fetchContracts (ele garante as regras sozinho, via ensureRules), então
+    // não há ordem a preservar; o modo de meta continua dentro da mesma
+    // barreira, portanto nenhum cálculo de % atingida aparece sem ele.
+    await Promise.all([
+      goalStore.load(),
+      contractsStore.fetchCompanies(),
+      contractsStore.fetchEnterprises(),
+      contractsStore.fetchWorkflowGroups(),
+      projStore.fetchProjectionsList(),
+      projStore.fetchEnterprises(),
+      stageRulesStore.fetchAll(),
+      valueRulesStore.fetchAll(),
+      trSatelliteStore.fetchAll(),
+      // Ocultos valem para todos, não só para quem configurou.
+      hiddenStore.fetchAll(),
+      contractsStore.fetchContracts(),
+      projStore.fetchReport(),
+    ]);
+  } finally {
+    loading.value = false;
+  }
 });
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)] relative">
-    <PageContainer size="full">
+  <div class="relative" :class="!embedded && 'min-h-[calc(100vh-3.5rem)]'">
+    <PageContainer size="full" :class="embedded && '!pt-0'">
 
       <!-- Header -->
       <PageHeader

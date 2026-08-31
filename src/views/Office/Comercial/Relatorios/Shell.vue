@@ -47,7 +47,12 @@ const trazContainer = computed(() => !!definicao.value?.embedded);
 const navegando = ref(false);
 const destino = ref(null);
 
-onBeforeRouteUpdate((to) => {
+onBeforeRouteUpdate((to, from) => {
+  // Mudar SÓ a query nao e troca de guia: os filtros chamam router.replace ao
+  // aplicar o recorte, e isso passa por aqui. Marcar navegacao nesse caso
+  // trocava o relatorio pelo indicador e, como route.path nao muda, o watch
+  // abaixo nunca desligava - a tela ficava presa em "Abrindo ..." ate um F5.
+  if (to.path === from.path) return;
   destino.value = RELATORIOS.find((r) => r.route === to.path) || null;
   navegando.value = true;
 });
@@ -77,7 +82,7 @@ const rotuloDestino = computed(() => destino.value?.pageTitle || 'relatório');
             title="Como usar os Relatórios Comerciais"
             intro="Todas as leituras de venda no mesmo lugar. Cada relatório é uma tela própria, liberada individualmente na alçada — você pode ver alguns e não ver outros."
             :steps="[
-              { title: 'Escolha o relatório', text: 'Faturamento e Vendas × Projeção respondem quanto vendemos. Leads, Imobiliárias e Corretores respondem de onde veio.' },
+              { title: 'Escolha o relatório', text: 'Faturamento e Vendas × Projeção respondem quanto vendemos. Pré-Cadastros e Reservas mostram por onde a venda passou antes de fechar. Leads, Imobiliárias e Corretores respondem de onde ela veio.' },
               { title: 'Filtre', text: 'Cada relatório tem seu filtro de período, empresa e cidade.' },
               { title: 'Compare', text: 'Nos rankings, a barra de participação mostra o peso de cada um no VGV do período.' },
             ]"
@@ -85,18 +90,19 @@ const rotuloDestino = computed(() => destino.value?.pageTitle || 'relatório');
               'Leads, Imobiliárias e Corretores precisam do detalhamento das vendas (contrato + reserva + lead), que é mais pesado. Filtre por cidade, empresa ou um período menor para acelerar.',
               'Quem aparece nos rankings é quem FECHOU a venda, lido da reserva do CV. O corretor que atendeu o lead pode ser outro — o cartão do selo Lead, no detalhe do Faturamento, mostra os dois lado a lado.',
               'O relatório de Leads considera captação nossa todo lead que não foi cadastrado nos painéis de gestor, corretor ou imobiliária — a mesma régua da tela de Leads.',
+              'Pré-Cadastros e Reservas trazem o filtro e as instruções dentro da própria guia - eles não usam o filtro das outras.',
               'A barra de guias só mostra os relatórios que a sua alçada libera.',
             ]"
           />
         </template>
       </PageHeader>
 
-      <div v-if="guias.length > 1" class="mb-4 overflow-x-auto -mx-1 px-1">
+      <div v-if="guias.length > 1" class="overflow-x-auto -mx-1 px-1">
         <SegmentedControl v-model="atual" :options="guias" size="sm" />
       </div>
     </PageContainer>
 
-    <PageContainer v-if="navegando" size="full">
+    <PageContainer v-if="navegando" size="full" class="!pt-0">
       <div class="py-16 flex flex-col items-center gap-3 text-ink-muted">
         <Spinner size="lg" />
         <p class="text-sm">Abrindo {{ rotuloDestino }}...</p>
@@ -105,7 +111,7 @@ const rotuloDestino = computed(() => destino.value?.pageTitle || 'relatório');
 
     <template v-else>
       <router-view v-if="trazContainer" />
-      <PageContainer v-else size="full">
+      <PageContainer v-else size="full" class="!pt-0">
         <router-view />
       </PageContainer>
     </template>

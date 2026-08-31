@@ -1,16 +1,11 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
-import { useHiddenEnterprisesStore } from '@/stores/Comercial/Contracts/hiddenEnterprisesStore';
-import { useStageCommissionRulesStore } from '@/stores/Comercial/Contracts/stageCommissionRulesStore';
-import { useEnterpriseValueRulesStore } from '@/stores/Comercial/Contracts/enterpriseValueRulesStore';
-import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
-import Spinner from '@/components/UI/Spinner.vue';
 import Button from '@/components/UI/Button.vue';
 
 import DashboardFilters from './components/DashboardFilters.vue';
@@ -25,45 +20,41 @@ import Skeleton from '@/components/UI/Skeleton.vue';
 defineProps({ embedded: { type: Boolean, default: false } });
 
 const contractsStore = useContractsStore();
-const hiddenStore = useHiddenEnterprisesStore();
-const stageCommissionRulesStore = useStageCommissionRulesStore();
-const valueRulesStore = useEnterpriseValueRulesStore();
-const trSatelliteStore = useTrSatelliteStore();
 const isLandSyncModalOpen = ref(false);
 const isClosingModalOpen = ref(false);
 const selectionMetrics = ref(null);
-const loading = ref(false);
+// Nasce carregando: a busca só dispara no 'ready' dos filtros (uma volta de
+// evento depois do mount), e com `false` a tela pintava os cartões zerados
+// nesse intervalo - num dashboard de vendas, zero é um número que engana.
+const loading = ref(true);
 
 const metricsToShow = computed(() => selectionMetrics.value || contractsStore.metrics);
 
 const loadData = async () => {
   loading.value = true;
-  // As regras de valor precisam estar carregadas ANTES do primeiro cálculo:
-  // elas definem como o VGV de cada empreendimento é somado.
-  await Promise.all([
-    valueRulesStore.fetchAll(),
-    stageCommissionRulesStore.fetchAll(),
-    trSatelliteStore.fetchAll(),
-    hiddenStore.fetchAll(),
-  ]);
-  await Promise.all([
-    contractsStore.fetchContracts(),
-    contractsStore.fetchEnterprises(),
-    contractsStore.fetchWorkflowGroups(),
-  ]);
-  loading.value = false;
+  try {
+    // As regras de valor continuam obrigatórias antes do primeiro cálculo, mas
+    // quem garante isso é o `ensureRules()` awaitado DENTRO do fetchContracts.
+    // Carregá-las aqui numa onda própria só empurrava a consulta pesada para
+    // depois de quatro idas ao servidor - agora tudo sai junto.
+    await Promise.all([
+      contractsStore.fetchContracts(),
+      contractsStore.fetchEnterprises(),
+      contractsStore.fetchWorkflowGroups(),
+    ]);
+  } finally {
+    loading.value = false;
+  }
 };
 
 const handleFilterChange = async () => {
   await contractsStore.fetchContracts();
 };
-
-onMounted(loadData);
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-3.5rem)] relative">
-    <PageContainer size="full">
+  <div class="relative" :class="!embedded && 'min-h-[calc(100vh-3.5rem)]'">
+    <PageContainer size="full" :class="embedded && '!pt-0'">
 
       <!-- Header — sai quando a tela roda dentro do Relatório Comercial, que
            já tem o seu próprio cabeçalho e a barra de guias. -->
@@ -100,7 +91,7 @@ onMounted(loadData);
 
       <!-- Filtros -->
       <div class="mb-4">
-        <DashboardFilters @filter-changed="handleFilterChange" />
+        <DashboardFilters @ready="loadData" @filter-changed="handleFilterChange" />
       </div>
 
       <!-- Erro -->
