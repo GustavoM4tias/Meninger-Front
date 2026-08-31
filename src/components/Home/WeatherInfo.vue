@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({
     weather: { type: Object, default: null },
@@ -93,6 +93,37 @@ const headline = computed(() => {
     return 'Acompanhe o desempenho do dia.'
 })
 
+/* ================================
+   ABRIR E FECHAR
+================================ */
+// No celular nao existe hover: o `group-hover` ficava PRESO depois do toque e o
+// painel nao fechava mais - ficava aberto por cima do resto da tela ate a pessoa
+// tocar em outro lugar. Quem tem mouse continua abrindo ao passar; quem tem dedo
+// abre tocando no chip e fecha tocando de novo (ou em qualquer lugar).
+const raiz = ref(null)
+const aberto = ref(false)
+let ponteiro = 'mouse'
+
+const entrar = (e) => {
+    ponteiro = e.pointerType || 'mouse'
+    if (ponteiro === 'mouse') aberto.value = true
+}
+const sair = (e) => {
+    if ((e.pointerType || 'mouse') === 'mouse') aberto.value = false
+}
+const alternar = () => {
+    if (ponteiro !== 'mouse') aberto.value = !aberto.value
+}
+
+function foraDaqui(e) {
+    if (raiz.value && !raiz.value.contains(e.target)) aberto.value = false
+}
+watch(aberto, (v) => {
+    if (v) document.addEventListener('click', foraDaqui, true)
+    else document.removeEventListener('click', foraDaqui, true)
+})
+onBeforeUnmount(() => document.removeEventListener('click', foraDaqui, true))
+
 const subtitle = computed(() => {
     if (!w.value) return ''
 
@@ -109,21 +140,23 @@ const subtitle = computed(() => {
 
 
 <template>
-    <div v-if="w" class="group relative w-fit">
+    <div v-if="w" ref="raiz" class="group relative w-fit"
+        @pointerenter="entrar" @pointerleave="sair">
         <!-- Chip compacto -->
-        <button type="button"
+        <button type="button" @click="alternar" :aria-expanded="aberto"
             class="flex items-center gap-2 px-3 h-9 rounded-xl bg-surface-raised border border-line
-                   hover:border-accent/40 hover:bg-surface-sunken transition-colors cursor-default">
+                   hover:border-accent/40 hover:bg-surface-sunken transition-colors">
             <i :class="[weatherIcon, iconColor]" class="text-base shrink-0"></i>
             <span class="text-sm font-semibold text-ink whitespace-nowrap" v-if="temperature != null">{{ temperature }}°C</span>
             <span class="text-ink-subtle">·</span>
             <span class="text-sm text-ink-muted whitespace-nowrap truncate max-w-[9rem]">{{ city }}</span>
         </button>
 
-        <!-- Modal ao hover -->
-        <div class="pointer-events-none absolute right-0 top-full mt-2 w-64 z-50
-                    opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0
-                    focus-within:opacity-100 transition-all duration-150 ease-out">
+        <!-- Detalhe: hover no mouse, toque no celular -->
+        <div :class="[
+            'absolute right-0 top-full mt-2 w-64 z-50 transition-all duration-150 ease-out',
+            aberto ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-1 pointer-events-none',
+        ]">
             <div class="bg-surface-overlay border border-line rounded-xl shadow-overlay overflow-hidden text-left">
                 <!-- Cabeçalho -->
                 <div class="flex items-center gap-3 px-4 py-3 border-b border-line
