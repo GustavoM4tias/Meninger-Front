@@ -181,6 +181,19 @@ async function alternarNoCv(w) {
     }
 }
 
+/** Liga o recebimento direto da linha do webhook, sem procurar o interruptor. */
+async function ligarEndpoint(funcionalidade) {
+    ocupado.value = funcionalidade;
+    try {
+        await store.salvarEndpoint(funcionalidade, { active: true });
+        toast.success(`Endpoint "${funcionalidade}" ligado. Os próximos avisos do CV passam a valer.`);
+    } catch (err) {
+        toast.error(err?.message || 'Erro ao ligar o endpoint.');
+    } finally {
+        ocupado.value = null;
+    }
+}
+
 async function alternarEndpoint(e, campo) {
     ocupado.value = e.funcionalidade;
     try {
@@ -364,11 +377,22 @@ onMounted(() => {
                             É uma automação com rota própria (cancelamento, boleto, contratos) ou um token
                             que foi regenerado depois deste cadastro.
                         </p>
-                        <p v-else-if="w.endpoint_local && !w.endpoint_ligado" class="mt-1.5 text-xs text-data-neg">
-                            <i class="fas fa-plug-circle-xmark mr-1"></i>
-                            O CV está mandando, mas o endpoint "{{ w.endpoint_local }}" está DESLIGADO no Office -
-                            os avisos estão sendo descartados.
-                        </p>
+                        <!-- O conserto fica JUNTO do problema. Antes esta linha
+                             só apontava o defeito e o interruptor que resolve
+                             morava noutra seção da tela: quem ativava o webhook
+                             no CV achava que tinha terminado, e os avisos
+                             continuavam sendo descartados em silêncio. -->
+                        <div v-else-if="w.endpoint_local && !w.endpoint_ligado"
+                            class="mt-1.5 flex flex-wrap items-center gap-2">
+                            <p class="text-xs text-data-neg">
+                                <i class="fas fa-plug-circle-xmark mr-1"></i>
+                                O CV está mandando, mas o endpoint "{{ w.endpoint_local }}" está DESLIGADO no Office -
+                                os avisos estão sendo descartados.
+                            </p>
+                            <Button variant="primary" size="sm" icon="fas fa-plug-circle-check"
+                                :loading="ocupado === w.endpoint_local"
+                                @click="ligarEndpoint(w.endpoint_local)">Ligar o endpoint</Button>
+                        </div>
                         <p v-else-if="w.endpoint_local && !w.endpoint_processa" class="mt-1.5 text-xs text-data-warn">
                             <i class="fas fa-ear-listen mr-1"></i>
                             Recebendo em modo escuta: o Office guarda o aviso e não altera nada.
@@ -397,8 +421,14 @@ onMounted(() => {
                                 </p>
                                 <p class="text-xs text-ink-muted mt-0.5">{{ e.descricao }}</p>
                             </div>
-                            <Switch :model-value="e.active" :disabled="ocupado === e.funcionalidade"
-                                @update:model-value="alternarEndpoint(e, 'active')" />
+                            <!-- Com legenda: sem ela, este interruptor e o botão
+                                 "Ativar" da linha do webhook pareciam a mesma
+                                 coisa, e ligar um só deixava o outro lado mudo. -->
+                            <label class="flex shrink-0 items-center gap-2 text-xs text-ink-muted">
+                                Receber do CV
+                                <Switch :model-value="e.active" :disabled="ocupado === e.funcionalidade"
+                                    @update:model-value="alternarEndpoint(e, 'active')" />
+                            </label>
                         </div>
 
                         <div class="mt-2.5 flex flex-wrap items-center gap-2">
