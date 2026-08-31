@@ -162,7 +162,7 @@ onMounted(async () => {
                 <!-- Confirmação de CPF -->
                 <template v-else>
                     <header>
-                        <h1 class="text-xl font-bold text-slate-900">Aditivo do seu contrato</h1>
+                        <h1 class="text-xl font-bold text-slate-900">{{ doc?.titulo }}</h1>
                         <p class="mt-1 text-sm text-slate-500">{{ doc?.documento }}</p>
                         <div class="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm">
                             <p class="font-semibold text-slate-800">{{ doc?.assinante }}</p>
@@ -198,10 +198,7 @@ onMounted(async () => {
                         </button>
                     </form>
 
-                    <p class="mt-4 text-xs text-slate-400">
-                        A assinatura é feita no DocuSign. Nada muda no seu contrato além da redação da cláusula 13,
-                        que passa a trazer a data-limite de entrega já prevista.
-                    </p>
+                    <p class="mt-4 text-xs text-slate-500">{{ doc?.observacao }}</p>
                 </template>
             </div>
 
