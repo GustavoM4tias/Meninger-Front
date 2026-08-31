@@ -780,7 +780,7 @@ function moduleCompleteness(mod) {
         (mod.price_table_ids?.length > 0) || (mod.manual_price_tables?.length > 0),
         !!(mod.max_entry_value || mod.rp_rule || mod.max_installments),
         (mod.campaigns?.length > 0),
-        !!(mod.manager_user_id || mod.correspondent_id || mod.contract_registration_by),
+        !!(mod.manager_user_id || mod.adm_user_id || mod.correspondent_id || mod.contract_registration_by),
     ];
 }
 
@@ -919,6 +919,7 @@ function moduleDefaults(m = {}) {
         manager_name: '',
         manager_email: '',
         manager_phone: '',
+        adm_user_id: null,
         delivery_deadline_months: null,
         delivery_deadline_note: '',
         commission_pct: null,

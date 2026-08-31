@@ -61,6 +61,19 @@
           </div>
         </div>
 
+        <!-- Administrativo Responsável: sempre usuário do Office (precisa de
+             acesso ao empreendimento), por isso não tem modo manual -->
+        <div class="space-y-2">
+          <label class="lbl mb-0">Administrativo Responsável</label>
+          <select :value="form.adm_user_id" @change="set('adm_user_id', numOrNull($event))" class="inp"
+            :disabled="readonly">
+            <option value="">Selecionar administrativo...</option>
+            <option v-for="u in activeUsers" :key="u.id" :value="u.id">
+              {{ u.username }}{{ u.position ? ` — ${u.position}` : '' }}
+            </option>
+          </select>
+        </div>
+
       </div>
     </div>
 

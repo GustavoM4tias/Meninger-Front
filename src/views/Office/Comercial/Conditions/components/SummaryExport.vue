@@ -224,6 +224,20 @@
                   </div>
                 </div> 
 
+                <!-- Administrativo -->
+                <div class="op-item">
+                  <i class="fas fa-user-gear op-icon"></i>
+                  <div class="min-w-0">
+                    <span class="field-label block mb-1">Administrativo Responsável</span>
+                    <span
+                      class="field-value block leading-snug break-words"
+                      :class="!modAdmLabel(mod) ? 'field-empty' : ''"
+                    >
+                      {{ modAdmLabel(mod) || 'Não informado' }}
+                    </span>
+                  </div>
+                </div>
+
                 <!-- Registro do contrato -->
                 <div class="op-item">
                   <i class="fas fa-file-signature op-icon"></i>
@@ -901,6 +915,13 @@ function modManagerLabel(mod) {
     return u.username + (u.position ? ` — ${u.position}` : '');
 }
 
+// Administrativo é sempre usuário do Office (não tem modo manual como o gestor).
+function modAdmLabel(mod) {
+    const u = props.officeUsers.find(u => Number(u.id) === Number(mod.adm_user_id));
+    if (!u) return null;
+    return u.username + (u.position ? ` — ${u.position}` : '');
+}
+
 function modCorrespondent(mod) {
     return props.correspondents.find(c => c.idusuario === mod.correspondent_id) ?? null;
 }
@@ -1282,6 +1303,11 @@ async function buildPrintHtml() {
         return u ? (u.username + (u.position ? ` — ${u.position}` : '')) : null;
     };
 
+    const adm = mod => {
+        const u = props.officeUsers?.find(u => Number(u.id) === Number(mod.adm_user_id));
+        return u ? (u.username + (u.position ? ` — ${u.position}` : '')) : null;
+    };
+
     const correspondent = mod =>
         props.correspondents?.find(c => Number(c.idusuario) === Number(mod.correspondent_id)) ?? null;
 
@@ -1541,7 +1567,12 @@ async function buildPrintHtml() {
                 icon: '👤',
                 label: 'Gestor Responsável',
                 main: manager(mod),
-            }, 
+            },
+            {
+                icon: '🧑‍💼',
+                label: 'Administrativo Responsável',
+                main: adm(mod),
+            },
             {
                 icon: '📄',
                 label: 'Registro do Contrato',
