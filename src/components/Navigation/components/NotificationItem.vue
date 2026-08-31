@@ -44,7 +44,10 @@ const aberto = ref(false);
 const corpoLongo = computed(() => props.expansivel && String(props.notification?.body || '').length > 180);
 const alternarCorpo = (e) => { e.preventDefault(); e.stopPropagation(); aberto.value = !aberto.value; };
 
-const handleClick = () => {
+const handleClick = (e) => {
+  // O toque que terminou um arraste ainda dispara clique: sem este freio, puxar
+  // o card para remover ABRIA o destino do aviso.
+  if (eixo === 'x') { e.preventDefault(); e.stopPropagation(); eixo = null; return; }
   if (props.gerenciavel && isUnread.value) store.markRead(props.notification.id);
 };
 
@@ -53,10 +56,92 @@ const handleRemove = (e) => {
   e.stopPropagation();
   store.remove(props.notification.id);
 };
+
+// ─── Arrastar para remover ──────────────────────────────────────────────────
+// No celular o "x" tem 28px e mora no canto do card, colado no texto: erra-se o
+// alvo e abre-se o aviso sem querer. Puxar o card para o lado remove - o mesmo
+// gesto da caixa de e-mail do telefone. No desktop nada muda: o hover já traz o
+// botão.
+const PUXAR_PARA_REMOVER = 96;  // px de arrasto que confirmam a remoção
+const DECIDIR_EIXO = 10;        // px antes disso o gesto ainda pode ser rolagem
+
+const desloc = ref(0);
+const saindo = ref(false);
+let arrastando = false;
+let x0 = 0;
+let y0 = 0;
+let eixo = null;
+
+const emGesto = computed(() => desloc.value !== 0 || saindo.value);
+const vaiRemover = computed(() => Math.abs(desloc.value) >= PUXAR_PARA_REMOVER);
+
+function toqueInicio(e) {
+  if (!props.gerenciavel || saindo.value || e.touches.length !== 1) return;
+  x0 = e.touches[0].clientX;
+  y0 = e.touches[0].clientY;
+  eixo = null;
+  arrastando = true;
+}
+
+function toqueMove(e) {
+  if (!arrastando) return;
+  const dx = e.touches[0].clientX - x0;
+  const dy = e.touches[0].clientY - y0;
+  if (!eixo) {
+    if (Math.abs(dx) < DECIDIR_EIXO && Math.abs(dy) < DECIDIR_EIXO) return;
+    eixo = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+  }
+  // Rolagem vertical continua sendo da lista: o card solta o gesto e volta.
+  if (eixo !== 'x') { arrastando = false; desloc.value = 0; return; }
+  e.preventDefault();
+  desloc.value = dx;
+}
+
+function toqueFim() {
+  if (!arrastando) { desloc.value = 0; return; }
+  arrastando = false;
+  if (Math.abs(desloc.value) < PUXAR_PARA_REMOVER) { desloc.value = 0; return; }
+  // Sai pelo lado para onde foi puxado, e só then some da lista: sem isso o card
+  // pisca no lugar antes de desaparecer.
+  saindo.value = true;
+  desloc.value = desloc.value > 0 ? 400 : -400;
+  setTimeout(() => store.remove(props.notification.id), 180);
+}
+
+const estiloGesto = computed(() => {
+  if (!emGesto.value) return null;
+  return {
+    transform: `translateX(${desloc.value}px)`,
+    opacity: saindo.value ? 0 : Math.max(0.35, 1 - Math.abs(desloc.value) / 260),
+    transition: arrastando ? 'none' : 'transform .18s ease-out, opacity .18s ease-out',
+  };
+});
 </script>
 
 <template>
-  <component :is="tag" v-bind="linkProps" @click="handleClick"
+  <!-- Casca do gesto: o card anda dentro dela, e a pista de remoção aparece
+       atrás conforme ele sai do lugar. `pan-y` deixa a lista rolar normalmente. -->
+  <div class="relative rounded-lg" :class="emGesto ? 'overflow-hidden' : ''"
+    :style="gerenciavel ? { touchAction: 'pan-y' } : null"
+    @touchstart.passive="toqueInicio" @touchmove="toqueMove"
+    @touchend="toqueFim" @touchcancel="toqueFim">
+
+    <!-- Pista atrás do card: diz o que o arraste vai fazer, e fica sólida quando
+         já passou do ponto de soltar. -->
+    <div v-if="emGesto" aria-hidden="true"
+      class="absolute inset-0 rounded-lg border flex items-center justify-between px-4 transition-colors duration-120"
+      :class="vaiRemover
+        ? 'bg-data-neg-soft border-data-neg/40 text-data-neg'
+        : 'bg-surface-sunken border-line text-ink-subtle'">
+      <span class="inline-flex items-center gap-2 text-micro font-medium">
+        <i class="fas fa-trash-can text-[11px]"></i> Remover
+      </span>
+      <span class="inline-flex items-center gap-2 text-micro font-medium">
+        Remover <i class="fas fa-trash-can text-[11px]"></i>
+      </span>
+    </div>
+
+  <component :is="tag" v-bind="linkProps" @click="handleClick" :style="estiloGesto"
     :class="[
       'group relative flex items-stretch gap-3 rounded-lg border transition-all duration-120',
       big ? 'p-3 sm:p-3.5' : 'p-2.5',
@@ -152,4 +237,5 @@ const handleRemove = (e) => {
       <i class="fas fa-xmark text-[11px]"></i>
     </button>
   </component>
+  </div>
 </template>
