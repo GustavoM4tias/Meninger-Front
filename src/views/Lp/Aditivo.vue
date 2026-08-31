@@ -30,9 +30,21 @@ const erro = ref('');
 
 const retorno = ref(null); // { evento, assinado }
 
+// O nome vem em caixa alta do CV e grita na tela; aqui ele aparece por
+// extenso normal, com as partículas em minúscula.
+const MINUSCULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'e']);
+function nomeBonito(nome) {
+    return String(nome || '')
+        .toLocaleLowerCase('pt-BR')
+        .split(/\s+/)
+        .map((p) => (MINUSCULAS.has(p) ? p : p.charAt(0).toLocaleUpperCase('pt-BR') + p.slice(1)))
+        .join(' ');
+}
+
 // Fallback para `assinante` caso a API ainda seja a versão anterior.
-const assinantes = computed(() => doc.value?.assinantes
-    ?? (doc.value?.assinante ? [{ nome: doc.value.assinante, assinado: false }] : []));
+const assinantes = computed(() => (doc.value?.assinantes
+    ?? (doc.value?.assinante ? [{ nome: doc.value.assinante, assinado: false }] : []))
+    .map((a) => ({ ...a, nome: nomeBonito(a.nome) })));
 
 const cpfLimpo = computed(() => cpf.value.replace(/\D/g, ''));
 const podeAbrir = computed(() => cpfLimpo.value.length === 11 && !abrindo.value);
