@@ -63,8 +63,8 @@ const SUGGESTION_POOL = [
   // Comercial
   { label: 'Faixas MCMV',            sublabel: 'Teto na sua cidade',            icon: 'fas fa-house-circle-check',  route: '/comercial/mcmv',         prompt: 'Qual o teto do Minha Casa Minha Vida na minha cidade?' },
   { label: 'Empreendimentos ativos', sublabel: 'Portfólio em vendas',           icon: 'fas fa-building',            route: '/crm/buildings',    prompt: 'Quais empreendimentos estão ativos em vendas?' },
-  { label: 'Pré-cadastros',          sublabel: 'Análises de crédito do mês',    icon: 'fas fa-folder-open',         route: '/comercial/precadastros', prompt: 'Como estão os pré-cadastros deste mês?' },
-  { label: 'Reservas',               sublabel: 'Funil da reserva à venda',      icon: 'fas fa-file-signature',      route: '/comercial/reservas-report', prompt: 'Como está o funil de reservas?' },
+  { label: 'Pré-cadastros',          sublabel: 'Análises de crédito do mês',    icon: 'fas fa-folder-open',         route: '/comercial/relatorios/precadastros', prompt: 'Como estão os pré-cadastros deste mês?' },
+  { label: 'Reservas',               sublabel: 'Funil da reserva à venda',      icon: 'fas fa-file-signature',      route: '/comercial/relatorios/reservas', prompt: 'Como está o funil de reservas?' },
   { label: 'Imobiliárias parceiras', sublabel: 'Quem atua na sua região',       icon: 'fas fa-house-flag',          route: '/crm/imobiliarias', prompt: 'Quais imobiliárias parceiras atuam na minha região?' },
   { label: 'Fichas comerciais',      sublabel: 'Condições por empreendimento',  icon: 'fas fa-clipboard-list',      route: '/comercial/conditions',   prompt: 'Quais fichas comerciais temos disponíveis?' },
   // Financeiro (gated por alçada)

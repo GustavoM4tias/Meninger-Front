@@ -305,18 +305,6 @@ export default [
                 name: 'comercial',
                 meta: { requiresAuth: true },
                 children: [
-                    {
-                        path: 'precadastros',
-                        name: 'Pré-Cadastros',
-                        component: () => import('@/views/Office/Comercial/Precadastros/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Relatório de Pré-Cadastros — análise de crédito, tempo e aprovação por correspondente' },
-                    },
-                    {
-                        path: 'reservas-report',
-                        name: 'Reservas',
-                        component: () => import('@/views/Office/Comercial/Reservas/Index.vue'),
-                        meta: { requiresAuth: true, allowedPosition: '', searchable: true, content: 'Relatório de Reservas — funil pós pré-cadastro até a venda concretizada' },
-                    },
                     // Relatórios comerciais: uma ROTA POR RELATÓRIO, sob a casca
                     // comum (cabeçalho + guias). Rota própria é o que permite
                     // conceder cada relatório separadamente na tela de Alçadas —
@@ -338,6 +326,12 @@ export default [
                     // fechamento apontam para elas.
                     { path: 'faturamento', redirect: to => ({ path: '/comercial/relatorios/faturamento', query: to.query }) },
                     { path: 'sales-projection', redirect: to => ({ path: '/comercial/relatorios/projecao', query: to.query }) },
+                    // Pré-Cadastros e Reservas entraram na mesma casca em
+                    // 2026-08-31. As duas guardam o filtro na URL e a Eme navega
+                    // para elas com query (`navigate_to_page`), então o redirect
+                    // precisa preservar a query, igual aos de cima.
+                    { path: 'precadastros', redirect: to => ({ path: '/comercial/relatorios/precadastros', query: to.query }) },
+                    { path: 'reservas-report', redirect: to => ({ path: '/comercial/relatorios/reservas', query: to.query }) },
                     {
                         path: 'cancelamento-reservas',
                         name: 'Cancelamentos CV × Sienge',

@@ -10,6 +10,13 @@
 //
 // `embedded: true` marca os relatórios que são as telas originais rodando
 // dentro da casca (elas trazem o próprio PageContainer e escondem o cabeçalho).
+//
+// A ORDEM daqui é a ordem das guias e também decide o relatório de entrada de
+// /comercial/relatorios (o primeiro que a alçada permitir). Ela conta o funil de
+// trás para frente, do resultado à procedência: quanto vendemos (Faturamento,
+// Vendas × Projeção), por onde passou (Pré-Cadastros, Reservas) e de onde veio
+// (Leads, Imobiliárias, Corretores). Faturamento fica na frente porque é a tela
+// de entrada de hoje - mexer nisso trocaria o destino padrão de todo mundo.
 
 // O `load` de cada relatório é o import dinâmico do componente. Fica aqui (e não
 // no router) para que a casca possa PRÉ-CARREGAR os vizinhos em tempo ocioso -
@@ -36,6 +43,28 @@ export const RELATORIOS = [
     subtitle: 'Meta projetada contra a venda realizada.',
     embedded: true,
     content: 'Relatório de Vendas x Projeção de Vendas — meta contra realizado por empreendimento',
+  },
+  {
+    key: 'precadastros',
+    route: '/comercial/relatorios/precadastros',
+    label: 'Pré-Cadastros',
+    pageTitle: 'Pré-Cadastros',
+    icon: 'fas fa-id-card-clip',
+    load: () => import('@/views/Office/Comercial/Precadastros/Index.vue'),
+    subtitle: 'Análise de crédito: em que fase está cada pasta e quanto tempo leva.',
+    embedded: true,
+    content: 'Relatório de Pré-Cadastros — análise de crédito, tempo e aprovação por correspondente',
+  },
+  {
+    key: 'reservas',
+    route: '/comercial/relatorios/reservas',
+    label: 'Reservas',
+    pageTitle: 'Reservas',
+    icon: 'fas fa-bookmark',
+    load: () => import('@/views/Office/Comercial/Reservas/Index.vue'),
+    subtitle: 'Funil pós pré-cadastro, da reserva até virar contrato.',
+    embedded: true,
+    content: 'Relatório de Reservas — funil pós pré-cadastro até a venda concretizada',
   },
   {
     key: 'leads',

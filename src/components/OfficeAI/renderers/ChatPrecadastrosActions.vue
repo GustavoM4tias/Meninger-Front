@@ -35,7 +35,7 @@ const buttons = computed(() => {
     color: 'indigo',
     action: () => {
       window.dispatchEvent(new CustomEvent('eme:navigate', {
-        detail: { route: '/comercial/precadastros', filters: dashQuery, message: 'Abrindo relatório de pré-cadastros...' },
+        detail: { route: '/comercial/relatorios/precadastros', filters: dashQuery, message: 'Abrindo relatório de pré-cadastros...' },
       }))
     },
   })

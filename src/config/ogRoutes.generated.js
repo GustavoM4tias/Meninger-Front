@@ -36,18 +36,6 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": "Eventos"
   },
-  "/comercial/precadastros": {
-    "name": "Pré-Cadastros",
-    "category": "Comercial",
-    "group": "OPERAÇÃO",
-    "subcategory": "Vendas"
-  },
-  "/comercial/reservas-report": {
-    "name": "Reservas",
-    "category": "Comercial",
-    "group": "OPERAÇÃO",
-    "subcategory": "Vendas"
-  },
   "/comercial/projections": {
     "name": "Projeção",
     "category": "Comercial",
@@ -62,6 +50,18 @@ export const OG_ROUTES = {
   },
   "/comercial/relatorios/projecao": {
     "name": "Vendas × Projeção",
+    "category": "Comercial",
+    "group": "OPERAÇÃO",
+    "subcategory": "Relatórios"
+  },
+  "/comercial/relatorios/precadastros": {
+    "name": "Pré-Cadastros",
+    "category": "Comercial",
+    "group": "OPERAÇÃO",
+    "subcategory": "Relatórios"
+  },
+  "/comercial/relatorios/reservas": {
+    "name": "Reservas",
     "category": "Comercial",
     "group": "OPERAÇÃO",
     "subcategory": "Relatórios"
@@ -338,6 +338,12 @@ export const OG_ROUTES = {
   },
   "/settings/backup-sienge": {
     "name": "Backup Sienge",
+    "category": "Administração",
+    "group": "SISTEMA",
+    "subcategory": null
+  },
+  "/settings/envio-sienge": {
+    "name": "Vendas travadas para o ERP",
     "category": "Administração",
     "group": "SISTEMA",
     "subcategory": null

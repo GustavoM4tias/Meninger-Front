@@ -13,7 +13,9 @@
 import { computed, ref } from 'vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
 import Badge from '@/components/UI/Badge.vue';
+import Export from '@/components/config/Export.vue';
 
 const props = defineProps({
   rows: { type: Array, default: () => [] },
@@ -50,6 +52,31 @@ const larguraBarra = (row) =>
   maiorValor.value > 0 ? `${Math.max(2, (row.valor / maiorValor.value) * 100)}%` : '0%';
 
 const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
+
+// ── Exportar ────────────────────────────────────────────────────────────────
+// Vale para os três rankings (imobiliária, corretor, leads) porque mora aqui e
+// não em cada painel. Sai a LISTA INTEIRA, não só as linhas visíveis: o "Ver
+// mais" é recorte de leitura, e planilha truncada em silêncio é pior que
+// nenhuma.
+//
+// `itens` (as vendas que compõem cada linha) fica de fora de propósito: é
+// objeto aninhado e pesado, e quem quer venda a venda abre a linha no modal.
+const exportOpen = ref(false);
+
+const dadosExport = computed(() => props.rows.map((row, i) => {
+  const linha = {
+    'Posição': i + 1,
+    [props.labelHeader]: row.label,
+    'Vendas': row.vendas,
+  };
+  if (props.showLead) linha['De lead'] = row.comLead;
+  linha['Ticket'] = Number(row.ticket) || 0;
+  linha['VGV'] = Number(row.valor) || 0;
+  linha['Participação (%)'] = Number((Number(row.shareValor) || 0).toFixed(1));
+  return linha;
+}));
+
+const camposExport = computed(() => Object.keys(dadosExport.value[0] || {}));
 </script>
 
 <template>
@@ -62,9 +89,13 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
         <h3 class="text-sm font-semibold text-ink truncate">{{ titulo }}</h3>
         <Badge v-if="rows.length" variant="neutral" size="sm">{{ rows.length }}</Badge>
       </div>
-      <p v-if="rows.length" class="text-micro font-mono text-ink-subtle tabular-nums shrink-0">
-        {{ totalVendas }} venda{{ totalVendas === 1 ? '' : 's' }} · {{ moeda(totalValor) }}
-      </p>
+      <div v-if="rows.length" class="flex items-center gap-2 shrink-0">
+        <p class="text-micro font-mono text-ink-subtle tabular-nums">
+          {{ totalVendas }} venda{{ totalVendas === 1 ? '' : 's' }} · {{ moeda(totalValor) }}
+        </p>
+        <IconButton icon="fas fa-download" size="sm" label="Exportar dados"
+          @click="exportOpen = true" />
+      </div>
     </header>
 
     <EmptyState v-if="!rows.length" :icon="icon" title="Sem dados" :description="emptyText" />
@@ -166,5 +197,8 @@ const abrir = (row) => { if (row?.itens?.length) emit('selecionar', row); };
         </Button>
       </div>
     </template>
+
+    <Export v-model="exportOpen" :source="dadosExport" :title="titulo || 'Ranking'"
+      :preselect="camposExport" />
   </section>
 </template>

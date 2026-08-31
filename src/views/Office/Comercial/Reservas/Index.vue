@@ -45,6 +45,10 @@ import ReservaDetailModal from './components/ReservaDetailModal.vue';
 import { iconForStage, bucketOf, etapaDe } from './stages.js';
 import { useIncrementalList } from '@/composables/useIncrementalList';
 
+// `embedded` = renderizada como guia do Relatório Comercial: esconde só o
+// cabeçalho próprio, que a casca já traz. Nenhuma regra muda.
+defineProps({ embedded: { type: Boolean, default: false } });
+
 const store = useReservasStore();
 const route = useRoute();
 const router = useRouter();
@@ -403,43 +407,47 @@ onMounted(async () => {
 </script>
 
 <template>
-  <PageContainer size="full">
+  <PageContainer size="full" :class="embedded && '!pt-0'">
 
-    <PageHeader title="Reservas"
+    <PageHeader v-if="!embedded" title="Reservas"
       subtitle="Funil pós pré-cadastro: em que etapa está cada reserva, quanto tempo leva até ter desfecho e quanto vira contrato."
       icon="fas fa-bookmark">
       <template #title>
         <span>Reservas</span>
-        <Favorite :router="'/comercial/reservas-report'" :section="'Reservas'" />
-      </template>
-      <template #actions>
-        <Button size="sm" variant="secondary" icon="fas fa-download"
-          :disabled="!lista.length" @click="exportOpen = true">
-          <span class="hidden sm:inline">Exportar</span>
-        </Button>
-        <PageHelp
-          storage-key="reservas"
-          title="Como usar Reservas"
-          intro="Esta tela lista as reservas do período e resume, no topo, como elas estão indo: quantas entraram, quanto tempo levam até ter desfecho, quantas chegaram na etapa Vendida e quantas foram canceladas."
-          :steps="[
-            { title: 'Escolha o período', text: 'Abra Filtros, defina as datas e o que mais quiser (empreendimento, situação, repasse, corretor) e clique em Buscar. A barra fica fechada para os números aparecerem primeiro.' },
-            { title: 'Leia os cinco cartões', text: 'Cada um traz o número, a linha de como ele variou dentro do período e um selo comparando a segunda metade do período com a primeira.' },
-            { title: 'Clique num cartão para recortar', text: 'Clicar em Etapa Vendida deixa na tabela só as reservas nessa etapa; em Cancelada, só as canceladas. Clicar de novo no mesmo cartão desfaz o recorte.' },
-            { title: 'Ordene a tabela', text: 'Clique no título de uma coluna para ordenar por ela. É assim que se vê qual empreendimento tem mais reservas, quais estão paradas há mais dias ou quais já foram para repasse.' },
-            { title: 'Abra a reserva', text: 'Clique na linha para ver o registro inteiro, com contratos, histórico de etapas, leads e mensagens. O botão ao lado leva direto ao CV.' },
-          ]"
-          :tips="[
-            'Vendida aqui é a ETAPA do CRM, não venda concretizada: a venda real é a do Faturamento. Por isso o cartão se chama Etapa Vendida (CRM).',
-            'Tempo até finalizar conta só as reservas com desfecho - virou etapa Vendida ou foi cancelada. As que estão em curso não entram na média.',
-            'A etapa e o repasse são links: clicar abre aquele registro no CV CRM, cada um na sua tela - a reserva em Comercial, o repasse em Financeiro.',
-            'Repasse vazio quer dizer que a reserva ainda não gerou repasse no CV, não que o dado faltou.',
-            'A cor da etapa é a mesma em toda a tela: âmbar é reservada ou em análise, violeta é em contrato, ciano é em repasse, verde é vendida e vermelho é cancelada ou distrato.',
-            'A tabela carrega de 50 em 50 conforme você rola, então não há página para caçar.',
-            'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
-          ]"
-        />
+        <Favorite :router="'/comercial/relatorios/reservas'" :section="'Reservas'" />
       </template>
     </PageHeader>
+    <!-- Ações da tela. Moraram no cabeçalho próprio até 2026-08-31; como ele
+         some quando a tela roda como guia do Relatório Comercial, o Exportar
+         sumia junto. Aqui valem nos dois modos, e o "Como usar" específico
+         desta tela continua acessível. -->
+    <div class="mb-4 flex items-center justify-end gap-2">
+      <Button size="sm" variant="secondary" icon="fas fa-download"
+        :disabled="!lista.length" @click="exportOpen = true">
+        <span class="hidden sm:inline">Exportar</span>
+      </Button>
+      <PageHelp
+        storage-key="reservas"
+        title="Como usar Reservas"
+        intro="Esta tela lista as reservas do período e resume, no topo, como elas estão indo: quantas entraram, quanto tempo levam até ter desfecho, quantas chegaram na etapa Vendida e quantas foram canceladas."
+        :steps="[
+          { title: 'Escolha o período', text: 'Abra Filtros, defina as datas e o que mais quiser (empreendimento, situação, repasse, corretor) e clique em Buscar. A barra fica fechada para os números aparecerem primeiro.' },
+          { title: 'Leia os cinco cartões', text: 'Cada um traz o número, a linha de como ele variou dentro do período e um selo comparando a segunda metade do período com a primeira.' },
+          { title: 'Clique num cartão para recortar', text: 'Clicar em Etapa Vendida deixa na tabela só as reservas nessa etapa; em Cancelada, só as canceladas. Clicar de novo no mesmo cartão desfaz o recorte.' },
+          { title: 'Ordene a tabela', text: 'Clique no título de uma coluna para ordenar por ela. É assim que se vê qual empreendimento tem mais reservas, quais estão paradas há mais dias ou quais já foram para repasse.' },
+          { title: 'Abra a reserva', text: 'Clique na linha para ver o registro inteiro, com contratos, histórico de etapas, leads e mensagens. O botão ao lado leva direto ao CV.' },
+        ]"
+        :tips="[
+          'Vendida aqui é a ETAPA do CRM, não venda concretizada: a venda real é a do Faturamento. Por isso o cartão se chama Etapa Vendida (CRM).',
+          'Tempo até finalizar conta só as reservas com desfecho - virou etapa Vendida ou foi cancelada. As que estão em curso não entram na média.',
+          'A etapa e o repasse são links: clicar abre aquele registro no CV CRM, cada um na sua tela - a reserva em Comercial, o repasse em Financeiro.',
+          'Repasse vazio quer dizer que a reserva ainda não gerou repasse no CV, não que o dado faltou.',
+          'A cor da etapa é a mesma em toda a tela: âmbar é reservada ou em análise, violeta é em contrato, ciano é em repasse, verde é vendida e vermelho é cancelada ou distrato.',
+          'A tabela carrega de 50 em 50 conforme você rola, então não há página para caçar.',
+          'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
+        ]"
+      />
+    </div>
 
     <div class="mb-4">
       <FilterBar :active-count="activeCount" :loading="loading" apply-label="Buscar"

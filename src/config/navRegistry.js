@@ -108,10 +108,10 @@ export const navRegistry = [
                 name: 'Vendas',
                 icon: 'fas fa-handshake',
                 pages: [
-                    // Gerenciadas por alçada desde 2026-07-29 (as APIs já exigiam
-                    // a tela liberada; sem isso não-admin ficava 403 sem ter onde liberar).
-                    { route: '/comercial/precadastros', section: 'Pré-Cadastros', name: 'Pré-Cadastros', icon: 'fas fa-id-card-clip' },
-                    { route: '/comercial/reservas-report', section: 'Reservas', name: 'Reservas', icon: 'fas fa-bookmark' },
+                    // Pré-Cadastros e Reservas saíram daqui em 2026-08-31: nas duas
+                    // "a tela É a listagem", ou seja, são relatórios como os outros.
+                    // Agora entram pelo catálogo (relatorios.js), na subcategoria
+                    // Relatórios. Sobrou aqui o que de fato não é leitura.
                     // Veio da subcategoria "Projeção & Metas" (2026-08-25), que
                     // tinha este único item - uma pasta para guardar um arquivo,
                     // custando um clique sem organizar nada. Aqui os três contam
