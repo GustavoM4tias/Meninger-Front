@@ -8,8 +8,8 @@
 // escondia justamente a comparação.
 import { computed, ref } from 'vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
-import KpiRow from '../components/KpiRow.vue';
-import RankingTable from '../components/RankingTable.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import RankPanel from '../components/RankPanel.vue';
 import VendasDoGrupoModal from '../components/VendasDoGrupoModal.vue';
 import { agruparVendas, saleVeioDeLead, leadOf, DIMENSOES } from '@/utils/Comercial/saleAttribution';
 
@@ -33,27 +33,34 @@ const somar = (lista) => lista.reduce((s, v) => s + (Number(props.valorDe(v)) ||
 const vgvTotal = computed(() => somar(props.vendas));
 const vgvLead = computed(() => somar(comLead.value));
 
+const inteiro = (v) => new Intl.NumberFormat('pt-BR').format(Math.round(v) || 0);
+const pct = (v) => `${Number(v).toFixed(1)}%`;
+
+// Cartões no primitivo do sistema. O KpiRow que morava aqui era a QUARTA
+// implementação de cartão de número do Office - mesmo desenho, outro tamanho de
+// ícone e outro comportamento no celular. `raw` + `format` também ligam o
+// count-up, que o KpiRow não tinha.
 const kpis = computed(() => [
   {
-    label: 'Vendas de lead nosso', icon: 'fas fa-bullhorn', tone: 'accent',
-    value: String(comLead.value.length),
+    key: 'vendas', label: 'Vendas de lead nosso', icon: 'fas fa-bullhorn', tone: 'accent',
+    raw: comLead.value.length, format: inteiro,
     hint: props.vendas.length
       ? `${((comLead.value.length / props.vendas.length) * 100).toFixed(1)}% das ${props.vendas.length} vendas`
       : '',
   },
   {
-    label: 'VGV de lead nosso', icon: 'fas fa-sack-dollar', tone: 'success',
-    value: moeda(vgvLead.value),
+    key: 'vgv', label: 'VGV de lead nosso', icon: 'fas fa-sack-dollar', tone: 'pos',
+    raw: vgvLead.value, format: moeda,
     hint: vgvTotal.value ? `${((vgvLead.value / vgvTotal.value) * 100).toFixed(1)}% do VGV do período` : '',
   },
   {
-    label: 'Ticket do lead', icon: 'fas fa-receipt', tone: 'neutral',
-    value: moeda(comLead.value.length ? vgvLead.value / comLead.value.length : 0),
+    key: 'ticket', label: 'Ticket do lead', icon: 'fas fa-receipt', tone: 'neutral',
+    raw: comLead.value.length ? vgvLead.value / comLead.value.length : 0, format: moeda,
     hint: `Geral: ${moeda(props.vendas.length ? vgvTotal.value / props.vendas.length : 0)}`,
   },
   {
-    label: 'Já com campanha', icon: 'fas fa-rectangle-ad', tone: 'warning',
-    value: String(comCampanha.value.length),
+    key: 'campanha', label: 'Já com campanha', icon: 'fas fa-rectangle-ad', tone: 'warn',
+    raw: comCampanha.value.length, format: inteiro,
     hint: 'Captadas pela Central Meta',
   },
 ]);
@@ -89,10 +96,12 @@ const grupoAberto = ref(null);
 
 <template>
   <div class="space-y-4">
-    <KpiRow :items="kpis" />
+    <StatRow :items="kpis" :cols="{ sm: 2, md: 2, lg: 4 }" />
 
-    <div class="rounded-xl border border-line bg-surface-raised surface-gradient p-3
-                text-xs text-ink-muted flex items-start gap-2">
+    <!-- `.panel` em vez da borda escrita a mao: a caixa de nota e uma
+         superficie do sistema como qualquer outra, e assim ela acompanha a
+         escada de elevacao em vez de virar um quarto degrau proprio. -->
+    <div class="panel surface-gradient p-3 text-xs text-ink-muted flex items-start gap-2">
       <i class="fas fa-circle-info text-accent mt-0.5"></i>
       <p>
         Conta como <strong class="text-ink">lead nosso</strong> quem NÃO foi cadastrado nos
@@ -108,12 +117,9 @@ const grupoAberto = ref(null);
       <p class="text-micro text-ink-subtle">Clique numa linha para ver as vendas.</p>
     </div>
 
-    <RankingTable :rows="linhas"
-      :titulo="`Vendas de lead por ${definicao.label.toLowerCase()}`"
-      :label-header="definicao.label"
-      :icon="definicao.icon"
-      :empty-text="VAZIO[quebra]"
-      @selecionar="grupoAberto = $event" />
+    <RankPanel :linhas="linhas" :label="definicao.label" :icon="definicao.icon"
+      :valor-de="valorDe" :empty-text="VAZIO[quebra]"
+      @abrir="grupoAberto = $event" />
 
     <VendasDoGrupoModal :grupo="grupoAberto" :dimensao="definicao.label"
       @fechar="grupoAberto = null" />

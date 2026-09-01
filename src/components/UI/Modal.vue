@@ -88,9 +88,14 @@ const screenInsetStyle = computed(() => (isScreen.value
     ? {
         top: 'var(--nav-topbar-h, 0px)',
         left: 'var(--nav-sidebar-w, 0px)',
-        right: '0px',
+        // A Eme encaixada é uma coluna à direita, e ela vive numa camada ACIMA
+        // desta (z 50 contra 20). Sem este recuo o modal passava por baixo dela
+        // e o botão de fechar, que mora no canto superior direito, caía
+        // exatamente onde a Eme está. Mesma solução da nav: ela publica quanto
+        // ocupa, o modal consome.
+        right: 'var(--eme-ocupa-w, 0px)',
         bottom: '0px',
-        transition: 'left 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+        transition: 'left 200ms cubic-bezier(0.16, 1, 0.3, 1), right 200ms cubic-bezier(0.16, 1, 0.3, 1)',
     }
     : null));
 

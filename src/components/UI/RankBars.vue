@@ -151,7 +151,7 @@ function alternarTodos() {
       class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pb-2 mb-1 border-b border-line-subtle">
       <li v-for="s in segments" :key="s.key" class="flex items-center gap-1.5 min-w-0">
         <span :class="[s.bar, 'h-2 w-2 rounded-sm shrink-0']"></span>
-        <span class="text-micro text-ink-muted truncate max-w-[12rem]">{{ s.label }}</span>
+        <span class="text-micro text-ink-muted truncate max-w-[12rem]" :title="s.label">{{ s.label }}</span>
       </li>
     </ul>
 
@@ -172,7 +172,8 @@ function alternarTodos() {
               <span v-if="showRank"
                 class="text-micro font-mono text-ink-subtle tabular-nums w-5 shrink-0">{{ i + 1 }}</span>
               <i v-if="item.icon" :class="[item.icon, item.iconClass || 'text-ink-subtle', 'text-xs shrink-0 w-4 text-center']"></i>
-              <span class="text-sm font-medium text-ink truncate flex-1 group-hover:text-accent transition-colors duration-120">
+              <span class="text-sm font-medium text-ink truncate flex-1 group-hover:text-accent transition-colors duration-120"
+                :title="item.label">
                 {{ item.label }}
               </span>
               <span v-if="item.badge"
@@ -199,7 +200,7 @@ function alternarTodos() {
               <div v-else :class="[bar, 'h-full w-full rounded-full']"></div>
             </div>
 
-            <p v-if="item.meta" class="mt-1 text-micro text-ink-subtle tabular-nums truncate">{{ item.meta }}</p>
+            <p v-if="item.meta" class="mt-1 text-micro text-ink-subtle tabular-nums truncate" :title="item.meta">{{ item.meta }}</p>
           </button>
 
           <button v-if="actionIcon" type="button" v-tippy="actionLabel"
@@ -217,7 +218,7 @@ function alternarTodos() {
         <div v-if="aberto === item.key" class="pb-3 pl-1 pr-11 animate-slide-down">
           <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 rounded-lg bg-surface-sunken/60 p-3">
             <div v-for="f in faixas(item)" :key="f.key" class="min-w-0">
-              <dt class="flex items-center gap-1.5 text-micro text-ink-muted truncate">
+              <dt class="flex items-center gap-1.5 text-micro text-ink-muted truncate" :title="f.label">
                 <span :class="[f.bar, 'h-2 w-2 rounded-sm shrink-0']"></span>{{ f.label }}
               </dt>
               <dd class="metric text-sm mt-0.5">

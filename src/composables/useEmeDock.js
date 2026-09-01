@@ -85,6 +85,13 @@ try {
 function aplicar() {
     if (typeof document === 'undefined') return;
     document.documentElement.style.setProperty('--eme-dock-w', `${largura.value}px`);
+    // Quanto a Eme OCUPA de fato. `--eme-dock-w` é o tamanho preferido dela e
+    // vale mesmo flutuando; esta aqui é 0 quando ela não está encaixada, e é a
+    // que serve para outra camada recuar sem precisar saber do estado do dock.
+    // Quem lê: o modal `screen`, que é teleportado para o <body> e por isso não
+    // herda o padding que o OfficeShell aplica na página.
+    document.documentElement.style.setProperty(
+        '--eme-ocupa-w', ocupando.value ? `${largura.value}px` : '0px');
     document.body.classList.toggle('eme-docada', ocupando.value);
 }
 

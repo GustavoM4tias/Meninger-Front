@@ -129,7 +129,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
+  <!-- Mesma superficie que o FilterBar do sistema renderiza (`.panel`). Este
+       filtro nao virou o primitivo porque agrupa os campos em linhas com
+       sentido proprio (datas, depois quem, depois onde), e a grade unica do
+       FilterBar desfaria esse agrupamento - mas a CASCA passa a ser a mesma,
+       que era a diferenca que se via de uma guia para a outra. -->
+  <section class="panel surface-gradient">
     <!-- Toolbar -->
     <div class="filters-toolbar">
       <button @click="toggle"

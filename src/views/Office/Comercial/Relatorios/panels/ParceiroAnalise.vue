@@ -17,20 +17,18 @@
 // modo separado, sem modal para agregado e sem uma segunda tabela dizendo a
 // mesma coisa que a primeira.
 //
-// A tabela manual saiu junto (RankingTable continua servindo a guia de Leads,
-// que não tem composição para mostrar): ela renderizava cartão no celular e
-// tabela no desktop, dois desenhos do mesmo dado. O RankBars é uma coluna de
-// linhas nas duas larguras.
+// A tabela manual saiu junto: ela renderizava cartão no celular e tabela no
+// desktop, dois desenhos do mesmo dado. Em 01/09 a guia de Leads veio para o
+// mesmo bloco (RankPanel) e a RankingTable foi apagada - as três guias
+// analíticas passaram a ter forma, espaçamento e exportação idênticos por
+// construção.
 import { computed, ref } from 'vue';
-import KpiRow from '../components/KpiRow.vue';
+import StatRow from '@/components/UI/StatRow.vue';
 import VendasDoGrupoModal from '../components/VendasDoGrupoModal.vue';
 
-import Panel from '@/components/UI/Panel.vue';
-import RankBars from '@/components/UI/RankBars.vue';
-import IconButton from '@/components/UI/IconButton.vue';
-import Export from '@/components/config/Export.vue';
+import RankPanel from '../components/RankPanel.vue';
 
-import { agruparVendas, comporLinhas, saleVeioDeLead, DIMENSOES } from '@/utils/Comercial/saleAttribution';
+import { agruparVendas, saleVeioDeLead, DIMENSOES } from '@/utils/Comercial/saleAttribution';
 
 const props = defineProps({
   vendas: { type: Array, required: true },
@@ -45,51 +43,6 @@ const moeda = (v) => new Intl.NumberFormat('pt-BR', {
 }).format(Number(v) || 0);
 
 const linhas = computed(() => agruparVendas(props.vendas, props.dimensao, props.valorDe));
-
-/* A segunda dimensão. `comporLinhas` decide o slot de cor de cada
-   empreendimento UMA vez, pelo VGV do conjunto - então a mesma cor é o mesmo
-   empreendimento em todas as linhas, e não a "primeira faixa" de cada uma. */
-const composicao = computed(() => comporLinhas(linhas.value, 'empreendimento', props.valorDe));
-
-/* Classe por slot, escrita por extenso. `bg-series-${n}` não existe: o Tailwind
-   varre o TEXTO do arquivo, então classe montada em runtime não gera CSS.
-   Slot 0 é o "Outros" - neutro de propósito, porque ciclar a paleta diria que
-   duas entidades diferentes são a mesma. Faixa é ÁREA, então `-soft`. */
-const CLASSES_SLOT = [
-  { bar: 'bg-data-neutral-area', text: 'text-ink-muted' },
-  { bar: 'bg-series-1-soft', text: 'text-series-1' },
-  { bar: 'bg-series-2-soft', text: 'text-series-2' },
-  { bar: 'bg-series-3-soft', text: 'text-series-3' },
-  { bar: 'bg-series-4-soft', text: 'text-series-4' },
-  { bar: 'bg-series-5-soft', text: 'text-series-5' },
-  { bar: 'bg-series-6-soft', text: 'text-series-6' },
-  { bar: 'bg-series-7-soft', text: 'text-series-7' },
-  { bar: 'bg-series-8-soft', text: 'text-series-8' },
-];
-
-const segmentos = computed(() => composicao.value.segmentos.map((s) => ({
-  key: s.key,
-  label: s.label,
-  ...(CLASSES_SLOT[s.slot] || CLASSES_SLOT[0]),
-})));
-
-const itens = computed(() => composicao.value.linhas.map((l) => ({
-  key: l.chave,
-  label: l.label,
-  value: l.valor,
-  segments: l.segments,
-  meta: [
-    `${l.vendas} venda${l.vendas === 1 ? '' : 's'}`,
-    `ticket ${moeda(l.ticket)}`,
-    l.comLead ? `${l.comLead} de lead` : null,
-  ].filter(Boolean).join(' · '),
-  /* `semDado` não é um parceiro: era itálico na tabela antiga, aqui é selo -
-     cor sozinha nunca identifica nada. */
-  badge: l.semDado
-    ? { text: 'sem identificação', class: 'bg-surface-sunken text-ink-muted' }
-    : null,
-  _linha: l,
-})));
 
 // Só as linhas com o dado de fato preenchido entram na contagem de parceiros -
 // "sem identificação" não é um parceiro.
@@ -113,67 +66,47 @@ const deLead = computed(() => props.vendas.filter(saleVeioDeLead).length);
 // REGISTRO - o agregado fica na página, sempre visível.
 const grupoAberto = ref(null);
 
+const inteiro = (v) => new Intl.NumberFormat('pt-BR').format(Math.round(v) || 0);
+const pct = (v) => `${Number(v).toFixed(1)}%`;
+
+// Cartões no primitivo do sistema (o KpiRow local era a quarta implementação de
+// cartão de número do Office). `raw` + `format` ligam o count-up.
 const kpis = computed(() => [
   {
-    label: def.value.label + 's ativas', icon: def.value.icon, tone: 'accent',
-    value: String(identificadas.value.length),
+    key: 'ativas', label: def.value.label + 's ativas', icon: def.value.icon, tone: 'accent',
+    raw: identificadas.value.length, format: inteiro,
     hint: `${props.vendas.length} vendas no período`,
   },
   {
-    label: 'Líder do período', icon: 'fas fa-trophy', tone: 'success',
-    value: lider.value ? moeda(lider.value.valor) : '—',
+    key: 'lider', label: 'Líder do período', icon: 'fas fa-trophy', tone: 'pos',
+    // Sem líder não há número para contar: o cartão mostra o traço.
+    ...(lider.value ? { raw: lider.value.valor, format: moeda } : { value: '—' }),
     hint: lider.value ? lider.value.label : 'Sem dados',
   },
   {
-    label: 'Concentração top 3', icon: 'fas fa-chart-pie', tone: 'warning',
-    value: `${top3.value.toFixed(1)}%`,
+    key: 'top3', label: 'Concentração top 3', icon: 'fas fa-layer-group', tone: 'warn',
+    raw: top3.value, format: pct,
     hint: 'Do VGV do período',
   },
   {
-    label: 'Vendas de lead nosso', icon: 'fas fa-bullhorn', tone: 'neutral',
-    value: String(deLead.value),
+    key: 'lead', label: 'Vendas de lead nosso', icon: 'fas fa-bullhorn', tone: 'neutral',
+    raw: deLead.value, format: inteiro,
     hint: props.vendas.length
       ? `${((deLead.value / props.vendas.length) * 100).toFixed(1)}% do período`
       : '',
   },
 ]);
 
-const totalVendas = computed(() => linhas.value.reduce((s, l) => s + l.vendas, 0));
-
-// ── Exportar ────────────────────────────────────────────────────────────────
-// Sai a lista INTEIRA, não só o que está à vista: o "Ver as outras N" é recorte
-// de leitura, e planilha truncada em silêncio é pior que planilha nenhuma.
-// `itens` (as vendas de cada linha) fica de fora - é objeto aninhado e pesado,
-// e quem quer venda a venda abre a linha.
-const exportOpen = ref(false);
-
-const dadosExport = computed(() => composicao.value.linhas.map((l, i) => {
-  const linha = {
-    'Posição': i + 1,
-    [def.value.label]: l.label,
-    'Vendas': l.vendas,
-    'De lead': l.comLead,
-    'Ticket': Number(l.ticket) || 0,
-    'VGV': Number(l.valor) || 0,
-    'Participação (%)': Number((Number(l.shareValor) || 0).toFixed(1)),
-  };
-  // A composição por empreendimento entra como coluna por empreendimento: é o
-  // mesmo cruzamento que a barra mostra, só que somável na planilha.
-  for (const s of composicao.value.segmentos) {
-    linha[`VGV ${s.label}`] = Number(l.segments?.[s.key] || 0);
-  }
-  return linha;
-}));
-
-const camposExport = computed(() => Object.keys(dadosExport.value[0] || {}));
 </script>
 
 <template>
   <div class="space-y-4">
-    <KpiRow :items="kpis" />
+    <StatRow :items="kpis" :cols="{ sm: 2, md: 2, lg: 4 }" />
 
-    <div class="rounded-xl border border-line bg-surface-raised surface-gradient p-3
-                text-xs text-ink-muted flex items-start gap-2">
+    <!-- `.panel` em vez da borda escrita a mao: a caixa de nota e uma
+         superficie do sistema como qualquer outra, e assim ela acompanha a
+         escada de elevacao em vez de virar um quarto degrau proprio. -->
+    <div class="panel surface-gradient p-3 text-xs text-ink-muted flex items-start gap-2">
       <i class="fas fa-circle-info text-accent mt-0.5"></i>
       <p>
         Quem aparece aqui é quem <strong class="text-ink">fechou</strong> a venda, lido da
@@ -183,33 +116,12 @@ const camposExport = computed(() => Object.keys(dadosExport.value[0] || {}));
       </p>
     </div>
 
-    <Panel :icon="def.icon" :title="`Ranking por ${def.label.toLowerCase()}`"
-      :subtitle="`${linhas.length} ${def.label.toLowerCase()}(s) · ${totalVendas} venda(s) · ${moeda(vgvTotal)} · barra repartida por empreendimento`"
-      :empty="!linhas.length" :empty-icon="def.icon" empty-title="Sem dados"
-      :empty-text="`Nenhuma venda do período tem ${def.label.toLowerCase()} identificada na reserva.`">
-
-      <template #actions>
-        <IconButton icon="fas fa-download" size="sm" label="Exportar dados"
-          @click="exportOpen = true" />
-      </template>
-
-      <!-- Clicar na linha abre a COMPOSIÇÃO ali mesmo; o botão da linha leva às
-           vendas. Duas coisas diferentes, dois alvos, nenhum modo. -->
-      <RankBars :items="itens" :segments="segmentos" :value-format="moeda"
-        action-icon="fas fa-list" action-label="Ver as vendas"
-        :empty-title="`Nenhuma ${def.label.toLowerCase()} no período`"
-        empty-text="Ajuste os filtros para ver resultados."
-        @action="grupoAberto = $event._linha" />
-
-      <template #footer>
-        Clique numa linha para ver de quais empreendimentos veio o valor.
-      </template>
-    </Panel>
+    <RankPanel :linhas="linhas" :label="def.label" :icon="def.icon"
+      :valor-de="valorDe" show-lead
+      :empty-text="`Nenhuma venda do período tem ${def.label.toLowerCase()} identificada na reserva.`"
+      @abrir="grupoAberto = $event" />
 
     <VendasDoGrupoModal :grupo="grupoAberto" :dimensao="def.label"
       @fechar="grupoAberto = null" />
-
-    <Export v-model="exportOpen" :source="dadosExport"
-      :title="`Ranking por ${def.label.toLowerCase()}`" :preselect="camposExport" />
   </div>
 </template>
