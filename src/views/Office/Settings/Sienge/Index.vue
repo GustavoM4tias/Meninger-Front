@@ -62,7 +62,7 @@ const AJUDA = {
     intro: 'Tudo do Sienge num lugar só. As duas primeiras abas são os dois jeitos de a integração falhar - o espelho do banco parar de atualizar, ou uma venda não chegar ao ERP - e a terceira é onde a régua das duas é configurada.',
     steps: [
         { title: 'Backup', text: 'Acompanha a carga diária que alimenta Custos/Títulos, Faturamento, Contas a Receber, Inadimplência, Stand de Vendas e os relatórios da Eme. O primeiro cartão diz de QUANDO é o dado que essas telas estão mostrando.' },
-        { title: 'Travadas no ERP', text: 'A lista das vendas que ficaram na etapa Envio Sienge além do prazo. O motivo do erro aparece na reserva, no painel do CV - a API do CV não expõe esse texto, então a lista aponta a reserva e o diagnóstico é lá.' },
+        { title: 'Travadas no ERP', text: 'A lista das vendas que ficaram na etapa Envio Sienge além do prazo. O motivo do erro aparece na reserva, no painel do CV - a API do CV não expõe esse texto, então a lista aponta a reserva e o diagnóstico é lá. Clique no número da reserva (ou na seta no fim da linha) para abrir direto no CV.' },
         { title: 'Configuração', text: 'Três blocos: a conexão com o Sienge (endereços, usuários e senhas), a regra da carga (horário, retentativa, vigia, aviso) e a régua do vigia do ERP (prazo, frequência e quem recebe).' },
         { title: 'Cada aba tem link próprio', text: 'A aba fica na URL (?tab=backup, ?tab=envio, ?tab=config), então dá para mandar o link já na aba certa. Os links antigos das duas telas separadas continuam funcionando e abrem a aba correspondente.' },
     ],

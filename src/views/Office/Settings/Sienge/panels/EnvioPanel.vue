@@ -28,6 +28,14 @@ import Spinner from '@/components/UI/Spinner.vue';
 import { useIncrementalList } from '@/composables/useIncrementalList';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
+/* O motivo do erro só existe na reserva, dentro do painel do CV: a API não
+   expõe nada de integração. Sem este link, a lista dizia QUAL reserva conferir
+   e obrigava a pessoa a procurá-la à mão no CV. Mesma URL usada na tela de
+   Reservas e no Cancelamento. */
+const cvReservaUrl = (r) => (r?.idreserva
+    ? `https://menin.cvcrm.com.br/gestor/comercial/reservas/${r.idreserva}/administrar`
+    : null);
+
 const store = useEnvioSiengeStore();
 const toast = useToast();
 
@@ -162,15 +170,23 @@ const ordenadas = computed(() => {
 
 const inc = useIncrementalList(ordenadas, { step: 50 });
 
-/* `priority` decide a ORDEM no celular: quem abre esta aba quer saber QUAL
-   reserva e HÁ QUANTO TEMPO; o ato pago vem logo depois porque é o que separa
-   o caso grave do caso comum. */
+/* Duas ordens diferentes, de propósito.
+
+   No MONITOR vale a ordem do array, que é a de leitura: qual reserva, onde, de
+   quem, há quanto tempo, e se o ato foi pago. As larguras são declaradas porque
+   sem elas a tabela dava metade da linha para "Parada há" (um número de duas
+   palavras) e espremia empreendimento e titular, que são o que se lê.
+
+   No CELULAR vale `priority`: 1 é o título do card (qual reserva e há quanto
+   tempo - as duas coisas que fazem alguém abrir esta aba), 2 é o corpo. Nada
+   ficou em 3: com cinco colunas, esconder o titular atrás de um toque custaria
+   mais do que economiza. */
 const COLUNAS = [
-    { key: 'idreserva', label: 'Reserva', priority: 1, sortable: true },
-    { key: 'minutos_esperando', label: 'Parada há', priority: 1, sortable: true, numeric: true },
-    { key: 'empreendimento', label: 'Empreendimento / unidade', priority: 2, sortable: true },
-    { key: 'ato_pago', label: 'Ato', priority: 2, sortable: true },
-    { key: 'titular_nome', label: 'Titular', priority: 3, sortable: true },
+    { key: 'idreserva', label: 'Reserva', priority: 1, sortable: true, width: '7.5rem' },
+    { key: 'empreendimento', label: 'Empreendimento / unidade', priority: 2, sortable: true, width: '34%' },
+    { key: 'titular_nome', label: 'Titular', priority: 2, sortable: true, width: '26%' },
+    { key: 'minutos_esperando', label: 'Parada há', priority: 1, sortable: true, numeric: true, width: '8.5rem' },
+    { key: 'ato_pago', label: 'Ato', priority: 2, sortable: true, width: '6rem' },
 ];
 
 // ─── Ações ──────────────────────────────────────────────────────────────────
@@ -299,8 +315,16 @@ onMounted(() => { store.fetchAll().catch(() => {}); });
               ? 'Ajuste ou limpe os filtros da barra acima.'
               : 'Tudo que entrou em Envio Sienge chegou ao Sienge.'">
 
+            <!-- O número É o atalho: leva direto para a reserva no CV, que é
+                 onde o motivo do erro está escrito. -->
             <template #cell-idreserva="{ row }">
-              <span class="font-mono tabular-nums text-ink font-semibold">{{ row.idreserva }}</span>
+              <a :href="cvReservaUrl(row)" target="_blank" rel="noopener" @click.stop
+                v-tippy="'Abrir a reserva no CV CRM'"
+                class="inline-flex items-center gap-1.5 font-mono tabular-nums font-semibold
+                       text-ink hover:text-accent transition-colors duration-120 focus-ring rounded px-1 -mx-1">
+                {{ row.idreserva }}
+                <i class="fas fa-arrow-up-right-from-square text-micro opacity-50"></i>
+              </a>
             </template>
 
             <template #cell-minutos_esperando="{ row }">
@@ -327,6 +351,17 @@ onMounted(() => { store.fetchAll().catch(() => {}); });
 
             <template #cell-titular_nome="{ row }">
               <span class="text-ink-muted">{{ row.titular_nome }}</span>
+            </template>
+
+            <!-- No celular esta ação vira o alvo de 40px do cabeçalho do card,
+                 onde o link do número seria pequeno demais para o polegar. -->
+            <template #actions="{ row }">
+              <a :href="cvReservaUrl(row)" target="_blank" rel="noopener" @click.stop
+                v-tippy="'Administrar no CV'" aria-label="Administrar no CV"
+                class="h-10 w-10 md:h-8 md:w-8 grid place-items-center rounded-lg text-ink-subtle
+                       hover:text-accent hover:bg-surface-sunken transition-colors duration-120 focus-ring">
+                <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+              </a>
             </template>
           </DataTable>
 
