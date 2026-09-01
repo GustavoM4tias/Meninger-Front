@@ -70,11 +70,15 @@ export const useTranscriptStore = defineStore('transcript', () => {
         error.value = null;
         try {
             // organizerEmail deixa o backend tentar o caminho de aplicação
-            // quando a pessoa apenas PARTICIPOU da reunião.
+            // quando a pessoa apenas PARTICIPOU da reunião. start/end recortam
+            // a OCORRÊNCIA: reunião recorrente acumula transcrições de todas as
+            // datas no mesmo link, e sem o recorte vinha a da semana errada.
             const organizerEmail = meeting?.organizer?.email || '';
             transcriptInfo.value = await requestWithAuth(
                 `${BASE}/check?joinUrl=${encodeURIComponent(meeting.joinUrl)}`
                 + (organizerEmail ? `&organizerEmail=${encodeURIComponent(organizerEmail)}` : '')
+                + (meeting?.start ? `&start=${encodeURIComponent(meeting.start)}` : '')
+                + (meeting?.end ? `&end=${encodeURIComponent(meeting.end)}` : '')
             );
         } catch (err) {
             error.value = err.message; noteGraphError(err);
