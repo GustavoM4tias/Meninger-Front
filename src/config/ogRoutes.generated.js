@@ -336,14 +336,8 @@ export const OG_ROUTES = {
     "group": "SISTEMA",
     "subcategory": null
   },
-  "/settings/backup-sienge": {
-    "name": "Backup Sienge",
-    "category": "Administração",
-    "group": "SISTEMA",
-    "subcategory": null
-  },
-  "/settings/envio-sienge": {
-    "name": "Vendas travadas para o ERP",
+  "/settings/sienge": {
+    "name": "Sienge",
     "category": "Administração",
     "group": "SISTEMA",
     "subcategory": null

@@ -118,12 +118,11 @@ export default [
                 meta: { requiresAuth: true, searchable: true, content: 'Checklists de lançamento: visualização, gestão, criação e cobrança de entregas e demandas' },
             },
             {
-                // Vigia do envio da venda ao ERP. Administração do próprio
-                // sistema: admin nos três níveis (rota, meta e navRegistry).
+                // 2026-08-31 - virou a aba "Travadas no ERP" da tela Sienge. A
+                // rota fica viva como redirect: é o alvo dos links de
+                // notificação e dos favoritos gravados antes da fusão.
                 path: 'settings/envio-sienge',
-                name: 'Vendas travadas para o ERP',
-                component: () => import('@/views/Office/Settings/EnvioSienge/Index.vue'),
-                meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Vendas que entraram em Envio Sienge e não chegaram ao Sienge no prazo do lote: lista, limite em minutos e aviso' },
+                redirect: (to) => ({ path: '/settings/sienge', query: { ...to.query, tab: 'envio' } }),
             },
             {
                 path: 'checklists/cobranca',
@@ -641,10 +640,19 @@ export default [
                         meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Painel admin de alertas: visão geral e uso por usuário' },
                     },
                     {
+                        // A tela do Sienge: backup do espelho, vendas travadas
+                        // para o ERP e a configuração das duas. Administração do
+                        // próprio sistema, então admin nos três níveis (aqui, no
+                        // navRegistry e no requireAdmin das rotas de API).
+                        path: 'sienge',
+                        name: 'Sienge',
+                        component: () => import('@/views/Office/Settings/Sienge/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Integração com o Sienge: backup diário do espelho do banco, vendas travadas para o ERP e configuração da conexão, da carga e do vigia' },
+                    },
+                    {
+                        // 2026-08-31 - virou a aba "Backup" da tela Sienge.
                         path: 'backup-sienge',
-                        name: 'Backup Sienge',
-                        component: () => import('@/views/Office/Settings/BackupSienge/Index.vue'),
-                        meta: { requiresAuth: true, allowedRole: 'admin', searchable: true, content: 'Acompanhamento e controle manual do backup diário do banco Sienge' },
+                        redirect: (to) => ({ path: '/settings/sienge', query: { ...to.query, tab: 'backup' } }),
                     },
                 ],
             },

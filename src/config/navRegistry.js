@@ -400,8 +400,10 @@ export const navRegistry = [
             // tirá-lo tornaria a delegação impossível de encontrar.
             { route: '/mural/admin', section: 'Mural de Avisos', name: 'Gestão do Mural', icon: 'fas fa-thumbtack', hiddenInNav: true },
             { route: '/tools/bucket-upload', section: 'Looqbox', name: 'Looqbox', icon: 'fas fa-cloud-arrow-up', iconImg: '/icons/looqbox.png' },
-            { route: '/settings/backup-sienge', section: 'Backup Sienge', name: 'Backup Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
-            { route: '/settings/envio-sienge', section: 'Envio ao ERP', name: 'Vendas travadas para o ERP', icon: 'fas fa-triangle-exclamation', adminOnly: true },
+            // Uma tela só (2026-08-31): eram "Backup Sienge" e "Envio ao ERP",
+            // dois itens de menu olhando a MESMA integração por lados
+            // diferentes. Viraram abas de /settings/sienge.
+            { route: '/settings/sienge', section: 'Sienge', name: 'Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
             { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.png', adminOnly: true },
             { route: '/tools/eme-brain', section: 'Cérebro da Eme', name: 'Cérebro da Eme', icon: 'fas fa-brain', adminOnly: true },
             { route: '/tools/eme-atende', section: 'Eme Atende', name: 'Eme Atende', icon: 'fas fa-headset', adminOnly: true },

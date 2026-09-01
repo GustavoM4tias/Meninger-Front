@@ -29,6 +29,15 @@ export const useSiengeBackupStore = defineStore('siengeBackup', {
         settings: null,
         settingsLoading: false,
         settingsSaving: false,
+
+        // Conexão com o Sienge (tabela sienge_connection_settings): endereços e
+        // credenciais das três portas. Senha nunca vem no GET - só os selos
+        // `has_*` e `from_env`.
+        connection: null,
+        connectionLoading: false,
+        connectionSaving: false,
+        connectionTesting: false,
+        connectionTest: null,
     }),
 
     getters: {
@@ -176,6 +185,72 @@ export const useSiengeBackupStore = defineStore('siengeBackup', {
                 throw err
             } finally {
                 this.settingsSaving = false
+            }
+        },
+
+        async fetchConnection() {
+            this.connectionLoading = true
+            try {
+                const res = await fetch(`${API_URL}/sienge/connection`, { headers: authHeaders() })
+                if (!res.ok) throw new Error('Erro ao buscar a conexão com o Sienge')
+                this.connection = await res.json()
+                return this.connection
+            } catch (err) {
+                this.error = err.message
+                return null
+            } finally {
+                this.connectionLoading = false
+            }
+        },
+
+        /**
+         * Grava a conexão. Segredo em branco MANTÉM o valor atual (a tela nunca
+         * recebe o valor, então não pode reenviá-lo); '__CLEAR__' apaga e
+         * devolve o campo à variável de ambiente.
+         */
+        async saveConnection(patch) {
+            this.error = null
+            this.connectionSaving = true
+            try {
+                const res = await fetch(`${API_URL}/sienge/connection`, {
+                    method: 'PUT',
+                    headers: authHeaders(),
+                    body: JSON.stringify(patch),
+                })
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}))
+                    throw new Error(body.error || 'Erro ao salvar a conexão')
+                }
+                this.connection = await res.json()
+                return this.connection
+            } catch (err) {
+                this.error = err.message
+                throw err
+            } finally {
+                this.connectionSaving = false
+            }
+        },
+
+        /** Bate nas três portas e diz qual respondeu. Grava o resultado no banco. */
+        async testConnection() {
+            this.error = null
+            this.connectionTesting = true
+            try {
+                const res = await fetch(`${API_URL}/sienge/connection/test`, {
+                    method: 'POST',
+                    headers: authHeaders(),
+                })
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}))
+                    throw new Error(body.error || 'Erro ao testar a conexão')
+                }
+                this.connectionTest = await res.json()
+                return this.connectionTest
+            } catch (err) {
+                this.error = err.message
+                throw err
+            } finally {
+                this.connectionTesting = false
             }
         },
     },
