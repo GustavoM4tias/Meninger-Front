@@ -47,6 +47,17 @@ export const reservaImobiliariaOf = (sale) =>
   repasseOf(sale)?.imobiliaria?.nomefantasia ||
   null;
 
+// Empreendimento da venda. O nome do SIENGE vem primeiro de propósito: é o que
+// a tabela do Faturamento mostra e o que sai no Excel, então a composição por
+// empreendimento fala o mesmo nome que o resto da tela. O CV só entra quando o
+// contrato não trouxe o nome.
+export const empreendimentoDaVendaOf = (sale) =>
+  firstContractOf(sale)?.enterprise_name ||
+  sale?.enterprise_name ||
+  repasseOf(sale)?.empreendimento ||
+  reservaOf(sale)?.empreendimento ||
+  null;
+
 // Corretor/imobiliária que atendeu o LEAD - nem sempre é quem fechou.
 export const leadCorretorOf = (sale) => leadOf(sale)?.corretor?.nome || null;
 export const leadImobiliariaOf = (sale) => leadOf(sale)?.imobiliaria?.nome || null;
@@ -81,6 +92,12 @@ export const DIMENSOES = {
     icon: 'fas fa-signs-post',
     get: (sale) => leadOf(sale)?.origem,
     vazio: SEM_ROTULO,
+  },
+  empreendimento: {
+    label: 'Empreendimento',
+    icon: 'fas fa-city',
+    get: empreendimentoDaVendaOf,
+    vazio: 'Sem empreendimento',
   },
   campanha: {
     label: 'Campanha',
@@ -140,4 +157,72 @@ export function agruparVendas(sales, dim, valueOf, { incluirVazios = true } = {}
       shareVendas: totalVendas ? (l.vendas / totalVendas) * 100 : 0,
     }))
     .sort((a, b) => b.valor - a.valor);
+}
+
+// ─── Composição: a SEGUNDA dimensão de um ranking ────────────────────────────
+//
+// Um ranking responde "quem vendeu mais". A composição responde "esse VGV veio
+// de onde" — e é a leitura que o gráfico de pizza por imobiliária tentava dar,
+// só que num modo separado da lista.
+//
+// Aqui ela vira faixa DENTRO da barra da própria linha: a imobiliária que vende
+// num loteamento só tem a barra de uma cor, a que vende espalhado tem quatro.
+// Sem alternador, sem modal, sem sair da leitura.
+//
+// A cor segue a ENTIDADE: o slot de cada chave é decidido UMA VEZ, pelo VGV do
+// conjunto inteiro, e vale para todas as linhas do painel — a mesma cor é o
+// mesmo empreendimento na linha 1 e na linha 30. Acima de `max` chaves vira
+// `Outros` (slot 0 = neutro), porque a paleta tem 8 slots e ciclar seria dizer
+// que duas entidades diferentes são a mesma.
+
+/**
+ * @param linhas  saída de `agruparVendas` (cada linha traz `itens`)
+ * @param dim     chave de DIMENSOES ou função (sale) => string
+ * @param valueOf mesma função de valor usada no agrupamento
+ * @returns { segmentos: [{ key, label, slot }], linhas: [{ ...linha, segments }] }
+ */
+export function comporLinhas(linhas, dim, valueOf, { max = 8, outrosLabel = 'Outros' } = {}) {
+    const def = typeof dim === 'string' ? DIMENSOES[dim] : { get: dim, vazio: SEM_ROTULO }
+    if (!def) return { segmentos: [], linhas: linhas || [] }
+
+    const rotulo = (sale) => {
+        const bruto = def.get(sale)
+        return bruto != null && String(bruto).trim() !== '' ? String(bruto).trim() : def.vazio
+    }
+
+    // 1) Peso de cada chave no conjunto INTEIRO — é o que decide quem ganha slot.
+    const peso = new Map()
+    for (const l of linhas || []) {
+        for (const sale of l.itens || []) {
+            const k = rotulo(sale)
+            peso.set(k, (peso.get(k) || 0) + (Number(valueOf(sale)) || 0))
+        }
+    }
+
+    // Empate de valor desempatado pelo nome: sem isso duas chaves de mesmo VGV
+    // trocariam de cor entre dois recálculos do mesmo período.
+    const ordenadas = [...peso.entries()]
+        .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0], 'pt-BR'))
+        .map(([k]) => k)
+
+    const comSlot = ordenadas.slice(0, max)
+    const slotDe = new Map(comSlot.map((k, i) => [k, i + 1]))
+    const temOutros = ordenadas.length > comSlot.length
+
+    const OUTROS = '__outros__'
+    const segmentos = comSlot.map((k) => ({ key: k, label: k, slot: slotDe.get(k) }))
+    if (temOutros) segmentos.push({ key: OUTROS, label: outrosLabel, slot: 0 })
+
+    // 2) Composição de cada linha, nas chaves acima.
+    const comComposicao = (linhas || []).map((l) => {
+        const segments = {}
+        for (const sale of l.itens || []) {
+            const k = rotulo(sale)
+            const alvo = slotDe.has(k) ? k : OUTROS
+            segments[alvo] = (segments[alvo] || 0) + (Number(valueOf(sale)) || 0)
+        }
+        return { ...l, segments }
+    })
+
+    return { segmentos, linhas: comComposicao }
 }

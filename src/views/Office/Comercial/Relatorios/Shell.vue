@@ -85,12 +85,14 @@ const rotuloDestino = computed(() => destino.value?.pageTitle || 'relatório');
               { title: 'Escolha o relatório', text: 'Faturamento e Vendas × Projeção respondem quanto vendemos. Pré-Cadastros e Reservas mostram por onde a venda passou antes de fechar. Leads, Imobiliárias e Corretores respondem de onde ela veio.' },
               { title: 'Filtre', text: 'Cada relatório tem seu filtro de período, empresa e cidade.' },
               { title: 'Compare', text: 'Nos rankings, a barra de participação mostra o peso de cada um no VGV do período.' },
+              { title: 'Veja de onde veio', text: 'Em Imobiliárias e Corretores a barra vem repartida por empreendimento. Clique na linha para abrir a composição ali mesmo; o botão da linha leva às vendas.' },
             ]"
             :tips="[
               'Leads, Imobiliárias e Corretores precisam do detalhamento das vendas (contrato + reserva + lead), que é mais pesado. Filtre por cidade, empresa ou um período menor para acelerar.',
               'Quem aparece nos rankings é quem FECHOU a venda, lido da reserva do CV. O corretor que atendeu o lead pode ser outro — o cartão do selo Lead, no detalhe do Faturamento, mostra os dois lado a lado.',
               'O relatório de Leads considera captação nossa todo lead que não foi cadastrado nos painéis de gestor, corretor ou imobiliária — a mesma régua da tela de Leads.',
               'Pré-Cadastros e Reservas trazem o filtro e as instruções dentro da própria guia - eles não usam o filtro das outras.',
+              'Na barra repartida, cada cor é um empreendimento e a mesma cor é sempre o mesmo empreendimento. Acima de oito, os menores entram como Outros, em cinza.',
               'A barra de guias só mostra os relatórios que a sua alçada libera.',
             ]"
           />

@@ -3,9 +3,8 @@
 // compõem uma linha de ranking.
 //
 // Reaproveitar o EnterpriseDetailModal em vez de escrever outra listagem é o
-// que garante o padrão: busca, ordenação, gráficos, selos de distrato/ajuste e
-// o selo de Lead com o cartão de captação já vêm prontos e idênticos aos do
-// Faturamento.
+// que garante o padrão: busca, ordenação, selos de distrato/ajuste e o selo de
+// Lead com o cartão de captação já vêm prontos e idênticos aos do Faturamento.
 import EnterpriseDetailModal from '@/views/Office/Comercial/Faturamento/components/EnterpriseDetailModal.vue';
 
 defineProps({
@@ -26,6 +25,5 @@ defineEmits(['fechar']);
       cost_center_code: null,
     }"
     :sales="grupo.itens || []"
-    initial-mode="list"
     @close="$emit('fechar')" />
 </template>

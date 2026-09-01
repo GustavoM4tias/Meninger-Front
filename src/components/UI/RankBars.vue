@@ -43,6 +43,11 @@ const props = defineProps({
   /* caixa de seleção por linha */
   selectable: { type: Boolean, default: false },
   selected: { type: Array, default: () => [] },
+  /* Legenda das faixas. A barra empilhada é um gráfico de 8 séries e legenda
+     é obrigatória a partir de 2 (DESIGN-LANGUAGE, "Gráficos"): sem ela a cor
+     não identifica nada até a pessoa abrir uma linha. Só aparece quando há
+     `segments`. */
+  showLegend: { type: Boolean, default: true },
   emptyTitle: { type: String, default: 'Nada para ranquear' },
   emptyText: { type: String, default: 'Ajuste os filtros para ver resultados.' },
   /* Botão de ação da linha. Ícone vazio = sem botão - é o caso da lista que
@@ -140,6 +145,16 @@ function alternarTodos() {
       </button>
     </div>
 
+    <!-- LEGENDA. O quadradinho usa a MESMA classe que pinta a faixa, nunca uma
+         cor "parecida" escrita à mão. -->
+    <ul v-if="showLegend && segments.length"
+      class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pb-2 mb-1 border-b border-line-subtle">
+      <li v-for="s in segments" :key="s.key" class="flex items-center gap-1.5 min-w-0">
+        <span :class="[s.bar, 'h-2 w-2 rounded-sm shrink-0']"></span>
+        <span class="text-micro text-ink-muted truncate max-w-[12rem]">{{ s.label }}</span>
+      </li>
+    </ul>
+
     <ul class="divide-y divide-line-subtle -my-1">
       <li v-for="(item, i) in visiveis" :key="item.key" :style="i < 16 ? { '--i': i } : null"
         :class="i < 16 ? 'stagger-in' : ''">
@@ -206,7 +221,7 @@ function alternarTodos() {
                 <span :class="[f.bar, 'h-2 w-2 rounded-sm shrink-0']"></span>{{ f.label }}
               </dt>
               <dd class="metric text-sm mt-0.5">
-                {{ f.n }}
+                {{ fmt(f.n) }}
                 <span class="text-micro font-normal text-ink-subtle tabular-nums">{{ f.pct.toFixed(0) }}%</span>
               </dd>
             </div>

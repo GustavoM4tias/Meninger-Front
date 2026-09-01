@@ -677,6 +677,79 @@ caso sem sair do padrão.
 
 ---
 
+## Padrões de VISUALIZAÇÃO
+
+Escrito em 2026-08-31, depois de o alternador Listagem / Pizza / Colunas do
+Faturamento ser rejeitado. As quatro regras abaixo são a razão pela qual ele
+saiu, e o roteiro de para onde o dado dele foi.
+
+### Uma leitura só, de cima para baixo
+
+**Relatório não tem modo A e modo B.** Alternador de visualização (lista /
+pizza / colunas) parece opção e é armadilha: a pessoa que abre no modo errado
+não vê o dado, a que troca perde o lugar onde estava, e quem manda o link manda
+um modo, não uma leitura. Além disso, todo modo que não está na frente é código
+que ninguém revisa.
+
+A página inteira é a resposta, e ela se lê rolando: conjunto em cima, detalhe
+embaixo, registro no fim.
+
+### O modal é para o REGISTRO
+
+Repetido aqui porque é onde mais se erra: **visão agregada mora na página,
+sempre visível.** Modal que abre gráfico de composição esconde o agregado atrás
+de um clique e ainda o tira do alcance de quem chegou pelo link.
+
+Modal serve para chegar num registro (uma venda, uma pessoa, um contrato) ou
+para uma listagem de registros (`screen`). Nunca para um resumo.
+
+### O que já está na tabela não vira gráfico
+
+A regra do piloto, em outras palavras: **se a resposta aparece ordenando uma
+coluna, o gráfico é redundância.** Ranking por valor, participação de cada
+linha, composição por categoria - a `DataTable` já faz, ordenando.
+
+Gráfico se justifica quando mostra o que a tabela **não tem**:
+
+| a tabela não tem | então o gráfico mostra |
+|---|---|
+| eixo de tempo | como o período se formou (ritmo, concentração no fim) |
+| número derivado do conjunto | concentração top 3, quantas linhas até 80% |
+| segunda dimensão dentro da linha | de onde veio o valor daquela linha |
+
+### Composição é faixa DENTRO da linha, não fatia solta
+
+Pizza com mais de ~7 fatias não se lê: ângulos parecidos não se comparam e a
+legenda vira uma lista - que é o ranking que deveria estar ali desde o começo.
+**Acima disso, é ranking ordenado.**
+
+E quando a pergunta é "esse valor veio de onde", a resposta é a **barra
+empilhada da própria linha** (`RankBars`): a linha que depende de uma fonte só
+tem barra de uma cor, a espalhada tem quatro, e a comparação entre as linhas é
+imediata. O detalhe abre **na própria linha**, não em outra tela.
+
+Duas obrigações herdadas de "Gráficos":
+
+- **legenda sempre**, porque a barra empilhada é um gráfico de N séries;
+- **a cor segue a entidade**, decidida uma vez pelo peso no conjunto inteiro:
+  a mesma cor é o mesmo empreendimento na primeira linha e na trigésima. Acima
+  de 8, o resto vira **`Outros`** em neutro - ciclar a paleta diria que duas
+  entidades diferentes são a mesma.
+
+### Onde o dado do alternador foi parar
+
+| saiu | foi para |
+|---|---|
+| pizza/colunas de VGV por imobiliária, no modal do Faturamento | guia **Imobiliárias** do Relatório Comercial: o ranking existente ganhou a barra repartida por empreendimento |
+| comparação entre linhas que a pizza dava | coluna **Participação** da tabela do Faturamento |
+| leitura de conjunto que faltava | painel **Como o período se formou**, na própria página do Faturamento |
+
+A composição por imobiliária **não** podia voltar ao Faturamento: ela depende da
+visão `ranking` (reserva + corretor + lead resolvidos), e a guia de Faturamento
+é a tela de entrada de todo mundo. Guia analítica é o lugar de consulta cara.
+
+---
+
 ## Sessão e acesso
 
 **Negar acesso e encerrar a sessão são coisas diferentes.** Vale para o sistema

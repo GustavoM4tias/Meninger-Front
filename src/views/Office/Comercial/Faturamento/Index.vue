@@ -10,6 +10,7 @@ import Button from '@/components/UI/Button.vue';
 
 import DashboardFilters from './components/DashboardFilters.vue';
 import MetricsCards from './components/MetricsCards.vue';
+import PeriodShapePanel from './components/PeriodShapePanel.vue';
 import EnterprisesSalesTable from './components/EnterprisesSalesTable.vue';
 import LandSyncConfigModal from './components/LandSyncConfigModal.vue';
 import ClosingModal from './components/ClosingModal.vue';
@@ -73,6 +74,7 @@ const handleFilterChange = async () => {
             intro="Esta tela mostra quanto foi vendido no período, somando os contratos do Sienge e as reservas/repasses do CV."
             :steps="[
               'Nos filtros acima, escolha o período e, se quiser, as empresas. Clique em Filtrar para aplicar.',
+              { title: 'Leia o ritmo', text: 'O painel Como o período se formou mostra o valor vendido ao longo do período (por dia, semana ou mês, conforme o tamanho do filtro) e o quanto o resultado depende de poucos empreendimentos.' },
               { title: 'Escolha o corte', text: 'No topo da tabela, alterne entre ver por Empresa ou por Empreendimento.' },
               { title: 'Entenda o valor', text: 'VGV é o valor da venda sem os descontos da construtora. VGV+DC soma esses descontos de volta. Os cartões e a tabela seguem o modo escolhido.' },
               { title: 'Abra o detalhe', text: 'Clique na linha para ver venda a venda: cliente, unidade, imobiliária e as condições de pagamento.' },
@@ -83,6 +85,8 @@ const handleFilterChange = async () => {
               'O marcador âmbar são vendas distratadas depois — elas continuam contando no período, porque na época foram venda.',
               'O marcador azul \'Ajustada\' são vendas com ajuste contábil: alguém corrigiu a data da instituição financeira ou uma série. O valor mostrado já é o corrigido; passe o mouse no selo para ver o que mudou e por quê.',
               'O selo \'Lead\' no detalhe marca o cliente que entrou por captação nossa, ou seja, o lead NÃO foi cadastrado nos painéis de gestor, corretor ou imobiliária. Passe o mouse para ver origem, mídia e campanha; clique para abrir o lead na tela de Leads.',
+              'Concentração top 3 e a contagem até 80% seguem o corte da tabela: com Empresa marcado eles falam de empresas, com Empreendimento falam de empreendimentos.',
+              'Para ver o VGV repartido por imobiliária ou corretor, use as guias Imobiliárias e Corretores do Relatório Comercial: lá a barra de participação vem repartida por empreendimento.',
               'Exportar gera uma planilha com exatamente o que está na tela.',
             ]"
           />
@@ -112,6 +116,10 @@ const handleFilterChange = async () => {
       <!-- Conteúdo -->
       <div v-else class="space-y-4">
         <MetricsCards :metrics="metricsToShow" />
+        <!-- A leitura analítica do período: o TEMPO e a CONCENTRAÇÃO, que a
+             tabela abaixo não responde ordenando coluna nenhuma. Fica aqui, na
+             página, porque visão agregada não mora em modal. -->
+        <PeriodShapePanel />
         <EnterprisesSalesTable
           :data="contractsStore.salesDashboard"
           @selection-metrics="selectionMetrics = $event"

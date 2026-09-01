@@ -561,7 +561,6 @@ onMounted(async () => {
       :sales="detailSales"
       :projection-row="detailRow"
       :time-elapsed-pct="projStore.timeElapsedPct"
-      initial-mode="list"
       @close="closeDetail" />
 
     <ProjectionSettingsModal :open="isSettingsOpen" @close="isSettingsOpen = false" />
