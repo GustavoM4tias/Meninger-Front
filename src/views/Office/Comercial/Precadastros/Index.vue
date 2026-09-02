@@ -321,33 +321,36 @@ onMounted(async () => {
         <Favorite :router="'/comercial/relatorios/precadastros'" :section="'Pré-Cadastros'" />
       </template>
     </PageHeader>
-    <!-- Ações da tela. Moraram no cabeçalho próprio até 2026-08-31; como ele
-         some quando a tela roda como guia do Relatório Comercial, o Exportar
-         sumia junto. Aqui valem nos dois modos, e o "Como usar" específico
-         desta tela continua acessível. -->
-    <div class="mb-4 flex items-center justify-end gap-2">
-      <Button size="sm" variant="secondary" icon="fas fa-download"
-        :disabled="!lista.length" @click="exportOpen = true">
-        <span class="hidden sm:inline">Exportar</span>
-      </Button>
-      <PageHelp
-        storage-key="precadastros"
-        title="Como usar Pré-Cadastros"
-        intro="Esta tela lista as pastas de análise de crédito do período e resume, no topo, como elas estão indo: quantas entraram, quanto tempo levam para sair e quanto se aprova."
-        :steps="[
-          { title: 'Escolha o período', text: 'Abra Filtros, defina as datas e o que mais quiser (empreendimento, etapa, correspondente) e clique em Buscar. A barra fica fechada para os números aparecerem primeiro.' },
-          { title: 'Leia os cinco cartões', text: 'Cada um traz o número, a linha de como ele variou dentro do período e um selo comparando a segunda metade do período com a primeira.' },
-          { title: 'Clique num cartão para recortar', text: 'Clicar em Aprovação deixa na tabela só as pastas aprovadas; em Reprovação, só as reprovadas. Clicar de novo no mesmo cartão desfaz o recorte.' },
-          { title: 'Ordene a tabela', text: 'Clique no título de uma coluna para ordenar por ela. É assim que se vê quem tem mais pastas, quem demora mais ou quem aprova mais.' },
-          { title: 'Abra a pasta', text: 'Clique na linha para ver o registro inteiro, com histórico e leads. O botão ao lado leva direto ao CV.' },
-        ]"
-        :tips="[
-          'A cor da etapa é a mesma em toda a tela e na resposta da Eme: violeta é em análise, âmbar é documentação, verde é aprovado, turquesa é em reserva e vermelho é reprovado ou cancelado.',
-          'A tabela carrega de 50 em 50 conforme você rola, então não há página para caçar.',
-          'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
-        ]"
-      />
-    </div>
+    <!-- As ações da tela sobem para o cabeçalho do Relatório Comercial em vez
+         de abrirem uma faixa só delas: a faixa custava a altura de uma linha
+         inteira para dois botões à direita, e ainda punha um segundo "Como
+         usar" logo abaixo do da casca. `disabled` faz o Teleport render no
+         lugar quando a tela roda fora da casca. -->
+    <Teleport to="#relatorio-acoes" :disabled="!embedded">
+      <div :class="embedded ? 'flex items-center gap-1.5' : 'mb-4 flex items-center justify-end gap-2'">
+        <Button size="sm" variant="secondary" icon="fas fa-download"
+          :disabled="!lista.length" @click="exportOpen = true">
+          <span class="hidden sm:inline">Exportar</span>
+        </Button>
+        <PageHelp
+          storage-key="precadastros"
+          title="Como usar Pré-Cadastros"
+          intro="Esta tela lista as pastas de análise de crédito do período e resume, no topo, como elas estão indo: quantas entraram, quanto tempo levam para sair e quanto se aprova."
+          :steps="[
+            { title: 'Escolha o período', text: 'Abra Filtros, defina as datas e o que mais quiser (empreendimento, etapa, correspondente) e clique em Buscar. A barra fica fechada para os números aparecerem primeiro.' },
+            { title: 'Leia os cinco cartões', text: 'Cada um traz o número, a linha de como ele variou dentro do período e um selo comparando a segunda metade do período com a primeira.' },
+            { title: 'Clique num cartão para recortar', text: 'Clicar em Aprovação deixa na tabela só as pastas aprovadas; em Reprovação, só as reprovadas. Clicar de novo no mesmo cartão desfaz o recorte.' },
+            { title: 'Ordene a tabela', text: 'Clique no título de uma coluna para ordenar por ela. É assim que se vê quem tem mais pastas, quem demora mais ou quem aprova mais.' },
+            { title: 'Abra a pasta', text: 'Clique na linha para ver o registro inteiro, com histórico e leads. O botão ao lado leva direto ao CV.' },
+          ]"
+          :tips="[
+            'A cor da etapa é a mesma em toda a tela e na resposta da Eme: violeta é em análise, âmbar é documentação, verde é aprovado, turquesa é em reserva e vermelho é reprovado ou cancelado.',
+            'A tabela carrega de 50 em 50 conforme você rola, então não há página para caçar.',
+            'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
+          ]"
+        />
+      </div>
+    </Teleport>
 
     <div class="mb-4">
       <FiltersBar v-model:filtros="filtros"

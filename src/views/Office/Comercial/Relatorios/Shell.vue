@@ -35,6 +35,17 @@ const atual = computed({
 
 const definicao = computed(() => RELATORIOS.find((r) => r.route === route.path));
 
+// ── Ações da guia no cabeçalho da casca ──────────────────────────────────────
+// Guia embedded com ação própria (Exportar, "Como usar" específico) publica os
+// botões AQUI por Teleport, em vez de abrir uma faixa só deles logo abaixo das
+// guias: aquela faixa custava a altura de uma linha inteira para dois botões
+// alinhados à direita, e era o vão que se via entre a barra de guias e o filtro.
+//
+// Quem traz ajuda própria está declarado no CATÁLOGO (`ajudaPropria`), não
+// avisado em tempo de montagem: assim a casca já nasce sabendo e não pinta o
+// "Como usar" genérico por um quadro antes de escondê-lo.
+
+
 // As guias de Faturamento e Vendas × Projeção são as telas inteiras rodando em
 // modo embedded — elas trazem o próprio PageContainer.
 const trazContainer = computed(() => !!definicao.value?.embedded);
@@ -77,7 +88,12 @@ const rotuloDestino = computed(() => destino.value?.pageTitle || 'relatório');
           <Favorite :router="route.path" :section="definicao?.label || 'Relatório Comercial'" />
         </template>
         <template #actions>
+          <!-- Alvo do Teleport das guias. Fica ANTES do "Como usar" da casca
+               para o botão de ação da tela vir primeiro, como em toda tela do
+               Office. -->
+          <div id="relatorio-acoes" class="contents"></div>
           <PageHelp
+            v-if="!definicao?.ajudaPropria"
             storage-key="relatorio-comercial"
             title="Como usar os Relatórios Comerciais"
             intro="Todas as leituras de venda no mesmo lugar. Cada relatório é uma tela própria, liberada individualmente na alçada — você pode ver alguns e não ver outros."

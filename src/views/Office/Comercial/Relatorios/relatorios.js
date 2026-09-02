@@ -53,6 +53,9 @@ export const RELATORIOS = [
     load: () => import('@/views/Office/Comercial/Precadastros/Index.vue'),
     subtitle: 'Análise de crédito: em que fase está cada pasta e quanto tempo leva.',
     embedded: true,
+    // Traz o proprio "Como usar": a casca desliga o generico dela enquanto
+    // esta guia esta aberta, senao aparecem dois botoes com o mesmo rotulo.
+    ajudaPropria: true,
     content: 'Relatório de Pré-Cadastros — análise de crédito, tempo e aprovação por correspondente',
   },
   {
@@ -64,6 +67,9 @@ export const RELATORIOS = [
     load: () => import('@/views/Office/Comercial/Reservas/Index.vue'),
     subtitle: 'Funil pós pré-cadastro, da reserva até virar contrato.',
     embedded: true,
+    // Traz o proprio "Como usar": a casca desliga o generico dela enquanto
+    // esta guia esta aberta, senao aparecem dois botoes com o mesmo rotulo.
+    ajudaPropria: true,
     content: 'Relatório de Reservas — funil pós pré-cadastro até a venda concretizada',
   },
   {
