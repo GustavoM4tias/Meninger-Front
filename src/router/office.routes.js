@@ -110,6 +110,25 @@ export default [
                 meta: { requiresAuth: true, searchable: false, content: 'Visualização de relatório' },
             },
 
+            // Veículo corporativo: agenda, retirada e devolução do carro da
+            // empresa. Delegável por alçada (capacidades em /frota).
+            {
+                path: 'frota',
+                name: 'Frota',
+                component: () => import('@/views/Office/Frota/Index.vue'),
+                meta: { requiresAuth: true, searchable: true, content: 'Veículo corporativo: reserva do carro da empresa, agenda de uso, retirada e devolução com quilometragem' },
+            },
+            {
+                // Sub-tela sem item de menu: herda a alçada de /frota pelo
+                // permissionRoute (sem ele ficaria fora do registro gerenciado
+                // e qualquer logado entraria pela URL). Quem pode SALVAR é a
+                // capacidade 'configurar', cobrada na API.
+                path: 'frota/configuracoes',
+                name: 'FrotaConfiguracoes',
+                component: () => import('@/views/Office/Frota/Configuracoes.vue'),
+                meta: { requiresAuth: true, permissionRoute: '/frota' },
+            },
+
             // Checklist (gestão de lançamentos e demandas) — substitui o Planner.
             {
                 path: 'checklists',

@@ -11,6 +11,7 @@ import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Button from '@/components/UI/Button.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import Surface from '@/components/UI/Surface.vue';
+import { consumirDestino } from '@/utils/destinoAposLogin';
 
 const router    = useRouter();
 const authStore = useAuthStore();
@@ -183,7 +184,11 @@ onMounted(async () => {
       state.value = 'setup';
     } else {
       state.value = 'success';
-      setTimeout(() => router.push('/'), 1200);
+      // Voltou da Microsoft: se a pessoa tinha clicado num link direto, é
+      // para lá que ela vai. O destino ficou no sessionStorage porque a query
+      // não sobrevive ao desvio do OAuth.
+      const destino = consumirDestino();
+      setTimeout(() => router.push(destino || '/'), 1200);
     }
   } catch (err) {
     console.error('[MicrosoftCallback] Erro ao concluir login:', err);

@@ -11,6 +11,7 @@ import officeRoutes from './office.routes.js';
 import maintenanceRoutes from './maintenance.routes.js';
 import lpRoutes from './lp.routes.js';
 import { attachPwaRoutes } from './pwa.routes.js';
+import { guardarDestino } from '@/utils/destinoAposLogin';
 
 // Decide se a aplicação roda como Academy ou Office.
 // Produção: pelo subdomínio (academy.menin.com.br → Academy; demais → Office).
@@ -110,7 +111,15 @@ router.beforeEach(async (to, from, next) => {
 
   // 1. Autenticação
   if (requiresAuth && !authStore.isAuthenticated()) {
-    return next(isAcademyHost() ? { name: 'AcademyLogin' } : { name: 'login' });
+    // Link direto de quem estava deslogado: o destino vai junto para o login,
+    // pela query (atravessa o formulário de senha) e pelo sessionStorage
+    // (atravessa o desvio até a Microsoft, onde a query se perde). Sem isto,
+    // todo link do Office - inclusive os das notificações - jogava a pessoa na
+    // Home depois de entrar.
+    guardarDestino(to.fullPath);
+    return next(isAcademyHost()
+      ? { name: 'AcademyLogin' }
+      : { name: 'login', query: { destino: to.fullPath } });
   }
 
   // 1b. Garante o usuário carregado do servidor antes de avaliar role/cargo.

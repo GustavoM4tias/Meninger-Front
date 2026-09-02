@@ -16,6 +16,7 @@ import RequestAccessModal from './RequestAccessModal.vue';
 import { sanitizeEmail } from './composables/useForgotPassword';
 import { usePersistedRef, clearPersisted } from '@/utils/usePersistedRef';
 import { academyUrl, officeUrl } from '@/utils/appContext';
+import { guardarDestino, consumirDestino } from '@/utils/destinoAposLogin';
 
 const authStore = useAuthStore();
 const microsoftStore = useMicrosoftStore();
@@ -51,7 +52,13 @@ const currentVersion = computed(() => versions[loginType.value] || '');
 // (dev: academy.localhost ou mesma origem conforme VITE_APP_CONTEXT).
 function resolveRedirectUrl(selectedPath) {
   const isAcademy = selectedPath === '/panel';
-  return isAcademy ? academyUrl('/panel') : officeUrl('/');
+  if (isAcademy) return academyUrl('/panel');
+
+  /* Quem chegou por link direto volta PARA O LINK, não para a Home. O destino
+     vem do guard (?destino=) ou do sessionStorage, e só caminho interno passa
+     - `destinoValido` barra o endereço externo que transformaria o login numa
+     ponte para fora. */
+  return officeUrl(consumirDestino(route.query.destino) || '/');
 }
 
 async function redirectAfterLogin() {
@@ -74,6 +81,13 @@ async function handleLogin() {
   } finally {
     loginLoading.value = false;
   }
+}
+
+/* O desvio até a Microsoft sai desta origem e volta noutra rota: a query se
+   perde no caminho, então o destino é guardado na sessão antes de sair. */
+function irParaMicrosoft() {
+  guardarDestino(route.query.destino);
+  microsoftStore.redirectToLogin();
 }
 
 function openFaceLogin() { faceModalOpen.value = true; }
@@ -165,7 +179,7 @@ onBeforeUnmount(() => { faceModalOpen.value = false; });
 
     <!-- Login alternativo -->
     <div class="grid grid-cols-2 gap-2">
-      <Button type="button" variant="secondary" @click="microsoftStore.redirectToLogin()" :disabled="loginLoading">
+      <Button type="button" variant="secondary" @click="irParaMicrosoft" :disabled="loginLoading">
         <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
           <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>

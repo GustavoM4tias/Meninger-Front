@@ -212,6 +212,13 @@ export const navRegistry = [
             // obrigam a abrir para descobrir qual é qual.
             { route: '/relatorios', name: 'Relatórios da Eme', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
 
+            // Veículo corporativo (2026-08-27). Substitui o combinado por
+            // mensagem no grupo do Teams: a agenda passa a saber o que já está
+            // ocupado no momento do pedido, que é o que a conversa não sabia.
+            // Delegável: quem tem a tela reserva; cadastro e configuração são
+            // capacidade de admin, e o gestor da frota é papel do módulo.
+            { route: '/frota', section: 'Veículo', name: 'Veículo', icon: 'fas fa-car-side' },
+
             { route: '/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
             // Acompanhamento das assinaturas de aditivo (2026-09-01). É trabalho
             // de cobrança: ver quem não assinou e reenviar o link. A tela do
