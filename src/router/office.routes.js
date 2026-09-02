@@ -332,6 +332,14 @@ export default [
                     { path: 'precadastros', redirect: to => ({ path: '/comercial/relatorios/precadastros', query: to.query }) },
                     { path: 'reservas-report', redirect: to => ({ path: '/comercial/relatorios/reservas', query: to.query }) },
                     {
+                        // Acompanhamento das assinaturas de aditivo (cláusula 13).
+                        // O link do cliente mora na LP; aqui é só o follow-up.
+                        path: 'aditivos',
+                        name: 'Aditivos',
+                        component: () => import('@/views/Office/Comercial/Aditivos/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Acompanhamento das assinaturas dos aditivos de cláusula 13 no DocuSign' },
+                    },
+                    {
                         path: 'cancelamento-reservas',
                         name: 'Cancelamentos CV × Sienge',
                         component: () => import('@/views/Office/Comercial/CancelamentoReservas/Index.vue'),

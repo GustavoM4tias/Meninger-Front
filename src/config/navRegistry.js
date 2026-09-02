@@ -213,6 +213,10 @@ export const navRegistry = [
             { route: '/relatorios', name: 'Relatórios da Eme', icon: 'fas fa-wand-magic-sparkles', permissionManaged: false },
 
             { route: '/validator', section: 'Validador', name: 'Validador', icon: 'fas fa-check-double' },
+            // Acompanhamento das assinaturas de aditivo (2026-09-01). É trabalho
+            // de cobrança: ver quem não assinou e reenviar o link. A tela do
+            // cliente é pública e mora na LP, fora do Office.
+            { route: '/comercial/aditivos', section: 'Aditivos', name: 'Aditivos', icon: 'fas fa-file-signature' },
             // Veio de Comercial (2026-08-25). É ferramenta de operação: dispara
             // o cancelamento no CV e no Sienge e mostra o histórico. A ROTA não
             // mudou, só o lugar no menu, então nenhuma alçada precisa migrar.
