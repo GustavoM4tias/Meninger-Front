@@ -336,8 +336,15 @@ onMounted(async () => {
          de abrirem uma faixa só delas: a faixa custava a altura de uma linha
          inteira para dois botões à direita, e ainda punha um segundo "Como
          usar" logo abaixo do da casca. `disabled` faz o Teleport render no
-         lugar quando a tela roda fora da casca. -->
-    <Teleport to="#relatorio-acoes" :disabled="!embedded">
+         lugar quando a tela roda fora da casca.
+
+         `defer`: o alvo mora no cabeçalho da casca, e quando a casca e esta
+         guia montam JUNTAS (abrir o link direto, F5) o Teleport procurava o
+         alvo antes de a casca entrar no documento. Sem alvo, os botões nunca
+         montavam, e a primeira atualização (a busca terminando) quebrava a
+         tela com "Cannot read properties of null (reading 'emitsOptions')".
+         Com `defer` ele resolve o alvo depois do ciclo de render. -->
+    <Teleport defer to="#relatorio-acoes" :disabled="!embedded">
       <div :class="embedded ? 'flex items-center gap-1.5' : 'mb-4 flex items-center justify-end gap-2'">
         <Button size="sm" variant="secondary" icon="fas fa-download"
           :disabled="!lista.length" @click="exportOpen = true">
