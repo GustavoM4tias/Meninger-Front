@@ -49,6 +49,14 @@ const notes = ref('');
 const priority = ref('normal');
 const archived = ref(false);
 
+// Represados DESTA campanha (ver `checarRepresados`, mais abaixo). Declarados
+// AQUI, antes do watch, porque ele roda imediato - ou seja, ainda dentro do
+// setup, no momento em que e registrado. Quando moravam depois dele, o reset
+// tocava em `heldPreview` antes de a const existir e o modal caia com
+// "Cannot access before initialization" toda vez que abria.
+const heldPreview = ref(null);      // { scanned, recoverable, no_binding, no_contact }
+const heldChecking = ref(false);
+
 function close() { emit('update:open', false); }
 
 watch([() => props.open, () => props.campaignId, () => props.since, () => props.until], async ([isOpen, id], [prevOpen, prevId]) => {
@@ -217,9 +225,8 @@ const vinculoError = ref(null);
 // ── Represados DESTA campanha ──────────────────────────────────────────────
 // Vincular a campanha só vale pro PRÓXIMO lead — os que chegaram antes ficaram
 // em `held` e continuavam parados. Aqui, no mesmo lugar em que a pessoa vincula,
-// dá pra soltar os que já estão presos.
-const heldPreview = ref(null);      // { scanned, recoverable, no_binding, no_contact }
-const heldChecking = ref(false);
+// dá pra soltar os que já estão presos. (`heldPreview` e `heldChecking` estão
+// declarados antes do watch de abertura, que os zera.)
 const heldSending = ref(false);
 const pedindoEnvioHeld = ref(false);
 

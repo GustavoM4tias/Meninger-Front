@@ -22,6 +22,11 @@ export const useReservasStore = defineStore('reservas', () => {
     const reservas = ref([]);
     const count = ref(0);
     const periodo = ref({ data_inicio: null, data_fim: null });
+    // O periodo que o SERVIDOR escolhe quando ninguem manda data. Mora na store
+    // (e nao na tela) porque a tela e remontada a cada troca de guia: se
+    // nascesse vazio de novo, o filtro de data espelhado da visita anterior
+    // contava como "2 filtros ativos" sem ninguem ter filtrado nada.
+    const periodoPadrao = ref({ data_inicio: '', data_fim: '' });
     const error = ref(null);
     const carregamento = useCarregamentoStore();
 
@@ -106,18 +111,32 @@ export const useReservasStore = defineStore('reservas', () => {
         saveLS(LS.leadOrig, leadOrigensOptions.value);
     }
 
+    // Uma busca por vez. Cada chamada cancela a anterior (AbortController) e
+    // carrega um numero de serie: so a resposta da busca MAIS RECENTE entra na
+    // store. Sem isso, sair da guia com uma busca no ar e voltar (ou clicar em
+    // Buscar duas vezes) deixava a resposta velha chegar por ultimo e
+    // sobrescrever a lista com o filtro anterior - a tela dizia um filtro e
+    // mostrava outro.
+    let buscaNoAr = null;
+    let serie = 0;
+
     async function fetchReservas(loading = false) {
         error.value = null;
+        if (buscaNoAr) buscaNoAr.abort();
+        const controle = new AbortController();
+        buscaNoAr = controle;
+        const minha = ++serie;
         try {
             if (loading) carregamento.iniciarCarregamento();
             const qs = buildQuery();
             const url = `${API_URL}/cv/reservas/report${qs ? `?${qs}` : ''}`;
-            const resp = await fetch(url, { method: 'GET', headers: authHeaders() });
+            const resp = await fetch(url, { method: 'GET', headers: authHeaders(), signal: controle.signal });
             if (resp.status === 401) {
                 localStorage.removeItem('token');
                 throw new Error('Sessão expirada. Faça login novamente.');
             }
             const data = await resp.json();
+            if (minha !== serie) return; // ja saiu uma busca mais nova: esta nao vale
             if (!resp.ok) throw new Error(data?.error || 'Erro ao carregar reservas');
 
             reservas.value = Array.isArray(data.results) ? data.results : [];
@@ -125,8 +144,10 @@ export const useReservasStore = defineStore('reservas', () => {
             periodo.value = data.periodo ?? { data_inicio: null, data_fim: null };
             mergeOptions(reservas.value);
         } catch (e) {
+            if (e?.name === 'AbortError') return; // cancelada por uma busca mais nova
             error.value = e.message;
         } finally {
+            if (buscaNoAr === controle) buscaNoAr = null;
             if (loading) carregamento.finalizarCarregamento();
         }
     }
@@ -146,7 +167,7 @@ export const useReservasStore = defineStore('reservas', () => {
 
     return {
         // state
-        reservas, count, periodo, error, filtros,
+        reservas, count, periodo, periodoPadrao, error, filtros,
         // options
         empreendimentosOptions, situacoesOptions, statusRepasseOptions,
         imobiliariasOptions, corretoresOptions, empresasCorrespondentesOptions,

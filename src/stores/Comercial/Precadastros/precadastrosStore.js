@@ -109,18 +109,30 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
         saveLS(LS.leadOrig, leadOrigensOptions.value);
     }
 
+    // Uma busca por vez: a nova cancela a anterior e so a resposta da busca
+    // MAIS RECENTE entra na store. Sem isso, trocar de guia com uma busca no
+    // ar e voltar deixava a resposta velha chegar por ultimo e sobrescrever a
+    // lista com o filtro anterior (mesma regra da store de Reservas).
+    let buscaNoAr = null;
+    let serie = 0;
+
     async function fetchPrecadastros(loading = false) {
         error.value = null;
+        if (buscaNoAr) buscaNoAr.abort();
+        const controle = new AbortController();
+        buscaNoAr = controle;
+        const minha = ++serie;
         try {
             if (loading) carregamento.iniciarCarregamento();
             const qs = buildQuery();
             const url = `${API_URL}/cv/precadastros${qs ? `?${qs}` : ''}`;
-            const resp = await fetch(url, { method: 'GET', headers: authHeaders() });
+            const resp = await fetch(url, { method: 'GET', headers: authHeaders(), signal: controle.signal });
             if (resp.status === 401) {
                 localStorage.removeItem('token');
                 throw new Error('Sessão expirada. Faça login novamente.');
             }
             const data = await resp.json();
+            if (minha !== serie) return; // ja saiu uma busca mais nova: esta nao vale
             if (!resp.ok) throw new Error(data?.error || 'Erro ao carregar pré-cadastros');
 
             precadastros.value = Array.isArray(data.results) ? data.results : [];
@@ -128,8 +140,10 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
             periodo.value = data.periodo ?? { data_inicio: null, data_fim: null };
             mergeOptions(precadastros.value);
         } catch (e) {
+            if (e?.name === 'AbortError') return; // cancelada por uma busca mais nova
             error.value = e.message;
         } finally {
+            if (buscaNoAr === controle) buscaNoAr = null;
             if (loading) carregamento.finalizarCarregamento();
         }
     }

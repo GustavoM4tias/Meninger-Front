@@ -60,6 +60,10 @@ const periodo = toRef(store, 'periodo');
 const error = toRef(store, 'error');
 const filtros = toRef(store, 'filtros');
 
+/* A store sobrevive a troca de guia; a tela nao. Um erro da visita anterior
+   pintaria a faixa vermelha por um quadro antes de a busca nova apaga-lo. */
+error.value = null;
+
 /* ── Filtros do servidor (URL + API) ─────────────────────────────────────── */
 const ARRAY_FIELDS = ['empreendimento', 'etapa', 'bloco', 'unidade', 'situacao', 'status_repasse', 'tipovenda', 'imobiliaria', 'corretor', 'empresa_correspondente', 'lead_origem'];
 const STR_FIELDS = ['nome', 'documento', 'data_inicio', 'data_fim'];
@@ -82,13 +86,15 @@ function syncUrlFromFilters() {
     else if (typeof v === 'boolean') { if (v) q[k] = 'true'; }
     else if (v && String(v).trim()) q[k] = String(v).trim();
   });
+  if (!Object.keys(q).length && !Object.keys(route.query).length) return;
   router.replace({ query: q });
 }
 
 /* O período padrão é o que o SERVIDOR escolhe quando ninguém pede data. Guardar
    qual é ele serve para duas coisas: saber se o usuário mudou o período (é o
-   que liga o selo de filtro ativo) e ter para onde voltar no Limpar. */
-const periodoPadrao = ref({ data_inicio: '', data_fim: '' });
+   que liga o selo de filtro ativo) e ter para onde voltar no Limpar. Mora na
+   store para sobreviver à troca de guia (ver o comentário lá). */
+const periodoPadrao = toRef(store, 'periodoPadrao');
 
 /* Quantos filtros estão preenchidos - conta DIMENSÃO, não valor: três
    empreendimentos selecionados são um filtro ativo, não três.
@@ -398,8 +404,14 @@ const periodoLabel = computed(() => {
   return `${d(periodo.value?.data_inicio)} → ${d(periodo.value?.data_fim)}`;
 });
 
+/* Quem manda na primeira busca: a URL, quando traz filtro (link compartilhado,
+   Eme, favorito); senão o filtro que ficou na store da visita anterior. Nos
+   dois casos a URL passa a dizer o que está valendo - antes, voltar para a
+   guia aplicava o filtro antigo com o endereço em branco, e o link copiado
+   dali abria a tela sem filtro nenhum. */
 onMounted(async () => {
-  syncFiltersFromUrl();
+  if (Object.keys(route.query).length) syncFiltersFromUrl();
+  else syncUrlFromFilters();
   loading.value = true;
   try { await store.fetchReservas(true); }
   finally { loading.value = false; espelharPeriodoNosCampos(); }

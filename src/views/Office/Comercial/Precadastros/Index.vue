@@ -51,6 +51,10 @@ const periodo = toRef(store, 'periodo');
 const error = toRef(store, 'error');
 const filtros = toRef(store, 'filtros');
 
+/* A store sobrevive a troca de guia; a tela nao. Um erro da visita anterior
+   pintaria a faixa vermelha por um quadro antes de a busca nova apaga-lo. */
+error.value = null;
+
 /* ── Filtros do servidor (URL + API) ─────────────────────────────────────── */
 const ARRAY_FIELDS = ['empresa', 'empreendimento', 'situacao_nome', 'imobiliaria', 'corretor', 'correspondente', 'empresa_correspondente', 'intencao_compra', 'lead_origem'];
 const STR_FIELDS = ['nome', 'documento', 'data_inicio', 'data_fim'];
@@ -73,6 +77,7 @@ function syncUrlFromFilters() {
     else if (typeof v === 'boolean') { if (v) q[k] = 'true'; }
     else if (v && String(v).trim()) q[k] = String(v).trim();
   });
+  if (!Object.keys(q).length && !Object.keys(route.query).length) return;
   router.replace({ query: q });
 }
 
@@ -302,8 +307,14 @@ const periodoLabel = computed(() => {
   return `${d(periodo.value?.data_inicio)} → ${d(periodo.value?.data_fim)}`;
 });
 
+/* Quem manda na primeira busca: a URL, quando traz filtro (link compartilhado,
+   Eme, favorito); senão o filtro que ficou na store da visita anterior. Nos
+   dois casos a URL passa a dizer o que está valendo - antes, voltar para a
+   guia aplicava o filtro antigo com o endereço em branco, e o link copiado
+   dali abria a tela sem filtro nenhum. */
 onMounted(async () => {
-  syncFiltersFromUrl();
+  if (Object.keys(route.query).length) syncFiltersFromUrl();
+  else syncUrlFromFilters();
   loading.value = true;
   try { await store.fetchPrecadastros(true); }
   finally { loading.value = false; }

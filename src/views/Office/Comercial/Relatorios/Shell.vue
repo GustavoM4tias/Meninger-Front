@@ -8,7 +8,7 @@
 //
 // A barra mostra só as guias que o usuário pode abrir; quem tem um relatório
 // só nem vê a barra.
-import { computed, ref, watch } from 'vue';
+import { computed, ref, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter, onBeforeRouteUpdate } from 'vue-router';
 
 import Favorite from '@/components/config/Favorite.vue';
@@ -28,9 +28,15 @@ const guias = computed(() =>
   RELATORIOS.filter((r) => perm.hasAccess(r.route))
     .map((r) => ({ value: r.route, label: r.label, icon: r.icon })));
 
+// Trocar de guia NAO leva a query junto. Cada relatorio guarda o proprio filtro
+// na URL, e Pre-Cadastros e Reservas usam os MESMOS nomes de chave
+// (data_inicio, empreendimento, only_active...) com significados proprios:
+// sair de Reservas filtrada por um empreendimento e abrir Pre-Cadastros
+// aplicava aquele filtro calado na outra tela, e o que sobrava (situacao=...)
+// ficava pendurado no endereco. Nenhum relatorio le a query de outro.
 const atual = computed({
   get: () => route.path,
-  set: (path) => { if (path !== route.path) router.push({ path, query: route.query }); },
+  set: (path) => { if (path !== route.path) router.push({ path }); },
 });
 
 const definicao = computed(() => RELATORIOS.find((r) => r.route === route.path));
@@ -68,8 +74,12 @@ onBeforeRouteUpdate((to, from) => {
   navegando.value = true;
 });
 
-// route.path só muda quando a navegação foi confirmada (chunk resolvido).
-watch(() => route.path, () => { navegando.value = false; });
+// Desliga quando a navegacao TERMINA, deu certo ou nao. Olhar so `route.path`
+// deixava o indicador ligado para sempre quando o chunk falhava ou um guard
+// cancelava a troca (o path nao muda e ninguem apagava o "Abrindo...").
+const pararAfterEach = router.afterEach(() => { navegando.value = false; });
+const pararOnError = router.onError(() => { navegando.value = false; });
+onBeforeUnmount(() => { pararAfterEach(); pararOnError(); });
 
 const rotuloDestino = computed(() => destino.value?.pageTitle || 'relatório');
 
