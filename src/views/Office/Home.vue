@@ -156,8 +156,14 @@ async function confirmFeedback({ comment }) {
 </script>
 
 <template>
-  <!-- dvh: no iOS Safari 100vh inclui a barra de URL e cortava o composer -->
-  <main class="flex flex-col w-full h-[calc(100vh-3rem)] supports-[height:100dvh]:h-[calc(100dvh-3rem)] overflow-hidden bg-surface">
+  <!-- dvh: no iOS Safari 100vh inclui a barra de URL e cortava o composer.
+       A barra de cima reserva 4rem no celular e 3rem a partir de sm (o `mt-16
+       sm:mt-12` da casca): descontar 3rem nos dois fazia a tela passar 16px do
+       viewport no celular, e esses 16px de rolagem levavam o clima do canto para
+       DEBAIXO da barra fixa. -->
+  <main class="flex flex-col w-full [--barra:4rem] sm:[--barra:3rem]
+               h-[calc(100vh-var(--barra))] supports-[height:100dvh]:h-[calc(100dvh-var(--barra))]
+               overflow-hidden bg-surface">
 
     <Transition name="fade" mode="out-in">
 
@@ -166,7 +172,12 @@ async function confirmFeedback({ comment }) {
         class="h-full overflow-y-auto">
         <div class="relative min-h-full flex flex-col items-center px-4 py-8 sm:py-10">
 
-          <div v-if="authStore.user" class="absolute top-4 right-4 z-40">
+          <!-- Clima: no celular entra no fluxo, acima da saudação. Flutuando no
+               canto ele ficava a 16px da barra de cima, logo abaixo do sino e do
+               avatar - encostava neles e parecia parte da barra. Do sm em diante
+               sobra canto de sobra e ele volta a flutuar. -->
+          <div v-if="authStore.user"
+            class="w-full flex justify-end mb-2 sm:mb-0 sm:w-auto sm:absolute sm:top-4 sm:right-4 sm:z-40">
             <WeatherInfo :weather="buildingStore.weather?.current_weather ?? buildingStore.weather"
               :city="authStore.user.city" />
           </div>

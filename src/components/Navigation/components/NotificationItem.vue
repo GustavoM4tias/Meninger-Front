@@ -45,9 +45,10 @@ const corpoLongo = computed(() => props.expansivel && String(props.notification?
 const alternarCorpo = (e) => { e.preventDefault(); e.stopPropagation(); aberto.value = !aberto.value; };
 
 const handleClick = (e) => {
-  // O toque que terminou um arraste ainda dispara clique: sem este freio, puxar
-  // o card para remover ABRIA o destino do aviso.
-  if (eixo === 'x') { e.preventDefault(); e.stopPropagation(); eixo = null; return; }
+  // O toque que termina um arraste ainda dispara clique. Marcar a HORA do último
+  // arraste e ignorar o clique que vem logo atrás é mais confiável do que ler o
+  // eixo: o gesto pode acabar sem clique nenhum, e aí a flag ficava presa.
+  if (Date.now() - fimDoArraste < 500) { e.preventDefault(); e.stopPropagation(); return; }
   if (props.gerenciavel && isUnread.value) store.markRead(props.notification.id);
 };
 
@@ -57,63 +58,86 @@ const handleRemove = (e) => {
   store.remove(props.notification.id);
 };
 
-// ─── Arrastar para remover ──────────────────────────────────────────────────
+// ─── Arrastar para remover ────────────────────────────────────────
 // No celular o "x" tem 28px e mora no canto do card, colado no texto: erra-se o
 // alvo e abre-se o aviso sem querer. Puxar o card para o lado remove - o mesmo
 // gesto da caixa de e-mail do telefone. No desktop nada muda: o hover já traz o
-// botão.
-const PUXAR_PARA_REMOVER = 96;  // px de arrasto que confirmam a remoção
-const DECIDIR_EIXO = 10;        // px antes disso o gesto ainda pode ser rolagem
+// botão, e o gesto só escuta toque.
+const CONFIRMA = 72;   // px de arrasto que confirmam a remoção
+const DECIDE = 8;      // px antes disso o gesto ainda pode virar rolagem
+const RELANCE = 0.5;   // px/ms: um piparote curto e rápido também confirma
 
 const desloc = ref(0);
+const arrastando = ref(false);
 const saindo = ref(false);
-let arrastando = false;
 let x0 = 0;
 let y0 = 0;
+let t0 = 0;
 let eixo = null;
+let fimDoArraste = 0;
 
-const emGesto = computed(() => desloc.value !== 0 || saindo.value);
-const vaiRemover = computed(() => Math.abs(desloc.value) >= PUXAR_PARA_REMOVER);
+const emGesto = computed(() => arrastando.value || desloc.value !== 0 || saindo.value);
+const vaiRemover = computed(() => Math.abs(desloc.value) >= CONFIRMA);
+const paraDireita = computed(() => desloc.value > 0);
+
+// Depois do ponto de soltar o card resiste: a mão SENTE que já passou do limite,
+// em vez de depender só da cor da pista atrás.
+function comResistencia(dx) {
+  const a = Math.abs(dx);
+  const util = a <= CONFIRMA ? a : CONFIRMA + (a - CONFIRMA) * 0.35;
+  return Math.sign(dx) * util;
+}
 
 function toqueInicio(e) {
   if (!props.gerenciavel || saindo.value || e.touches.length !== 1) return;
   x0 = e.touches[0].clientX;
   y0 = e.touches[0].clientY;
+  t0 = e.timeStamp;
   eixo = null;
-  arrastando = true;
 }
 
 function toqueMove(e) {
-  if (!arrastando) return;
+  if (!props.gerenciavel || saindo.value || eixo === 'y' || !e.touches.length) return;
   const dx = e.touches[0].clientX - x0;
   const dy = e.touches[0].clientY - y0;
+
   if (!eixo) {
-    if (Math.abs(dx) < DECIDIR_EIXO && Math.abs(dy) < DECIDIR_EIXO) return;
-    eixo = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (Math.abs(dx) < DECIDE && Math.abs(dy) < DECIDE) return;
+    // A rolagem da lista tem preferência: só assume o card quando a intenção é
+    // claramente horizontal. Empate diagonal rola, não arrasta.
+    eixo = Math.abs(dx) > Math.abs(dy) * 1.3 ? 'x' : 'y';
+    if (eixo === 'y') return;
+    arrastando.value = true;
   }
-  // Rolagem vertical continua sendo da lista: o card solta o gesto e volta.
-  if (eixo !== 'x') { arrastando = false; desloc.value = 0; return; }
-  e.preventDefault();
-  desloc.value = dx;
+
+  // Segura a rolagem: sem isto o dedo arrasta o card E rola a página junto.
+  if (e.cancelable) e.preventDefault();
+  desloc.value = comResistencia(dx);
 }
 
-function toqueFim() {
-  if (!arrastando) { desloc.value = 0; return; }
-  arrastando = false;
-  if (Math.abs(desloc.value) < PUXAR_PARA_REMOVER) { desloc.value = 0; return; }
-  // Sai pelo lado para onde foi puxado, e só then some da lista: sem isso o card
+function toqueFim(e) {
+  if (eixo !== 'x') { eixo = null; return; }
+  eixo = null;
+  arrastando.value = false;
+  fimDoArraste = Date.now();
+
+  const dt = Math.max(1, (e?.timeStamp || t0) - t0);
+  const relance = Math.abs(desloc.value) > 24 && Math.abs(desloc.value) / dt >= RELANCE;
+  if (!vaiRemover.value && !relance) { desloc.value = 0; return; }
+
+  // Sai pelo lado para onde foi puxado, e só então some da lista: sem isso o card
   // pisca no lugar antes de desaparecer.
   saindo.value = true;
-  desloc.value = desloc.value > 0 ? 400 : -400;
-  setTimeout(() => store.remove(props.notification.id), 180);
+  desloc.value = paraDireita.value ? 420 : -420;
+  setTimeout(() => store.remove(props.notification.id), 200);
 }
 
 const estiloGesto = computed(() => {
   if (!emGesto.value) return null;
   return {
-    transform: `translateX(${desloc.value}px)`,
-    opacity: saindo.value ? 0 : Math.max(0.35, 1 - Math.abs(desloc.value) / 260),
-    transition: arrastando ? 'none' : 'transform .18s ease-out, opacity .18s ease-out',
+    transform: `translate3d(${desloc.value}px,0,0)`,
+    opacity: saindo.value ? 0 : Math.max(0.4, 1 - Math.abs(desloc.value) / 300),
+    transition: arrastando.value ? 'none' : 'transform .2s ease-out, opacity .2s ease-out',
   };
 });
 </script>
@@ -121,10 +145,11 @@ const estiloGesto = computed(() => {
 <template>
   <!-- Casca do gesto: o card anda dentro dela, e a pista de remoção aparece
        atrás conforme ele sai do lugar. `pan-y` deixa a lista rolar normalmente. -->
-  <div class="relative rounded-lg" :class="emGesto ? 'overflow-hidden' : ''"
+  <div class="relative rounded-lg"
+    :class="[emGesto ? 'overflow-hidden' : '', arrastando ? 'select-none [-webkit-touch-callout:none]' : '']"
     :style="gerenciavel ? { touchAction: 'pan-y' } : null"
     @touchstart.passive="toqueInicio" @touchmove="toqueMove"
-    @touchend="toqueFim" @touchcancel="toqueFim">
+    @touchend="toqueFim" @touchcancel="toqueFim" @dragstart.prevent>
 
     <!-- Pista atrás do card: diz o que o arraste vai fazer, e fica sólida quando
          já passou do ponto de soltar. -->
@@ -133,11 +158,15 @@ const estiloGesto = computed(() => {
       :class="vaiRemover
         ? 'bg-data-neg-soft border-data-neg/40 text-data-neg'
         : 'bg-surface-sunken border-line text-ink-subtle'">
-      <span class="inline-flex items-center gap-2 text-micro font-medium">
-        <i class="fas fa-trash-can text-[11px]"></i> Remover
+      <!-- A palavra fica do lado para onde o card está sendo puxado: é de lá que a
+           pista aparece, e ler nos dois cantos ao mesmo tempo confundia. -->
+      <span class="inline-flex items-center gap-2 text-micro font-medium transition-opacity duration-120"
+        :class="paraDireita ? 'opacity-100' : 'opacity-0'">
+        <i class="fas fa-trash-can text-[11px]"></i> {{ vaiRemover ? 'Solte para remover' : 'Remover' }}
       </span>
-      <span class="inline-flex items-center gap-2 text-micro font-medium">
-        Remover <i class="fas fa-trash-can text-[11px]"></i>
+      <span class="inline-flex items-center gap-2 text-micro font-medium transition-opacity duration-120"
+        :class="paraDireita ? 'opacity-0' : 'opacity-100'">
+        {{ vaiRemover ? 'Solte para remover' : 'Remover' }} <i class="fas fa-trash-can text-[11px]"></i>
       </span>
     </div>
 
@@ -148,7 +177,7 @@ const estiloGesto = computed(() => {
       isUnread
         ? 'bg-accent-soft/40 border-accent/20'
         : 'bg-surface-raised border-line',
-      target.has
+      target.has && !arrastando
         ? 'cursor-pointer hover:border-accent/40 hover:shadow-soft hover:-translate-y-px active:translate-y-0'
         : 'cursor-default',
       target.has && !isUnread ? 'hover:bg-surface-sunken' : '',
