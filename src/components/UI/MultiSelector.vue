@@ -94,13 +94,20 @@ const search = ref('');
 let t;
 watch(searchRaw, (v) => { clearTimeout(t); t = setTimeout(() => (search.value = v), props.searchDebounce); });
 
-// lowercased cache
+// Normaliza para a BUSCA: minúsculo e SEM acento. Digitar "sao jose" tem que
+// achar "São José" — o filtro só fazia toLowerCase(), então o catálogo de
+// municípios do IBGE exigia o acento certo para a cidade aparecer.
+const semAcento = (v) => String(v ?? '')
+    .normalize('NFD').replace(/\p{M}/gu, '')
+    .toLowerCase();
+
+// cache normalizado
 const optionsLc = computed(() =>
-    (props.options || []).map(o => [o, (o ?? '').toString().toLowerCase()])
+    (props.options || []).map(o => [o, semAcento(o)])
 );
 
 const filteredOptions = computed(() => {
-    const s = (search.value || '').trim().toLowerCase();
+    const s = semAcento(search.value).trim();
     if (!s) return optionsLc.value.map(([orig]) => orig);
     const out = [];
     for (const [orig, low] of optionsLc.value) if (low.includes(s)) out.push(orig);
