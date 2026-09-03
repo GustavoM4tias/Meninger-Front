@@ -3,7 +3,7 @@
 Gerado por `_design/mapscreens.mjs` em 2026-09-03. Para atualizar os números depois de
 mexer nas telas, rode de novo e o checklist se refaz.
 
-- **66** telas pontuadas (+ 6 especiais fora do score)
+- **73** telas pontuadas (+ 6 especiais fora do score)
 - **Score médio: 99/100**
 - Score = esqueleto (50) + tokens (25) + tipografia (15) + tabela mobile (10) + gráfico com tema (10)
 
@@ -17,9 +17,14 @@ carga com `Skeleton`, alvo de toque >= 40px e PageHelp escrito.
 
 ---
 
-## Onda 3 - Acabamento  `2 telas`
+## Onda 3 - Acabamento  `3 telas`
 
 Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tabela.
+
+### Painel · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
+
+- [ ] **Relatório de Faturamento** `/comercial/relatorios/faturamento` · ` 94`
+      <sub>views/Office/Comercial/Faturamento/Index.vue · 5573L (+8 comp.) · 15 cor fixa, 1 gráfico</sub>
 
 ### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
 
@@ -31,7 +36,7 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
 - [ ] **Frota** `/frota` · ` 75`
       <sub>views/Office/Frota/Index.vue · 1744L (+9 comp.) · 64 cor fixa</sub>
 
-## Onda 4 - Manutenção  `64 telas`
+## Onda 4 - Manutenção  `70 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
 
@@ -43,6 +48,8 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Marketing/Leads/Index.vue · 3162L (+16 comp.) · 3 gráfico, 2 tabela</sub>
 - [ ] **E-mail** `/outlook` · `100`
       <sub>views/Office/Microsoft/Outlook/Index.vue · 4673L (+12 comp.) · 1 gráfico</sub>
+- [ ] **Vendas × Projeção** `/comercial/relatorios/projecao` · `100`
+      <sub>views/Office/Comercial/Sales-Projection/Index.vue · 2612L (+5 comp.) · 1 cor fixa, 1 gráfico</sub>
 
 ### Detalhe · parte do MÓVEL <sub>(mais usada por diretoria e lideranças)</sub>
 
@@ -85,6 +92,10 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Tools/BucketUpload/Index.vue · 481L · 1 tabela</sub>
 - [ ] **Visão Executiva** `/sobre/relatorio` · `100`
       <sub>views/Office/Sobre/Relatorio.vue · 247L · 1 tabela</sub>
+- [ ] **Pré-Cadastros** `/comercial/relatorios/precadastros` · `100`
+      <sub>views/Office/Comercial/Precadastros/Index.vue · 1020L (+2 comp.) · 1 tabela</sub>
+- [ ] **Reservas** `/comercial/relatorios/reservas` · `100`
+      <sub>views/Office/Comercial/Reservas/Index.vue · 1025L (+1 comp.) · 1 tabela</sub>
 
 ### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
 
@@ -146,7 +157,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Eventos** `/events` · `100`
       <sub>views/Office/Marketing/Events/Index.vue · 2336L (+9 comp.) · ok</sub>
 - [ ] **Relatorios** `/relatorios [Comercial/Relatorios]` · `100`
-      <sub>views/Office/Comercial/Relatorios/Shell.vue · 406L (+3 comp.) · ok</sub>
+      <sub>views/Office/Comercial/Relatorios/Shell.vue · 416L (+3 comp.) · ok</sub>
 - [ ] **Cancelamentos CV × Sienge** `/cancelamento-reservas` · `100`
       <sub>views/Office/Comercial/CancelamentoReservas/Index.vue · 1251L (+1 comp.) · ok</sub>
 - [ ] **Fichas Comerciais** `/conditions` · `100`
@@ -177,6 +188,12 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Docs/Docs.vue · 763L · ok</sub>
 - [ ] **Mapa do Sistema** `/sobre` · `100`
       <sub>views/Office/Sobre/Mapa.vue · 159L · ok</sub>
+- [ ] **Desempenho por Lead** `/comercial/relatorios/leads` · `100`
+      <sub>views/Office/Comercial/Relatorios/panels/LeadsPanel.vue · 268L (+2 comp.) · ok</sub>
+- [ ] **Desempenho por Imobiliária** `/comercial/relatorios/imobiliarias` · `100`
+      <sub>views/Office/Comercial/Relatorios/panels/ImobiliariasPanel.vue · 268L (+2 comp.) · ok</sub>
+- [ ] **Desempenho por Corretor** `/comercial/relatorios/corretores` · `100`
+      <sub>views/Office/Comercial/Relatorios/panels/CorretoresPanel.vue · 268L (+2 comp.) · ok</sub>
 
 ## Especiais  `6 telas`
 

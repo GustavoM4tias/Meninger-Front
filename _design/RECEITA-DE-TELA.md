@@ -273,6 +273,9 @@ cheia (o `Modal` já faz isso sozinho).
 9. `npx vite build`, 375px e 1440px, claro e escuro.
 10. Marcar a linha em `ui-checklist.md` e rodar
     `node _design/mapscreens.mjs .. && node _design/gen-checklist.mjs ..`.
+    Tela que entra por um catálogo de rotas (como as guias do Relatório
+    Comercial, em `relatorios.js`) é lida sozinha; catálogo NOVO entra em
+    `CATALOGOS`, no bloco 2b do `mapscreens.mjs` - a instrução está lá.
 
 ---
 

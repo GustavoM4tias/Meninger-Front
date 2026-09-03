@@ -1,6 +1,15 @@
 /**
  * Mapeia todas as telas do Office: rota -> arquivo -> métricas de aderência.
  * Saída: ui-map.json + ui-checklist.md
+ *
+ * DE ONDE VEM A LISTA DE TELAS (dois lugares, e os dois importam):
+ *   bloco 2   router/office.routes.js — toda rota com `import('@/views/...vue')`
+ *             escrito por extenso.
+ *   bloco 2b  CATALOGOS — arquivos que definem rotas em LOOP (o router faz
+ *             `RELATORIOS.map(...)`) e guardam o `import()` neles mesmos. O
+ *             router não tem o nome do arquivo, então o bloco 2 não os vê.
+ * Tela que não aparece no placar quase sempre entrou por um catálogo novo:
+ * ver o bloco 2b antes de mexer em qualquer outra coisa.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -59,6 +68,69 @@ const routes = [];
     const pathIdx = paths.length ? paths[paths.length - 1].index : -1;
     routes.push({ path: lastPath, name: nameIdx > pathIdx ? lastName : '', file: m[1] });
   }
+}
+
+/* ── 2b. Catálogos de rota: telas que o router NÃO importa por nome ───────── */
+/* O bloco 2 acha tela pelo texto literal `import('@/views/...vue')` dentro do
+   router. Só que o Relatório Comercial registra as guias dele em LOOP:
+
+       const relatorioRoutes = RELATORIOS.map((r) => ({ path: r.key, component: r.load, ... }))
+
+   e o `import()` de cada guia mora no CATÁLOGO (`relatorios.js`), não no
+   router. Foi assim que, em 2026-09-03, sete telas de verdade (Faturamento,
+   Vendas x Projeção, Pré-Cadastros, Reservas, Leads, Imobiliárias, Corretores)
+   sumiram do placar de uma vez, e a casca (`Shell.vue`, 130 linhas) pontuou
+   100 no lugar das sete. Este bloco lê os catálogos.
+
+   ┌─ COMO ADICIONAR OUTRO CATÁLOGO ──────────────────────────────────────────┐
+   │ Uma entrada em CATALOGOS:                                                │
+   │   arquivo  caminho relativo a src/ do catálogo                           │
+   │   casca    (opcional) o arquivo que dá PageContainer/PageHeader/PageHelp │
+   │            às guias que NÃO são `embedded`. A guia herda a casca no      │
+   │            score - sem isto ela perde 50 pontos por uma casca que existe.│
+   │ O que o leitor espera encontrar em cada entrada do catálogo:             │
+   │   route: '/rota/completa'      (como está no navRegistry)                │
+   │   pageTitle: '...'  ou  label: '...'                                     │
+   │   load: () => import('@/views/...vue')                                   │
+   │   embedded: true               (opcional: a tela traz a própria casca)   │
+   │ Depois rode o mapscreens e leia a linha "de catálogos: N" no fim. Se der │
+   │ 0 para um catálogo que existe, o FORMATO dele mudou e o leitor abaixo    │
+   │ precisa acompanhar - o script avisa com ⚠️, não falha calado.            │
+   └──────────────────────────────────────────────────────────────────────────┘ */
+const CATALOGOS = [
+  {
+    arquivo: 'views/Office/Comercial/Relatorios/relatorios.js',
+    casca: 'views/Office/Comercial/Relatorios/Shell.vue',
+  },
+];
+
+const ultimo = (lista) => (lista && lista.length ? lista[lista.length - 1] : null);
+let deCatalogos = 0;
+for (const cat of CATALOGOS) {
+  const abs = path.join(SRC, cat.arquivo);
+  if (!exists(abs)) { console.warn(`⚠️  catálogo não existe: ${cat.arquivo}`); continue; }
+  const src = read(abs);
+
+  /* Cada entrada é delimitada pelo seu `load:`. O que vem ANTES dele (route,
+     label, pageTitle) está no trecho entre o load anterior e este; o que vem
+     DEPOIS (embedded) está no trecho entre este load e o próximo - e esse
+     trecho só contém a cauda desta entrada e a cabeça da seguinte, que não tem
+     `embedded`, então não há como confundir. */
+  const loads = [...src.matchAll(/load:\s*\(\)\s*=>\s*import\('@\/(views\/[^']+\.vue)'\)/g)];
+  let lidas = 0;
+  loads.forEach((m, i) => {
+    const antes = src.slice(i ? loads[i - 1].index + loads[i - 1][0].length : 0, m.index);
+    const depois = src.slice(m.index + m[0].length, i + 1 < loads.length ? loads[i + 1].index : src.length);
+    const route = ultimo([...antes.matchAll(/route:\s*'([^']+)'/g)])?.[1];
+    const nome = ultimo([...antes.matchAll(/pageTitle:\s*'([^']+)'/g)])?.[1]
+      || ultimo([...antes.matchAll(/label:\s*'([^']+)'/g)])?.[1] || '';
+    if (!route) return;
+    const embedded = /embedded:\s*true/.test(depois);
+    routes.push({ path: route, name: nome, file: m[1], casca: embedded ? null : (cat.casca || null) });
+    lidas += 1;
+  });
+  if (!lidas) console.warn(`⚠️  catálogo sem nenhuma rota lida (formato mudou?): ${cat.arquivo}`);
+  deCatalogos += lidas;
 }
 
 /* ── 3. métricas por arquivo ────────────────────────────────────────────────── */
@@ -142,6 +214,11 @@ for (const r of routes) {
   const m = metrics(r.file);
   if (!m) continue;
 
+  /* Guia de catálogo que não é `embedded` vive DENTRO de uma casca: quem tem
+     PageContainer/PageHeader/PageHelp é o Shell, e a guia herda. É a mesma
+     ideia do "casca na árvore" logo abaixo, só que o pai não é um filho. */
+  const casca = r.casca ? metrics(r.casca) : null;
+
   // componentes irmãos: pasta do arquivo + subpasta components/
   const dir = path.dirname(path.join(SRC, r.file));
   /* Filhos = arquivos da PROPRIA pasta + tudo sob `components/`. O walk
@@ -192,9 +269,10 @@ for (const r of routes) {
        repasse de 8 linhas para um componente que TEM PageContainer/Header
        (ex.: /account -> components/Form.vue): pontuar so o arquivo da rota
        dizia "sem casca" para uma tela que tem. */
-    pageContainer: m.pageContainer || kidStats.some((k) => k.pageContainer),
-    pageHeader: m.pageHeader || kidStats.some((k) => k.pageHeader),
-    pageHelp: m.pageHelp || kidStats.some((k) => k.pageHelp),
+    casca: r.casca || null,
+    pageContainer: m.pageContainer || kidStats.some((k) => k.pageContainer) || !!casca?.pageContainer,
+    pageHeader: m.pageHeader || kidStats.some((k) => k.pageHeader) || !!casca?.pageHeader,
+    pageHelp: m.pageHelp || kidStats.some((k) => k.pageHelp) || !!casca?.pageHelp,
     skeleton: m.skeleton || kidStats.some((k) => k.skeleton),
     totalCharts: (m.chart ? 1 : 0) + kidStats.filter((k) => k.chart).length,
     /* Grafico SEM o tema compartilhado. Antes a penalidade era por existir
@@ -265,7 +343,8 @@ for (const [rota, lista] of porRota) {
 fs.writeFileSync(path.join(ROOT, 'ui-map.json'), /* Data REAL da geracao. Era literal '2026-08-20', entao o checklist
    jurava estar fresco meses depois. */
 JSON.stringify({ generated: new Date().toISOString().slice(0, 10), screens }, null, 2));
-console.log('telas:', screens.length);
+console.log('telas:', screens.length, '| de catálogos:', deCatalogos,
+  deCatalogos ? '' : '  ⚠️  ZERO - veja o bloco 2b');
 const scored = screens.filter((s) => s.score !== null);
 console.log('score medio:', Math.round(scored.reduce((a, s) => a + s.score, 0) / scored.length), '| pontuadas:', scored.length);
 const byArch = {};
