@@ -132,8 +132,20 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": null
   },
+  "/frota": {
+    "name": "Veículo",
+    "category": "Ferramentas",
+    "group": "OPERAÇÃO",
+    "subcategory": null
+  },
   "/validator": {
     "name": "Validador",
+    "category": "Ferramentas",
+    "group": "OPERAÇÃO",
+    "subcategory": null
+  },
+  "/comercial/aditivos": {
+    "name": "Aditivos",
     "category": "Ferramentas",
     "group": "OPERAÇÃO",
     "subcategory": null
@@ -242,6 +254,12 @@ export const OG_ROUTES = {
   },
   "/crm/configuracoes": {
     "name": "Configurações",
+    "category": "CV CRM",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
+  "/crm/integracoes": {
+    "name": "Integrações",
     "category": "CV CRM",
     "group": "RECURSOS",
     "subcategory": null
