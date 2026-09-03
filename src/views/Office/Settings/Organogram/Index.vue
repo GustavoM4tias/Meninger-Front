@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useCan } from '@/composables/useCan';
+import { useOrgCatalog } from '@/composables/useOrgCatalog';
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import API_URL from '@/config/apiUrl';
@@ -10,6 +11,7 @@ import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
@@ -23,11 +25,31 @@ const toast = useToast();
 const store = useAuthStore();
 const rootData = ref(null);
 const allUsersMap = ref({});
-const positionDescMap = ref({});
 const totalVisible = ref(0);
 
 const search = ref('');
 const selectedPerson = ref(null);
+
+// Catálogo de departamentos/cargos pela rota do próprio organograma: /admin/*
+// é requireAdmin e a tela é alçada — antes disto a descrição do cargo só
+// aparecia para admin, e para o resto o fetch falhava calado.
+const catalogo = useOrgCatalog({ source: 'organogram' });
+const positionDescMap = catalogo.descriptionByPositionName;
+
+// Filtro por departamento. NÃO muda a estrutura: recorta a mesma árvore,
+// preservando os ancestrais de quem casa (igual à busca).
+const filterDepartment = ref('');
+const departmentOptions = computed(() =>
+  catalogo.departmentOptions('Todos os departamentos')
+);
+// Departamento de uma pessoa = departamento do cargo dela.
+function departmentIdOf(positionName) {
+  return catalogo.departmentIdOfPosition(positionName);
+}
+function departmentNameOf(positionName) {
+  const id = departmentIdOf(positionName);
+  return id ? (catalogo.departmentById.value.get(Number(id))?.name || null) : null;
+}
 
 // ── Ajustes do organograma (camada de overrides) ───
 // { [user_id]: { display_parent_id, display_order, pos_x, pos_y } }. Sem nada aqui,
@@ -255,17 +277,30 @@ const hasManualPos = computed(() =>
   !!(selectedOverride.value && selectedOverride.value.pos_x != null && selectedOverride.value.pos_y != null)
 );
 
-// ── Search: filtra preservando ancestrais ──────────
-function filterTree(node, query) {
-  if (!query) return node;
-  const q = query.toLowerCase();
-  const matches = (n) => [n.data.name, n.data.title, n.data.city, n.data.email]
-    .filter(Boolean).some(s => s.toLowerCase().includes(q));
+// ── Recorte: busca + departamento, preservando ancestrais ──────────
+// A ÁRVORE NÃO MUDA: o filtro só esconde quem não casa. Quem casa continua
+// pendurado em quem é, mesmo que o gestor seja de outro departamento — por isso
+// os ancestrais são mantidos (senão o card ficaria solto, sugerindo hierarquia
+// que não existe).
+const semAcento = (v) => String(v ?? '')
+  .normalize('NFD').replace(/\p{M}/gu, '')
+  .toLowerCase();
+
+function filterTree(node, query, deptId) {
+  if (!query && !deptId) return node;
+  const q = semAcento(query).trim();
+
+  const matchesQuery = (n) => !q || [n.data.name, n.data.title, n.data.city, n.data.email]
+    .filter(Boolean).some(s => semAcento(s).includes(q));
+  // O nó-raiz "empresa" não tem departamento — nunca é ele que o filtro corta.
+  const matchesDept = (n) => !deptId || n.type === 'company'
+    || departmentIdOf(n.data.title) === String(deptId);
 
   function walk(n) {
     const filteredChildren = (n.children || []).map(walk).filter(Boolean);
-    if (matches(n) || filteredChildren.length) {
-      return { ...n, children: filteredChildren };
+    if ((matchesQuery(n) && matchesDept(n)) || filteredChildren.length) {
+      // `matched` distingue quem o filtro achou de quem só ficou como caminho.
+      return { ...n, matched: matchesQuery(n) && matchesDept(n), children: filteredChildren };
     }
     return null;
   }
@@ -274,7 +309,22 @@ function filterTree(node, query) {
 
 const filteredRoot = computed(() => {
   if (!rootData.value) return null;
-  return filterTree(rootData.value, search.value);
+  return filterTree(rootData.value, search.value, filterDepartment.value);
+});
+
+const hasFilter = computed(() => !!(search.value || filterDepartment.value));
+function clearFilters() { search.value = ''; filterDepartment.value = ''; }
+
+// Quantas pessoas o recorte atual mostra (o contador do topo é do total).
+const matchCount = computed(() => {
+  if (!hasFilter.value) return totalVisible.value;
+  let n = 0;
+  (function walk(node) {
+    if (!node) return;
+    if (node.type !== 'company' && node.matched) n++;
+    (node.children || []).forEach(walk);
+  })(filteredRoot.value);
+  return n;
 });
 
 const visibleChildren = computed(() => filteredRoot.value?.children || []);
@@ -316,7 +366,12 @@ async function runExport(format) {
         subtitle: `Menin Engenharia - ${nodes.filter(n => n.type !== 'company').length} pessoa(s)`,
         user: store.user?.username || localStorage.getItem('username') || 'Usuário',
         system: 'Menin Office',
-        note: search.value ? `Filtro aplicado na busca: "${search.value}"` : '',
+        note: [
+          search.value ? `Busca: "${search.value}"` : '',
+          filterDepartment.value
+            ? `Departamento: ${departmentOptions.value.find(o => o.value === filterDepartment.value)?.label || ''}`
+            : '',
+        ].filter(Boolean).join(' · '),
       },
     });
     exportOpen.value = false;
@@ -336,6 +391,7 @@ function selectPerson(personData) {
     ...personData,
     managerName: full?.manager?.username ?? null,
     positionDesc: positionDescMap.value[personData.title] || '',
+    departmentName: departmentNameOf(personData.title),
   };
   reparentTarget.value = overrideMap.value[personData.id]?.display_parent_id ?? '';
 }
@@ -343,20 +399,10 @@ function closePerson() { selectedPerson.value = null; }
 
 // ── Init ───────────────────────────────────────────
 onMounted(async () => {
-  const [, resPos] = await Promise.allSettled([
+  await Promise.allSettled([
     store.getAllUsers(),
-    fetch(`${API_URL}/admin/positions`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    }),
+    catalogo.load(),
   ]);
-
-  if (resPos.status === 'fulfilled') {
-    const posData = await resPos.value.json();
-    const posList = Array.isArray(posData) ? posData : (posData?.data || []);
-    positionDescMap.value = Object.fromEntries(
-      posList.filter(p => p?.active).map(p => [p.name, p.description || ''])
-    );
-  }
 
   await loadOverrides();
   buildTree();
@@ -383,15 +429,18 @@ onMounted(async () => {
             intro="A estrutura da equipe, montada a partir de quem responde a quem. Ela não é decorativa: é dela que saem as cadeias de aprovação e a visão de time em outras telas."
             :steps="[
               { title: 'Navegue', text: 'Busque uma pessoa para saltar direto até ela na árvore, em vez de abrir nível por nível.' },
+              { title: 'Recorte por departamento', text: 'O seletor ao lado da busca esconde quem é de outra área. A árvore não muda: quem aparece continua pendurado no gestor real, mesmo que ele seja de outro departamento.' },
               { title: 'Edite a hierarquia', text: 'No modo edição você muda a quem cada pessoa responde. A mudança vale para todo mundo, na hora.' },
             ]"
             :tips="[
               'Pessoa sem gestor definido fica solta na raiz — é o sinal de cadastro incompleto, não de cargo alto.',
+              'O departamento vem do CARGO da pessoa. Quem está sem cargo no cadastro não entra em departamento nenhum e some quando você filtra.',
               'Trocar o gestor de alguém muda também quem enxerga o time dela em outras telas.',
             ]" />
-          <Badge v-if="totalVisible > 0" variant="neutral" size="sm">
+          <Badge v-if="totalVisible > 0" :variant="hasFilter ? 'accent' : 'neutral'" size="sm">
             <i class="fas fa-users text-[9px]"></i>
-            {{ totalVisible }} pessoa(s)
+            <template v-if="hasFilter">{{ matchCount }} de {{ totalVisible }}</template>
+            <template v-else>{{ totalVisible }} pessoa(s)</template>
           </Badge>
           <Button size="sm" variant="secondary" icon="fas fa-file-export"
             :disabled="!hasResults" @click.stop="exportOpen = true">
@@ -403,7 +452,10 @@ onMounted(async () => {
             @click.stop="toggleEditMode">
             {{ editMode ? 'Concluir edição' : 'Editar layout' }}
           </Button>
-          <div class="w-56 sm:w-72" @click.stop>
+          <div class="w-44 sm:w-56" @click.stop>
+            <Select v-model="filterDepartment" :options="departmentOptions" size="sm" />
+          </div>
+          <div class="w-44 sm:w-72" @click.stop>
             <Input v-model="search" size="sm" placeholder="Buscar..."
               iconLeft="fas fa-magnifying-glass" />
           </div>
@@ -420,11 +472,11 @@ onMounted(async () => {
           icon="fas fa-sitemap" title="Nenhum colaborador no organograma"
           description='Acesse o painel de usuários e ative "Exibir no organograma" para cada colaborador.' />
 
-        <EmptyState v-else-if="search && !hasResults" size="lg"
+        <EmptyState v-else-if="hasFilter && !hasResults" size="lg"
           icon="fas fa-magnifying-glass" title="Nenhum resultado"
-          :description="`Nenhuma pessoa corresponde a &quot;${search}&quot;.`">
+          description="Nenhuma pessoa do organograma corresponde ao filtro atual.">
           <template #actions>
-            <Button variant="secondary" @click="search = ''">Limpar busca</Button>
+            <Button variant="secondary" @click="clearFilters">Limpar filtros</Button>
           </template>
         </EmptyState>
 
@@ -472,7 +524,7 @@ onMounted(async () => {
           <li><i class="fas fa-check text-accent mr-1.5"></i>Sai a árvore inteira, sem depender do zoom ou do tamanho da tela.</li>
           <li><i class="fas fa-check text-accent mr-1.5"></i>Fundo claro e resolução 3x - dá para ampliar sem borrar.</li>
           <li><i class="fas fa-check text-accent mr-1.5"></i>Rodapé com quem gerou, data/hora e o sistema.</li>
-          <li v-if="search"><i class="fas fa-filter text-data-warn mr-1.5"></i>A busca atual está filtrando o organograma e vai junto no arquivo.</li>
+          <li v-if="hasFilter"><i class="fas fa-filter text-data-warn mr-1.5"></i>O filtro atual está recortando o organograma e vai junto no arquivo.</li>
         </ul>
       </div>
     </Modal>
@@ -543,6 +595,12 @@ onMounted(async () => {
         </div>
 
         <ul class="space-y-1.5 text-sm">
+          <li v-if="selectedPerson?.departmentName" class="flex items-center gap-2.5 text-ink-muted">
+            <div class="h-7 w-7 rounded-lg bg-surface-sunken border border-line grid place-items-center shrink-0">
+              <i class="fas fa-building-user text-ink-subtle text-xs"></i>
+            </div>
+            <span class="truncate text-xs">{{ selectedPerson.departmentName }}</span>
+          </li>
           <li v-if="selectedPerson?.city" class="flex items-center gap-2.5 text-ink-muted">
             <div class="h-7 w-7 rounded-lg bg-surface-sunken border border-line grid place-items-center shrink-0">
               <i class="fas fa-location-dot text-ink-subtle text-xs"></i>

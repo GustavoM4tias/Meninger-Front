@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watchEffect, onMounted, computed } from 'vue';
+import { ref, watch, watchEffect, onMounted, computed } from 'vue';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
+import { useOrgCatalog } from '@/composables/useOrgCatalog';
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { adminResetUserPassword, activateUser, rejectUser } from '@/utils/Auth/apiAuth';
@@ -37,11 +38,29 @@ const editableUser = ref(props.user ? { ...props.user } : { ...baseUser });
 const allUsers = ref([]);
 const password = ref('');
 const passwordConfirm = ref('');
-const positionsOptions = ref([]);
-const positionsRaw = ref([]);   // cargos com o departamento (para a ativação)
-const positionDescMap = ref({});
 const citiesRaw = ref([]);   // catálogo completo (IBGE) — busca no seletor
 const permissionProfiles = ref([]);
+
+// ── Departamento → Cargo (cascata) ──────────────────
+// Cargo pertence a departamento. Escolher o departamento primeiro reduz a
+// lista de 30+ cargos de toda a empresa para os da área — ver
+// composables/useOrgCatalog.js.
+const catalogo = useOrgCatalog({ onlyInternal: true });
+const positionDescMap = catalogo.descriptionByPositionName;
+
+const selectedDepartment = ref('');
+const departmentOptions = computed(() => catalogo.departmentOptions('Todos os departamentos'));
+const positionsOptions = computed(() =>
+  catalogo.positionOptions(selectedDepartment.value, { valueKey: 'name' })
+);
+
+// Trocar de departamento só limpa o cargo se ele não for mais daquela área —
+// voltar para "Todos" nunca apaga a escolha que já estava gravada.
+watch(selectedDepartment, (dep) => {
+  if (!catalogo.positionFitsDepartment(editableUser.value.position, dep)) {
+    editableUser.value.position = '';
+  }
+});
 
 // Rótulo "Cidade - UF" (único) ↔ registro do catálogo.
 const cityLabel = (c) => (c.uf ? `${c.name} - ${c.uf}` : c.name);
@@ -78,11 +97,10 @@ const isPending = computed(() => isEdit.value && props.user?.approval_status ===
 const isIncomplete = computed(() => isEdit.value && props.user?.approval_status === 'incomplete');
 
 // Departamento escolhido pelo usuário no formulário de primeiro acesso
-const departmentsList = ref([]);
 const signupDepartmentName = computed(() => {
   const id = props.user?.signup_department_id;
   if (!id) return null;
-  return departmentsList.value.find(d => Number(d.id) === Number(id))?.name || null;
+  return catalogo.departmentById.value.get(Number(id))?.name || null;
 });
 
 watchEffect(() => {
@@ -100,21 +118,16 @@ onMounted(async () => {
     allUsers.value = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
 
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
-    const [resPos, resCity] = await Promise.allSettled([
-      fetch(`${API_URL}/admin/positions`,   { headers }),
+    const [, resCity] = await Promise.allSettled([
+      catalogo.load(),
       fetch(`${API_URL}/admin/user-cities`, { headers }),
     ]);
 
-    if (resPos.status === 'fulfilled') {
-      const data = await resPos.value.json();
-      const list = Array.isArray(data) ? data : (data?.data || []);
-      const active = list.filter(p => p?.active && p?.is_internal);
-      positionsRaw.value = active;
-      positionsOptions.value = active
-        .map(p => ({ label: p.name, value: p.name }))
-        .sort((a, b) => a.label.localeCompare(b.label));
-      positionDescMap.value = Object.fromEntries(active.map(p => [p.name, p.description || '']));
-    }
+    // Abrindo um cadastro que já tem cargo, o departamento vem DEDUZIDO dele.
+    // Cadastro novo de primeiro acesso já traz o departamento que a pessoa
+    // escolheu no formulário — é justamente por ele que o admin escolhe o cargo.
+    selectedDepartment.value = catalogo.departmentIdOfPosition(editableUser.value.position)
+      || (props.user?.signup_department_id ? String(props.user.signup_department_id) : '');
 
     if (resCity.status === 'fulfilled') {
       const data = await resCity.value.json();
@@ -128,17 +141,10 @@ onMounted(async () => {
     // ativação) + departamentos (para mostrar o escolhido no cadastro)
     if (isAdmin.value && isPending.value) {
       try {
-        const [resProfiles, resDepts] = await Promise.allSettled([
-          fetch(`${API_URL}/permissions/profiles`, { headers }),
-          fetch(`${API_URL}/admin/departments`, { headers }),
-        ]);
-        if (resProfiles.status === 'fulfilled' && resProfiles.value.ok) {
-          const data = await resProfiles.value.json();
+        const resProfiles = await fetch(`${API_URL}/permissions/profiles`, { headers });
+        if (resProfiles.ok) {
+          const data = await resProfiles.json();
           permissionProfiles.value = Array.isArray(data) ? data : [];
-        }
-        if (resDepts.status === 'fulfilled' && resDepts.value.ok) {
-          const data = await resDepts.value.json();
-          departmentsList.value = Array.isArray(data) ? data : (data?.data || []);
         }
       } catch { /* segue sem preview de alçadas */ }
     }
@@ -237,10 +243,11 @@ const routeNameMap = (() => {
   return map;
 })();
 
-// Departamento derivado do cargo escolhido no formulário
+// Departamento derivado do cargo escolhido no formulário (é ele que define as
+// alçadas padrão aplicadas na ativação — não o que a pessoa marcou no cadastro).
 const activationDepartment = computed(() => {
-  const pos = positionsRaw.value.find(p => p.name === editableUser.value.position);
-  return pos?.department || null;
+  const id = catalogo.departmentIdOfPosition(editableUser.value.position);
+  return id ? (catalogo.departmentById.value.get(Number(id)) || null) : null;
 });
 
 // Perfil de alçadas padrão vinculado ao departamento (se existir)
@@ -421,6 +428,8 @@ async function saveUser() {
       <section>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-2.5">Cargo e localização</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <UiSelect v-model="selectedDepartment" :options="departmentOptions"
+            label="Departamento" />
           <UiSelect v-model="editableUser.position" :options="positionsOptions"
             label="Cargo" placeholder="Selecione o cargo" />
           <div>

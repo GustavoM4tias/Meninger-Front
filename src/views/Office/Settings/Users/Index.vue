@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
+import { useOrgCatalog } from '@/composables/useOrgCatalog';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import { useMicrosoftStore } from '@/stores/Microsoft/microsoftStore';
@@ -36,6 +37,7 @@ const users = ref([]);
 const searchQuery = ref('');
 const searchField = ref('username');
 const filterCity = ref('');
+const filterDepartment = ref('');
 const filterPosition = ref('');
 const filterStatus = ref('active'); // '' (todos) | 'active' | 'inactive'
 const editableUser = ref(null);
@@ -79,10 +81,27 @@ const cityOptions = computed(() => [
   ...[...new Set(users.value.map(u => u.city).filter(Boolean))].map(c => ({ value: c, label: c })),
 ]);
 
-const positionOptions = computed(() => [
-  { value: '', label: 'Todos' },
-  ...[...new Set(users.value.map(u => u.position).filter(Boolean))].map(p => ({ value: p, label: p })),
-]);
+// ─── Departamento → Cargo (cascata) ──────────────────
+// Mesmo padrão do cadastro: escolher o departamento encurta a lista de cargos.
+// A lista de cargos sai do CATÁLOGO (não dos usuários) para não sumir com um
+// cargo só porque ninguém está nele — e para saber a que departamento pertence.
+const catalogo = useOrgCatalog({ onlyInternal: true });
+const departmentOptions = computed(() => catalogo.departmentOptions('Todos'));
+
+const positionOptions = computed(() => {
+  const doCatalogo = catalogo.positionOptions(filterDepartment.value, { valueKey: 'name' });
+  // Cargo legado que existe só na string do usuário (cadastro antigo) continua
+  // filtrável enquanto nenhum departamento estiver escolhido.
+  const conhecidos = new Set(doCatalogo.map(o => o.value));
+  const soltos = filterDepartment.value ? [] : [...new Set(
+    users.value.map(u => u.position).filter(p => p && !conhecidos.has(p))
+  )].map(p => ({ value: p, label: p }));
+  return [{ value: '', label: 'Todos' }, ...doCatalogo, ...soltos];
+});
+
+watch(filterDepartment, (dep) => {
+  if (!catalogo.positionFitsDepartment(filterPosition.value, dep)) filterPosition.value = '';
+});
 
 const filteredUsers = computed(() => {
   const q = (searchQuery.value || '').toLowerCase();
@@ -90,6 +109,8 @@ const filteredUsers = computed(() => {
   return users.value.filter(u => {
     const matchesSearch = String(u?.[field] ?? '').toLowerCase().includes(q);
     const matchesCity = !filterCity.value || u.city === filterCity.value;
+    const matchesDepartment = !filterDepartment.value
+      || catalogo.departmentIdOfPosition(u.position) === filterDepartment.value;
     const matchesPosition = !filterPosition.value || u.position === filterPosition.value;
     const matchesStatus = filterStatus.value === ''
       || (filterStatus.value === 'pending'
@@ -98,7 +119,7 @@ const filteredUsers = computed(() => {
     // Pendentes de aprovação sempre aparecem no filtro padrão "Ativo":
     // são justamente os que o admin precisa ver para liberar.
     const visible = matchesStatus || (filterStatus.value === 'active' && isPendingUser(u));
-    return matchesSearch && matchesCity && matchesPosition && visible;
+    return matchesSearch && matchesCity && matchesDepartment && matchesPosition && visible;
   });
 });
 
@@ -119,7 +140,8 @@ function startEditing(user) { editableUser.value = { ...user }; showUserModal.va
 function startCreating() { editableUser.value = null; showUserModal.value = true; }
 function closeModal() { editableUser.value = null; showUserModal.value = false; }
 function clearFilters() {
-  searchQuery.value = ''; filterCity.value = ''; filterPosition.value = ''; filterStatus.value = '';
+  searchQuery.value = ''; filterCity.value = ''; filterDepartment.value = '';
+  filterPosition.value = ''; filterStatus.value = '';
 }
 
 function goToPermissions(user) {
@@ -146,7 +168,7 @@ function avatarUrl(user) {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchUsers(), microsoftStore.fetchStatus()]);
+  await Promise.all([fetchUsers(), microsoftStore.fetchStatus(), catalogo.load()]);
   // Deep-link vindo da notificação/e-mail de cadastro pendente:
   // /settings/users?user=<id> abre o modal do usuário direto.
   const qid = Number(route.query.user);
@@ -244,9 +266,10 @@ onMounted(async () => {
             <Input v-model="searchQuery" placeholder="Buscar usuário..."
               iconLeft="fas fa-magnifying-glass" />
 
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
               <Select v-model="searchField" :options="fieldOptions" label="Buscar por" />
               <Select v-model="filterCity" :options="cityOptions" label="Cidade" />
+              <Select v-model="filterDepartment" :options="departmentOptions" label="Departamento" />
               <Select v-model="filterPosition" :options="positionOptions" label="Cargo" />
               <Select v-model="filterStatus" :options="statusOptions" label="Status" />
               <div class="flex items-end">

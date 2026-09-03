@@ -3,8 +3,8 @@ import { ref, computed, watch } from 'vue';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useOrgCatalog } from '@/composables/useOrgCatalog';
 import { updateMeInfo } from '@/utils/Auth/apiAuth';
-import API_URL from '@/config/apiUrl';
 
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
@@ -47,29 +47,30 @@ function fillEditableUser() {
 
 watch(() => authStore.user, fillEditableUser, { immediate: true });
 
-// ─── Positions ───────────────────────────────────────
-const positionsOptions = ref([]);
-const positionDescMap = ref({});
+// ─── Departamento → Cargo ────────────────────────────
+// Campo de admin (o usuário comum vê o cargo travado). Mesma cascata do
+// cadastro: o departamento encurta a lista de cargos.
+const catalogo = useOrgCatalog({ onlyInternal: true });
+const positionDescMap = catalogo.descriptionByPositionName;
 const selectedPositionDesc = computed(() =>
   editableUser.value.position ? positionDescMap.value[editableUser.value.position] || '' : ''
 );
 
-async function loadPositions() {
-  try {
-    const res = await fetch(`${API_URL}/admin/positions`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : (data?.data || []);
-    const active = list.filter(p => p?.active && p?.is_internal);
-    positionsOptions.value = active
-      .map(p => ({ label: p.name, value: p.name }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-    positionDescMap.value = Object.fromEntries(active.map(p => [p.name, p.description || '']));
-  } catch { /* silencioso */ }
-}
+const selectedDepartment = ref('');
+const departmentOptions = computed(() => catalogo.departmentOptions('Todos os departamentos'));
+const positionsOptions = computed(() =>
+  catalogo.positionOptions(selectedDepartment.value, { valueKey: 'name' })
+);
 
-loadPositions();
+watch(selectedDepartment, (dep) => {
+  if (!catalogo.positionFitsDepartment(editableUser.value.position, dep)) {
+    editableUser.value.position = '';
+  }
+});
+
+catalogo.load().then(() => {
+  selectedDepartment.value = catalogo.departmentIdOfPosition(editableUser.value.position);
+});
 
 // ─── Avatar / metadata ───────────────────────────────
 const avatarUrl = computed(() => {
@@ -198,6 +199,8 @@ async function updateUser() {
 
         <!-- Cargo (admin only) -->
         <div v-if="isAdmin" class="md:col-span-2 space-y-1.5">
+          <UiSelect v-if="!isDisabled" v-model="selectedDepartment" :options="departmentOptions"
+            label="Departamento" class="mb-1.5" />
           <UiSelect v-if="!isDisabled" v-model="editableUser.position" :options="positionsOptions"
             label="Cargo" placeholder="Selecione o cargo" required />
           <Input v-else v-model="editableUser.position" disabled label="Cargo" placeholder="Seu cargo" />
