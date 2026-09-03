@@ -123,9 +123,16 @@ const costCenterOfSale = (sale) =>
     null
   );
 
+/* Quem assinou a venda e o titular do CONTRATO, no Sienge - e e esse nome que
+ * sai no Excel. A reserva do CV e contexto e chega casada por UNIDADE
+ * (`rp_by_unit` no contractSalesController), entao uma unidade distratada e
+ * revendida devolve a reserva do comprador NOVO: com a prioridade invertida, o
+ * contrato distratado aparecia na tela com o nome de quem comprou depois
+ * (contrato 18848, QD 11 - LT 07 dos Anjos, maio/2026). O CV so entra quando o
+ * Sienge nao tem nome. */
 const customerNameOf = (sale) =>
-  reservaOf(sale)?.titular?.nome ||
   sale?.customer_name ||
+  reservaOf(sale)?.titular?.nome ||
   reservaOf(sale)?.cliente?.nome ||
   reservaOf(sale)?.comprador ||
   '—';
@@ -396,6 +403,12 @@ const filteredSales = computed(() => {
   return list.filter((sale) => {
     return (
       has(customerNameOf(sale)) ||
+      // Os DOIS nomes entram na busca: o do contrato (Sienge) e o da reserva
+      // (CV) divergem em acento, em grafia e - quando a unidade foi revendida -
+      // na pessoa. Procurar so pelo exibido deixava o registro invisivel para
+      // quem digitava o nome que saiu no Excel.
+      has(sale.customer_name) ||
+      has(reservaOf(sale)?.titular?.nome) ||
       has(sale.unit_name) ||
       has(reservaUnitOf(sale)) ||
       has(sale.contracts?.[0]?.associates?.[0]?.name) ||
