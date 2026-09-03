@@ -719,9 +719,17 @@ async function copyLink() {
             <div class="rounded-lg border border-line bg-surface-sunken/40 p-3">
               <p class="text-micro uppercase tracking-wider text-ink-subtle font-semibold mb-1">Valor</p>
               <p class="text-xl font-bold text-ink font-mono tabular-nums">{{ formatCurrency(live?.valor) }}</p>
+              <!-- A conta que gerou o valor: o ato cheio, quanto dele era
+                   comissão da imobiliária, e o que sobrou para cobrar. -->
               <p v-if="live?.valor_original && Number(live.valor_original) !== Number(live.valor)"
                 class="text-ink-subtle mt-1">
-                Original: {{ formatCurrency(live.valor_original) }} · Comissão {{ live.comissao_percentual_aplicada }}%
+                Ato: {{ formatCurrency(live.valor_original) }} ·
+                <template v-if="live.comissao_valor_deduzida != null">
+                  comissão fora do contrato {{ formatCurrency(live.comissao_valor_deduzida) }}
+                </template>
+                <template v-else>
+                  comissão {{ live.comissao_percentual_aplicada }}%
+                </template>
               </p>
             </div>
             <div class="rounded-lg border border-line bg-surface-sunken/40 p-3">

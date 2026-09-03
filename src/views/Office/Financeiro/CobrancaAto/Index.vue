@@ -34,11 +34,13 @@
               { title: 'Conciliação: confira o que entrou', text: 'É o relatório “Contas Recebidas” do Sienge no documento AVC, lido ao vivo da API, com filtro de período (data do recebimento), empresa e empreendimento. Serve para bater com o ERP sem abrir o ERP.' },
               { title: 'Leia os quatro grupos', text: 'O confronto com o ato já vem ligado e separa tudo em: conciliados, o que falta lançar no Sienge, o que foi abatido sem ato correspondente, e os que bateram mas com valor diferente. Passe o mouse no selo da coluna Ato, ou abra a linha, para ver de quanto é a diferença.' },
               { title: 'Ataque a lista “Falta lançar”', text: 'É o ato que o cliente já pagou e que ninguém lançou no Sienge ainda - a fila do administrativo. Ela traz cliente, unidade, valor e reserva, e vai junto no CSV do botão Exportar.' },
-              { title: 'Configurações: ajuste a automação', text: 'Guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o percentual de comissão por empreendimento e o envio ao cliente.' },
+              { title: 'Configurações: ajuste a automação', text: 'Guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o cálculo da comissão embutida e o envio ao cliente.' },
             ]"
             :tips="[
               'A automação pode ser pausada sem perder nada: os webhooks que chegarem ficam registrados e voltam a ser processados quando ela for religada.',
-              'A comissão embutida multiplica o valor da série antes de emitir. Série de R$ 10.000 com 20% vira um boleto de R$ 2.000.',
+              'Em alguns empreendimentos a série do ato vem com a comissão da imobiliária dentro. Ligando “deduzir a comissão do CV” naquele empreendimento, a cobrança passa a ser o ato menos a comissão fora do contrato que o CV informa na reserva: ato de R$ 27.310,66 com R$ 21.848,51 de comissão vira uma cobrança de R$ 5.462,15, o mesmo número da coluna “sem comissão fora do contrato” do CV.',
+              'Antes de ligar essa dedução num empreendimento, abra as condições de uma reserva dele no CV: ela só serve quando a coluna “sem comissão fora do contrato” muda apenas na linha do ato. Onde a comissão está espalhada nas parcelas, use o percentual fixo ou o valor cheio.',
+              'Quando a comissão é maior que o ato, não sobra nada a cobrar: a emissão para, e a reserva recebe mensagem de divergência em vez de um boleto de valor inventado.',
               'Boleto fora da janela de horário não falha: fica agendado, e a tabela mostra a hora em que vai sair.',
               'O selo com um número ao lado da reserva quer dizer que já houve mais de um boleto para ela.',
               'A Conciliação lê a API do Sienge AO VIVO, não o backup diário: um recebimento lançado há cinco minutos já aparece. O rodapé da aba diz a fonte e a hora exata da consulta.',
@@ -315,13 +317,33 @@
               <div>
                 <h2 class="font-semibold text-sm">Comissão Embutida por Empreendimento</h2>
                 <p class="text-ink-muted">
-                  Quando o valor da série já inclui a comissão, defina aqui o % do valor que deve ir para o boleto.
+                  A série do ato traz junto a comissão que o cliente paga à imobiliária. Aqui se define quanto dela sai da cobrança.
                 </p>
               </div>
             </div>
             <Button variant="primary" size="sm" icon="fas fa-plus" @click="openRuleModal()">
               Nova regra
             </Button>
+          </div>
+
+          <!-- Padrão geral: vale para todo empreendimento sem regra própria.
+               O CV informa a comissão fora do contrato reserva a reserva, então
+               este é o cálculo exato; "valor cheio" é o comportamento antigo. -->
+          <div class="rounded-xl border border-line bg-surface-sunken/60 p-3 space-y-2">
+            <Select
+              :model-value="form.comissao_modo"
+              :options="comissaoModoOptions"
+              label="Como calcular o valor da cobrança (padrão geral)"
+              :disabled="salvandoComissaoModo"
+              @update:model-value="onChangeComissaoModo" />
+            <p class="text-ink-subtle">
+              <template v-if="form.comissao_modo === 'cv'">
+                Cobra a série do ato menos a comissão fora do contrato que o CV informa na reserva. Só serve onde a comissão cai toda no ato: confira na tela de condições do CV antes de ligar para todos.
+              </template>
+              <template v-else>
+                Cobra a série do ato inteira, sem descontar comissão. Quem desconta é só o empreendimento com regra própria.
+              </template>
+            </p>
           </div>
 
           <p v-if="store.rulesError" class="text-data-neg flex items-center gap-1.5">
@@ -333,7 +355,7 @@
           </div>
 
           <div v-else-if="!store.rules.length" class="text-ink-subtle italic py-2">
-            Nenhuma regra cadastrada. Todos os empreendimentos usam o valor cheio da série.
+            Nenhuma regra cadastrada. Todos os empreendimentos seguem o padrão geral acima.
           </div>
 
           <div v-else class="overflow-x-auto -mx-3">
@@ -342,6 +364,7 @@
                 <tr class="bg-surface-sunken/60 border-b border-line">
                   <th class="text-left px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">ID Emp.</th>
                   <th class="text-left px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">Empreendimento</th>
+                  <th class="text-left px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">Cálculo</th>
                   <th class="text-right px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">% Boleto</th>
                   <th class="text-center px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">Máx dias</th>
                   <th class="text-left px-3 py-2 text-micro font-mono uppercase tracking-wider text-ink-subtle">Observação</th>
@@ -354,8 +377,19 @@
                   class="border-b border-line/60 hover:bg-surface-hover/40 transition-colors">
                   <td class="px-3 py-2 font-mono text-accent">{{ rule.idempreendimento_cv }}</td>
                   <td class="px-3 py-2 text-ink">{{ rule.empreendimento_nome || '—' }}</td>
+                  <td class="px-3 py-2">
+                    <Badge :variant="modoDaRegra(rule) === 'percentual' ? 'warning' : 'info'" size="sm">
+                      {{ modoLabel(rule) }}
+                    </Badge>
+                    <span v-if="modoHerdado(rule)" class="text-ink-subtle ml-1.5">herdado</span>
+                  </td>
                   <td class="px-3 py-2 text-right font-mono tabular-nums font-semibold">
-                    {{ Number(rule.percentual_boleto).toFixed(2) }}%
+                    <template v-if="modoDaRegra(rule) === 'percentual'">
+                      {{ Number(rule.percentual_boleto).toFixed(2) }}%
+                    </template>
+                    <span v-else class="text-ink-subtle italic font-sans" title="O valor sai da comissão informada pelo CV, não deste percentual.">
+                      não usado
+                    </span>
                   </td>
                   <td class="px-3 py-2 text-center font-mono text-xs">
                     <template v-if="rule.max_dias_vencimento">
@@ -393,7 +427,7 @@
              fecha no Esc e fica na camada certa. -->
         <Modal :open="ruleModal.open" size="md"
           :title="ruleModal.id ? 'Editar regra' : 'Nova regra de comissão'"
-          subtitle="O valor da série é multiplicado por este percentual antes de virar boleto."
+          subtitle="Como descontar, nesta reserva, a comissão que vem embutida na série do ato."
           @close="closeRuleModal">
           <div class="space-y-4">
 
@@ -417,7 +451,15 @@
               <p class="text-ink-subtle mt-1">O empreendimento não pode ser alterado em uma regra existente.</p>
             </div>
 
+            <Select
+              :model-value="ruleModal.form.modo || ''"
+              :options="regraModoOptions"
+              label="Cálculo do valor"
+              hint="Deduzir do CV usa a conta da própria reserva e acompanha ato negociado e venda à vista, mas só vale onde a comissão cai toda no ato. O percentual fixo só fecha enquanto o ato for sempre a mesma fração do contrato."
+              @update:model-value="v => ruleModal.form.modo = v || null" />
+
             <Input
+              v-if="modoDaRegra(ruleModal.form) === 'percentual'"
               v-model.number="ruleModal.form.percentual_boleto"
               type="number"
               step="0.01"
@@ -949,6 +991,7 @@ const form = ref({
   cv_situacoes_reserva_morta: [4],
   max_dias_vencimento: 10,
   valor_maximo: 300000,
+  comissao_modo: 'nenhum',
   janela_ativa: true,
   janela_inicio_hora: 6,
   janela_fim_hora: 23,
@@ -1240,12 +1283,70 @@ function paymentBadgeLabel(s) {
 }
 
 // ── Regras de Comissão por Empreendimento ─────────────────────────────────────
+// Duas formas de achar quanto da série é da incorporadora: a comissão que o CV
+// informa na reserva (exata, por venda) ou um percentual fixo do empreendimento
+// (só fecha enquanto o ato for sempre a mesma fração do contrato).
+const comissaoModoOptions = [
+  { value: 'nenhum', label: 'Emitir o valor cheio da série' },
+  { value: 'cv', label: 'Deduzir a comissão informada pelo CV' },
+];
+
+const regraModoOptions = [
+  { value: '', label: 'Usar o padrão geral' },
+  { value: 'cv', label: 'Deduzir a comissão informada pelo CV' },
+  { value: 'percentual', label: 'Percentual fixo da série' },
+];
+
+// Regra sem modo escolhido: percentual gravado continua mandando (era assim
+// antes do campo existir); sem percentual, herda o padrão geral.
+const modoDaRegra = (rule) => {
+  if (rule?.modo) return rule.modo;
+  const pct = Number(rule?.percentual_boleto);
+  if (Number.isFinite(pct) && pct >= 0 && pct < 100) return 'percentual';
+  return form.value.comissao_modo || 'nenhum';
+};
+
+const modoLabel = (rule) => ({
+  cv: 'Comissão do CV',
+  percentual: 'Percentual fixo',
+  nenhum: 'Valor cheio',
+}[modoDaRegra(rule)] || 'Valor cheio');
+
+// Herda de verdade quem não tem modo escolhido nem percentual gravado.
+const modoHerdado = (rule) => {
+  if (rule?.modo) return false;
+  const pct = Number(rule?.percentual_boleto);
+  return !(Number.isFinite(pct) && pct >= 0 && pct < 100);
+};
+
+const salvandoComissaoModo = ref(false);
+
+async function onChangeComissaoModo(valor) {
+  if (!valor || valor === form.value.comissao_modo) return;
+  const anterior = form.value.comissao_modo;
+  const alvo = comissaoModoOptions.find(o => o.value === valor)?.label || valor;
+  const quantas = store.rules.filter(modoHerdado).length;
+  const ok = await pedirConfirmacao({
+    title: `Mudar o cálculo padrão para "${alvo}"?`,
+    consequence: valor === 'cv'
+      ? `As próximas cobranças de todo empreendimento sem regra própria passam a descontar a comissão que o CV informa em cada reserva${quantas ? `, mais ${quantas} regra(s) que herdam o padrão` : ''}. As já emitidas continuam como estão.`
+      : `As próximas cobranças de todo empreendimento sem regra própria passam a sair pelo valor cheio da série, com a comissão dentro${quantas ? `, mais ${quantas} regra(s) que herdam o padrão` : ''}. As já emitidas continuam como estão.`,
+    confirmLabel: 'Mudar o cálculo',
+  });
+  if (!ok) return;
+  form.value.comissao_modo = valor;
+  salvandoComissaoModo.value = true;
+  await store.saveSettings({ comissao_modo: valor });
+  salvandoComissaoModo.value = false;
+  if (store.settingsError) form.value.comissao_modo = anterior;
+}
+
 const ruleModal = ref({
   open: false,
   id: null,
   saving: false,
   error: '',
-  form: { idempreendimento_cv: null, empreendimento_nome: '', percentual_boleto: 100, max_dias_vencimento: null, observacao: '', active: true },
+  form: { idempreendimento_cv: null, empreendimento_nome: '', modo: null, percentual_boleto: 100, max_dias_vencimento: null, observacao: '', active: true },
 });
 
 // Opções para o select de empreendimentos no modal.
@@ -1279,6 +1380,7 @@ function openRuleModal(rule = null) {
       form: {
         idempreendimento_cv: rule.idempreendimento_cv,
         empreendimento_nome: rule.empreendimento_nome || '',
+        modo: rule.modo || null,
         percentual_boleto: Number(rule.percentual_boleto),
         max_dias_vencimento: rule.max_dias_vencimento ?? null,
         observacao: rule.observacao || '',
@@ -1288,7 +1390,7 @@ function openRuleModal(rule = null) {
   } else {
     ruleModal.value = {
       open: true, id: null, saving: false, error: '',
-      form: { idempreendimento_cv: null, empreendimento_nome: '', percentual_boleto: 100, max_dias_vencimento: null, observacao: '', active: true },
+      form: { idempreendimento_cv: null, empreendimento_nome: '', modo: null, percentual_boleto: 100, max_dias_vencimento: null, observacao: '', active: true },
     };
   }
 }
@@ -1303,7 +1405,8 @@ async function saveRule() {
     ruleModal.value.error = 'Informe o ID do empreendimento.';
     return;
   }
-  if (f.percentual_boleto == null || f.percentual_boleto < 0 || f.percentual_boleto > 100) {
+  if (modoDaRegra(f) === 'percentual'
+    && (f.percentual_boleto == null || f.percentual_boleto < 0 || f.percentual_boleto > 100)) {
     ruleModal.value.error = 'Percentual deve estar entre 0 e 100.';
     return;
   }
@@ -1320,7 +1423,7 @@ async function saveRule() {
 async function confirmDeleteRule(rule) {
   if (!await pedirConfirmacao({
     title: `Excluir a regra de ${rule.empreendimento_nome || rule.idempreendimento_cv}?`,
-    consequence: 'Os boletos ja emitidos continuam como estao. Os proximos deste empreendimento passam a usar a regra geral.',
+    consequence: 'As cobrancas ja emitidas continuam como estao. As proximas deste empreendimento passam a usar o calculo padrao da tela.',
     confirmLabel: 'Excluir regra',
   })) return;
   await store.deleteComissionRule(rule.id);
@@ -1356,6 +1459,7 @@ onMounted(async () => {
       form.value.cv_situacoes_reserva_morta = [...(store.settings.cv_situacoes_reserva_morta || [4])];
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
+      form.value.comissao_modo = store.settings.comissao_modo || 'nenhum';
       form.value.janela_ativa = store.settings.janela_ativa ?? true;
       form.value.janela_inicio_hora = store.settings.janela_inicio_hora ?? 6;
       form.value.janela_fim_hora = store.settings.janela_fim_hora ?? 23;
