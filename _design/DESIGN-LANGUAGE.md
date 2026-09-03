@@ -463,10 +463,21 @@ Ordem fixa. Quem inventar um número fora dela quebra alguma das outras.
 ```
 conteúdo da página   auto
 ActionBar            10     barra da seleção, flutua sobre o conteúdo
+Eme com modal aberto 15     o flutuante recua: fica acima da página, abaixo do modal
 modal `screen`       20     cobre a página, NÃO a nav
 nav                  30-60  backdrop, sidebar, topbar, flyout
+Eme flutuante        50     bolinha e painel solto, sobre a página
 diálogo              9999   bloqueia tudo, inclusive a nav
 ```
+
+**Quem flutua sobre a página sai da frente quando um modal abre.** O player da
+Eme vive em 50 e o modal `screen` em 20 (ele fica abaixo da nav de propósito),
+então a bolinha — ancorada no canto de baixo à direita — cobria toda listagem em
+tela cheia, bem onde mora a ação do modal: mirar em "Fechar" acertava a Eme.
+Com um modal aberto ela desce para 15, continua visível atrás e para de roubar
+clique. Quem precisa dos dois ao mesmo tempo **encaixa** a Eme na lateral: aí ela
+vira coluna de layout, o Office encolhe e é o MODAL que recua
+(`--eme-ocupa-w`). `useModalStack()` é quem responde "tem modal aberto?".
 
 `screen` fica **abaixo** da nav porque ele já não a cobre: se ficasse na frente,
 a sidebar abriria por trás dele e o menu responderia ao clique sem aparecer.

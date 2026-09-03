@@ -7,7 +7,6 @@ import Export from '@/components/config/Export.vue';
 
 import Modal from '@/components/UI/Modal.vue';
 import Surface from '@/components/UI/Surface.vue';
-import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
@@ -904,9 +903,14 @@ const columns = computed(() => {
   ];
   if (hasRepasse.value) {
     cols.push(
-      { key: 'imobiliaria', label: 'Imobiliária', priority: 2, width: '13rem' },
+      /* `truncate: false` nas colunas de NOME. O padrão da DataTable é cortar,
+          e razão de sobra: numa tabela larga uma célula solta estica tudo. Só
+          que nome de imobiliária e de empreendimento diverge no FIM
+          ("...EMPREENDIMENTOS I" x "...EMPREENDIMENTOS III"), então cortar
+          apaga exatamente o que identifica. Elas quebram em duas linhas. */
+      { key: 'imobiliaria', label: 'Imobiliária', priority: 2, width: '15rem', truncate: false },
       { key: 'repasse', label: 'Repasse', priority: 2, width: '11rem' },
-      { key: 'empreendimento', label: 'Empreendimento', priority: 3 },
+      { key: 'empreendimento', label: 'Empreendimento', priority: 3, truncate: false },
       { key: 'etapa', label: 'Etapa', priority: 3 },
       { key: 'bloco', label: 'Bloco', priority: 3 },
     );
@@ -931,14 +935,17 @@ const closeModal = () => emit('close');
   <!-- `screen`: listagem de registros toma a tela inteira. Um cartao flutuando
        no meio da tela desperdica area justamente onde ha muita linha para ler;
        e o padrao de todo modal de listagem do Office. -->
-  <Modal :open="true" size="screen" :padded="false" hide-close @close="closeModal">
+  <!-- Sem `hide-close`: o Fechar mora no CANTO DE CIMA, como em todo modal do
+       Office. Ele estava só no rodapé, no canto de baixo à direita - exatamente
+       onde a bolinha da Eme flutua, então clicar em Fechar acertava a Eme. -->
+  <Modal :open="true" size="screen" :padded="false" @close="closeModal">
     <template #header>
       <div class="flex items-center gap-3 min-w-0">
         <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
           <i class="fas fa-chart-line text-sm"></i>
         </div>
         <div class="min-w-0">
-          <h2 class="text-base font-semibold text-ink truncate">{{ enterprise.name }}</h2>
+          <h2 class="text-base font-semibold text-ink truncate" :title="enterprise.name">{{ enterprise.name }}</h2>
           <p class="text-xs text-ink-muted mt-0.5">
             <span class="tabular-nums text-ink">{{ totalSales }}</span> venda(s) &middot;
             <span class="tabular-nums text-ink">{{ formatCurrency(totalValue) }}</span> &middot;
@@ -961,7 +968,7 @@ const closeModal = () => emit('close');
 
       <!-- Realizado x Projetado: era um "modo" no alternador; virou secao, na
            mesma pagina, acima da lista que ela resume. -->
-      <div v-if="projectionRow" class="mt-4 border-t border-line">
+      <div v-if="projectionRow" class="mt-4 border-t border-line px-4 sm:px-5 pt-4 space-y-3">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <h4 class="text-sm font-semibold text-ink">Realizado × Projetado</h4>
             <span class="text-xs text-ink-subtle font-mono">
@@ -1091,7 +1098,7 @@ const closeModal = () => emit('close');
                 <i class="fas fa-chart-line text-micro"></i>Projecao
               </Badge>
               <span v-if="row.contracts?.[0]?.associates?.[0]"
-                class="block w-full text-micro text-ink-subtle truncate">
+                class="block w-full text-micro text-ink-subtle break-words">
                 {{ row.contracts[0].associates[0].name }} #{{ row.contracts[0].associates[0].customer_id }}
               </span>
             </span>
@@ -1110,9 +1117,9 @@ const closeModal = () => emit('close');
           </template>
 
           <template #cell-imobiliaria="{ row }">
-            <span class="inline-flex items-center gap-1.5 min-w-0">
-              <i class="fas fa-store text-micro text-accent shrink-0"></i>
-              <span class="truncate">{{ imobiliariaOf(row) }}</span>
+            <span class="inline-flex items-start gap-1.5 min-w-0">
+              <i class="fas fa-store text-micro text-accent shrink-0 mt-1"></i>
+              <span class="break-words">{{ imobiliariaOf(row) }}</span>
             </span>
           </template>
 
@@ -1239,9 +1246,6 @@ const closeModal = () => emit('close');
       </div>
     </div>
 
-    <template #footer>
-      <Button variant="ghost" @click="closeModal">Fechar</Button>
-    </template>
   </Modal>
 
   <!-- Ajuste contabil (admin) - sobreposto ao detalhe -->

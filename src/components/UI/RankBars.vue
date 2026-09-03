@@ -151,7 +151,7 @@ function alternarTodos() {
       class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pb-2 mb-1 border-b border-line-subtle">
       <li v-for="s in segments" :key="s.key" class="flex items-center gap-1.5 min-w-0">
         <span :class="[s.bar, 'h-2 w-2 rounded-sm shrink-0']"></span>
-        <span class="text-micro text-ink-muted truncate max-w-[12rem]" :title="s.label">{{ s.label }}</span>
+        <span class="text-micro text-ink-muted break-words">{{ s.label }}</span>
       </li>
     </ul>
 
@@ -168,12 +168,22 @@ function alternarTodos() {
 
           <button type="button" class="flex-1 min-w-0 text-left group focus-ring rounded-lg px-1 -mx-1"
             :aria-expanded="aberto === item.key" @click="abrir(item)">
-            <div class="flex items-baseline gap-2 min-w-0">
+            <!-- No estreito a linha QUEBRA: nome, valor e % em 375px não cabem
+                 lado a lado, e forçá-los deixava 20 caracteres para o nome. A
+                 partir de `sm` volta a ser uma linha só. -->
+            <div class="flex items-baseline gap-x-2 gap-y-0.5 min-w-0 flex-wrap sm:flex-nowrap">
               <span v-if="showRank"
                 class="text-micro font-mono text-ink-subtle tabular-nums w-5 shrink-0">{{ i + 1 }}</span>
               <i v-if="item.icon" :class="[item.icon, item.iconClass || 'text-ink-subtle', 'text-xs shrink-0 w-4 text-center']"></i>
-              <span class="text-sm font-medium text-ink truncate flex-1 group-hover:text-accent transition-colors duration-120"
-                :title="item.label">
+              <!-- O nome QUEBRA, não corta. Ranking de imobiliária e de
+                   empreendimento é lista de nome longo ("CONSTRUTORA X
+                   EMPREENDIMENTOS IMOBILIARIOS LTDA"), e `truncate` comia
+                   justamente a parte que distingue um do outro: ficavam quatro
+                   linhas com o mesmo começo e reticências. Aqui sobra espaço
+                   vertical - uma linha a mais é mais barata que um nome
+                   perdido, e `title` não existe no toque. -->
+              <span class="text-sm font-medium text-ink break-words flex-1 min-w-0
+                           group-hover:text-accent transition-colors duration-120">
                 {{ item.label }}
               </span>
               <span v-if="item.badge"
@@ -200,7 +210,7 @@ function alternarTodos() {
               <div v-else :class="[bar, 'h-full w-full rounded-full']"></div>
             </div>
 
-            <p v-if="item.meta" class="mt-1 text-micro text-ink-subtle tabular-nums truncate" :title="item.meta">{{ item.meta }}</p>
+            <p v-if="item.meta" class="mt-1 text-micro text-ink-subtle tabular-nums">{{ item.meta }}</p>
           </button>
 
           <button v-if="actionIcon" type="button" v-tippy="actionLabel"
@@ -218,8 +228,8 @@ function alternarTodos() {
         <div v-if="aberto === item.key" class="pb-3 pl-1 pr-11 animate-slide-down">
           <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 rounded-lg bg-surface-sunken/60 p-3">
             <div v-for="f in faixas(item)" :key="f.key" class="min-w-0">
-              <dt class="flex items-center gap-1.5 text-micro text-ink-muted truncate" :title="f.label">
-                <span :class="[f.bar, 'h-2 w-2 rounded-sm shrink-0']"></span>{{ f.label }}
+              <dt class="flex items-start gap-1.5 text-micro text-ink-muted break-words">
+                <span :class="[f.bar, 'h-2 w-2 rounded-sm shrink-0 mt-1']"></span>{{ f.label }}
               </dt>
               <dd class="metric text-sm mt-0.5">
                 {{ fmt(f.n) }}

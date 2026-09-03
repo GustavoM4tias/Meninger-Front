@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useModalStack } from '@/composables/useModalStack';
 
 /**
  * Modal — padrão único do Office.
@@ -180,6 +181,7 @@ function onKey(e) {
    o de dentro devolvia a rolagem ao fundo enquanto o de fora ainda estava
    aberto - a pagina rolava atras do dialogo. O contador so solta quando o
    ultimo fecha. */
+const modais = useModalStack();
 let travado = false;
 function travarFundo(v) {
   if (v === travado) return;
@@ -187,6 +189,10 @@ function travarFundo(v) {
   const n = Number(document.body.dataset.modaisAbertos || 0) + (v ? 1 : -1);
   document.body.dataset.modaisAbertos = String(Math.max(0, n));
   document.body.style.overflow = n > 0 ? 'hidden' : '';
+  /* O mesmo contador, agora reativo: quem FLUTUA sobre a página (o player da
+     Eme) precisa saber que tem modal aberto para sair da frente. Ler
+     `dataset` de fora exigiria um MutationObserver. */
+  v ? modais.entrar() : modais.sair();
 }
 
 function applyOpen(v) {
