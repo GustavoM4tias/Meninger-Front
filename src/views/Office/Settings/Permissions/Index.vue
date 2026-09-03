@@ -19,7 +19,7 @@
  * que ainda não foi salvo é calculado aqui, e só para o sujeito aberto - o
  * cliente nunca é a fonte da verdade do que já está gravado.
  */
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { managedRegistry, getDeptManagedPages, getAdminOnlyPages, getAlwaysFreePages } from '@/config/navRegistry';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
@@ -757,10 +757,6 @@ const orphanPolicies = computed(() => {
   const conhecidas = new Set(todasAsRotas.value.map(normRoute));
   return routePolicies.value.filter(p => p.adminOnly && !conhecidas.has(normRoute(p.route)));
 });
-
-/* Trocar de aba com alteração pendente: a barra continua visível, então o
-   trabalho não se perde de vista. */
-watch(aba, () => { toast.success(''); });
 
 onMounted(carregarTudo);
 </script>
