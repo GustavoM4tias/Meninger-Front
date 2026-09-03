@@ -27,7 +27,7 @@ function asArray(json) {
 }
 
 export const useMuralMetaStore = defineStore('muralMeta', () => {
-    const positions = ref([]);    // [{ code, name }]
+    const positions = ref([]);    // [{ code, name, department_id }]
     const departments = ref([]);  // [{ id, name }]
     const cities = ref([]);       // [{ id, name }]
     const loaded = ref(false);
@@ -46,7 +46,16 @@ export const useMuralMetaStore = defineStore('muralMeta', () => {
                 // completo (municípios do IBGE) não serve para audiência.
                 adminFetch('/admin/user-cities?inUse=true').catch(() => []),
             ]);
-            positions.value = asArray(pos).map((p) => ({ code: p.code, name: p.name })).filter((p) => p.code);
+            // department_id vem junto: o seletor de CARGO se recorta por
+            // departamento (padrão da casa desde 2026-08-27) e cargo inativo
+            // não deve aparecer numa audiência nova.
+            positions.value = asArray(pos)
+                .filter((p) => p?.code && p?.active !== false)
+                .map((p) => ({
+                    code: p.code,
+                    name: p.name,
+                    department_id: p.department_id ?? p.department?.id ?? null,
+                }));
             departments.value = asArray(deps).map((d) => ({ id: d.id, name: d.name }));
             cities.value = asArray(cts).map((c) => ({ id: c.id, name: c.name }));
             loaded.value = true;

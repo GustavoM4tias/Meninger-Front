@@ -48,11 +48,20 @@ const form = ref({
   uf: '',
 });
 
+// Recorte da aba Cargos por departamento — mesmo padrão dos cadastros: cargo é
+// sempre de um departamento, então a listagem também se lê por departamento.
+const filterDepartment = ref('');
+
 // ── Computeds ────────────────────────────────────────
-const items = computed(() => ({
-  departments: store.departments,
-  positions:   store.positions,
-}[activeTab.value] || []));
+const items = computed(() => {
+  if (activeTab.value === 'positions') {
+    const dep = filterDepartment.value;
+    return dep
+      ? store.positions.filter(p => String(p.department_id ?? p.department?.id ?? '') === String(dep))
+      : store.positions;
+  }
+  return store.departments;
+});
 
 const labelSingular = computed(() => ({
   departments: 'Departamento',
@@ -66,6 +75,11 @@ const modalTitle = computed(() =>
 const departmentOptions = computed(() => [
   { value: '', label: 'Selecione um departamento' },
   ...store.departments.filter(d => d.active).map(d => ({ value: d.id, label: d.name })),
+]);
+
+const departmentFilterOptions = computed(() => [
+  { value: '', label: 'Todos os departamentos' },
+  ...store.departments.filter(d => d.active).map(d => ({ value: String(d.id), label: d.name })),
 ]);
 
 const departmentNameById = (id) => {
@@ -85,7 +99,13 @@ function resetForm() {
 
 function openModal(item) {
   editingItem.value = item || null;
-  if (!item) { resetForm(); }
+  if (!item) {
+    resetForm();
+    // Cargo novo criado com um departamento em recorte já nasce nele.
+    if (activeTab.value === 'positions' && filterDepartment.value) {
+      form.value.departmentId = Number(filterDepartment.value);
+    }
+  }
   else if (activeTab.value === 'positions') {
     form.value = {
       name: item.name, code: item.code, description: item.description || '',
@@ -218,7 +238,13 @@ onMounted(async () => {
       </PageHeader>
 
       <!-- Tabs -->
-      <SegmentedControl v-model="activeTab" :options="tabs" size="md" class="mb-5" />
+      <SegmentedControl v-model="activeTab" :options="tabs" size="md"
+        :class="activeTab === 'positions' ? 'mb-3' : 'mb-5'" />
+
+      <!-- Recorte por departamento (só faz sentido na aba de cargos) -->
+      <div v-if="activeTab === 'positions'" class="mb-5 max-w-xs">
+        <Select v-model="filterDepartment" :options="departmentFilterOptions" size="sm" />
+      </div>
 
       <!-- Erro -->
       <div v-if="store.error"
@@ -226,8 +252,19 @@ onMounted(async () => {
         <i class="fas fa-circle-exclamation"></i>{{ store.error }}
       </div>
 
+      <!-- Vazio pelo filtro (≠ vazio de cadastro) -->
+      <EmptyState v-if="!items.length && filterDepartment && activeTab === 'positions'"
+        icon="fas fa-id-badge"
+        title="Nenhum cargo neste departamento"
+        description="Crie o primeiro cargo da área ou volte para todos os departamentos.">
+        <template #actions>
+          <Button variant="secondary" @click="filterDepartment = ''">Ver todos</Button>
+          <Button icon="fas fa-plus" @click="openModal(null)">Novo cargo</Button>
+        </template>
+      </EmptyState>
+
       <!-- Empty -->
-      <EmptyState v-if="!items.length"
+      <EmptyState v-else-if="!items.length"
         :icon="tabs.find(t => t.value === activeTab)?.icon || 'far fa-folder'"
         :title="`Nenhum ${labelSingular.toLowerCase()} cadastrado`"
         :description="`Crie o primeiro ${labelSingular.toLowerCase()} para começar.`">

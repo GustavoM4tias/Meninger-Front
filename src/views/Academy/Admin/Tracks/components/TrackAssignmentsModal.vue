@@ -62,6 +62,16 @@
                                 </button>
                             </div>
 
+                            <div class="px-3 pt-3">
+                                <select v-model="posDepartment"
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100">
+                                    <option value="">Todos os departamentos</option>
+                                    <option v-for="d in (meta.departments || [])" :key="`fdep-${d.id}`" :value="String(d.id)">
+                                        {{ d.name }}
+                                    </option>
+                                </select>
+                            </div>
+
                             <div class="p-3 space-y-2 max-h-[320px] overflow-auto">
                                 <label v-for="p in filteredPositions" :key="`pos-${p.code}`"
                                     class="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
@@ -71,7 +81,7 @@
                                         <div class="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{{
                                             p.name }}</div>
                                         <div class="text-xs text-slate-500 dark:text-slate-400 font-mono truncate">
-                                            code={{ p.code }} | dep={{ p.department_id ?? '-' }}
+                                            code={{ p.code }} | {{ departmentNameById.get(String(p.department_id)) || 'sem departamento' }}
                                         </div>
                                     </div>
                                 </label>
@@ -361,9 +371,24 @@ function filterLocalList(arr, getLabel, getSub) {
     });
 }
 
-const filteredPositions = computed(() =>
-    filterLocalList(meta.positions || [], (p) => p.name, (p) => `code=${p.code} dep=${p.department_id ?? ''}`)
+// Recorte da coluna de CARGOS por departamento (padrão da casa: cargo pertence
+// a um departamento). É só um recorte da LISTA — não seleciona o departamento
+// como público-alvo, isso continua sendo a coluna ao lado.
+const posDepartment = ref('');
+const departmentNameById = computed(() =>
+    new Map((meta.departments || []).map((d) => [String(d.id), d.name]))
 );
+
+const filteredPositions = computed(() => {
+    const base = posDepartment.value
+        ? (meta.positions || []).filter((p) => String(p.department_id ?? '') === posDepartment.value)
+        : (meta.positions || []);
+    return filterLocalList(
+        base,
+        (p) => p.name,
+        (p) => `code=${p.code} ${departmentNameById.value.get(String(p.department_id)) || ''}`,
+    );
+});
 
 const filteredDepartments = computed(() =>
     filterLocalList(meta.departments || [], (d) => d.name, (d) => `id=${d.id} code=${d.code ?? ''}`)
