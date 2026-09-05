@@ -3,7 +3,7 @@
     <PageContainer size="full">
 
       <PageHeader
-        subtitle="Cobrança da entrada por boleto Caixa ou link de cartão, acionada pelo webhook do CV"
+        subtitle="Cobrança da entrada (boleto Caixa ou link de cartão) e das parcelas mensais até o Sienge faturar o contrato"
         icon="fas fa-file-invoice-dollar">
         <template #title>
           <span>Ato</span>
@@ -28,15 +28,19 @@
           <PageHelp
             storage-key="cobranca-ato"
             title="Como usar - Ato"
-            intro="Esta tela cuida da entrada (o ato) de ponta a ponta: cobra, acompanha e confere. Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto Caixa ou o link de cartão, anexa na reserva e devolve a situação. Depois, a aba Conciliação mostra se aquilo que o cliente pagou já foi lançado no Sienge."
+            intro="Esta tela cuida da cobrança da venda antes do Sienge assumir: a entrada (o ato) e as parcelas mensais. Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto Caixa ou o link de cartão do ato. Pago o ato, nasce o plano de parcelas: o Office emite cada mensal com antecedência, reemite as vencidas com encargos e para sozinho quando o Financeiro fatura o contrato no Sienge. A aba Conciliação mostra se o que o cliente pagou já foi lançado no ERP."
             :steps="[
-              { title: 'Histórico: acompanhe as cobranças', text: 'Lista o que foi emitido no período. Os cartões do topo contam quantos foram pagos, quantos ainda esperam e quantos falharam. Clique em um cartão para recortar a tabela (clicar de novo desfaz) e na linha para abrir o detalhe, com a linha do tempo e o PDF.' },
+              { title: 'Histórico: acompanhe as cobranças do ato', text: 'Lista o que foi emitido no período. Os cartões do topo contam quantos foram pagos, quantos ainda esperam e quantos falharam. Clique em um cartão para recortar a tabela (clicar de novo desfaz) e na linha para abrir o detalhe, com a linha do tempo e o PDF.' },
+              { title: 'Parcelas: as mensais depois do ato', text: 'Uma linha por reserva com plano: quantas parcelas foram pagas, qual é a próxima, o que está em atraso e se o Sienge já faturou. Abra a linha para ver parcela a parcela, emitir ou reemitir um boleto, marcar como paga, pausar ou encerrar o plano. O plano nasce sozinho quando o ato é pago e encerra sozinho quando o contrato ganha título no Sienge.' },
               { title: 'Conciliação: confira o que entrou', text: 'É o relatório “Contas Recebidas” do Sienge no documento AVC, lido ao vivo da API, com filtro de período (data do recebimento), empresa e empreendimento. Serve para bater com o ERP sem abrir o ERP.' },
               { title: 'Leia os quatro grupos', text: 'O confronto com o ato já vem ligado e separa tudo em: conciliados, o que falta lançar no Sienge, o que foi abatido sem ato correspondente, e os que bateram mas com valor diferente. Passe o mouse no selo da coluna Ato, ou abra a linha, para ver de quanto é a diferença.' },
               { title: 'Ataque a lista “Falta lançar”', text: 'É o ato que o cliente já pagou e que ninguém lançou no Sienge ainda - a fila do administrativo. Ela traz cliente, unidade, valor e reserva, e vai junto no CSV do botão Exportar.' },
-              { title: 'Configurações: ajuste a automação', text: 'Guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o cálculo da comissão embutida e o envio ao cliente.' },
+              { title: 'Configurações: ajuste a automação', text: 'Guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o cálculo da comissão embutida, o envio ao cliente e as regras das parcelas mensais (antecedência, atraso, multa e juros, lembretes).' },
             ]"
             :tips="[
+              'A cobrança das parcelas nasce DESLIGADA. Com ela desligada a aba Parcelas mostra os planos e o que a rodada faria, mas nenhum boleto sai. Ligue em Configurações > Parcelas mensais quando conferir os planos.',
+              'Parcela que já estava vencida quando o plano nasceu sai com vencimento novo e sem multa: o atraso foi nosso, não do cliente. Multa e juros só entram na reemissão de boleto que o cliente deixou vencer.',
+              'Quando o Sienge fatura o contrato, o plano encerra e os boletos em aberto do Office são baixados, para o cliente não receber duas cobranças da mesma parcela.',
               'A automação pode ser pausada sem perder nada: os webhooks que chegarem ficam registrados e voltam a ser processados quando ela for religada.',
               'Em alguns empreendimentos a série do ato vem com a comissão da imobiliária dentro. Ligando “deduzir a comissão do CV” naquele empreendimento, a cobrança passa a ser o ato menos a comissão fora do contrato que o CV informa na reserva: ato de R$ 27.310,66 com R$ 21.848,51 de comissão vira uma cobrança de R$ 5.462,15, o mesmo número da coluna “sem comissão fora do contrato” do CV.',
               'Antes de ligar essa dedução num empreendimento, abra as condições de uma reserva dele no CV: ela só serve quando a coluna “sem comissão fora do contrato” muda apenas na linha do ato. Onde a comissão está espalhada nas parcelas, use o percentual fixo ou o valor cheio.',
@@ -659,6 +663,9 @@
           <UseredeSettings />
         </div>
 
+        <!-- Card: Parcelas mensais (plano por reserva; salva sozinho) -->
+        <ParcelasSettings />
+
         <!-- Botão salvar -->
         <div class="flex flex-wrap items-center justify-end gap-3">
           <p v-if="store.settingsError" class="text-data-neg flex items-center gap-1.5">
@@ -721,6 +728,9 @@
            (documento AVC). Fica nesta tela porque é a mesma conversa do
            Histórico, só do outro lado do balcão. -->
       <Conciliacao v-if="activeTab === 'conciliacao'" />
+
+      <!-- ── TAB: Parcelas (mensais depois do ato) ─────────────────────────── -->
+      <Parcelas v-if="activeTab === 'parcelas'" />
 
       <div v-if="activeTab === 'history'" class="space-y-4">
 
@@ -898,6 +908,8 @@ import PageHelp from '@/components/UI/PageHelp.vue';
 import StatRow from '@/components/UI/StatRow.vue';
 import DataTable from '@/components/UI/DataTable.vue';
 import Conciliacao from './components/Conciliacao.vue';
+import Parcelas from './components/Parcelas.vue';
+import ParcelasSettings from './components/ParcelasSettings.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import Spinner from '@/components/UI/Spinner.vue';
@@ -921,12 +933,14 @@ const can = useCan('/financeiro/cobranca/ato');
 const route = useRoute();
 const router = useRouter();
 
-const ABAS_VALIDAS = ['history', 'conciliacao', 'settings'];
+const ABAS_VALIDAS = ['history', 'parcelas', 'conciliacao', 'settings'];
 const activeTab = ref(ABAS_VALIDAS.includes(route.query.tab) ? route.query.tab : 'history');
 
 const tabOptions = computed(() => {
   const base = [
     { value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' },
+    // As mensais depois do ato: plano por reserva, até o Sienge faturar.
+    { value: 'parcelas', label: 'Parcelas', icon: 'fas fa-calendar-check' },
     { value: 'conciliacao', label: 'Conciliação', icon: 'fas fa-code-compare' },
   ];
   if (can('configure')) {
