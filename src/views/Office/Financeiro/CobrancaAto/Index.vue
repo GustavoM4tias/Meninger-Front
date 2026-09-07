@@ -39,7 +39,7 @@
             ]"
             :tips="[
               'A cobrança das parcelas nasce DESLIGADA. Com ela desligada a aba Parcelas mostra os planos e o que a rodada faria, mas nenhum boleto sai. Ligue em Configurações > Parcelas mensais quando conferir os planos.',
-              'Parcela vencida: o cliente recebe um aviso perguntando se quer a nova via. Ela sai quando ele responde SIM no WhatsApp ou quando alguém clica Reemitir na tela, sempre com o mesmo valor e vencimento no próximo dia útil. Nesta etapa não há multa nem juros.',
+              'Parcela vencida: o cliente recebe um aviso de que a reserva pode ser cancelada e de que deve procurar o corretor. A nova via sai pelo botão Reemitir na tela, sempre com o mesmo valor e vencimento no próximo dia útil. Nesta etapa não há multa nem juros.',
               'O plano encerra sozinho quando a venda é faturada no Sienge (a mesma regra do relatório de Faturamento). Aí os boletos em aberto do Office são baixados, para o cliente não receber duas cobranças da mesma parcela.',
               'A automação pode ser pausada sem perder nada: os webhooks que chegarem ficam registrados e voltam a ser processados quando ela for religada.',
               'Em alguns empreendimentos a série do ato vem com a comissão da imobiliária dentro. Ligando “deduzir a comissão do CV” naquele empreendimento, a cobrança passa a ser o ato menos a comissão fora do contrato que o CV informa na reserva: ato de R$ 27.310,66 com R$ 21.848,51 de comissão vira uma cobrança de R$ 5.462,15, o mesmo número da coluna “sem comissão fora do contrato” do CV.',
