@@ -132,7 +132,7 @@
 
       <p class="text-micro text-ink-subtle">
         A rodada diária emite cada parcela com a antecedência configurada. Parcela vencida recebe aviso (a reserva pode ser cancelada);
-        a nova via sai pelo botão Reemitir, sempre com o mesmo valor e vencimento no próximo dia útil.
+        a nova via sai quando o cliente responde SIM no WhatsApp ou pelo botão Reemitir, sempre com o mesmo valor e vencimento no próximo dia útil.
         Quando a venda é faturada no Sienge, o plano encerra sozinho e o ERP passa a cobrar.
       </p>
     </div>

@@ -68,7 +68,7 @@
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Parcela vencida</p>
         <p class="text-ink font-mono">
-          {{ form.atraso_reemitir ? `a rodada reemite sozinha, até ${form.atraso_max_reemissoes}x` : `a pedido, pelo botão Reemitir, até ${form.atraso_max_reemissoes}x` }} · próximo dia útil
+          {{ form.atraso_reemitir ? `a rodada reemite sozinha, até ${form.atraso_max_reemissoes}x` : `a pedido (cliente responde SIM ou botão Reemitir), até ${form.atraso_max_reemissoes}x` }} · próximo dia útil
         </p>
       </div>
       <div>
@@ -110,7 +110,7 @@
       <Select v-model="form.parcelas_vencidas_na_adesao" label="Parcela já vencida quando o plano nasce"
         :options="[{ value: 'emitir', label: 'Emitir agora, com vencimento no próximo dia útil' }, { value: 'ignorar', label: 'Não emitir (fica prevista para a tela decidir)' }]" />
       <div class="space-y-3">
-        <Switch v-model="form.atraso_reemitir" label="Reemitir parcela vencida sem esperar o cliente" description="Desligado (padrão): o cliente recebe o aviso de vencida e procura o corretor; a nova via sai pelo botão Reemitir na tela. Ligado: a rodada reemite sozinha. Sempre com o mesmo valor e vencimento no próximo dia útil." />
+        <Switch v-model="form.atraso_reemitir" label="Reemitir parcela vencida sem esperar o cliente" description="Desligado (padrão): o cliente recebe o aviso de vencida e a nova via sai quando ele responde SIM no WhatsApp ou alguém clica Reemitir na tela. Ligado: a rodada reemite sozinha. Sempre com o mesmo valor e vencimento no próximo dia útil." />
         <Input v-model.number="form.atraso_max_reemissoes" type="number" label="Máx. de reemissões por parcela" hint="Depois disso a parcela para e aparece como atraso para alguém decidir." />
       </div>
       <Input v-model.number="form.lembrete_dias_antes" type="number" label="Lembrete ao cliente (dias antes do vencimento)" hint="0 desliga. E-mail sempre; WhatsApp quando o template estiver aprovado." />
