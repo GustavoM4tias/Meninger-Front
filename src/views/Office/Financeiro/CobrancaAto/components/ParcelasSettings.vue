@@ -34,7 +34,7 @@
     <div class="rounded-xl border border-line bg-surface-sunken/60 p-3">
       <Switch v-model="form.parcelas_ativo" :disabled="!editing"
         label="Cobrar as parcelas mensais automaticamente"
-        description="Ligado: a rodada diária emite os boletos das parcelas que vencem dentro da antecedência, reemite as vencidas com encargos e avisa o cliente. Desligado: só calcula e mostra os planos." />
+        description="Ligado: a rodada diária emite os boletos das parcelas que vencem dentro da antecedência, lembra o cliente antes do vencimento e avisa quando venceu. Desligado: só calcula e mostra os planos." />
     </div>
 
     <!-- ── LEITURA ──────────────────────────────────────────────────────── -->
@@ -59,16 +59,16 @@
       </div>
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Quando o Sienge assume</p>
-        <p class="text-ink font-mono">{{ form.parcelas_encerrar_quando_faturado ? criterioLabel(form.parcelas_criterio_sienge) : 'nunca encerra sozinho' }}</p>
+        <p class="text-ink font-mono">{{ form.parcelas_encerrar_quando_faturado ? 'quando a venda é faturada (regra do Faturamento)' : 'nunca encerra sozinho' }}</p>
       </div>
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Parcela já vencida na adesão</p>
-        <p class="text-ink font-mono">{{ form.parcelas_vencidas_na_adesao === 'ignorar' ? 'ignorar' : `emitir com vencimento em ${form.parcelas_prazo_vencida_dias} dias, sem encargos` }}</p>
+        <p class="text-ink font-mono">{{ form.parcelas_vencidas_na_adesao === 'ignorar' ? 'ignorar' : 'emitir com vencimento no próximo dia útil' }}</p>
       </div>
       <div>
-        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Atraso</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Parcela vencida</p>
         <p class="text-ink font-mono">
-          {{ form.atraso_reemitir ? `reemite até ${form.atraso_max_reemissoes}x, mesmo valor` : 'não reemite' }}
+          {{ form.atraso_reemitir ? `a rodada reemite sozinha, até ${form.atraso_max_reemissoes}x` : `a pedido (cliente responde SIM ou pela tela), até ${form.atraso_max_reemissoes}x` }} · próximo dia útil
         </p>
       </div>
       <div>
@@ -105,17 +105,12 @@
       <Input v-model.number="form.parcelas_max_emissoes_rodada" type="number" label="Máx. de boletos por rodada" hint="O resto sai no dia seguinte. Segura a primeira rodada, que tem fila acumulada." />
       <div class="space-y-3">
         <Switch v-model="form.parcelas_exigir_ato_pago" label="Só cobrar parcelas com o ato pago" description="Desligado, a adesão cria plano para toda reserva com série mensal (ato pago ou não)." />
-        <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando o Sienge assumir" description="Quando o critério abaixo é atendido, o ERP passa a cobrar e os boletos em aberto do Office são baixados." />
+        <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando a venda for faturada no Sienge" description="Venda faturada = data com a instituição financeira, a mesma regra do relatório de Faturamento. Aí o ERP passa a cobrar e os boletos em aberto do Office são baixados." />
       </div>
-      <Select v-model="form.parcelas_criterio_sienge" label="Quando o Sienge assume a cobrança"
-        :options="CRITERIOS" hint="Título = o Financeiro gerou os títulos no Sienge. Venda faturada = data com a instituição financeira, a mesma regra do relatório de Faturamento. Em 07/09 havia 42 contratos com título e sem venda faturada." />
-      <div>
-        <Select v-model="form.parcelas_vencidas_na_adesao" label="Parcela já vencida quando o plano nasce"
-          :options="[{ value: 'emitir', label: 'Emitir agora, com vencimento novo e sem encargos' }, { value: 'ignorar', label: 'Não emitir (fica prevista para a tela decidir)' }]" />
-        <Input v-model.number="form.parcelas_prazo_vencida_dias" type="number" class="mt-3" label="Prazo do vencimento novo (dias)" hint="Vale para a parcela vencida na adesão e para a reemissão por atraso." />
-      </div>
+      <Select v-model="form.parcelas_vencidas_na_adesao" label="Parcela já vencida quando o plano nasce"
+        :options="[{ value: 'emitir', label: 'Emitir agora, com vencimento no próximo dia útil' }, { value: 'ignorar', label: 'Não emitir (fica prevista para a tela decidir)' }]" />
       <div class="space-y-3">
-        <Switch v-model="form.atraso_reemitir" label="Reemitir parcela vencida automaticamente" description="Boleto vencido é baixado pela rodada das 08h; no dia, a rodada de parcelas gera uma via nova com o mesmo valor e vencimento novo. Sem multa nem juros nesta etapa." />
+        <Switch v-model="form.atraso_reemitir" label="Reemitir parcela vencida sem esperar o cliente" description="Desligado (padrão): o cliente recebe o aviso de vencida e a nova via só sai quando ele responde SIM no WhatsApp ou alguém clica Reemitir na tela. Ligado: a rodada reemite sozinha. Sempre com o mesmo valor e vencimento no próximo dia útil." />
         <Input v-model.number="form.atraso_max_reemissoes" type="number" label="Máx. de reemissões por parcela" hint="Depois disso a parcela para e aparece como atraso para alguém decidir." />
       </div>
       <Input v-model.number="form.lembrete_dias_antes" type="number" label="Lembrete ao cliente (dias antes do vencimento)" hint="0 desliga. E-mail sempre; WhatsApp quando o template estiver aprovado." />
@@ -158,22 +153,16 @@ const parcelas = useParcelasStore();
 
 const CAMPOS = [
   'parcelas_ativo', 'parcelas_idseries', 'parcelas_exigir_ato_pago', 'parcelas_antecedencia_dias',
-  'parcelas_encerrar_quando_faturado', 'parcelas_criterio_sienge', 'parcelas_vencidas_na_adesao', 'parcelas_prazo_vencida_dias',
+  'parcelas_encerrar_quando_faturado', 'parcelas_vencidas_na_adesao',
   'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'atraso_reemitir', 'atraso_max_reemissoes',
   'lembrete_dias_antes', 'aviso_atraso_dias_depois',
 ];
 const DEFAULTS = {
   parcelas_ativo: false, parcelas_idseries: [20, 1, 37], parcelas_exigir_ato_pago: true, parcelas_antecedencia_dias: 10,
-  parcelas_encerrar_quando_faturado: true, parcelas_criterio_sienge: 'titulo_e_venda', parcelas_vencidas_na_adesao: 'emitir', parcelas_prazo_vencida_dias: 5,
-  parcelas_hora_rodada: 9, parcelas_max_emissoes_rodada: 40, atraso_reemitir: true, atraso_max_reemissoes: 3,
+  parcelas_encerrar_quando_faturado: true, parcelas_vencidas_na_adesao: 'emitir',
+  parcelas_hora_rodada: 9, parcelas_max_emissoes_rodada: 40, atraso_reemitir: false, atraso_max_reemissoes: 3,
   lembrete_dias_antes: 3, aviso_atraso_dias_depois: 1,
 };
-const CRITERIOS = [
-  { value: 'titulo_e_venda', label: 'Título gerado E venda faturada (regra do Faturamento)' },
-  { value: 'titulo', label: 'Só o título gerado' },
-  { value: 'venda', label: 'Só a venda faturada' },
-];
-const criterioLabel = (v) => CRITERIOS.find(c => c.value === v)?.label || v;
 const form = ref({ ...DEFAULTS });
 const editing = ref(false);
 let snapshot = null;

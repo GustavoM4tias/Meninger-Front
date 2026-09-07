@@ -166,13 +166,11 @@
 
         <template #cell-sienge="{ row }">
           <span v-if="row.sienge_contract_id" class="inline-flex flex-col items-start gap-0.5">
-            <Badge :variant="row.sienge_receivable_bill_id && row.sienge_venda_faturada_em ? 'info' : 'neutral'" size="sm">
+            <Badge :variant="row.sienge_venda_faturada_em ? 'info' : 'neutral'" size="sm">
               <i class="fas fa-file-invoice mr-1" style="font-size:9px"></i>
-              {{ row.sienge_receivable_bill_id && row.sienge_venda_faturada_em ? 'Sienge assumiu' : `contrato ${row.sienge_contract_id}` }}
+              {{ row.sienge_venda_faturada_em ? `venda faturada ${formatDate(row.sienge_venda_faturada_em)}` : 'venda não faturada' }}
             </Badge>
-            <span class="text-micro text-ink-subtle">
-              {{ row.sienge_receivable_bill_id ? 'título' : 'sem título' }} · {{ row.sienge_venda_faturada_em ? 'venda faturada' : 'venda não faturada' }}
-            </span>
+            <span class="text-micro text-ink-subtle">contrato {{ row.sienge_contract_id }}</span>
           </span>
           <span v-else class="text-ink-subtle">sem contrato</span>
         </template>
@@ -323,7 +321,7 @@ async function rodarAgora() {
   const ok = await pedirConfirmacao({
     title: 'Rodar o ciclo de parcelas agora?',
     consequence: ligado
-      ? 'Faz a adesão das reservas com ato pago, encerra os planos que o Sienge já assumiu e EMITE os boletos das parcelas que vencem dentro da antecedência configurada (e reemite as vencidas com o mesmo valor). Cada boleto sai para o cliente por e-mail e WhatsApp.'
+      ? 'Faz a adesão das reservas com ato pago, encerra os planos cuja venda o Sienge já faturou e EMITE os boletos das parcelas que vencem dentro da antecedência configurada. Cada boleto sai para o cliente por e-mail e WhatsApp; lembretes e avisos de vencida também.'
       : 'A cobrança de parcelas está pausada: a rodada só faz a adesão dos planos e os encerramentos. Nenhum boleto é emitido.',
     confirmLabel: 'Rodar agora', tone: ligado ? 'danger' : 'primary',
   });
