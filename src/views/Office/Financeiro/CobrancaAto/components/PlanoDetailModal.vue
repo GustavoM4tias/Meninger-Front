@@ -115,9 +115,15 @@
         </template>
         <template #actions="{ row }">
           <span v-if="can('operate')" class="inline-flex items-center gap-1">
-            <IconButton v-if="['prevista', 'vencida', 'erro'].includes(row.status) && det.plano.status === 'ativo'"
-              icon="fas fa-file-invoice-dollar" size="sm" :label="row.status === 'vencida' ? 'Reemitir boleto' : 'Emitir boleto agora'"
-              @click.stop="emitir(row)" />
+            <!-- Botão com rótulo, não ícone: é a ação que o corretor pede
+                 ("gera a nova via") e precisa ser achada de primeira. -->
+            <Button v-if="reemitivel(row)" variant="primary" size="sm" icon="fas fa-rotate" :loading="store.acting" @click.stop="emitir(row)">
+              Reemitir
+            </Button>
+            <Button v-else-if="['prevista', 'erro'].includes(row.status) && det.plano.status === 'ativo'" variant="outline" size="sm"
+              icon="fas fa-file-invoice-dollar" :loading="store.acting" @click.stop="emitir(row)">
+              Emitir agora
+            </Button>
             <IconButton v-if="row.status === 'emitida'" icon="fas fa-ban" size="sm" label="Baixar boleto no Ecobrança" @click.stop="baixar(row)" />
             <IconButton v-if="['emitida', 'vencida'].includes(row.status)" icon="fas fa-check-double" size="sm" label="Marcar como paga" @click.stop="marcarPaga(row)" />
           </span>
@@ -231,12 +237,18 @@ async function encerrar() {
   if (!motivo) return;
   try { await store.encerrar(props.idreserva, motivo); acompanhar(30000); recarregar(); } catch { /* */ }
 }
+/* Reemitir: parcela vencida (boleto já baixado) ou boleto vivo que passou do
+   vencimento (a rodada das 08h ainda não baixou). No segundo caso a emissão
+   baixa o boleto antigo antes de gerar o novo. */
+const reemitivel = (row) => det.value?.plano?.status === 'ativo'
+  && (row.status === 'vencida' || (row.status === 'emitida' && row.vencimento_cobrado && row.vencimento_cobrado < det.value.hoje));
+
 async function emitir(row) {
-  const reemissao = row.status === 'vencida';
+  const reemissao = row.status === 'vencida' || row.status === 'emitida';
   if (!await pedirConfirmacao({
     title: `${reemissao ? 'Reemitir' : 'Emitir'} o boleto da parcela ${row.numero}/${row.total}?`,
     consequence: reemissao
-      ? `Gera uma nova via de ${formatCurrency(row.valor)} com vencimento no próximo dia útil e envia ao cliente por e-mail e WhatsApp.`
+      ? `Gera uma nova via de ${formatCurrency(row.valor)} com vencimento no próximo dia útil e envia ao cliente por e-mail e WhatsApp${row.status === 'emitida' ? '. O boleto vencido é baixado no Ecobrança antes' : ''}.`
       : `Emite agora o boleto de ${formatCurrency(row.valor)} com vencimento ${formatDate(row.vencimento)}${row.vencimento < det.value.hoje ? ' (já vencido: sai com vencimento no próximo dia útil)' : ''} e envia ao cliente por e-mail e WhatsApp.`,
     confirmLabel: reemissao ? 'Reemitir' : 'Emitir agora', tone: 'primary',
   })) return;
