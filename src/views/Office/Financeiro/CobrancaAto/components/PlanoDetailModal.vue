@@ -26,8 +26,15 @@
         </div>
         <div>
           <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Sienge</p>
-          <Badge v-if="det.contrato?.receivable_bill_id" variant="info" size="sm">faturado (título {{ det.contrato.receivable_bill_id }})</Badge>
-          <Badge v-else-if="det.contrato" variant="neutral" size="sm">contrato {{ det.contrato.id }} · {{ det.contrato.situation }}</Badge>
+          <span v-if="det.contrato" class="inline-flex flex-wrap gap-1">
+            <Badge variant="neutral" size="sm">contrato {{ det.contrato.id }} · {{ det.contrato.situation }}</Badge>
+            <Badge :variant="det.contrato.receivable_bill_id ? 'info' : 'neutral'" size="sm">
+              {{ det.contrato.receivable_bill_id ? `título ${det.contrato.receivable_bill_id}` : 'sem título' }}
+            </Badge>
+            <Badge :variant="det.contrato.financial_institution_date ? 'info' : 'neutral'" size="sm">
+              {{ det.contrato.financial_institution_date ? `venda faturada ${formatDate(det.contrato.financial_institution_date)}` : 'venda não faturada' }}
+            </Badge>
+          </span>
           <span v-else class="text-sm text-ink-subtle">sem contrato</span>
         </div>
         <div>
@@ -121,8 +128,8 @@
       </DataTable>
 
       <p class="text-micro text-ink-subtle">
-        A rodada diária emite cada parcela com a antecedência configurada e reemite as vencidas com multa e juros.
-        Quando o Sienge fatura o contrato, o plano encerra sozinho e o ERP passa a cobrar.
+        A rodada diária emite cada parcela com a antecedência configurada e reemite as vencidas com o mesmo valor e vencimento novo.
+        Quando o contrato tem título gerado e a venda faturada no Sienge, o plano encerra sozinho e o ERP passa a cobrar.
       </p>
     </div>
 
@@ -231,8 +238,8 @@ async function emitir(row) {
   if (!await pedirConfirmacao({
     title: `${reemissao ? 'Reemitir' : 'Emitir'} o boleto da parcela ${row.numero}/${row.total}?`,
     consequence: reemissao
-      ? `Gera uma nova via com multa e juros (se configurado) e vencimento em alguns dias, e envia ao cliente por e-mail e WhatsApp. Valor base ${formatCurrency(row.valor)}.`
-      : `Emite agora o boleto de ${formatCurrency(row.valor)} com vencimento ${formatDate(row.vencimento)}${row.vencimento < det.value.hoje ? ' (já vencido: sai com vencimento novo, sem encargos)' : ''} e envia ao cliente por e-mail e WhatsApp.`,
+      ? `Gera uma nova via de ${formatCurrency(row.valor)} com vencimento em alguns dias e envia ao cliente por e-mail e WhatsApp.`
+      : `Emite agora o boleto de ${formatCurrency(row.valor)} com vencimento ${formatDate(row.vencimento)}${row.vencimento < det.value.hoje ? ' (já vencido: sai com vencimento novo)' : ''} e envia ao cliente por e-mail e WhatsApp.`,
     confirmLabel: reemissao ? 'Reemitir' : 'Emitir agora', tone: 'primary',
   })) return;
   try { await store.emitirParcela(row.id); acompanhar(); } catch { /* */ }

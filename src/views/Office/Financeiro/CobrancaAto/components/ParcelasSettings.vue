@@ -58,8 +58,8 @@
         <p class="text-ink font-mono">{{ form.parcelas_exigir_ato_pago ? 'sim' : 'não' }}</p>
       </div>
       <div>
-        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Encerra quando o Sienge fatura</p>
-        <p class="text-ink font-mono">{{ form.parcelas_encerrar_quando_faturado ? 'sim' : 'não' }}</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Quando o Sienge assume</p>
+        <p class="text-ink font-mono">{{ form.parcelas_encerrar_quando_faturado ? criterioLabel(form.parcelas_criterio_sienge) : 'nunca encerra sozinho' }}</p>
       </div>
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Parcela já vencida na adesão</p>
@@ -68,9 +68,7 @@
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Atraso</p>
         <p class="text-ink font-mono">
-          {{ form.atraso_reemitir ? `reemite até ${form.atraso_max_reemissoes}x` : 'não reemite' }}
-          <span v-if="form.atraso_reemitir && form.atraso_cobrar_encargos"> · multa {{ form.atraso_multa_pct }}% + juros {{ form.atraso_juros_mes_pct }}% a.m.</span>
-          <span v-else-if="form.atraso_reemitir"> · sem encargos</span>
+          {{ form.atraso_reemitir ? `reemite até ${form.atraso_max_reemissoes}x, mesmo valor` : 'não reemite' }}
         </p>
       </div>
       <div>
@@ -107,23 +105,18 @@
       <Input v-model.number="form.parcelas_max_emissoes_rodada" type="number" label="Máx. de boletos por rodada" hint="O resto sai no dia seguinte. Segura a primeira rodada, que tem fila acumulada." />
       <div class="space-y-3">
         <Switch v-model="form.parcelas_exigir_ato_pago" label="Só cobrar parcelas com o ato pago" description="Desligado, a adesão cria plano para toda reserva com série mensal (ato pago ou não)." />
-        <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando o Sienge faturar" description="Contrato com título no Sienge = o ERP cobra. Os boletos em aberto do Office são baixados." />
+        <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando o Sienge assumir" description="Quando o critério abaixo é atendido, o ERP passa a cobrar e os boletos em aberto do Office são baixados." />
       </div>
+      <Select v-model="form.parcelas_criterio_sienge" label="Quando o Sienge assume a cobrança"
+        :options="CRITERIOS" hint="Título = o Financeiro gerou os títulos no Sienge. Venda faturada = data com a instituição financeira, a mesma regra do relatório de Faturamento. Em 07/09 havia 42 contratos com título e sem venda faturada." />
       <div>
         <Select v-model="form.parcelas_vencidas_na_adesao" label="Parcela já vencida quando o plano nasce"
           :options="[{ value: 'emitir', label: 'Emitir agora, com vencimento novo e sem encargos' }, { value: 'ignorar', label: 'Não emitir (fica prevista para a tela decidir)' }]" />
         <Input v-model.number="form.parcelas_prazo_vencida_dias" type="number" class="mt-3" label="Prazo do vencimento novo (dias)" hint="Vale para a parcela vencida na adesão e para a reemissão por atraso." />
       </div>
       <div class="space-y-3">
-        <Switch v-model="form.atraso_reemitir" label="Reemitir parcela vencida automaticamente" description="Boleto vencido é baixado pela rodada das 08h; no dia, a rodada de parcelas gera uma via nova." />
+        <Switch v-model="form.atraso_reemitir" label="Reemitir parcela vencida automaticamente" description="Boleto vencido é baixado pela rodada das 08h; no dia, a rodada de parcelas gera uma via nova com o mesmo valor e vencimento novo. Sem multa nem juros nesta etapa." />
         <Input v-model.number="form.atraso_max_reemissoes" type="number" label="Máx. de reemissões por parcela" hint="Depois disso a parcela para e aparece como atraso para alguém decidir." />
-      </div>
-      <div class="space-y-3">
-        <Switch v-model="form.atraso_cobrar_encargos" label="Cobrar multa e juros na reemissão" description="Mesmos percentuais que o CV manda ao Sienge (2% e 1% a.m.). Calculados sobre o valor original, pro rata dia." />
-        <div class="grid grid-cols-2 gap-3">
-          <Input v-model.number="form.atraso_multa_pct" type="number" step="0.01" label="Multa (%)" />
-          <Input v-model.number="form.atraso_juros_mes_pct" type="number" step="0.01" label="Juros (% ao mês)" />
-        </div>
       </div>
       <Input v-model.number="form.lembrete_dias_antes" type="number" label="Lembrete ao cliente (dias antes do vencimento)" hint="0 desliga. E-mail sempre; WhatsApp quando o template estiver aprovado." />
       <Input v-model.number="form.aviso_atraso_dias_depois" type="number" label="Aviso de atraso (dias depois do vencimento)" hint="0 desliga. Avisa que o boleto venceu e que uma via nova vem aí." />
@@ -165,16 +158,22 @@ const parcelas = useParcelasStore();
 
 const CAMPOS = [
   'parcelas_ativo', 'parcelas_idseries', 'parcelas_exigir_ato_pago', 'parcelas_antecedencia_dias',
-  'parcelas_encerrar_quando_faturado', 'parcelas_vencidas_na_adesao', 'parcelas_prazo_vencida_dias',
+  'parcelas_encerrar_quando_faturado', 'parcelas_criterio_sienge', 'parcelas_vencidas_na_adesao', 'parcelas_prazo_vencida_dias',
   'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'atraso_reemitir', 'atraso_max_reemissoes',
-  'atraso_cobrar_encargos', 'atraso_multa_pct', 'atraso_juros_mes_pct', 'lembrete_dias_antes', 'aviso_atraso_dias_depois',
+  'lembrete_dias_antes', 'aviso_atraso_dias_depois',
 ];
 const DEFAULTS = {
   parcelas_ativo: false, parcelas_idseries: [20, 1, 37], parcelas_exigir_ato_pago: true, parcelas_antecedencia_dias: 10,
-  parcelas_encerrar_quando_faturado: true, parcelas_vencidas_na_adesao: 'emitir', parcelas_prazo_vencida_dias: 5,
+  parcelas_encerrar_quando_faturado: true, parcelas_criterio_sienge: 'titulo_e_venda', parcelas_vencidas_na_adesao: 'emitir', parcelas_prazo_vencida_dias: 5,
   parcelas_hora_rodada: 9, parcelas_max_emissoes_rodada: 40, atraso_reemitir: true, atraso_max_reemissoes: 3,
-  atraso_cobrar_encargos: true, atraso_multa_pct: 2, atraso_juros_mes_pct: 1, lembrete_dias_antes: 3, aviso_atraso_dias_depois: 1,
+  lembrete_dias_antes: 3, aviso_atraso_dias_depois: 1,
 };
+const CRITERIOS = [
+  { value: 'titulo_e_venda', label: 'Título gerado E venda faturada (regra do Faturamento)' },
+  { value: 'titulo', label: 'Só o título gerado' },
+  { value: 'venda', label: 'Só a venda faturada' },
+];
+const criterioLabel = (v) => CRITERIOS.find(c => c.value === v)?.label || v;
 const form = ref({ ...DEFAULTS });
 const editing = ref(false);
 let snapshot = null;
