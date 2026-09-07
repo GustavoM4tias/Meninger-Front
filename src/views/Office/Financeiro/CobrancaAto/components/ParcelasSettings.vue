@@ -62,6 +62,11 @@
         <p class="text-ink font-mono">{{ form.parcelas_encerrar_quando_faturado ? 'quando a venda é faturada (regra do Faturamento)' : 'nunca encerra sozinho' }}</p>
       </div>
       <div>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Cobrar a partir de</p>
+        <p class="text-ink font-mono">{{ form.parcelas_cobrar_a_partir_de ? formatDate(form.parcelas_cobrar_a_partir_de) : 'sem corte' }}</p>
+        <p class="text-ink-subtle mt-0.5">Parcela vencida antes disso é retroativa: a rodada não toca, fica na tela para trabalho manual.</p>
+      </div>
+      <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Parcela já vencida na adesão</p>
         <p class="text-ink font-mono">{{ form.parcelas_vencidas_na_adesao === 'ignorar' ? 'ignorar' : 'emitir com vencimento no próximo dia útil' }}</p>
       </div>
@@ -107,6 +112,8 @@
         <Switch v-model="form.parcelas_exigir_ato_pago" label="Só cobrar parcelas com o ato pago" description="Desligado, a adesão cria plano para toda reserva com série mensal (ato pago ou não)." />
         <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando a venda for faturada no Sienge" description="Venda faturada = data com a instituição financeira, a mesma regra do relatório de Faturamento. Aí o ERP passa a cobrar e os boletos em aberto do Office são baixados." />
       </div>
+      <Input v-model="form.parcelas_cobrar_a_partir_de" type="date" label="Cobrar parcelas com vencimento a partir de"
+        hint="Parcela com vencimento original antes desta data é retroativa: a rodada não emite nem reemite; ela aparece como atraso e só sai pelo botão Emitir agora. Vazio = sem corte." />
       <Select v-model="form.parcelas_vencidas_na_adesao" label="Parcela já vencida quando o plano nasce"
         :options="[{ value: 'emitir', label: 'Emitir agora, com vencimento no próximo dia útil' }, { value: 'ignorar', label: 'Não emitir (fica prevista para a tela decidir)' }]" />
       <div class="space-y-3">
@@ -146,20 +153,20 @@ import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import Switch from '@/components/UI/Switch.vue';
 import Badge from '@/components/UI/Badge.vue';
-import { formatDateTime } from './parcelasFormat';
+import { formatDateTime, formatDate } from './parcelasFormat';
 
 const boletoStore = useBoletoStore();
 const parcelas = useParcelasStore();
 
 const CAMPOS = [
   'parcelas_ativo', 'parcelas_idseries', 'parcelas_exigir_ato_pago', 'parcelas_antecedencia_dias',
-  'parcelas_encerrar_quando_faturado', 'parcelas_vencidas_na_adesao',
+  'parcelas_encerrar_quando_faturado', 'parcelas_vencidas_na_adesao', 'parcelas_cobrar_a_partir_de',
   'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'atraso_reemitir', 'atraso_max_reemissoes',
   'lembrete_dias_antes', 'aviso_atraso_dias_depois',
 ];
 const DEFAULTS = {
   parcelas_ativo: false, parcelas_idseries: [20, 1, 37], parcelas_exigir_ato_pago: true, parcelas_antecedencia_dias: 10,
-  parcelas_encerrar_quando_faturado: true, parcelas_vencidas_na_adesao: 'emitir',
+  parcelas_encerrar_quando_faturado: true, parcelas_vencidas_na_adesao: 'emitir', parcelas_cobrar_a_partir_de: '',
   parcelas_hora_rodada: 9, parcelas_max_emissoes_rodada: 40, atraso_reemitir: false, atraso_max_reemissoes: 3,
   lembrete_dias_antes: 3, aviso_atraso_dias_depois: 1,
 };

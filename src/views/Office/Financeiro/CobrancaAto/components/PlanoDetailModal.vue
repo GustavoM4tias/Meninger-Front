@@ -23,6 +23,7 @@
           <p v-if="det.plano.encerrado_motivo" class="text-micro text-ink-muted mt-1">
             {{ motivoLabel(det.plano.encerrado_motivo) }}<span v-if="det.plano.encerrado_detalhe"> · {{ det.plano.encerrado_detalhe }}</span>
           </p>
+          <p v-else-if="det.plano.observacao" class="text-micro text-data-warn mt-1">{{ det.plano.observacao }}</p>
         </div>
         <div>
           <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Sienge</p>
