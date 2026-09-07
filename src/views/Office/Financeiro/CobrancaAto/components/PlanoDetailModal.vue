@@ -46,25 +46,34 @@
         </div>
       </div>
 
-      <!-- Divergências (condição mudou no CV depois de emitir) -->
+      <!-- Divergências: o plano é CONGELADO, o CV não o altera. Isto só informa. -->
       <div v-if="det.plano.divergencias?.length"
         class="rounded-xl border border-data-warn/30 bg-data-warn/10 p-3 text-sm text-data-warn">
-        <p class="font-semibold"><i class="fas fa-triangle-exclamation mr-1"></i> A condição mudou no CV depois de parcela emitida</p>
+        <p class="font-semibold"><i class="fas fa-triangle-exclamation mr-1"></i> A condição no CV está diferente do plano</p>
         <ul class="mt-1 list-disc pl-5 text-xs">
           <li v-for="(d, i) in det.plano.divergencias" :key="i">
-            <template v-if="d.tipo === 'condicao_mudou'">
-              parcela #{{ d.parcelaId }}: gravada {{ formatCurrency(d.atual.valor) }} em {{ formatDate(d.atual.vencimento) }},
+            <template v-if="d.tipo === 'prevista_mudou'">
+              parcela {{ d.numero }}: o CV diz {{ formatCurrency(d.cv.valor) }} em {{ formatDate(d.cv.vencimento) }}
+            </template>
+            <template v-else-if="d.tipo === 'condicao_mudou'">
+              parcela #{{ d.parcelaId }} (já com boleto): gravada {{ formatCurrency(d.atual.valor) }} em {{ formatDate(d.atual.vencimento) }},
               CV diz {{ formatCurrency(d.cv.valor) }} em {{ formatDate(d.cv.vencimento) }}
             </template>
-            <template v-else>parcela {{ d.numero }} (#{{ d.parcelaId }}) já emitida não existe mais nas condições do CV</template>
+            <template v-else-if="d.tipo === 'serie_nova'">
+              o CV tem uma parcela nova ({{ formatCurrency(d.cv.valor) }} em {{ formatDate(d.cv.vencimento) }}) que não está no plano
+            </template>
+            <template v-else>parcela {{ d.numero }} não existe mais nas condições do CV</template>
           </li>
         </ul>
-        <p class="text-xs mt-1">Boleto já emitido não muda sozinho. Se precisar, baixe o boleto da parcela e emita de novo.</p>
+        <p class="text-xs mt-1">
+          O plano foi definido no Envio Sienge e não acompanha o CV. Mudança só por administrador, aqui no Office:
+          editando a parcela (lápis) ou aplicando as condições do CV de propósito.
+        </p>
       </div>
 
       <!-- Ações do plano -->
       <div v-if="can('operate')" class="flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" icon="fas fa-rotate" :loading="store.acting" @click="sincronizar">Sincronizar com o CV</Button>
+        <Button v-if="can('configure')" variant="outline" size="sm" icon="fas fa-rotate" :loading="store.acting" @click="sincronizar">Aplicar condições do CV</Button>
         <Button v-if="det.plano.status === 'ativo'" variant="outline" size="sm" icon="fas fa-pause" :loading="store.acting" @click="pausar">Pausar</Button>
         <Button v-if="det.plano.status === 'pausado' || (det.plano.status === 'encerrado' && det.plano.encerrado_motivo === 'manual')"
           variant="outline" size="sm" icon="fas fa-play" :loading="store.acting" @click="reativar">Reativar</Button>
@@ -126,16 +135,34 @@
             </Button>
             <IconButton v-if="row.status === 'emitida'" icon="fas fa-ban" size="sm" label="Baixar boleto no Ecobrança" @click.stop="baixar(row)" />
             <IconButton v-if="['emitida', 'vencida'].includes(row.status)" icon="fas fa-check-double" size="sm" label="Marcar como paga" @click.stop="marcarPaga(row)" />
+            <IconButton v-if="can('configure') && ['prevista', 'vencida', 'erro'].includes(row.status)" icon="fas fa-pen-to-square" size="sm"
+              label="Editar valor ou vencimento (admin)" @click.stop="abrirEdicao(row)" />
           </span>
         </template>
       </DataTable>
 
       <p class="text-micro text-ink-subtle">
+        O plano é definido no Envio Sienge e não muda pelo CV; só administrador altera, aqui.
         A rodada diária emite cada parcela com a antecedência configurada. Parcela vencida recebe aviso (a reserva pode ser cancelada);
         a nova via sai quando o cliente responde SIM no WhatsApp ou pelo botão Reemitir, sempre com o mesmo valor e vencimento no próximo dia útil.
         Quando a venda é faturada no Sienge, o plano encerra sozinho e o ERP passa a cobrar.
       </p>
     </div>
+
+    <!-- Edição de parcela (admin): valor e vencimento originais -->
+    <Modal :open="edicao.open" title="Editar parcela" :subtitle="edicao.row ? `Parcela ${edicao.row.numero}/${edicao.row.total}` : ''" size="sm" :z-index="10050" @close="edicao.open = false">
+      <div class="space-y-3">
+        <p class="text-sm text-ink-muted">Isto muda o que o Office vai cobrar nesta parcela. O CV não é alterado.</p>
+        <Input v-model.number="edicao.valor" type="number" step="0.01" label="Valor (R$)" />
+        <Input v-model="edicao.vencimento" type="date" label="Vencimento" />
+        <Input v-model="edicao.motivo" label="Motivo" placeholder="Ex.: acordo com o cliente em 07/09" />
+        <p v-if="edicao.erro" class="text-sm text-data-neg">{{ edicao.erro }}</p>
+        <div class="flex justify-end gap-2">
+          <Button variant="ghost" size="sm" @click="edicao.open = false">Cancelar</Button>
+          <Button size="sm" icon="fas fa-check" :loading="store.acting" :disabled="!edicao.motivo || edicao.motivo.length < 5" @click="salvarEdicao">Salvar</Button>
+        </div>
+      </div>
+    </Modal>
 
     <!-- Boleto da parcela: o mesmo modal do Ato, por cima deste. -->
     <BoletoDetailModal :open="boletoModal.open" :item="boletoModal.item" :z-index="10050"
@@ -150,6 +177,7 @@ import { useCan } from '@/composables/useCan';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 import Modal from '@/components/UI/Modal.vue';
+import Input from '@/components/UI/Input.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
@@ -219,7 +247,29 @@ watch(() => [props.open, props.idreserva], ([open, id]) => {
 onUnmounted(pararPolling);
 
 async function sincronizar() {
+  const n = (det.value?.plano?.divergencias || []).length;
+  if (!await pedirConfirmacao({
+    title: 'Aplicar as condições atuais do CV neste plano?',
+    consequence: `O plano é congelado no Envio Sienge; isto é a exceção. As parcelas ainda sem boleto passam a seguir o CV (${n} diferença${n === 1 ? '' : 's'} registrada${n === 1 ? '' : 's'}). Parcelas com boleto emitido não mudam.`,
+    confirmLabel: 'Aplicar CV', tone: 'primary',
+  })) return;
   try { await store.sincronizar(props.idreserva); recarregar(); } catch { /* actionError já mostra */ }
+}
+
+// ── Edição de parcela (admin) ─────────────────────────────────────────────────
+const edicao = ref({ open: false, row: null, valor: null, vencimento: '', motivo: '', erro: null });
+function abrirEdicao(row) {
+  edicao.value = { open: true, row, valor: Number(row.valor), vencimento: String(row.vencimento).slice(0, 10), motivo: '', erro: null };
+}
+async function salvarEdicao() {
+  edicao.value.erro = null;
+  try {
+    await store.editarParcela(edicao.value.row.id, { valor: edicao.value.valor, vencimento: edicao.value.vencimento, motivo: edicao.value.motivo });
+    edicao.value.open = false;
+    recarregar();
+  } catch (e) {
+    edicao.value.erro = e.message || 'Falha ao editar.';
+  }
 }
 async function pausar() {
   if (!await pedirConfirmacao({ title: `Pausar o plano da reserva #${props.idreserva}?`, consequence: 'A rodada diária deixa de emitir e reemitir parcelas desta reserva até você reativar. Boletos já emitidos continuam valendo e sendo conferidos.', confirmLabel: 'Pausar', tone: 'primary' })) return;

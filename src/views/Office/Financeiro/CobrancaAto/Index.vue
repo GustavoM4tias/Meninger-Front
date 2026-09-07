@@ -38,6 +38,7 @@
               { title: 'Configurações: ajuste a automação', text: 'Guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o cálculo da comissão embutida, o envio ao cliente e as regras das parcelas mensais (antecedência, reemissão de vencidas, critério de parada pelo Sienge, lembretes).' },
             ]"
             :tips="[
+              'O plano de parcelas é definido uma vez, no Envio Sienge, e não acompanha mudanças feitas depois no CV: o que mudou lá aparece como aviso no plano, e só administrador altera, dentro do Office (editando a parcela ou aplicando as condições do CV de propósito).',
               'A cobrança das parcelas nasce DESLIGADA. Com ela desligada a aba Parcelas mostra os planos e o que a rodada faria, mas nenhum boleto sai. Ligue em Configurações > Parcelas mensais quando conferir os planos.',
               'Parcela vencida: o cliente recebe um aviso de que a reserva pode ser cancelada, com um botão SIM para pedir a nova via. Respondeu SIM, o Office reemite na hora; a tela também tem o botão Reemitir. Sempre com o mesmo valor e vencimento no próximo dia útil. Nesta etapa não há multa nem juros.',
               'O plano encerra sozinho quando a venda é faturada no Sienge (a mesma regra do relatório de Faturamento). Aí os boletos em aberto do Office são baixados, para o cliente não receber duas cobranças da mesma parcela.',

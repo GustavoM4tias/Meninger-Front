@@ -150,6 +150,18 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
     const emitirParcela = (id) => post(`/${id}/emitir`);
     const baixarParcela = (id) => post(`/${id}/baixar`);
     const marcarPaga = (id, nota) => post(`/${id}/marcar-paga`, { nota });
+    async function editarParcela(id, { valor, vencimento, motivo }) {
+        acting.value = true;
+        actionError.value = null;
+        try {
+            return await requestWithAuth(`${BASE}/${id}`, { method: 'PATCH', body: JSON.stringify({ valor, vencimento, motivo }) });
+        } catch (e) {
+            actionError.value = e.message || 'Falha ao editar a parcela.';
+            throw e;
+        } finally {
+            acting.value = false;
+        }
+    }
     const rodarCiclo = () => post('/rodar');
 
     // ── Templates WhatsApp (configure) ─────────────────────────────────────────
@@ -185,7 +197,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         fetchPlanos, loadMore, fetchStats, fetchFacets, fetchStatus, setSort, refresh,
         detalhe, detalheLoading, detalheError, fetchDetalhe,
         acting, actionError,
-        criarPlano, sincronizar, pausar, reativar, encerrar, emitirParcela, baixarParcela, marcarPaga, rodarCiclo,
+        criarPlano, sincronizar, pausar, reativar, encerrar, emitirParcela, baixarParcela, marcarPaga, editarParcela, rodarCiclo,
         templates, templatesLoading, templatesMsg, fetchTemplates, syncTemplates,
     };
 });
