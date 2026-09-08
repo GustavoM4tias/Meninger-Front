@@ -198,6 +198,13 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         }
     }
 
+    // ── Etapas do repasse (CV) para a regra de encerramento ────────────────────
+    const repasseEtapas = ref([]);   // [{ id, nome, ordem }] na ordem do workflow do CV
+    async function fetchRepasseEtapas() {
+        try { repasseEtapas.value = (await requestWithAuth(`${BASE}/repasse-etapas`))?.etapas || []; }
+        catch (e) { console.error('[parcelas] repasse-etapas', e); }
+    }
+
     // ── Templates WhatsApp (configure) ─────────────────────────────────────────
     const templates = ref([]);
     const templatesLoading = ref(false);
@@ -233,6 +240,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         acting, actionError,
         criarPlano, sincronizar, pausar, reativar, encerrar, emitirParcela, baixarParcela, marcarPaga, editarParcela, rodarCiclo,
         rodadas, rodadasLoading, rodadasError, boletos, boletosLoading, boletosError, boletosFiltro, fetchRodadas, fetchBoletos,
+        repasseEtapas, fetchRepasseEtapas,
         templates, templatesLoading, templatesMsg, fetchTemplates, syncTemplates,
     };
 });

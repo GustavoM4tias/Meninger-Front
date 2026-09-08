@@ -4,7 +4,8 @@
 export const PLANO_LABEL = { ativo: 'Ativo', pausado: 'Pausado', encerrado: 'Encerrado', cancelado: 'Cancelado' };
 export const PLANO_VARIANT = { ativo: 'success', pausado: 'warning', encerrado: 'info', cancelado: 'neutral' };
 export const MOTIVO_LABEL = {
-  sienge_faturado: 'Sienge faturou o contrato',
+  sienge_faturado: 'Sienge faturou a venda',
+  repasse_contrato_emitido: 'Caixa emitiu o contrato (repasse no CV)',
   reserva_cancelada: 'reserva cancelada no CV',
   manual: 'encerrado pela tela',
   sem_series: 'sem série mensal no CV',

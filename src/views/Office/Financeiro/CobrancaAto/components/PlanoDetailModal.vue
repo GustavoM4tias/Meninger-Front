@@ -36,6 +36,14 @@
           <span v-else class="text-sm text-ink-subtle">sem contrato</span>
         </div>
         <div>
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Repasse (CV)</p>
+          <span v-if="det.plano.cv_repasse_situacao" class="inline-flex flex-col items-start gap-0.5">
+            <Badge :variant="det.plano.encerrado_motivo === 'repasse_contrato_emitido' ? 'info' : 'neutral'" size="sm">{{ det.plano.cv_repasse_situacao }}</Badge>
+            <span class="text-micro text-ink-subtle">repasse {{ det.plano.cv_repasse_id }} · etapa {{ det.plano.cv_repasse_situacao_id }}</span>
+          </span>
+          <span v-else class="text-sm text-ink-subtle">{{ det.plano.sienge_verificado_em ? 'sem repasse' : 'ainda não verificado' }}</span>
+        </div>
+        <div>
           <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Pagas</p>
           <p class="text-sm text-ink tabular-nums">{{ resumo.pagas }} de {{ resumo.total }} · {{ formatCurrency(resumo.valorPago) }}</p>
         </div>

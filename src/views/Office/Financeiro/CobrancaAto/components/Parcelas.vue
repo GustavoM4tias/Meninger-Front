@@ -274,8 +274,12 @@
               {{ row.sienge_venda_faturada_em ? `venda faturada ${formatDate(row.sienge_venda_faturada_em)}` : 'venda não faturada' }}
             </Badge>
             <span class="text-micro text-ink-subtle">contrato {{ row.sienge_contract_id }}</span>
+            <span v-if="row.cv_repasse_situacao" class="text-micro text-ink-subtle truncate max-w-[9rem]" :title="`Repasse no CV: ${row.cv_repasse_situacao}`">repasse: {{ row.cv_repasse_situacao }}</span>
           </span>
-          <span v-else class="text-ink-subtle">sem contrato</span>
+          <span v-else class="inline-flex flex-col items-start gap-0.5">
+            <span class="text-ink-subtle">sem contrato</span>
+            <span v-if="row.cv_repasse_situacao" class="text-micro text-ink-subtle truncate max-w-[9rem]" :title="`Repasse no CV: ${row.cv_repasse_situacao}`">repasse: {{ row.cv_repasse_situacao }}</span>
+          </span>
         </template>
 
         <template #actions="{ row }">

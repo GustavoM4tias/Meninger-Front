@@ -62,8 +62,13 @@
         <p class="text-ink font-mono">{{ form.parcelas_exigir_ato_pago ? 'sim' : 'não' }}</p>
       </div>
       <div>
-        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Quando o Sienge assume</p>
-        <p class="text-ink font-mono">{{ form.parcelas_encerrar_quando_faturado ? 'quando a venda é faturada (regra do Faturamento)' : 'nunca encerra sozinho' }}</p>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Quando o plano encerra</p>
+        <p class="text-ink font-mono">{{ form.parcelas_encerrar_quando_faturado ? 'venda faturada no Sienge (regra do Faturamento)' : 'não encerra pelo Sienge' }}</p>
+        <p class="text-ink font-mono mt-0.5">
+          <template v-if="form.parcelas_encerrar_etapas_repasse.length">repasse do CV em {{ form.parcelas_encerrar_etapas_repasse.length }} etapa{{ form.parcelas_encerrar_etapas_repasse.length === 1 ? '' : 's' }}: {{ etapasResumo }}</template>
+          <template v-else>não encerra pela etapa do repasse</template>
+        </p>
+        <p class="text-ink-subtle mt-0.5">Qualquer uma das regras basta. Ao encerrar, os boletos em aberto são baixados e o cliente para de receber cobrança do Office.</p>
       </div>
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Cobrar a partir de</p>
@@ -120,6 +125,15 @@
         <Switch v-model="form.parcelas_exigir_ato_pago" label="Só cobrar parcelas com o ato pago" description="Desligado, a adesão cria plano para toda reserva com série mensal (ato pago ou não)." />
         <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando a venda for faturada no Sienge" description="Venda faturada = data com a instituição financeira, a mesma regra do relatório de Faturamento. Aí o ERP passa a cobrar e os boletos em aberto do Office são baixados." />
       </div>
+      <div class="md:col-span-2">
+        <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">Encerrar o plano quando o repasse do CV estiver em</label>
+        <MultiSelector v-model="etapasLabels" :options="etapasOptions" placeholder="Nenhuma etapa (regra desligada)" :page-size="100" />
+        <p class="text-ink-subtle mt-1.5">
+          A partir de "Contrato Emitido CAIXA" vem a confissão de dívida, a assinatura e o faturamento: cobrar parcela daí em diante gera
+          pagamento sem a informação para os contratos. Marque a etapa e todas as seguintes da linha principal; a rodada encerra o plano
+          e baixa os boletos em aberto quando o repasse estiver em qualquer uma delas. Vazio desliga a regra.
+        </p>
+      </div>
       <Input v-model="form.parcelas_cobrar_a_partir_de" type="date" label="Cobrar parcelas com vencimento a partir de"
         hint="Parcela com vencimento original antes desta data é retroativa: a rodada não emite nem reemite; ela aparece como atraso e só sai pelo botão Emitir agora. Vazio = sem corte." />
       <Select v-model="form.parcelas_vencidas_na_adesao" label="Parcela já vencida quando o plano nasce"
@@ -152,10 +166,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
 import { useParcelasStore } from '@/stores/Financeiro/CobrancaAto/parcelasStore';
 import Panel from '@/components/UI/Panel.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
@@ -168,14 +183,15 @@ const parcelas = useParcelasStore();
 
 const CAMPOS = [
   'parcelas_ativo', 'parcelas_idseries', 'parcelas_exigir_ato_pago', 'parcelas_antecedencia_dias',
-  'parcelas_encerrar_quando_faturado', 'parcelas_vencidas_na_adesao', 'parcelas_cobrar_a_partir_de',
+  'parcelas_encerrar_quando_faturado', 'parcelas_encerrar_etapas_repasse', 'parcelas_vencidas_na_adesao', 'parcelas_cobrar_a_partir_de',
   'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'parcelas_lote_tamanho', 'parcelas_lote_pausa_min',
   'atraso_reemitir', 'atraso_max_reemissoes',
   'lembrete_dias_antes', 'aviso_atraso_dias_depois',
 ];
 const DEFAULTS = {
   parcelas_ativo: false, parcelas_idseries: [20, 1, 37], parcelas_exigir_ato_pago: true, parcelas_antecedencia_dias: 10,
-  parcelas_encerrar_quando_faturado: true, parcelas_vencidas_na_adesao: 'emitir', parcelas_cobrar_a_partir_de: '',
+  parcelas_encerrar_quando_faturado: true, parcelas_encerrar_etapas_repasse: [45, 27, 57, 47, 48, 46, 54, 33, 34, 35, 36],
+  parcelas_vencidas_na_adesao: 'emitir', parcelas_cobrar_a_partir_de: '',
   parcelas_hora_rodada: 9, parcelas_max_emissoes_rodada: 0, parcelas_lote_tamanho: 10, parcelas_lote_pausa_min: 5,
   atraso_reemitir: false, atraso_max_reemissoes: 3,
   lembrete_dias_antes: 3, aviso_atraso_dias_depois: 1,
@@ -208,10 +224,26 @@ function addSerie() {
 }
 function removeSerie(id) { form.value.parcelas_idseries = form.value.parcelas_idseries.filter(s => s !== id); }
 
+/* Etapas do repasse: o MultiSelector trabalha com rótulos; o form guarda os ids. */
+const etapaLabel = (e) => `${e.id} · ${e.nome}`;
+const etapasOptions = computed(() => parcelas.repasseEtapas.map(etapaLabel));
+const etapasLabels = computed({
+  get: () => form.value.parcelas_encerrar_etapas_repasse.map(id => {
+    const e = parcelas.repasseEtapas.find(x => x.id === Number(id));
+    return e ? etapaLabel(e) : `${id} · (etapa não encontrada no CV)`;
+  }),
+  set: (labels) => { form.value.parcelas_encerrar_etapas_repasse = labels.map(l => Number(String(l).split(' · ')[0])).filter(n => n > 0); },
+});
+const etapasResumo = computed(() => {
+  const nomes = form.value.parcelas_encerrar_etapas_repasse.map(id => parcelas.repasseEtapas.find(x => x.id === Number(id))?.nome || `#${id}`);
+  return nomes.length <= 3 ? nomes.join(', ') : `${nomes.slice(0, 2).join(', ')} e mais ${nomes.length - 2}`;
+});
+
 onMounted(async () => {
   if (!boletoStore.settings) await boletoStore.fetchSettings();
   carregar();
   parcelas.fetchTemplates();
   parcelas.fetchStatus();
+  parcelas.fetchRepasseEtapas();
 });
 </script>
