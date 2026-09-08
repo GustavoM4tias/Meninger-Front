@@ -51,7 +51,11 @@
       </div>
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Hora da rodada</p>
-        <p class="text-ink font-mono">{{ String(form.parcelas_hora_rodada).padStart(2, '0') }}:00 · até {{ form.parcelas_max_emissoes_rodada }} boletos</p>
+        <p class="text-ink font-mono">
+          {{ String(form.parcelas_hora_rodada).padStart(2, '0') }}:00 ·
+          {{ form.parcelas_max_emissoes_rodada > 0 ? `até ${form.parcelas_max_emissoes_rodada} boletos` : 'tudo da janela no mesmo dia' }}
+          · lotes de {{ form.parcelas_lote_tamanho }}{{ form.parcelas_lote_pausa_min > 0 ? ` com ${form.parcelas_lote_pausa_min} min de pausa` : '' }}
+        </p>
       </div>
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Exige ato pago</p>
@@ -107,7 +111,11 @@
       </div>
       <Input v-model.number="form.parcelas_antecedencia_dias" type="number" label="Antecedência da emissão (dias)" hint="O boleto da parcela sai N dias corridos antes do vencimento." />
       <Input v-model.number="form.parcelas_hora_rodada" type="number" label="Hora da rodada diária (0-23, Brasília)" hint="Depois das 08h, que é quando a rodada de pagamento marca o que foi pago ou venceu." />
-      <Input v-model.number="form.parcelas_max_emissoes_rodada" type="number" label="Máx. de boletos por rodada" hint="O resto sai no dia seguinte. Segura a primeira rodada, que tem fila acumulada." />
+      <div class="grid grid-cols-2 gap-3">
+        <Input v-model.number="form.parcelas_lote_tamanho" type="number" label="Boletos por lote" hint="A rodada emite em lotes; entre um e outro faz a pausa ao lado. Tudo que está na janela sai no mesmo dia." />
+        <Input v-model.number="form.parcelas_lote_pausa_min" type="number" label="Pausa entre lotes (min)" hint="0 = sem pausa. Cada emissão já leva cerca de 1 minuto no portal." />
+      </div>
+      <Input v-model.number="form.parcelas_max_emissoes_rodada" type="number" label="Teto de boletos por rodada (0 = sem teto)" hint="Só use para segurar um dia específico. Com teto, o que sobrar fica para o dia seguinte." />
       <div class="space-y-3">
         <Switch v-model="form.parcelas_exigir_ato_pago" label="Só cobrar parcelas com o ato pago" description="Desligado, a adesão cria plano para toda reserva com série mensal (ato pago ou não)." />
         <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando a venda for faturada no Sienge" description="Venda faturada = data com a instituição financeira, a mesma regra do relatório de Faturamento. Aí o ERP passa a cobrar e os boletos em aberto do Office são baixados." />
@@ -161,13 +169,15 @@ const parcelas = useParcelasStore();
 const CAMPOS = [
   'parcelas_ativo', 'parcelas_idseries', 'parcelas_exigir_ato_pago', 'parcelas_antecedencia_dias',
   'parcelas_encerrar_quando_faturado', 'parcelas_vencidas_na_adesao', 'parcelas_cobrar_a_partir_de',
-  'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'atraso_reemitir', 'atraso_max_reemissoes',
+  'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'parcelas_lote_tamanho', 'parcelas_lote_pausa_min',
+  'atraso_reemitir', 'atraso_max_reemissoes',
   'lembrete_dias_antes', 'aviso_atraso_dias_depois',
 ];
 const DEFAULTS = {
   parcelas_ativo: false, parcelas_idseries: [20, 1, 37], parcelas_exigir_ato_pago: true, parcelas_antecedencia_dias: 10,
   parcelas_encerrar_quando_faturado: true, parcelas_vencidas_na_adesao: 'emitir', parcelas_cobrar_a_partir_de: '',
-  parcelas_hora_rodada: 9, parcelas_max_emissoes_rodada: 40, atraso_reemitir: false, atraso_max_reemissoes: 3,
+  parcelas_hora_rodada: 9, parcelas_max_emissoes_rodada: 0, parcelas_lote_tamanho: 10, parcelas_lote_pausa_min: 5,
+  atraso_reemitir: false, atraso_max_reemissoes: 3,
   lembrete_dias_antes: 3, aviso_atraso_dias_depois: 1,
 };
 const form = ref({ ...DEFAULTS });
