@@ -1,5 +1,5 @@
 <script setup>
-// Assinatura pública do aditivo contratual: lp.menin.com.br/aditivo/<token>
+// Assinatura pública do aditivo contratual: lp.menin.com.br/<token>
 //
 // O link é fixo e vai para o cliente por WhatsApp/e-mail. A URL de assinatura
 // do DocuSign vive poucos minutos, então ela é gerada na hora do clique - o
@@ -8,7 +8,7 @@
 // O CPF é conferido antes de liberar: sem isso, quem recebesse o link
 // encaminhado assinaria no lugar do comprador.
 //
-// A mesma tela atende o retorno do DocuSign (/aditivo/<token>/pronto).
+// A mesma tela atende o retorno do DocuSign (/<token>/pronto).
 
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
@@ -28,7 +28,15 @@ const cpf = ref('');
 const abrindo = ref(false);
 const erro = ref('');
 
-const retorno = ref(null); // { evento, assinado }
+const retorno = ref(null);              // { evento, assinado }
+const confirmacaoPendente = ref(false); // a nossa API não respondeu na volta
+const erroCarregar = ref('');           // queda ao abrir (link pode estar certo)
+
+// O DocuSign só devolve o cliente com `signing_complete` DEPOIS da cerimônia
+// terminar: a assinatura já existe lá, mesmo que a nossa API não responda na
+// volta. Por isso a tela de retorno nunca depende só da nossa confirmação.
+const assinouPelaUrl = String(route.query.event || '') === 'signing_complete';
+const assinado = computed(() => Boolean(retorno.value?.assinado) || assinouPelaUrl);
 
 // O nome vem em caixa alta do CV e grita na tela; aqui ele aparece por
 // extenso normal, com as partículas em minúscula.
@@ -57,13 +65,21 @@ function mascararCpf(e) {
         .replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
 }
 
+// O `status` vai junto do erro porque a tela trata 404 (link errado mesmo) de
+// um jeito e queda de rede/servidor de outro - dizer "link não encontrado" para
+// quem tem o link certo é o pior retorno possível.
 async function pedir(caminho, opts = {}) {
-    const r = await fetch(BASE + caminho, {
-        headers: { 'Content-Type': 'application/json' },
-        ...opts,
-    });
+    let r;
+    try {
+        r = await fetch(BASE + caminho, {
+            headers: { 'Content-Type': 'application/json' },
+            ...opts,
+        });
+    } catch {
+        throw Object.assign(new Error('Sem conexão com o servidor.'), { status: 0 });
+    }
     const body = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(body.error || `Erro ${r.status}`);
+    if (!r.ok) throw Object.assign(new Error(body.error || `Erro ${r.status}`), { status: r.status });
     return body;
 }
 
@@ -79,23 +95,52 @@ async function abrirAssinatura() {
     }
 }
 
-onMounted(async () => {
-    // Página pública é sempre clara, mesmo com tema escuro salvo no navegador.
-    document.documentElement.classList.remove('dark');
-    try {
-        if (ehRetorno.value) {
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Na volta do DocuSign o cliente está quase sempre no 4G, saindo de outro app:
+// uma falha isolada de rede não pode virar "link não encontrado" para quem
+// acabou de assinar. Tenta de novo e, se ainda assim não der, a tela se apoia
+// no evento que o próprio DocuSign colocou na URL.
+async function confirmarRetorno() {
+    for (let tentativa = 1; tentativa <= 3; tentativa += 1) {
+        try {
             retorno.value = await pedir('/retorno', {
                 method: 'POST',
                 body: JSON.stringify({ event: String(route.query.event || '') }),
             });
-        } else {
-            doc.value = await pedir('');
+            return;
+        } catch {
+            if (tentativa === 3) confirmacaoPendente.value = true;
+            else await espera(800 * tentativa);
         }
+    }
+}
+
+async function carregarDoc() {
+    carregando.value = true;
+    erroLink.value = '';
+    erroCarregar.value = '';
+    try {
+        doc.value = await pedir('');
     } catch (err) {
-        erroLink.value = err?.message || 'Link inválido.';
+        // Só 404 significa link errado; queda de rede ou servidor é outra história
+        // e tem conserto - tentar de novo.
+        if (err?.status === 404) erroLink.value = err.message;
+        else erroCarregar.value = err?.message || 'Não foi possível carregar.';
     } finally {
         carregando.value = false;
     }
+}
+
+onMounted(async () => {
+    // Página pública é sempre clara, mesmo com tema escuro salvo no navegador.
+    document.documentElement.classList.remove('dark');
+    if (ehRetorno.value) {
+        await confirmarRetorno();
+        carregando.value = false;
+        return;
+    }
+    await carregarDoc();
 });
 </script>
 
@@ -115,7 +160,7 @@ onMounted(async () => {
                     <p class="mt-3 text-sm">Carregando...</p>
                 </div>
 
-                <!-- Link inválido -->
+                <!-- Link inválido: só quando a API disse 404 mesmo -->
                 <div v-else-if="erroLink" class="py-14 text-center">
                     <i class="fas fa-link-slash text-3xl text-slate-400"></i>
                     <h1 class="mt-4 text-lg font-semibold text-slate-800">Link não encontrado</h1>
@@ -124,13 +169,34 @@ onMounted(async () => {
                     </p>
                 </div>
 
+                <!-- Queda de rede/servidor: o link pode estar certo, então a tela
+                     oferece nova tentativa em vez de acusar o link. -->
+                <div v-else-if="erroCarregar" class="py-14 text-center">
+                    <i class="fas fa-triangle-exclamation text-3xl text-amber-500"></i>
+                    <h1 class="mt-4 text-lg font-semibold text-slate-800">Não foi possível carregar</h1>
+                    <p class="mt-1 text-sm text-slate-500">
+                        A conexão falhou por um instante. O seu link continua valendo.
+                    </p>
+                    <button
+                        type="button"
+                        class="mt-5 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+                        @click="carregarDoc"
+                    >
+                        <i class="fas fa-rotate"></i>Tentar de novo
+                    </button>
+                </div>
+
                 <!-- Retorno do DocuSign -->
                 <div v-else-if="ehRetorno" class="py-12 text-center">
-                    <template v-if="retorno?.assinado">
+                    <template v-if="assinado">
                         <i class="fas fa-circle-check text-4xl text-emerald-500"></i>
                         <h1 class="mt-4 text-lg font-semibold text-slate-800">Assinatura concluída</h1>
                         <p class="mt-1 text-sm text-slate-500">
                             Obrigado! Recebemos a sua assinatura. Uma via assinada será enviada para você.
+                        </p>
+                        <p v-if="confirmacaoPendente" class="mt-3 text-xs text-slate-400">
+                            A sua assinatura foi registrada no DocuSign. A confirmação aqui não carregou por
+                            causa da conexão, mas você não precisa fazer mais nada.
                         </p>
                     </template>
                     <template v-else>
@@ -140,7 +206,7 @@ onMounted(async () => {
                             Você saiu antes de finalizar. O link continua valendo - é só abrir de novo quando quiser.
                         </p>
                         <RouterLink
-                            :to="`/aditivo/${token}`"
+                            :to="`/${token}`"
                             class="mt-5 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
                         >
                             <i class="fas fa-pen-nib"></i>Voltar para assinar
