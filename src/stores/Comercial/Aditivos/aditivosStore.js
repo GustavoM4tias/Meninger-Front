@@ -56,11 +56,12 @@ export const useAditivosStore = defineStore('aditivos', () => {
         }
     }
 
-    // Percentual de assinaturas colhidas, para a barra de progresso.
+    // Percentual de unidades fechadas, para a barra de progresso: a entrega é
+    // a unidade com o documento completo, não a assinatura solta.
     const progresso = computed(() => {
         const r = resumo.value;
-        if (!r?.assinantes) return 0;
-        return Math.round((r.assinaram / r.assinantes) * 100);
+        if (!r?.unidades) return 0;
+        return Math.round((r.unidades_concluidas / r.unidades) * 100);
     });
 
     return {

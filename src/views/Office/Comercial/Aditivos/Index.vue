@@ -11,8 +11,8 @@
             storage-key="aditivos-assinaturas"
             intro="Cada unidade tem um documento no DocuSign e um link fixo por assinante. O mesmo link atende o titular e o cônjuge: quem abre digita o próprio CPF e o sistema descobre quem é. Esta tela mostra em que pé está cada um e entrega o link para reenviar."
             :steps="[
-              { title: 'Leia o placar', text: 'Os cartões contam PESSOAS, não unidades. Clique num cartão para recortar a lista - por exemplo, ver só quem abriu o link e não assinou.' },
-              { title: 'Cobre quem parou', text: 'Sem interação é quem nunca abriu o link: provavelmente ainda não recebeu. Abriu, não assinou é quem viu o documento e desistiu no meio - esse é o que vale uma ligação.' },
+              { title: 'Leia o placar', text: 'Os cartões contam UNIDADES e formam um funil: cada unidade aparece em um cartão só. Clique num cartão para recortar a lista - por exemplo, ver só as unidades em que ninguém abriu o link. Quem assinou dentro de cada unidade você vê nos cartões da lista.' },
+              { title: 'Cobre quem parou', text: 'Sem interação é a unidade em que ninguém abriu o link: provavelmente ainda não receberam. Abriram, ninguém assinou é quem viu o documento e desistiu no meio, e Falta uma assinatura é a unidade em que só o cônjuge (ou só o titular) ainda não assinou - esses dois são os que valem uma ligação.' },
               { title: 'Reenvie o link', text: 'O botão Copiar link entrega o endereço do assinante. O link nunca expira: pode reenviar por WhatsApp quantas vezes precisar.' },
               { title: 'Atualize pelo DocuSign', text: 'A lista mostra o que estava gravado na última leitura. O botão Atualizar vai ao DocuSign conferir envelope por envelope - leva alguns segundos e é a informação mais fresca que existe.' },
             ]"
@@ -41,16 +41,24 @@
       <!-- Placar -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatCard
-          label="Assinaram"
-          :raw="resumo.assinaram" :format="inteiro"
-          :hint="`de ${resumo.assinantes} assinantes`"
-          icon="fas fa-circle-check" tone="pos"
-          selectable :active="filtro === 'assinado'"
+          label="Unidades concluídas"
+          :raw="resumo.unidades_concluidas" :format="inteiro"
+          :hint="`de ${resumo.unidades} unidades`"
+          icon="fas fa-file-circle-check" tone="pos"
+          selectable :active="filtro === 'concluida'"
           :loading="store.carregando"
-          @select="alternarFiltro('assinado')" />
+          @select="alternarFiltro('concluida')" />
         <StatCard
-          label="Abriram, não assinaram"
-          :raw="resumo.abriram" :format="inteiro"
+          label="Falta uma assinatura"
+          :raw="resumo.unidades_parciais" :format="inteiro"
+          hint="parte da unidade já assinou"
+          icon="fas fa-user-clock" tone="warn"
+          selectable :active="filtro === 'parcial'"
+          :loading="store.carregando"
+          @select="alternarFiltro('parcial')" />
+        <StatCard
+          label="Abriram, ninguém assinou"
+          :raw="resumo.unidades_abriram" :format="inteiro"
           hint="viram o link e pararam"
           icon="fas fa-hourglass-half" tone="warn"
           selectable :active="filtro === 'abriu'"
@@ -58,20 +66,12 @@
           @select="alternarFiltro('abriu')" />
         <StatCard
           label="Sem interação"
-          :raw="resumo.parados" :format="inteiro"
-          hint="nunca abriram o link"
+          :raw="resumo.unidades_paradas" :format="inteiro"
+          hint="ninguém abriu o link"
           icon="fas fa-circle-minus" tone="neutral"
           selectable :active="filtro === 'parado'"
           :loading="store.carregando"
           @select="alternarFiltro('parado')" />
-        <StatCard
-          label="Unidades concluídas"
-          :raw="resumo.unidades_concluidas" :format="inteiro"
-          :hint="`de ${resumo.unidades} unidades`"
-          icon="fas fa-file-circle-check" tone="accent"
-          selectable :active="filtro === 'concluida'"
-          :loading="store.carregando"
-          @select="alternarFiltro('concluida')" />
       </div>
 
       <!-- Progresso -->
@@ -81,7 +81,7 @@
             :style="{ width: `${store.progresso}%` }"></div>
         </div>
         <p class="mt-1.5 text-xs text-ink-muted">
-          {{ store.progresso }}% das assinaturas colhidas
+          {{ store.progresso }}% das unidades concluídas
           <span v-if="store.ultimaAtualizacao"> · lido do DocuSign às {{ hora(store.ultimaAtualizacao) }}</span>
         </p>
       </div>
@@ -197,14 +197,15 @@ const TOM = {
 const filtro = ref('todas');
 const opcoesFiltro = [
   { value: 'todas', label: 'Todas' },
-  { value: 'parado', label: 'Sem interação' },
-  { value: 'abriu', label: 'Abriram' },
-  { value: 'assinado', label: 'Assinaram' },
   { value: 'concluida', label: 'Concluídas' },
+  { value: 'parcial', label: 'Falta uma' },
+  { value: 'abriu', label: 'Abriram' },
+  { value: 'parado', label: 'Sem interação' },
 ];
 
 const resumo = computed(() => store.resumo ?? {
-  unidades: 0, unidades_concluidas: 0, assinantes: 0, assinaram: 0, abriram: 0, parados: 0, recusaram: 0,
+  unidades: 0, unidades_concluidas: 0, unidades_parciais: 0, unidades_abriram: 0, unidades_paradas: 0,
+  assinantes: 0, assinaram: 0, abriram: 0, parados: 0, recusaram: 0,
 });
 
 const opcoesEmpreendimento = computed(() => [
@@ -212,11 +213,11 @@ const opcoesEmpreendimento = computed(() => [
   ...store.empreendimentos.map((e) => ({ value: e, label: e })),
 ]);
 
-// O filtro pergunta das PESSOAS, menos "concluida", que é da unidade.
+// O placar e o filtro falam da UNIDADE: `estado` vem pronto do back, para a
+// tela não repetir (e nem discordar de) a regra de quando o documento fecha.
 const lista = computed(() => {
   if (filtro.value === 'todas') return store.unidades;
-  if (filtro.value === 'concluida') return store.unidades.filter((u) => u.concluida);
-  return store.unidades.filter((u) => u.signers.some((s) => s.estado === filtro.value));
+  return store.unidades.filter((u) => u.estado === filtro.value);
 });
 
 function alternarFiltro(valor) {
