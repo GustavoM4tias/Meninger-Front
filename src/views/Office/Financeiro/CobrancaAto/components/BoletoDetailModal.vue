@@ -848,6 +848,13 @@ async function copyLink() {
                   {{ live?.cliente_whatsapp_enviado ? 'enviado' : (warningsList(live).find(w => w.etapa === 'cliente_whatsapp')?.erro || 'não enviado') }}
                 </span>
               </li>
+              <li v-if="warningsList(live).find(w => w.etapa === 'cep_contingencia')" class="flex items-start gap-2">
+                <i class="fas fa-location-dot text-data-warn"></i>
+                <span class="text-data-warn">
+                  <strong>CEP a corrigir no CV:</strong>
+                  {{ warningsList(live).find(w => w.etapa === 'cep_contingencia')?.erro }}
+                </span>
+              </li>
             </ul>
           </div>
         </div>

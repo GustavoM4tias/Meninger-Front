@@ -835,6 +835,10 @@
                 <span v-if="row.emissao_agendada_para" class="text-micro text-ink-subtle tabular-nums">
                   {{ formatDateTime(row.emissao_agendada_para) }}
                 </span>
+                <!-- A Caixa recusou o CEP do CV e o boleto saiu com o endereço da Menin. -->
+                <span v-if="alertaCep(row)" class="text-micro text-data-warn" :title="alertaCep(row)">
+                  <i class="fas fa-location-dot" style="font-size:9px"></i> CEP a corrigir no CV
+                </span>
               </span>
             </template>
 
@@ -1270,6 +1274,13 @@ function formatDateTime(iso) {
 }
 
 // ── Status helpers ────────────────────────────────────────────────────────────
+/* Aviso de CEP: a Caixa recusou o CEP do CV e o boleto saiu com o endereço da Menin. */
+function alertaCep(row) {
+  let w = row?.warnings;
+  if (typeof w === 'string') { try { w = JSON.parse(w); } catch { w = null; } }
+  return Array.isArray(w) ? (w.find(x => x?.etapa === 'cep_contingencia')?.erro || null) : null;
+}
+
 function statusVariant(status) {
   return {
     processing: 'info',
