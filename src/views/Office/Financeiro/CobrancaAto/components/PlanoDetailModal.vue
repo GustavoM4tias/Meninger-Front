@@ -1,6 +1,6 @@
 <!--
   Detalhe do plano de parcelas de uma reserva: cabeçalho (reserva, titular,
-  empreendimento, situação, repasse no CV, contrato no Sienge), ações do plano e a lista parcela a parcela
+  empreendimento, situação, Sienge), ações do plano e a lista parcela a parcela
   com o boleto atual de cada uma. Abrir um boleto reaproveita o modal do Ato
   (BoletoDetailModal), que já sabe mostrar PDF, linha do tempo e reenvio.
 -->
@@ -26,9 +26,12 @@
           <p v-else-if="det.plano.observacao" class="text-micro text-data-warn mt-1">{{ det.plano.observacao }}</p>
         </div>
         <div>
-          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Sienge (informação)</p>
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Sienge</p>
           <span v-if="det.contrato" class="inline-flex flex-wrap gap-1">
             <Badge variant="neutral" size="sm">contrato {{ det.contrato.id }} · {{ det.contrato.situation }}</Badge>
+            <Badge :variant="det.contrato.financial_institution_date ? 'info' : 'neutral'" size="sm">
+              {{ det.contrato.financial_institution_date ? `venda faturada ${formatDate(det.contrato.financial_institution_date)}` : 'venda não faturada' }}
+            </Badge>
           </span>
           <span v-else class="text-sm text-ink-subtle">sem contrato</span>
         </div>
@@ -158,7 +161,7 @@
         O plano é definido no Envio Sienge e não muda pelo CV; só administrador altera, aqui.
         A rodada diária emite cada parcela com a antecedência configurada. Parcela vencida recebe aviso (a reserva pode ser cancelada);
         a nova via sai quando o cliente responde SIM no WhatsApp ou pelo botão Reemitir, sempre com o mesmo valor e vencimento no próximo dia útil.
-        Quando o repasse no CV chega a “Contrato Emitido CAIXA” (ou etapa seguinte), o plano encerra sozinho e o contrato passa a cobrar. Contrato ou título no Sienge não encerram nada.
+        Quando a venda é faturada no Sienge, ou o repasse no CV chega a “Contrato Emitido CAIXA”, o plano encerra sozinho e o ERP passa a cobrar. Título gerado no Sienge não encerra.
       </p>
     </div>
 

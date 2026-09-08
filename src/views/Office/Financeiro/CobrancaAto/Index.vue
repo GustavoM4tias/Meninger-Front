@@ -3,7 +3,7 @@
     <PageContainer size="full">
 
       <PageHeader
-        subtitle="Cobrança da entrada (boleto Caixa ou link de cartão) e das parcelas mensais até a Caixa emitir o contrato"
+        subtitle="Cobrança da entrada (boleto Caixa ou link de cartão) e das parcelas mensais até o Sienge faturar o contrato"
         icon="fas fa-file-invoice-dollar">
         <template #title>
           <span>Ato e Parcelas</span>
@@ -28,15 +28,15 @@
           <PageHelp
             storage-key="cobranca-ato"
             title="Como usar - Ato e Parcelas"
-            intro="Esta tela cuida da cobrança da venda antes do Sienge assumir: a entrada (o ato) e as parcelas mensais. Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto Caixa ou o link de cartão do ato. Pago o ato, nasce o plano de parcelas: o Office emite cada mensal com antecedência, avisa o cliente quando vence, reemite a pedido (sem multa nem juros) e para sozinho quando o repasse no CV chega a “Contrato Emitido CAIXA”. A aba Conciliação mostra se o que o cliente pagou já foi lançado no ERP."
+            intro="Esta tela cuida da cobrança da venda antes do Sienge assumir: a entrada (o ato) e as parcelas mensais. Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto Caixa ou o link de cartão do ato. Pago o ato, nasce o plano de parcelas: o Office emite cada mensal com antecedência, avisa o cliente quando vence, reemite a pedido (sem multa nem juros) e para sozinho quando o Financeiro fatura a venda no Sienge. A aba Conciliação mostra se o que o cliente pagou já foi lançado no ERP."
             :steps="[
               { title: 'Histórico: acompanhe as cobranças do ato', text: 'Lista o que foi emitido no período. Os cartões do topo contam quantos foram pagos, quantos ainda esperam e quantos falharam. Clique em um cartão para recortar a tabela (clicar de novo desfaz) e na linha para abrir o detalhe, com a linha do tempo e o PDF.' },
-              { title: 'Parcelas: as mensais depois do ato', text: 'Uma linha por reserva com plano: quantas parcelas foram pagas, qual é a próxima, o que está em atraso e em que etapa está o repasse no CV. Abra a linha para ver parcela a parcela, emitir ou reemitir um boleto, marcar como paga, pausar ou encerrar o plano. O plano nasce sozinho quando o ato é pago e encerra sozinho quando o repasse chega a “Contrato Emitido CAIXA”.' },
+              { title: 'Parcelas: as mensais depois do ato', text: 'Uma linha por reserva com plano: quantas parcelas foram pagas, qual é a próxima, o que está em atraso e se o Sienge já faturou. Abra a linha para ver parcela a parcela, emitir ou reemitir um boleto, marcar como paga, pausar ou encerrar o plano. O plano nasce sozinho quando o ato é pago e encerra sozinho quando a venda é faturada no Sienge.' },
               { title: 'Parcelas: confira o que a rodada fez', text: 'O painel Acompanhamento lista boleto a boleto o que saiu no dia (ou em 7 e 30 dias): quem recebeu, por qual canal (anexo no CV, e-mail, WhatsApp) e, quando não saiu, o motivo escrito (CEP recusado pela Caixa, titular sem número no CV). Os selos do topo recortam a lista; clique na linha para abrir o boleto. Em Últimas rodadas fica o histórico de cada ciclo: quando rodou, quanto emitiu, o que falhou e onde caiu.' },
               { title: 'Conciliação: confira o que entrou', text: 'É o relatório “Contas Recebidas” do Sienge no documento AVC, lido ao vivo da API, com filtro de período (data do recebimento), empresa e empreendimento. Serve para bater com o ERP sem abrir o ERP.' },
               { title: 'Leia os quatro grupos', text: 'O confronto com o ato já vem ligado e separa tudo em: conciliados, o que falta lançar no Sienge, o que foi abatido sem ato correspondente, e os que bateram mas com valor diferente. Passe o mouse no selo da coluna Ato, ou abra a linha, para ver de quanto é a diferença.' },
               { title: 'Ataque a lista “Falta lançar”', text: 'É o ato que o cliente já pagou e que ninguém lançou no Sienge ainda - a fila do administrativo. Ela traz cliente, unidade, valor e reserva, e vai junto no CSV do botão Exportar.' },
-              { title: 'Configurações: ajuste a automação', text: 'Guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o cálculo da comissão embutida, o envio ao cliente e as regras das parcelas mensais (antecedência, reemissão de vencidas, etapas do repasse que encerram o plano, lembretes).' },
+              { title: 'Configurações: ajuste a automação', text: 'Guarda as credenciais do Ecobrança, o endereço do webhook, a janela de horário, o cálculo da comissão embutida, o envio ao cliente e as regras das parcelas mensais (antecedência, reemissão de vencidas, critério de parada pelo Sienge, lembretes).' },
             ]"
             :tips="[
               'O plano de parcelas é definido uma vez, no Envio Sienge, e não acompanha mudanças feitas depois no CV: o que mudou lá aparece como aviso no plano, e só administrador altera, dentro do Office (editando a parcela ou aplicando as condições do CV de propósito).',
@@ -44,7 +44,7 @@
               'A Caixa não aceita o CEP genérico da cidade (86360-000, por exemplo). Quando isso acontece o boleto sai mesmo assim com o endereço da Menin, que também está no contrato, e a reserva fica com o alerta “CEP a corrigir no CV” na tabela, no plano e no painel Acompanhamento; o corretor recebe a mensagem no CV. Corrigido o cadastro, o alerta some na emissão seguinte. O endereço de contingência é configurável em Configurações > Parcelas mensais.',
               'Outros erros de emissão ficam marcados como erro no plano e no painel Acompanhamento, com o motivo escrito. A rodada seguinte tenta de novo, até cinco vezes.',
               'Parcela vencida: o cliente recebe um aviso de que a reserva pode ser cancelada, com um botão SIM para pedir a nova via. Respondeu SIM, o Office reemite na hora; a tela também tem o botão Reemitir. Sempre com o mesmo valor e vencimento no próximo dia útil. Nesta etapa não há multa nem juros.',
-              'O plano encerra sozinho por UMA regra: o repasse no CV chegou a “Contrato Emitido CAIXA” ou a uma etapa seguinte (daí vêm a confissão de dívida, a assinatura e o faturamento). Aí os boletos em aberto do Office são baixados, para o cliente não pagar sem a informação para os contratos. Contrato lançado ou título gerado no Sienge NÃO encerram: o título pode ser um adiantamento e não prova que o ERP cobra as mensais. As etapas do repasse que encerram são escolhidas em Configurações > Parcelas mensais. Reserva cancelada no CV também encerra.',
+              'O plano encerra sozinho por qualquer uma de duas regras: a venda foi faturada no Sienge (a mesma regra do relatório de Faturamento) ou o repasse no CV chegou a “Contrato Emitido CAIXA” ou a uma etapa seguinte (daí vêm a confissão de dívida, a assinatura e o faturamento). Nos dois casos os boletos em aberto do Office são baixados, para o cliente não pagar sem a informação para os contratos. Contrato lançado ou título gerado no Sienge NÃO encerram: o título pode ser um adiantamento. As etapas do repasse que encerram são escolhidas em Configurações > Parcelas mensais.',
               'A automação pode ser pausada sem perder nada: os webhooks que chegarem ficam registrados e voltam a ser processados quando ela for religada.',
               'Em alguns empreendimentos a série do ato vem com a comissão da imobiliária dentro. Ligando “deduzir a comissão do CV” naquele empreendimento, a cobrança passa a ser o ato menos a comissão fora do contrato que o CV informa na reserva: ato de R$ 27.310,66 com R$ 21.848,51 de comissão vira uma cobrança de R$ 5.462,15, o mesmo número da coluna “sem comissão fora do contrato” do CV.',
               'Antes de ligar essa dedução num empreendimento, abra as condições de uma reserva dele no CV: ela só serve quando a coluna “sem comissão fora do contrato” muda apenas na linha do ato. Onde a comissão está espalhada nas parcelas, use o percentual fixo ou o valor cheio.',
@@ -947,7 +947,7 @@ const activeTab = ref(ABAS_VALIDAS.includes(route.query.tab) ? route.query.tab :
 const tabOptions = computed(() => {
   const base = [
     { value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' },
-    // As mensais depois do ato: plano por reserva, até a Caixa emitir o contrato (repasse no CV).
+    // As mensais depois do ato: plano por reserva, até o Sienge faturar.
     { value: 'parcelas', label: 'Parcelas', icon: 'fas fa-calendar-check' },
     { value: 'conciliacao', label: 'Conciliação', icon: 'fas fa-code-compare' },
   ];

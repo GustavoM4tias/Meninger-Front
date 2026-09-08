@@ -63,7 +63,8 @@
       </div>
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Quando o plano encerra</p>
-        <p class="text-ink font-mono">
+        <p class="text-ink font-mono">{{ form.parcelas_encerrar_quando_faturado ? 'venda faturada no Sienge (regra do Faturamento)' : 'não encerra pelo Sienge' }}</p>
+        <p class="text-ink font-mono mt-0.5">
           <template v-if="form.parcelas_encerrar_etapas_repasse.length">repasse do CV em {{ form.parcelas_encerrar_etapas_repasse.length }} etapa{{ form.parcelas_encerrar_etapas_repasse.length === 1 ? '' : 's' }}: {{ etapasResumo }}</template>
           <template v-else>não encerra pela etapa do repasse</template>
         </p>
@@ -130,6 +131,7 @@
       <Input v-model.number="form.parcelas_max_emissoes_rodada" type="number" label="Teto de boletos por rodada (0 = sem teto)" hint="Só use para segurar um dia específico. Com teto, o que sobrar fica para o dia seguinte." />
       <div class="space-y-3">
         <Switch v-model="form.parcelas_exigir_ato_pago" label="Só cobrar parcelas com o ato pago" description="Desligado, a adesão cria plano para toda reserva com série mensal (ato pago ou não)." />
+        <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando a venda for faturada no Sienge" description="Venda faturada = data com a instituição financeira, a mesma regra do relatório de Faturamento. Aí o ERP passa a cobrar e os boletos em aberto do Office são baixados." />
       </div>
       <div class="md:col-span-2">
         <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">Encerrar o plano quando o repasse do CV estiver em</label>
@@ -202,7 +204,7 @@ const parcelas = useParcelasStore();
 
 const CAMPOS = [
   'parcelas_ativo', 'parcelas_idseries', 'parcelas_exigir_ato_pago', 'parcelas_antecedencia_dias',
-  'parcelas_encerrar_etapas_repasse', 'parcelas_vencidas_na_adesao', 'parcelas_cobrar_a_partir_de',
+  'parcelas_encerrar_quando_faturado', 'parcelas_encerrar_etapas_repasse', 'parcelas_vencidas_na_adesao', 'parcelas_cobrar_a_partir_de',
   'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'parcelas_lote_tamanho', 'parcelas_lote_pausa_min',
   'atraso_reemitir', 'atraso_max_reemissoes',
   'lembrete_dias_antes', 'aviso_atraso_dias_depois',
@@ -210,7 +212,7 @@ const CAMPOS = [
 ];
 const DEFAULTS = {
   parcelas_ativo: false, parcelas_idseries: [20, 1, 37], parcelas_exigir_ato_pago: true, parcelas_antecedencia_dias: 10,
-  parcelas_encerrar_etapas_repasse: [45, 27, 57, 47, 48, 46, 54, 33, 34, 35, 36],
+  parcelas_encerrar_quando_faturado: true, parcelas_encerrar_etapas_repasse: [45, 27, 57, 47, 48, 46, 54, 33, 34, 35, 36],
   parcelas_cep_contingencia_ativo: true,
   parcelas_cep_contingencia: { cep: '17500005', endereco: 'Rua São Luiz', numero: '231', complemento: '', bairro: 'Centro', cidade: 'Marília', estado: 'SP' },
   parcelas_vencidas_na_adesao: 'emitir', parcelas_cobrar_a_partir_de: '',

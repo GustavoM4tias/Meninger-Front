@@ -2,10 +2,9 @@
   Aba Parcelas da tela Ato e Parcelas (Financeiro > Cobrança).
 
   O ato é só a entrada. Depois dele vêm as mensais, que ficavam paradas até o
-  contrato ser emitido - meses de caixa parado e cliente sem boleto. Esta aba
-  mostra o PLANO de parcelas de cada reserva (nasce com o ato pago, encerra
-  quando o repasse no CV chega a "Contrato Emitido CAIXA") e o que a rodada
-  diária fez com ele.
+  Financeiro faturar o contrato no Sienge - meses de caixa parado e cliente sem
+  boleto. Esta aba mostra o PLANO de parcelas de cada reserva (nasce com o ato
+  pago, encerra quando o Sienge fatura) e o que a rodada diária fez com ele.
 
   Uma linha por reserva; o detalhe (parcela a parcela, boletos, ações) abre no
   modal. Mobile-first: a DataTable vira cartões no estreito.
@@ -274,14 +273,18 @@
           </span>
         </template>
 
-        <template #cell-repasse="{ row }">
-          <span class="inline-flex flex-col items-start gap-0.5">
-            <Badge v-if="row.cv_repasse_situacao" :variant="row.encerrado_motivo === 'repasse_contrato_emitido' ? 'info' : 'neutral'" size="sm"
-              class="max-w-[10rem] truncate" :title="`Repasse no CV: ${row.cv_repasse_situacao} (etapa ${row.cv_repasse_situacao_id})`">
-              <i class="fas fa-diagram-project mr-1" style="font-size:9px"></i>{{ row.cv_repasse_situacao }}
+        <template #cell-sienge="{ row }">
+          <span v-if="row.sienge_contract_id" class="inline-flex flex-col items-start gap-0.5">
+            <Badge :variant="row.sienge_venda_faturada_em ? 'info' : 'neutral'" size="sm">
+              <i class="fas fa-file-invoice mr-1" style="font-size:9px"></i>
+              {{ row.sienge_venda_faturada_em ? `venda faturada ${formatDate(row.sienge_venda_faturada_em)}` : 'venda não faturada' }}
             </Badge>
-            <span v-else class="text-ink-subtle">sem repasse</span>
-            <span class="text-micro text-ink-subtle">{{ row.sienge_contract_id ? `contrato ${row.sienge_contract_id} no Sienge` : 'sem contrato no Sienge' }}</span>
+            <span class="text-micro text-ink-subtle">contrato {{ row.sienge_contract_id }}</span>
+            <span v-if="row.cv_repasse_situacao" class="text-micro text-ink-subtle truncate max-w-[9rem]" :title="`Repasse no CV: ${row.cv_repasse_situacao}`">repasse: {{ row.cv_repasse_situacao }}</span>
+          </span>
+          <span v-else class="inline-flex flex-col items-start gap-0.5">
+            <span class="text-ink-subtle">sem contrato</span>
+            <span v-if="row.cv_repasse_situacao" class="text-micro text-ink-subtle truncate max-w-[9rem]" :title="`Repasse no CV: ${row.cv_repasse_situacao}`">repasse: {{ row.cv_repasse_situacao }}</span>
           </span>
         </template>
 
@@ -395,7 +398,7 @@ const kpiCards = computed(() => {
     { key: 'emitidas', label: 'Boletos em aberto', value: s.emitidas.qty, hint: formatCurrency(s.emitidas.valor), icon: 'fas fa-barcode', tone: 'neutral', tooltip: 'Parcelas com boleto emitido aguardando pagamento. Clique para recortar' },
     { key: 'atraso', label: 'Em atraso', value: s.atraso.qty, hint: `${formatCurrency(s.atraso.valor)}${s.atraso.nuncaCobradas ? ` · ${s.atraso.nuncaCobradas} nunca cobradas` : ''}`, icon: 'fas fa-triangle-exclamation', tone: 'neg', tooltip: 'Parcelas vencidas sem pagamento, inclusive as que passaram do vencimento sem nunca terem sido cobradas. Clique para recortar' },
     { key: 'pagas30', label: 'Pagas (30 dias)', value: s.pagas30.qty, hint: `${formatCurrency(s.pagas30.valor)} · ${s.pagas.qty} no total`, icon: 'fas fa-circle-check', tone: 'pos', tooltip: 'Parcelas pagas nos últimos 30 dias' },
-    { key: 'erro', label: 'Com erro', value: s.erro.qty, hint: `${s.transferidas.qty} transferidas ao contrato`, icon: 'fas fa-bug', tone: s.erro.qty ? 'neg' : 'neutral', tooltip: 'Parcelas cuja emissão falhou. Clique para recortar' },
+    { key: 'erro', label: 'Com erro', value: s.erro.qty, hint: `${s.transferidas.qty} transferidas ao Sienge`, icon: 'fas fa-bug', tone: s.erro.qty ? 'neg' : 'neutral', tooltip: 'Parcelas cuja emissão falhou. Clique para recortar' },
   ];
 });
 
@@ -408,7 +411,7 @@ const COLUNAS = [
   { key: 'proxima', label: 'Próxima cobrança', priority: 1, sortable: true, width: '11rem' },
   { key: 'atraso', label: 'Atraso', priority: 1, sortable: true, width: '8rem' },
   { key: 'status', label: 'Plano', priority: 2, sortable: true, width: '9rem' },
-  { key: 'repasse', label: 'Repasse (CV)', priority: 3, width: '10rem' },
+  { key: 'sienge', label: 'Sienge', priority: 3, width: '8rem' },
 ];
 
 // ── Acompanhamento: rodadas e boletos ─────────────────────────────────────────
@@ -542,7 +545,7 @@ async function rodarAgora() {
   const ok = await pedirConfirmacao({
     title: 'Rodar o ciclo de parcelas agora?',
     consequence: ligado
-      ? 'Faz a adesão das reservas com ato pago, encerra os planos cujo repasse no CV já chegou a “Contrato Emitido CAIXA” e EMITE os boletos das parcelas que vencem dentro da antecedência configurada. Cada boleto sai para o cliente por e-mail e WhatsApp; lembretes e avisos de vencida também.'
+      ? 'Faz a adesão das reservas com ato pago, encerra os planos cuja venda o Sienge já faturou e EMITE os boletos das parcelas que vencem dentro da antecedência configurada. Cada boleto sai para o cliente por e-mail e WhatsApp; lembretes e avisos de vencida também.'
       : 'A cobrança de parcelas está pausada: a rodada só faz a adesão dos planos e os encerramentos. Nenhum boleto é emitido.',
     confirmLabel: 'Rodar agora', tone: ligado ? 'danger' : 'primary',
   });
