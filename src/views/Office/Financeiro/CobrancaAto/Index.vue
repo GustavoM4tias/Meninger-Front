@@ -6,8 +6,8 @@
         subtitle="Cobrança da entrada (boleto Caixa ou link de cartão) e das parcelas mensais até o Sienge faturar o contrato"
         icon="fas fa-file-invoice-dollar">
         <template #title>
-          <span>Ato</span>
-          <Favorite :router="'/financeiro/cobranca/ato'" :section="'Ato'" />
+          <span>Ato e Parcelas</span>
+          <Favorite :router="'/financeiro/cobranca/ato'" :section="'Ato e Parcelas'" />
         </template>
         <template #actions>
           <!-- Status indicator -->
@@ -27,11 +27,12 @@
           </div>
           <PageHelp
             storage-key="cobranca-ato"
-            title="Como usar - Ato"
-            intro="Esta tela cuida da cobrança da venda antes do Sienge assumir: a entrada (o ato) e as parcelas mensais. Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto Caixa ou o link de cartão do ato. Pago o ato, nasce o plano de parcelas: o Office emite cada mensal com antecedência, reemite as vencidas com encargos e para sozinho quando o Financeiro fatura o contrato no Sienge. A aba Conciliação mostra se o que o cliente pagou já foi lançado no ERP."
+            title="Como usar - Ato e Parcelas"
+            intro="Esta tela cuida da cobrança da venda antes do Sienge assumir: a entrada (o ato) e as parcelas mensais. Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto Caixa ou o link de cartão do ato. Pago o ato, nasce o plano de parcelas: o Office emite cada mensal com antecedência, avisa o cliente quando vence, reemite a pedido (sem multa nem juros) e para sozinho quando o Financeiro fatura a venda no Sienge. A aba Conciliação mostra se o que o cliente pagou já foi lançado no ERP."
             :steps="[
               { title: 'Histórico: acompanhe as cobranças do ato', text: 'Lista o que foi emitido no período. Os cartões do topo contam quantos foram pagos, quantos ainda esperam e quantos falharam. Clique em um cartão para recortar a tabela (clicar de novo desfaz) e na linha para abrir o detalhe, com a linha do tempo e o PDF.' },
-              { title: 'Parcelas: as mensais depois do ato', text: 'Uma linha por reserva com plano: quantas parcelas foram pagas, qual é a próxima, o que está em atraso e se o Sienge já faturou. Abra a linha para ver parcela a parcela, emitir ou reemitir um boleto, marcar como paga, pausar ou encerrar o plano. O plano nasce sozinho quando o ato é pago e encerra sozinho quando o contrato ganha título no Sienge.' },
+              { title: 'Parcelas: as mensais depois do ato', text: 'Uma linha por reserva com plano: quantas parcelas foram pagas, qual é a próxima, o que está em atraso e se o Sienge já faturou. Abra a linha para ver parcela a parcela, emitir ou reemitir um boleto, marcar como paga, pausar ou encerrar o plano. O plano nasce sozinho quando o ato é pago e encerra sozinho quando a venda é faturada no Sienge.' },
+              { title: 'Parcelas: confira o que a rodada fez', text: 'O painel Acompanhamento lista boleto a boleto o que saiu no dia (ou em 7 e 30 dias): quem recebeu, por qual canal (anexo no CV, e-mail, WhatsApp) e, quando não saiu, o motivo escrito (CEP recusado pela Caixa, titular sem número no CV). Os selos do topo recortam a lista; clique na linha para abrir o boleto. Em Últimas rodadas fica o histórico de cada ciclo: quando rodou, quanto emitiu, o que falhou e onde caiu.' },
               { title: 'Conciliação: confira o que entrou', text: 'É o relatório “Contas Recebidas” do Sienge no documento AVC, lido ao vivo da API, com filtro de período (data do recebimento), empresa e empreendimento. Serve para bater com o ERP sem abrir o ERP.' },
               { title: 'Leia os quatro grupos', text: 'O confronto com o ato já vem ligado e separa tudo em: conciliados, o que falta lançar no Sienge, o que foi abatido sem ato correspondente, e os que bateram mas com valor diferente. Passe o mouse no selo da coluna Ato, ou abra a linha, para ver de quanto é a diferença.' },
               { title: 'Ataque a lista “Falta lançar”', text: 'É o ato que o cliente já pagou e que ninguém lançou no Sienge ainda - a fila do administrativo. Ela traz cliente, unidade, valor e reserva, e vai junto no CSV do botão Exportar.' },
@@ -39,7 +40,8 @@
             ]"
             :tips="[
               'O plano de parcelas é definido uma vez, no Envio Sienge, e não acompanha mudanças feitas depois no CV: o que mudou lá aparece como aviso no plano, e só administrador altera, dentro do Office (editando a parcela ou aplicando as condições do CV de propósito).',
-              'A cobrança das parcelas nasce DESLIGADA. Com ela desligada a aba Parcelas mostra os planos e o que a rodada faria, mas nenhum boleto sai. Ligue em Configurações > Parcelas mensais quando conferir os planos.',
+              'A cobrança das parcelas está ligada desde 08/09/2026 e só cobra parcela com vencimento a partir da data de corte configurada. O que venceu antes é retroativo: aparece como atraso na aba Parcelas e só sai pelo botão Emitir agora, dentro do plano.',
+              'Parcela com erro de emissão (CEP recusado pela Caixa, por exemplo) fica marcada como erro no plano e no painel Acompanhamento, com o motivo escrito. Corrija o cadastro no CV: a rodada seguinte tenta de novo, até cinco vezes.',
               'Parcela vencida: o cliente recebe um aviso de que a reserva pode ser cancelada, com um botão SIM para pedir a nova via. Respondeu SIM, o Office reemite na hora; a tela também tem o botão Reemitir. Sempre com o mesmo valor e vencimento no próximo dia útil. Nesta etapa não há multa nem juros.',
               'O plano encerra sozinho quando a venda é faturada no Sienge (a mesma regra do relatório de Faturamento). Aí os boletos em aberto do Office são baixados, para o cliente não receber duas cobranças da mesma parcela.',
               'A automação pode ser pausada sem perder nada: os webhooks que chegarem ficam registrados e voltam a ser processados quando ela for religada.',

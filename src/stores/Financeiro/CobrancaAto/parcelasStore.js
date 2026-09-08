@@ -1,6 +1,6 @@
 // src/stores/Financeiro/CobrancaAto/parcelasStore.js
 //
-// Aba Parcelas da tela Ato (Financeiro > Cobranca > Ato). Consome
+// Aba Parcelas da tela Ato e Parcelas (Financeiro > Cobranca). Consome
 // /api/cobranca-ato/parcelas/*: planos de parcelas mensais por reserva, KPIs,
 // detalhe e acoes. O plano nasce quando o ato e pago e encerra quando o Sienge
 // fatura o contrato - ver _estudo/ato-parcelas/PLANO.md no backend.
@@ -164,6 +164,40 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
     }
     const rodarCiclo = () => post('/rodar');
 
+    // ── Acompanhamento: rodadas e boletos de parcela ───────────────────────────
+    // O que a rodada fez, de verdade: cada ciclo (automatico ou manual) grava
+    // inicio, fim, contagens e erros; e cada boleto de parcela aparece com o
+    // canal por onde saiu (CV, e-mail, WhatsApp) e o motivo quando nao saiu.
+    const rodadas = ref([]);
+    const rodadasLoading = ref(false);
+    const rodadasError = ref(null);
+    const boletos = ref({ rows: [], resumo: null, hoje: null });
+    const boletosLoading = ref(false);
+    const boletosError = ref(null);
+    const boletosFiltro = ref({ periodo: 'hoje', status: '', q: '' }); // periodo: hoje | 7d | 30d
+
+    async function fetchRodadas({ silent = false } = {}) {
+        if (!silent) { rodadasLoading.value = true; rodadasError.value = null; }
+        try { rodadas.value = (await requestWithAuth(`${BASE}/rodadas?limit=30`))?.rows || []; }
+        catch (e) { rodadasError.value = e.message || 'Falha ao listar as rodadas.'; }
+        finally { if (!silent) rodadasLoading.value = false; }
+    }
+
+    async function fetchBoletos({ silent = false } = {}) {
+        if (!silent) { boletosLoading.value = true; boletosError.value = null; }
+        try {
+            const f = boletosFiltro.value;
+            const q = new URLSearchParams({ periodo: f.periodo || 'hoje' });
+            if (f.status) q.set('status', f.status);
+            if (f.q) q.set('q', f.q);
+            boletos.value = await requestWithAuth(`${BASE}/boletos?${q}`);
+        } catch (e) {
+            boletosError.value = e.message || 'Falha ao listar os boletos de parcela.';
+        } finally {
+            if (!silent) boletosLoading.value = false;
+        }
+    }
+
     // ── Templates WhatsApp (configure) ─────────────────────────────────────────
     const templates = ref([]);
     const templatesLoading = ref(false);
@@ -198,6 +232,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         detalhe, detalheLoading, detalheError, fetchDetalhe,
         acting, actionError,
         criarPlano, sincronizar, pausar, reativar, encerrar, emitirParcela, baixarParcela, marcarPaga, editarParcela, rodarCiclo,
+        rodadas, rodadasLoading, rodadasError, boletos, boletosLoading, boletosError, boletosFiltro, fetchRodadas, fetchBoletos,
         templates, templatesLoading, templatesMsg, fetchTemplates, syncTemplates,
     };
 });

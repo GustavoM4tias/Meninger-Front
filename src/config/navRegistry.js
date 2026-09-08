@@ -184,7 +184,9 @@ export const navRegistry = [
                     // é a aba Conciliação DESTA tela, não um item próprio:
                     // cobrar a entrada e conferir se ela entrou é a mesma
                     // conversa. /financeiro/recebimentos-ato virou redirect.
-                    { route: '/financeiro/cobranca/ato', name: 'Ato', icon: 'fas fa-file-invoice-dollar' },
+                    // Renomeado em 08/09/2026: a tela cobra o ato E as parcelas
+                    // mensais até o Sienge faturar. A rota continua a mesma.
+                    { route: '/financeiro/cobranca/ato', name: 'Ato e Parcelas', icon: 'fas fa-file-invoice-dollar' },
                 ],
             },
         ],
