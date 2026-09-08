@@ -147,6 +147,9 @@
             <Badge :variant="emissaoVariant(row)" size="sm" dot>{{ emissaoLabel(row) }}</Badge>
             <span v-if="row.status === 'error'" class="text-micro text-data-neg leading-snug">{{ limparErro(row.error_message) }}</span>
             <span v-else-if="row.nosso_numero" class="text-micro font-mono text-ink-subtle">{{ row.nosso_numero }}</span>
+            <span v-if="row.cep_contingencia" class="text-micro text-data-warn leading-snug" :title="row.cep_contingencia">
+              <i class="fas fa-location-dot" style="font-size:9px"></i> CEP recusado: saiu com o endereço da Menin. Corrigir o CV.
+            </span>
           </span>
         </template>
         <template #cell-canais="{ row }">
@@ -264,6 +267,9 @@
               <i class="fas fa-triangle-exclamation" style="font-size:9px"></i> condição mudou no CV
             </span>
             <span v-else-if="row.parcelas_erro" class="text-micro text-data-neg">{{ row.parcelas_erro }} com erro</span>
+            <span v-if="row.cadastro_alerta" class="text-micro text-data-warn" :title="row.cadastro_alerta">
+              <i class="fas fa-location-dot" style="font-size:9px"></i> CEP a corrigir no CV
+            </span>
           </span>
         </template>
 
@@ -429,6 +435,7 @@ const RECORTES_BOLETOS = {
   email: (r) => r.status === 'success' && !r.cliente_email_enviado,
   cv: (r) => r.status === 'success' && !r.cv_documento_anexado,
   pagos: (r) => r.payment_status === 'paid',
+  cep: (r) => !!r.cep_contingencia,
 };
 const boletosRecortados = computed(() => {
   const rows = store.boletos?.rows || [];
@@ -449,6 +456,7 @@ const resumoChips = computed(() => {
     { key: 'email', label: 'sem e-mail', value: s.email_nao_enviado, icon: 'fas fa-envelope', classe: s.email_nao_enviado ? neg : neu },
     { key: 'cv', label: 'sem anexo no CV', value: s.cv_nao_anexado, icon: 'fas fa-paperclip', classe: s.cv_nao_anexado ? neg : neu },
     { key: 'pagos', label: 'pagos', value: s.pagos, icon: 'fas fa-circle-check', classe: s.pagos ? pos : neu },
+    { key: 'cep', label: 'CEP a corrigir no CV', value: s.cep_contingencia || 0, icon: 'fas fa-location-dot', classe: s.cep_contingencia ? 'bg-data-warn/10 text-data-warn hover:bg-data-warn/15' : neu },
   ];
 });
 

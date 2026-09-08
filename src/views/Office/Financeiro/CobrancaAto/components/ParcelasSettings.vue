@@ -86,6 +86,14 @@
         </p>
       </div>
       <div>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">CEP recusado pela Caixa</p>
+        <p class="text-ink font-mono">
+          <template v-if="form.parcelas_cep_contingencia_ativo">emite com {{ form.parcelas_cep_contingencia.endereco }}, {{ form.parcelas_cep_contingencia.numero }} · CEP {{ form.parcelas_cep_contingencia.cep }} · {{ form.parcelas_cep_contingencia.cidade }}/{{ form.parcelas_cep_contingencia.estado }}</template>
+          <template v-else>parcela fica em erro até corrigir o CV</template>
+        </p>
+        <p class="text-ink-subtle mt-0.5">A reserva fica com o alerta "CEP a corrigir no CV" até a Caixa aceitar o endereço do cadastro.</p>
+      </div>
+      <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Lembrete / aviso ao cliente</p>
         <p class="text-ink font-mono">
           {{ form.lembrete_dias_antes ? `${form.lembrete_dias_antes} dias antes` : 'sem lembrete' }} ·
@@ -144,6 +152,19 @@
       </div>
       <Input v-model.number="form.lembrete_dias_antes" type="number" label="Lembrete ao cliente (dias antes do vencimento)" hint="0 desliga. E-mail sempre; WhatsApp quando o template estiver aprovado." />
       <Input v-model.number="form.aviso_atraso_dias_depois" type="number" label="Aviso de atraso (dias depois do vencimento)" hint="0 desliga. Avisa que o boleto venceu e que uma via nova vem aí." />
+      <div class="md:col-span-2 pt-3 border-t border-line space-y-3">
+        <Switch v-model="form.parcelas_cep_contingencia_ativo" label="CEP recusado pela Caixa: emitir com o endereço de contingência"
+          description="A Caixa não aceita o CEP genérico da cidade (86360-000, 14940-000). Ligado, o boleto sai mesmo assim com o endereço abaixo (o da Menin, que também está no contrato), a reserva fica com o alerta 'CEP a corrigir no CV' e o corretor recebe a mensagem no CV. Desligado, a parcela fica em erro até o cadastro ser corrigido." />
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Input v-model="form.parcelas_cep_contingencia.cep" label="CEP" placeholder="17500005" />
+          <Input v-model="form.parcelas_cep_contingencia.endereco" label="Logradouro" class="col-span-2" />
+          <Input v-model="form.parcelas_cep_contingencia.numero" label="Número" />
+          <Input v-model="form.parcelas_cep_contingencia.complemento" label="Complemento" />
+          <Input v-model="form.parcelas_cep_contingencia.bairro" label="Bairro" />
+          <Input v-model="form.parcelas_cep_contingencia.cidade" label="Cidade" />
+          <Input v-model="form.parcelas_cep_contingencia.estado" label="UF" placeholder="SP" />
+        </div>
+      </div>
     </div>
 
     <!-- Templates WhatsApp das parcelas -->
@@ -187,16 +208,19 @@ const CAMPOS = [
   'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'parcelas_lote_tamanho', 'parcelas_lote_pausa_min',
   'atraso_reemitir', 'atraso_max_reemissoes',
   'lembrete_dias_antes', 'aviso_atraso_dias_depois',
+  'parcelas_cep_contingencia_ativo', 'parcelas_cep_contingencia',
 ];
 const DEFAULTS = {
   parcelas_ativo: false, parcelas_idseries: [20, 1, 37], parcelas_exigir_ato_pago: true, parcelas_antecedencia_dias: 10,
   parcelas_encerrar_quando_faturado: true, parcelas_encerrar_etapas_repasse: [45, 27, 57, 47, 48, 46, 54, 33, 34, 35, 36],
+  parcelas_cep_contingencia_ativo: true,
+  parcelas_cep_contingencia: { cep: '17500005', endereco: 'Rua São Luiz', numero: '231', complemento: '', bairro: 'Centro', cidade: 'Marília', estado: 'SP' },
   parcelas_vencidas_na_adesao: 'emitir', parcelas_cobrar_a_partir_de: '',
   parcelas_hora_rodada: 9, parcelas_max_emissoes_rodada: 0, parcelas_lote_tamanho: 10, parcelas_lote_pausa_min: 5,
   atraso_reemitir: false, atraso_max_reemissoes: 3,
   lembrete_dias_antes: 3, aviso_atraso_dias_depois: 1,
 };
-const form = ref({ ...DEFAULTS });
+const form = ref(JSON.parse(JSON.stringify(DEFAULTS)));
 const editing = ref(false);
 let snapshot = null;
 const novaSerie = ref(null);
@@ -205,7 +229,9 @@ function carregar() {
   const s = boletoStore.settings || {};
   for (const k of CAMPOS) {
     if (s[k] === undefined || s[k] === null) continue;
-    form.value[k] = Array.isArray(DEFAULTS[k]) ? [...s[k]] : (typeof DEFAULTS[k] === 'number' ? Number(s[k]) : s[k]);
+    if (Array.isArray(DEFAULTS[k])) form.value[k] = [...s[k]];
+    else if (DEFAULTS[k] && typeof DEFAULTS[k] === 'object') form.value[k] = { ...DEFAULTS[k], ...(typeof s[k] === 'object' ? s[k] : {}) };
+    else form.value[k] = typeof DEFAULTS[k] === 'number' ? Number(s[k]) : s[k];
   }
 }
 function startEdit() { snapshot = JSON.parse(JSON.stringify(form.value)); editing.value = true; }

@@ -55,6 +55,13 @@
         </div>
       </div>
 
+      <!-- Alerta de cadastro: a Caixa recusou o CEP do CV, o boleto saiu com o endereço da Menin. -->
+      <div v-if="det.plano.cadastro_alerta"
+        class="rounded-xl border border-data-warn/30 bg-data-warn/10 p-3 text-sm text-data-warn">
+        <p class="font-semibold"><i class="fas fa-location-dot mr-1"></i> CEP a corrigir no CV</p>
+        <p class="text-xs mt-1">{{ det.plano.cadastro_alerta }} O alerta some sozinho quando a Caixa voltar a aceitar o endereço do cadastro.</p>
+      </div>
+
       <!-- Divergências: o plano é CONGELADO, o CV não o altera. Isto só informa. -->
       <div v-if="det.plano.divergencias?.length"
         class="rounded-xl border border-data-warn/30 bg-data-warn/10 p-3 text-sm text-data-warn">
