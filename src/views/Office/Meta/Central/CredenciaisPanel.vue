@@ -88,11 +88,18 @@ async function onTest() {
 
 // ══ 2. Gestão de Campanhas (token admin) ════════════════════════════════════
 
+/* Token vencido continua gravado (o backend guarda nome/data), mas não vale
+   nada: o sync o ignora e volta pro System User. Estado próprio na tela porque
+   pintar "Conectado ... expira em -5 dia(s)" de verde escondia justamente o
+   problema. */
+const campExpired = computed(() => !!store.campaignsStatus?.expired);
+
 const campExpiry = computed(() => {
   const s = store.campaignsStatus;
   if (!s?.connected) return null;
   if (!s.expires_at) return 'sem expiração (token permanente)';
-  return `expira em ${s.days_left} dia(s) · ${new Date(s.expires_at).toLocaleDateString('pt-BR')}`;
+  const data = new Date(s.expires_at).toLocaleDateString('pt-BR');
+  return s.expired ? `expirou em ${data}` : `expira em ${s.days_left} dia(s) · ${data}`;
 });
 
 async function onConnectLogin() {
@@ -255,10 +262,12 @@ async function copyWebhook() {
 
       <!-- Status -->
       <div class="rounded-lg border px-3 py-2.5 text-sm"
-        :class="store.campaignsStatus?.connected
-          ? 'border-data-pos/20 bg-data-pos/5'
-          : 'border-data-warn/20 bg-data-warn/5'">
-        <div v-if="store.campaignsStatus?.connected" class="space-y-0.5">
+        :class="!store.campaignsStatus?.connected
+          ? 'border-data-warn/20 bg-data-warn/5'
+          : campExpired
+            ? 'border-data-neg/20 bg-data-neg/5'
+            : 'border-data-pos/20 bg-data-pos/5'">
+        <div v-if="store.campaignsStatus?.connected && !campExpired" class="space-y-0.5">
           <div class="flex items-center gap-2 text-data-pos font-medium">
             <i class="fas fa-circle-check"></i>
             Conectado como {{ store.campaignsStatus.name || 'admin' }}
@@ -266,6 +275,16 @@ async function copyWebhook() {
           <div class="text-xs text-ink-muted">
             <span v-if="store.campaignsStatus.accounts_count != null">{{ store.campaignsStatus.accounts_count }} contas visíveis · </span>
             <span>{{ campExpiry }}</span>
+          </div>
+        </div>
+        <div v-else-if="campExpired" class="space-y-0.5">
+          <div class="flex items-center gap-2 text-data-neg font-medium">
+            <i class="fas fa-circle-xmark"></i>
+            Token expirado ({{ store.campaignsStatus.name || 'admin' }}) — {{ campExpiry }}
+          </div>
+          <div class="text-xs text-ink-muted">
+            Token expirado não tem renovação: só o login de novo em <b>Reconectar com Facebook</b> resolve.
+            Enquanto isso o relatório roda com o token do System User (vê só as contas atribuídas a ele) e os leads seguem entrando.
           </div>
         </div>
         <div v-else class="flex items-center gap-2 text-data-warn">
@@ -288,7 +307,7 @@ async function copyWebhook() {
         <Button icon="fab fa-facebook" @click="onConnectLogin">
           {{ store.campaignsStatus?.connected ? 'Reconectar com Facebook' : 'Conectar com Facebook' }}
         </Button>
-        <Button v-if="store.campaignsStatus?.connected" variant="secondary" :loading="store.campaignsBusy"
+        <Button v-if="store.campaignsStatus?.connected && !campExpired" variant="secondary" :loading="store.campaignsBusy"
           icon="fas fa-rotate" @click="store.refreshCampaigns()">Renovar token</Button>
         <Button variant="secondary" icon="fas fa-arrows-rotate" @click="store.fetchCampaignsStatus()">Atualizar</Button>
         <Button v-if="store.campaignsStatus?.connected" variant="secondary" :loading="store.campaignsBusy"
