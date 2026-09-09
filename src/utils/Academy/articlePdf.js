@@ -44,6 +44,44 @@ function fmtDate(v) {
     const d = new Date(v);
     return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
+// As fontes padrão do jsPDF (Helvetica/Courier) só codificam WinAnsi. Todo
+// caractere fora dela sai como lixo visível no PDF - o "⚡" do título virava
+// "&¡", o "✅" da lista virava "'" e o "⚠️" da citação virava três símbolos.
+// Aqui o que tem equivalente é traduzido e o resto (emoji, seletor de variação,
+// ZWJ) é descartado antes de chegar no pdf.text().
+const EQUIVALENTE = {
+    '→': '->', '←': '<-', '⇒': '=>', '↑': '^', '↓': 'v',
+    '✗': 'x', '❌': 'x', '☑': '[x]', '☐': '[ ]', '★': '*', '☆': '*',
+    // ✅, ✓ e ⚠️ não entram aqui de propósito: eles aparecem no começo de item
+    // de lista e de citação, onde o PDF já desenha o bullet e o filete. Virar
+    // "- " ou "! " ali só duplicaria a marca - some, e a frase segue limpa.
+    '●': '•', '▪': '•', '▶': '>', '›': '>',
+};
+// Codepoints acima de 0xFF que a WinAnsi tem (aspas curvas, travessões, bullet,
+// reticências, € ...). O resto acima de 0xFF não existe na fonte.
+const WINANSI_ACIMA_FF = new Set([
+    0x20ac, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021, 0x02c6, 0x2030,
+    0x0160, 0x2039, 0x0152, 0x017d, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022,
+    0x2013, 0x2014, 0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x017e, 0x0178,
+]);
+function glifosSeguros(str) {
+    let out = '';
+    for (const ch of String(str ?? '')) {
+        const eq = EQUIVALENTE[ch];
+        if (eq !== undefined) { out += eq; continue; }
+        const c = ch.codePointAt(0);
+        if (c === 9 || c === 10) { out += ch; continue; }
+        if (c < 0x20) continue;
+        if (c <= 0xff || WINANSI_ACIMA_FF.has(c)) out += ch;
+    }
+    return out;
+}
+// Versão para texto de uma linha só (célula de tabela, título, metadado): sem o
+// buraco de espaços que o símbolo removido deixa para trás.
+function textoLimpo(str) {
+    return glifosSeguros(str).replace(/[ 	]{2,}/g, ' ').trim();
+}
+
 function slugifyFilename(str) {
     return String(str || 'artigo')
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -163,34 +201,45 @@ export async function exportArticleToPdf({ markdown, payload, article, user }) {
             line = []; lineW = 0;
         }
 
-        function pushWord(text, style) {
+        // `cola` = este pedaço encosta no anterior, sem espaço. É o que segura a
+        // pontuação que vem logo depois de um link ou de um negrito: sem isso o
+        // PDF saía com "Envio das Reservas ao Sienge ."
+        function pushWord(text, style, cola = false) {
             setFont(style, fontSize);
             let w = pdf.getTextWidth(text);
             const sp = spaceW(style);
             // palavra maior que a linha inteira -> quebra por caractere
             if (w > maxWidth) {
                 let chunk = '';
+                let primeiro = true;
                 for (const ch of text) {
                     setFont(style, fontSize);
                     if (pdf.getTextWidth(chunk + ch) > maxWidth && chunk) {
-                        pushWord(chunk, style); chunk = ch;
+                        pushWord(chunk, style, cola && primeiro); primeiro = false; chunk = ch;
                     } else chunk += ch;
                 }
-                if (chunk) pushWord(chunk, style);
+                if (chunk) pushWord(chunk, style, cola && primeiro);
                 return;
             }
-            const add = lineW === 0 ? w : lineW + sp + w;
-            if (add > maxWidth && line.length) flush();
+            let gap = (lineW === 0 || cola) ? 0 : sp;
+            if (lineW + gap + w > maxWidth && line.length) { flush(); gap = 0; }
+            if (gap === 0 && line.length) line[line.length - 1].sp = 0;
             setFont(style, fontSize);
             w = pdf.getTextWidth(text);
-            lineW = lineW === 0 ? w : lineW + sp + w;
+            lineW += gap + w;
             line.push({ text, style, w, sp });
         }
 
+        let emenda = false;   // o run anterior terminou sem espaço
         for (const run of runs) {
-            if (run.br) { flush(); continue; }
-            const words = String(run.text || '').split(/\s+/).filter(Boolean);
-            for (const word of words) pushWord(word, run);
+            if (run.br) { flush(); emenda = false; continue; }
+            const bruto = String(run.text || '');
+            if (!bruto) continue;
+            const words = bruto.split(/\s+/).filter(Boolean);
+            if (!words.length) { emenda = false; continue; }   // run só de espaço
+            const cola = emenda && !/^\s/.test(bruto);
+            words.forEach((word, i) => pushWord(word, run, i === 0 && cola));
+            emenda = !/\s$/.test(bruto);
         }
         if (line.length) flush();
     }
@@ -203,12 +252,12 @@ export async function exportArticleToPdf({ markdown, payload, article, user }) {
         let bold = 0, italic = 0, link = null;
         for (const t of inlineToken.children || []) {
             switch (t.type) {
-                case 'text': runs.push({ text: t.content, bold: !!bold, italic: !!italic, link }); break;
+                case 'text': runs.push({ text: glifosSeguros(t.content), bold: !!bold, italic: !!italic, link }); break;
                 case 'strong_open': bold++; break;
                 case 'strong_close': bold = Math.max(0, bold - 1); break;
                 case 'em_open': italic++; break;
                 case 'em_close': italic = Math.max(0, italic - 1); break;
-                case 'code_inline': runs.push({ text: t.content, code: true, bold: !!bold, italic: !!italic }); break;
+                case 'code_inline': runs.push({ text: glifosSeguros(t.content), code: true, bold: !!bold, italic: !!italic }); break;
                 case 'link_open': link = t.attrGet('href'); break;
                 case 'link_close': link = null; break;
                 case 'softbreak':
@@ -217,7 +266,7 @@ export async function exportArticleToPdf({ markdown, payload, article, user }) {
                     segments.push({ runs }); runs = [];
                     segments.push({ image: t.attrGet('src'), alt: t.content });
                     break;
-                default: if (t.content) runs.push({ text: t.content, bold: !!bold, italic: !!italic, link });
+                default: if (t.content) runs.push({ text: glifosSeguros(t.content), bold: !!bold, italic: !!italic, link });
             }
         }
         segments.push({ runs });
@@ -225,7 +274,8 @@ export async function exportArticleToPdf({ markdown, payload, article, user }) {
     }
 
     function inlineToPlain(inlineToken) {
-        return (inlineToken.children || []).map((t) => (t.type === 'softbreak' || t.type === 'hardbreak' ? ' ' : t.content || '')).join('');
+        const bruto = (inlineToken.children || []).map((t) => (t.type === 'softbreak' || t.type === 'hardbreak' ? ' ' : t.content || '')).join('');
+        return textoLimpo(bruto);
     }
 
     async function renderImage(src) {
@@ -274,7 +324,7 @@ export async function exportArticleToPdf({ markdown, payload, article, user }) {
         const fs = 8.6;
         const lh = fs * 1.4 * PT2MM;
         setFont({ code: true }, fs);
-        const raw = String(content || '').replace(/\n$/, '').split('\n');
+        const raw = glifosSeguros(content).replace(/\n$/, '').split('\n');
         const lines = [];
         for (const ln of raw) lines.push(...pdf.splitTextToSize(ln || ' ', CONTENT_W - 6));
         const boxH = lines.length * lh + 5;
@@ -334,8 +384,8 @@ export async function exportArticleToPdf({ markdown, payload, article, user }) {
         const t = String(type || '').toUpperCase();
         const e = embeds.find((x) => String(x?.type || '').toUpperCase() === t && String(x?.ref ?? '') === String(ref)) || null;
         const kicker = KICKERS[t] || 'BLOCO';
-        const title = e?.title || `${kicker} ${ref}`;
-        const url = e?.url || '';
+        const title = textoLimpo(e?.title) || `${kicker} ${ref}`;
+        const url = textoLimpo(e?.url);
 
         setFont({}, 10);
         const titleLines = pdf.splitTextToSize(title, CONTENT_W - 8);
@@ -455,13 +505,13 @@ export async function exportArticleToPdf({ markdown, payload, article, user }) {
 
     // Título + metadados
     setFont({ bold: true }, 19); pdf.setTextColor(...HEAD);
-    const titleLines = pdf.splitTextToSize(String(article?.title || 'Artigo'), CONTENT_W);
+    const titleLines = pdf.splitTextToSize(textoLimpo(article?.title) || 'Artigo', CONTENT_W);
     for (const ln of titleLines) { pdf.text(ln, MARGIN, cursor.y + 6); cursor.y += 7.6; }
     cursor.y += 1.5;
 
     const meta = [];
-    if (article?.categorySlug) meta.push(`Categoria: ${article.categorySlug}`);
-    const authorName = article?.createdBy?.username || 'Equipe Menin';
+    if (article?.categorySlug) meta.push(`Categoria: ${textoLimpo(article.categorySlug)}`);
+    const authorName = textoLimpo(article?.createdBy?.username) || 'Equipe Menin';
     meta.push(`Autor: ${authorName}`);
     if (article?.updatedAt) meta.push(`Atualizado: ${fmtDate(article.updatedAt)}`);
     if (article?.readingMinutes) meta.push(`${article.readingMinutes} min de leitura`);
@@ -487,7 +537,7 @@ export async function exportArticleToPdf({ markdown, payload, article, user }) {
     // ── Rodapé em todas as páginas ───────────────────────────────────────
     const gerouEm = fmtNow();
     const ano = new Date().getFullYear();
-    const quem = user?.username || user?.email || 'Usuário';
+    const quem = textoLimpo(user?.username) || textoLimpo(user?.email) || 'Usuário';
     const quemLinha = user?.email && user?.username ? `${quem} (${user.email})` : quem;
     const line1 = `Gerado por ${quemLinha} em ${gerouEm} - Sistema: Menin Office - Academy`;
     const line2 = `© ${ano} Menin Engenharia - Documento interno e confidencial. Todos os direitos reservados. Autor do artigo: ${authorName}.`;
