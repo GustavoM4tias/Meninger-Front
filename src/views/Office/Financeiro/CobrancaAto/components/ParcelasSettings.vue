@@ -64,7 +64,7 @@
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Fora da cobrança de parcelas</p>
         <p class="text-ink font-mono">
-          <template v-if="form.parcelas_empreendimentos_excluidos.length">{{ form.parcelas_empreendimentos_excluidos.join(', ') }}</template>
+          <template v-if="form.parcelas_empreendimentos_excluidos.length">{{ excluidosResumo }}</template>
           <template v-else>nenhum: todo empreendimento com ato pago entra</template>
         </p>
         <p class="text-ink-subtle mt-0.5">O ato tem o webhook por empreendimento no CV; a parcela não tem webhook. A adesão pega toda reserva com ato pago, e esta lista é o único lugar para tirar um empreendimento.</p>
@@ -146,6 +146,7 @@
         <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">Empreendimentos fora da cobrança de parcelas</label>
         <MultiSelector v-model="excluidosLabels" :options="empreendimentosOptions" placeholder="Nenhum (todo empreendimento com ato pago entra)" :page-size="100" />
         <p class="text-ink-subtle mt-1.5">
+          A escolha é pelo empreendimento do CV (id), mostrado pelo nome mais recente: se o CV renomear, a regra continua valendo.
           Ao salvar, os planos ativos desses empreendimentos são pausados na hora e reserva nova deles não entra na cobrança.
           Boletos já emitidos continuam valendo (baixe pela tela se precisar). Tirar um empreendimento da lista reativa os planos que esta regra pausou.
         </p>
@@ -258,17 +259,18 @@ function startEdit() { snapshot = JSON.parse(JSON.stringify(form.value)); editin
 function cancelEdit() { if (snapshot) form.value = snapshot; snapshot = null; editing.value = false; }
 async function save() {
   // Lista de exclusao mudou: diz quantos planos vao ser pausados/reativados antes de aplicar.
-  const antes = new Set((snapshot?.parcelas_empreendimentos_excluidos || []).map(normNome));
-  const depois = new Set(form.value.parcelas_empreendimentos_excluidos.map(normNome));
-  const entram = [...depois].filter(n => !antes.has(n));
-  const saem = [...antes].filter(n => !depois.has(n));
+  const antes = new Set((snapshot?.parcelas_empreendimentos_excluidos || []).map(Number));
+  const depois = new Set(form.value.parcelas_empreendimentos_excluidos.map(Number));
+  const entram = [...depois].filter(id => !antes.has(id));
+  const saem = [...antes].filter(id => !depois.has(id));
   if (entram.length || saem.length) {
-    const conta = (nomes, campo) => nomes.reduce((acc, n) => acc + (parcelas.empreendimentos.find(e => normNome(e.nome) === n)?.[campo] || 0), 0);
+    const conta = (ids, campo) => ids.reduce((acc, id) => acc + (empPorId(id)?.[campo] || 0), 0);
+    const nomes = (ids) => ids.map(id => empPorId(id)?.nome || `#${id}`).join(', ');
     const pausar = conta(entram, 'ativos');
     const reativar = conta(saem, 'pausados');
     const partes = [];
-    if (entram.length) partes.push(`${pausar} plano${pausar === 1 ? '' : 's'} ativo${pausar === 1 ? '' : 's'} de ${entram.join(', ')} ${pausar === 1 ? 'é pausado' : 'são pausados'} agora e reserva nova não entra. Boletos já emitidos continuam valendo.`);
-    if (saem.length) partes.push(`Até ${reativar} plano${reativar === 1 ? '' : 's'} de ${saem.join(', ')} pausado${reativar === 1 ? '' : 's'} por esta regra volta${reativar === 1 ? '' : 'm'} a ativo e a próxima rodada emite.`);
+    if (entram.length) partes.push(`${pausar} plano${pausar === 1 ? '' : 's'} ativo${pausar === 1 ? '' : 's'} de ${nomes(entram)} ${pausar === 1 ? 'é pausado' : 'são pausados'} agora e reserva nova não entra. Boletos já emitidos continuam valendo.`);
+    if (saem.length) partes.push(`Até ${reativar} plano${reativar === 1 ? '' : 's'} de ${nomes(saem)} pausado${reativar === 1 ? '' : 's'} por esta regra volta${reativar === 1 ? '' : 'm'} a ativo e a próxima rodada emite.`);
     if (!await pedirConfirmacao({ title: 'Mudar os empreendimentos fora da cobrança?', consequence: partes.join(' '), confirmLabel: 'Salvar e aplicar', tone: 'primary' })) return;
   }
   const payload = {};
@@ -283,18 +285,24 @@ async function save() {
   }
 }
 const exclusoesMsg = ref(null);
-const normNome = (s) => String(s || '').trim().toUpperCase().replace(/\s+/g, ' ');
 
-/* Empreendimentos: o MultiSelector trabalha com rótulos "NOME · N ativos"; o form guarda só o nome. */
-const empLabel = (e) => `${e.nome} · ${e.ativos} ativo${e.ativos === 1 ? '' : 's'}${e.pausados ? `, ${e.pausados} pausado${e.pausados === 1 ? '' : 's'}` : ''}`;
+/* Empreendimentos: o form guarda o ID do CV; o MultiSelector trabalha com rótulos
+   "NOME · N ativos" (nome mais recente; o CV renomeia, o id fica). */
+const empPorId = (id) => parcelas.empreendimentos.find(e => Number(e.id) === Number(id));
+const empLabel = (e) => `${e.nome}${e.nomes_antigos?.length ? ` (antes ${e.nomes_antigos.join(', ')})` : ''} · ${e.ativos} ativo${e.ativos === 1 ? '' : 's'}${e.pausados ? `, ${e.pausados} pausado${e.pausados === 1 ? '' : 's'}` : ''}`;
 const empreendimentosOptions = computed(() => parcelas.empreendimentos.map(empLabel));
 const excluidosLabels = computed({
-  get: () => form.value.parcelas_empreendimentos_excluidos.map(n => {
-    const e = parcelas.empreendimentos.find(x => normNome(x.nome) === normNome(n));
-    return e ? empLabel(e) : `${n} · (sem reserva conhecida)`;
+  get: () => form.value.parcelas_empreendimentos_excluidos.map(id => {
+    const e = empPorId(id);
+    return e ? empLabel(e) : `#${id} · (empreendimento sem reserva conhecida)`;
   }),
-  set: (labels) => { form.value.parcelas_empreendimentos_excluidos = labels.map(l => normNome(String(l).split(' · ')[0])).filter(Boolean); },
+  set: (labels) => {
+    form.value.parcelas_empreendimentos_excluidos = labels
+      .map(l => parcelas.empreendimentos.find(e => empLabel(e) === l)?.id ?? Number(String(l).match(/^#(\d+)/)?.[1]))
+      .filter(id => Number.isInteger(id) && id > 0);
+  },
 });
+const excluidosResumo = computed(() => form.value.parcelas_empreendimentos_excluidos.map(id => empPorId(id)?.nome || `#${id}`).join(', '));
 function addSerie() {
   const id = Number(novaSerie.value);
   if (!id || form.value.parcelas_idseries.includes(id)) return;
