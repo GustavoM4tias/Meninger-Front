@@ -27,6 +27,7 @@ const draft = ref({
     form_rate_limit_per_min: 10,
     lead_return_auto: true,
     lead_return_ordem_blindada: 4,
+    lead_return_mesmo_empreendimento: 'manter_com_dono',
     alert_recipient_user_ids: [],
     meta_form_fallback_scope: 'no_campaign',
 });
@@ -34,6 +35,26 @@ const draft = ref({
 // Situações de lead do CV, para a régua ser escolhida por etapa e não por um
 // número solto. Vem do próprio CV, então acompanha situação nova que criarem lá.
 const situacoesCv = ref([]);
+
+// Reconversão no MESMO empreendimento. Os valores são os mesmos de
+// lib/leadReturnRule.js no backend - a tela só escolhe entre eles.
+const POLITICAS_MESMO_EMP = [
+    {
+        valor: 'manter_com_dono',
+        titulo: 'Mantém quem já atende (recomendado)',
+        texto: 'Tem corretor ou imobiliária no lead: só marca o interesse e mantém o atendimento. Sem ninguém associado, o lead vai para a fila do empreendimento - lead solto precisa de dono.',
+    },
+    {
+        valor: 'manter_sempre',
+        titulo: 'Nunca devolve no mesmo empreendimento',
+        texto: 'Reconversão no mesmo empreendimento nunca volta para a fila, mesmo quando o lead está sem corretor associado.',
+    },
+    {
+        valor: 'devolver',
+        titulo: 'Devolve sempre para a fila',
+        texto: 'Toda reconversão volta para a etapa inicial e para a fila, inclusive no mesmo empreendimento. É como funcionava antes de 09/09/2026: tirava o lead de quem estava atendendo.',
+    },
+];
 
 function resetDraft() {
     const c = store.config || {};
@@ -43,6 +64,9 @@ function resetDraft() {
         form_rate_limit_per_min: c.form_rate_limit_per_min ?? 10,
         lead_return_auto: c.lead_return_auto !== false,
         lead_return_ordem_blindada: c.lead_return_ordem_blindada ?? 4,
+        lead_return_mesmo_empreendimento: POLITICAS_MESMO_EMP.some(p => p.valor === c.lead_return_mesmo_empreendimento)
+            ? c.lead_return_mesmo_empreendimento
+            : 'manter_com_dono',
         alert_recipient_user_ids: Array.isArray(c.alert_recipient_user_ids) ? [...c.alert_recipient_user_ids] : [],
         meta_form_fallback_scope: c.meta_form_fallback_scope === 'always' ? 'always' : 'no_campaign',
     };
@@ -95,6 +119,7 @@ async function save() {
         form_rate_limit_per_min: Number(draft.value.form_rate_limit_per_min) || 10,
         lead_return_auto: draft.value.lead_return_auto,
         lead_return_ordem_blindada: Number(draft.value.lead_return_ordem_blindada) ?? 4,
+        lead_return_mesmo_empreendimento: draft.value.lead_return_mesmo_empreendimento,
         alert_recipient_user_ids: draft.value.alert_recipient_user_ids,
         meta_form_fallback_scope: draft.value.meta_form_fallback_scope,
     };
@@ -190,6 +215,40 @@ async function save() {
                 Ordem {{ draft.lead_return_ordem_blindada }} (não consegui ler as etapas do CV)
               </option>
             </select>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-line">
+            <label class="block text-xs font-medium text-ink mb-1">Converteu de novo no MESMO empreendimento</label>
+            <p class="text-xs text-ink-muted mb-2">
+              Cliente que já tem o empreendimento como interesse e volta a converter numa campanha
+              dele não é interesse novo: devolver à fila nessa hora tira o lead de quem já está
+              falando com ele. O estado do lead (interesses e corretor) é lido ao vivo no CV na hora
+              da decisão, não pelo espelho de 30 minutos.
+            </p>
+            <div class="space-y-2">
+              <label v-for="p in POLITICAS_MESMO_EMP" :key="p.valor"
+                class="flex items-start gap-2 rounded-lg border px-3 py-2 cursor-pointer transition-colors"
+                :class="[
+                  draft.lead_return_mesmo_empreendimento === p.valor
+                    ? 'border-accent bg-accent/5'
+                    : 'border-line bg-surface-sunken hover:border-accent/40',
+                  !draft.lead_return_auto ? 'opacity-50 pointer-events-none' : '',
+                ]">
+                <input type="radio" class="mt-0.5 accent-current"
+                  :value="p.valor" v-model="draft.lead_return_mesmo_empreendimento"
+                  :disabled="!draft.lead_return_auto" />
+                <span class="min-w-0">
+                  <span class="block text-xs font-medium text-ink">{{ p.titulo }}</span>
+                  <span class="block text-xs text-ink-muted">{{ p.texto }}</span>
+                </span>
+              </label>
+            </div>
+            <p v-if="draft.lead_return_mesmo_empreendimento === 'devolver'"
+              class="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              <i class="fas fa-triangle-exclamation mr-1"></i>
+              Com essa opção, quem está em atendimento volta para a fila ao converter outra vez no
+              mesmo empreendimento.
+            </p>
           </div>
         </Surface>
 
