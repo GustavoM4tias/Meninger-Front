@@ -482,6 +482,21 @@ function fmtDateStr(dt) {
   return d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// O nome que o navegador sugere ao salvar em PDF é o <title> da aba - nada mais.
+// Enquanto ele era só "Relatório de Reunião", toda ata salva caía na pasta com o
+// mesmo nome, e quem baixava três reuniões ficava com (1), (2), (3).
+function nomeDoArquivo(assunto, quando) {
+  const limpo = String(assunto || 'Reunião')
+    .replace(/[\\/:*?"<>|]+/g, ' ')  // proibidos em nome de arquivo no Windows
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+  const d = quando ? new Date(String(quando).replace('T', ' ').split('.')[0]) : new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const data = isNaN(d.getTime()) ? '' : `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+  return ['Ata', limpo, data].filter(Boolean).join(' - ');
+}
+
 const PRINT_STATUS = {
   ok:      { label: 'No rumo',  bg: '#dcfce7', fg: '#15803d' },
   atencao: { label: 'Atenção',  bg: '#fef3c7', fg: '#b45309' },
@@ -491,7 +506,8 @@ const PRINT_STATUS = {
 function printReport() {
   const r  = props.report;
   const m  = props.meeting;
-  const title = m?.subject || 'Relatório de Reunião';
+  const title    = m?.subject || 'Relatório de Reunião';
+  const fileName = nomeDoArquivo(m?.subject, m?.start);
   const grupos = (list) => agrupar(list);
 
   const grupoTitulo = (nome) => nome
@@ -526,7 +542,7 @@ function printReport() {
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>${esc(title)}</title>
+<title>${esc(fileName)}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111827;padding:40px;max-width:900px;margin:0 auto;font-size:13px}
@@ -656,6 +672,7 @@ function printReport() {
   if (!win) { toast.warning('Permita pop-ups para exportar o PDF.'); return; }
   win.document.write(html);
   win.document.close();
+  win.document.title = fileName;
 }
 </script>
 

@@ -376,7 +376,7 @@
                           <i class="fas fa-rotate-right mr-1"></i> Regenerar
                         </button>
                       </div>
-                      <ReportPanel :report="ts.report" @email="openEmailModal" />
+                      <ReportPanel :report="ts.report" :meeting="ts.selectedMeeting" @email="openEmailModal" />
                     </div>
                   </div>
 
@@ -489,7 +489,7 @@
                       <i class="fas fa-rotate-right mr-1"></i> Regenerar
                     </button>
                   </div>
-                  <ReportPanel :report="ipReport" @email="ipOpenEmail" />
+                  <ReportPanel :report="ipReport" :meeting="ipMeetingMeta" @email="ipOpenEmail" />
                 </div>
               </div>
 
@@ -934,17 +934,23 @@ async function ipDoDelete() {
 // ── Email ─────────────────────────────────────────────────────────────────────
 const showEmailModal = ref(false);
 
-const emailMeetingMeta = computed(() => {
-  if (activeTab.value === 'inperson' && ipSelected.value) {
-    return {
-      subject:   ipSelected.value.title,
-      start:     ipSelected.value.meeting_date,
-      organizer: { name: ipSelected.value.organizer_name },
-      attendees: ipSelected.value.attendees_json || [],
-    };
-  }
-  return ts.selectedMeeting;
+// A reunião presencial não tem o objeto do calendário: monta um equivalente
+// (assunto, data, organizador) para quem precisa dele - o modal de e-mail e o
+// cabeçalho/nome do arquivo do relatório.
+const ipMeetingMeta = computed(() => {
+  const m = ipSelected.value;
+  if (!m) return null;
+  return {
+    subject:   m.title,
+    start:     m.meeting_date,
+    organizer: { name: m.organizer_name },
+    attendees: m.attendees_json || [],
+  };
 });
+
+const emailMeetingMeta = computed(() =>
+  activeTab.value === 'inperson' && ipSelected.value ? ipMeetingMeta.value : ts.selectedMeeting
+);
 
 const emailReport = computed(() =>
   activeTab.value === 'inperson' ? ipReport.value : ts.report
