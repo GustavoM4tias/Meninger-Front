@@ -84,7 +84,7 @@
         <p class="text-ink font-mono">
           {{ form.atraso_reemitir ? `a rodada reemite sozinha, até ${form.atraso_max_reemissoes} via(s) nova(s)` : `a pedido (cliente responde SIM ou botão Reemitir), até ${form.atraso_max_reemissoes} via(s) nova(s)` }} · próximo dia útil
         </p>
-        <p class="text-ink-subtle mt-0.5">Acabaram as vias{{ form.aviso_final_sem_resposta_dias ? ` ou ${form.aviso_final_sem_resposta_dias} dias sem resposta ao aviso` : '' }}: aviso final sem nova via, com o número {{ form.parcelas_contato }}.</p>
+        <p class="text-ink-subtle mt-0.5">Acabaram as vias{{ form.aviso_final_sem_resposta_dias ? ` ou ${form.aviso_final_sem_resposta_dias} dias sem resposta ao aviso` : '' }}: aviso final sem nova via ("procure o seu corretor").</p>
       </div>
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">CEP recusado pela Caixa</p>
@@ -149,10 +149,9 @@
         :options="[{ value: 'emitir', label: 'Emitir agora, com vencimento no próximo dia útil' }, { value: 'ignorar', label: 'Não emitir (fica prevista para a tela decidir)' }]" />
       <div class="space-y-3">
         <Switch v-model="form.atraso_reemitir" label="Reemitir parcela vencida sem esperar o cliente" description="Desligado (padrão): o cliente recebe o aviso de vencida e a nova via sai quando ele responde SIM no WhatsApp ou alguém clica Reemitir na tela. Ligado: a rodada reemite sozinha. Sempre com o mesmo valor e vencimento no próximo dia útil." />
-        <Input v-model.number="form.atraso_max_reemissoes" type="number" label="Vias novas por parcela" hint="Cada aviso de atraso oferece uma via nova (o cliente responde SIM). Acabaram as vias, o cliente recebe o aviso final, sem nova via, com o número de contato; a parcela fica como atraso para alguém decidir." />
+        <Input v-model.number="form.atraso_max_reemissoes" type="number" label="Vias novas por parcela" hint="Cada aviso de atraso oferece uma via nova (o cliente responde SIM). Acabaram as vias, o cliente recebe o aviso final, sem nova via, orientado a procurar o corretor; a parcela fica como atraso para alguém decidir." />
       </div>
-      <Input v-model.number="form.aviso_final_sem_resposta_dias" type="number" label="Aviso final sem resposta (dias depois do aviso de atraso)" hint="0 desliga. O cliente não respondeu SIM nesse prazo: recebe o aviso final, sem nova via, com o número de contato." />
-      <Input v-model="form.parcelas_contato" label="Número de contato nos avisos" hint="Aparece no aviso final e no aviso de baixa. Formato livre, ex.: (44) 99151-0579." />
+      <Input v-model.number="form.aviso_final_sem_resposta_dias" type="number" label="Aviso final sem resposta (dias depois do aviso de atraso)" hint="0 desliga. O cliente não respondeu SIM nesse prazo: recebe o aviso final, sem nova via, orientado a procurar o corretor." />
       <Input v-model.number="form.lembrete_dias_antes" type="number" label="Lembrete ao cliente (dias antes do vencimento)" hint="0 desliga. E-mail sempre; WhatsApp quando o template estiver aprovado." />
       <Input v-model.number="form.aviso_atraso_dias_depois" type="number" label="Aviso de atraso (dias depois do vencimento)" hint="0 desliga. Avisa que o boleto venceu e que uma via nova vem aí." />
       <div class="md:col-span-2 pt-3 border-t border-line space-y-3">
@@ -210,7 +209,7 @@ const CAMPOS = [
   'parcelas_encerrar_quando_faturado', 'parcelas_encerrar_etapas_repasse', 'parcelas_vencidas_na_adesao', 'parcelas_cobrar_a_partir_de',
   'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'parcelas_lote_tamanho', 'parcelas_lote_pausa_min',
   'atraso_reemitir', 'atraso_max_reemissoes',
-  'lembrete_dias_antes', 'aviso_atraso_dias_depois', 'aviso_final_sem_resposta_dias', 'parcelas_contato',
+  'lembrete_dias_antes', 'aviso_atraso_dias_depois', 'aviso_final_sem_resposta_dias',
   'parcelas_cep_contingencia_ativo', 'parcelas_cep_contingencia',
 ];
 const DEFAULTS = {
@@ -221,7 +220,7 @@ const DEFAULTS = {
   parcelas_vencidas_na_adesao: 'emitir', parcelas_cobrar_a_partir_de: '',
   parcelas_hora_rodada: 9, parcelas_max_emissoes_rodada: 0, parcelas_lote_tamanho: 10, parcelas_lote_pausa_min: 5,
   atraso_reemitir: false, atraso_max_reemissoes: 2,
-  lembrete_dias_antes: 3, aviso_atraso_dias_depois: 1, aviso_final_sem_resposta_dias: 15, parcelas_contato: '(44) 99151-0579',
+  lembrete_dias_antes: 3, aviso_atraso_dias_depois: 1, aviso_final_sem_resposta_dias: 15,
 };
 const form = ref(JSON.parse(JSON.stringify(DEFAULTS)));
 const editing = ref(false);
