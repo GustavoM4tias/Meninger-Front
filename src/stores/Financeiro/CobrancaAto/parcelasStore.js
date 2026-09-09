@@ -205,6 +205,13 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         catch (e) { console.error('[parcelas] repasse-etapas', e); }
     }
 
+    // ── Empreendimentos (para a lista de exclusao da cobranca) ─────────────────
+    const empreendimentos = ref([]);   // [{ nome, ativos, pausados }]
+    async function fetchEmpreendimentos() {
+        try { empreendimentos.value = (await requestWithAuth(`${BASE}/empreendimentos`))?.empreendimentos || []; }
+        catch (e) { console.error('[parcelas] empreendimentos', e); }
+    }
+
     // ── Templates WhatsApp (configure) ─────────────────────────────────────────
     const templates = ref([]);
     const templatesLoading = ref(false);
@@ -241,6 +248,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         criarPlano, sincronizar, pausar, reativar, encerrar, emitirParcela, baixarParcela, marcarPaga, editarParcela, rodarCiclo,
         rodadas, rodadasLoading, rodadasError, boletos, boletosLoading, boletosError, boletosFiltro, fetchRodadas, fetchBoletos,
         repasseEtapas, fetchRepasseEtapas,
+        empreendimentos, fetchEmpreendimentos,
         templates, templatesLoading, templatesMsg, fetchTemplates, syncTemplates,
     };
 });

@@ -62,6 +62,14 @@
         <p class="text-ink font-mono">{{ form.parcelas_exigir_ato_pago ? 'sim' : 'não' }}</p>
       </div>
       <div>
+        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Fora da cobrança de parcelas</p>
+        <p class="text-ink font-mono">
+          <template v-if="form.parcelas_empreendimentos_excluidos.length">{{ form.parcelas_empreendimentos_excluidos.join(', ') }}</template>
+          <template v-else>nenhum: todo empreendimento com ato pago entra</template>
+        </p>
+        <p class="text-ink-subtle mt-0.5">O ato tem o webhook por empreendimento no CV; a parcela não tem webhook. A adesão pega toda reserva com ato pago, e esta lista é o único lugar para tirar um empreendimento.</p>
+      </div>
+      <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Quando o plano encerra</p>
         <p class="text-ink font-mono">{{ form.parcelas_encerrar_quando_faturado ? 'venda faturada no Sienge (regra do Faturamento)' : 'não encerra pelo Sienge' }}</p>
         <p class="text-ink font-mono mt-0.5">
@@ -135,6 +143,14 @@
         <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando a venda for faturada no Sienge" description="Venda faturada = data com a instituição financeira, a mesma regra do relatório de Faturamento. Aí o ERP passa a cobrar e os boletos em aberto do Office são baixados." />
       </div>
       <div class="md:col-span-2">
+        <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">Empreendimentos fora da cobrança de parcelas</label>
+        <MultiSelector v-model="excluidosLabels" :options="empreendimentosOptions" placeholder="Nenhum (todo empreendimento com ato pago entra)" :page-size="100" />
+        <p class="text-ink-subtle mt-1.5">
+          Ao salvar, os planos ativos desses empreendimentos são pausados na hora e reserva nova deles não entra na cobrança.
+          Boletos já emitidos continuam valendo (baixe pela tela se precisar). Tirar um empreendimento da lista reativa os planos que esta regra pausou.
+        </p>
+      </div>
+      <div class="md:col-span-2">
         <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">Encerrar o plano quando o repasse do CV estiver em</label>
         <MultiSelector v-model="etapasLabels" :options="etapasOptions" placeholder="Nenhuma etapa (regra desligada)" :page-size="100" />
         <p class="text-ink-subtle mt-1.5">
@@ -184,6 +200,7 @@
         </Badge>
       </div>
       <p v-if="parcelas.templatesMsg" class="text-xs text-ink-muted mt-2">{{ parcelas.templatesMsg }}</p>
+      <p v-if="exclusoesMsg" class="text-xs text-ink-muted mt-2">Exclusões aplicadas: {{ exclusoesMsg }}</p>
     </div>
   </Panel>
 </template>
@@ -200,12 +217,13 @@ import Select from '@/components/UI/Select.vue';
 import Switch from '@/components/UI/Switch.vue';
 import Badge from '@/components/UI/Badge.vue';
 import { formatDateTime, formatDate } from './parcelasFormat';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const boletoStore = useBoletoStore();
 const parcelas = useParcelasStore();
 
 const CAMPOS = [
-  'parcelas_ativo', 'parcelas_idseries', 'parcelas_exigir_ato_pago', 'parcelas_antecedencia_dias',
+  'parcelas_ativo', 'parcelas_idseries', 'parcelas_exigir_ato_pago', 'parcelas_empreendimentos_excluidos', 'parcelas_antecedencia_dias',
   'parcelas_encerrar_quando_faturado', 'parcelas_encerrar_etapas_repasse', 'parcelas_vencidas_na_adesao', 'parcelas_cobrar_a_partir_de',
   'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'parcelas_lote_tamanho', 'parcelas_lote_pausa_min',
   'atraso_reemitir', 'atraso_max_reemissoes',
@@ -213,7 +231,7 @@ const CAMPOS = [
   'parcelas_cep_contingencia_ativo', 'parcelas_cep_contingencia',
 ];
 const DEFAULTS = {
-  parcelas_ativo: false, parcelas_idseries: [20], parcelas_exigir_ato_pago: true, parcelas_antecedencia_dias: 10,
+  parcelas_ativo: false, parcelas_idseries: [20], parcelas_exigir_ato_pago: true, parcelas_empreendimentos_excluidos: [], parcelas_antecedencia_dias: 10,
   parcelas_encerrar_quando_faturado: true, parcelas_encerrar_etapas_repasse: [45, 27, 57, 47, 48, 46, 54, 33, 34, 35, 36],
   parcelas_cep_contingencia_ativo: true,
   parcelas_cep_contingencia: { cep: '17500005', endereco: 'Rua São Luiz', numero: '231', complemento: '', bairro: 'Centro', cidade: 'Marília', estado: 'SP' },
@@ -239,11 +257,44 @@ function carregar() {
 function startEdit() { snapshot = JSON.parse(JSON.stringify(form.value)); editing.value = true; }
 function cancelEdit() { if (snapshot) form.value = snapshot; snapshot = null; editing.value = false; }
 async function save() {
+  // Lista de exclusao mudou: diz quantos planos vao ser pausados/reativados antes de aplicar.
+  const antes = new Set((snapshot?.parcelas_empreendimentos_excluidos || []).map(normNome));
+  const depois = new Set(form.value.parcelas_empreendimentos_excluidos.map(normNome));
+  const entram = [...depois].filter(n => !antes.has(n));
+  const saem = [...antes].filter(n => !depois.has(n));
+  if (entram.length || saem.length) {
+    const conta = (nomes, campo) => nomes.reduce((acc, n) => acc + (parcelas.empreendimentos.find(e => normNome(e.nome) === n)?.[campo] || 0), 0);
+    const pausar = conta(entram, 'ativos');
+    const reativar = conta(saem, 'pausados');
+    const partes = [];
+    if (entram.length) partes.push(`${pausar} plano${pausar === 1 ? '' : 's'} ativo${pausar === 1 ? '' : 's'} de ${entram.join(', ')} ${pausar === 1 ? 'é pausado' : 'são pausados'} agora e reserva nova não entra. Boletos já emitidos continuam valendo.`);
+    if (saem.length) partes.push(`Até ${reativar} plano${reativar === 1 ? '' : 's'} de ${saem.join(', ')} pausado${reativar === 1 ? '' : 's'} por esta regra volta${reativar === 1 ? '' : 'm'} a ativo e a próxima rodada emite.`);
+    if (!await pedirConfirmacao({ title: 'Mudar os empreendimentos fora da cobrança?', consequence: partes.join(' '), confirmLabel: 'Salvar e aplicar', tone: 'primary' })) return;
+  }
   const payload = {};
   for (const k of CAMPOS) payload[k] = form.value[k];
   await boletoStore.saveSettings(payload);
-  if (!boletoStore.settingsError) { editing.value = false; snapshot = null; parcelas.fetchStatus(); }
+  if (!boletoStore.settingsError) {
+    editing.value = false; snapshot = null; parcelas.fetchStatus(); parcelas.fetchEmpreendimentos();
+    const r = boletoStore.settings?.parcelas_exclusoes;
+    if (r && !r.erro && (r.pausados || r.reativados)) {
+      exclusoesMsg.value = `${r.pausados} plano(s) pausado(s), ${r.reativados} reativado(s)${r.boletosVivos ? `; ${r.boletosVivos} boleto(s) de parcela seguem em aberto nos pausados` : ''}.`;
+    } else if (r?.erro) exclusoesMsg.value = `A lista foi salva, mas a aplicação falhou: ${r.erro}. A rodada das 09h aplica de novo.`;
+  }
 }
+const exclusoesMsg = ref(null);
+const normNome = (s) => String(s || '').trim().toUpperCase().replace(/\s+/g, ' ');
+
+/* Empreendimentos: o MultiSelector trabalha com rótulos "NOME · N ativos"; o form guarda só o nome. */
+const empLabel = (e) => `${e.nome} · ${e.ativos} ativo${e.ativos === 1 ? '' : 's'}${e.pausados ? `, ${e.pausados} pausado${e.pausados === 1 ? '' : 's'}` : ''}`;
+const empreendimentosOptions = computed(() => parcelas.empreendimentos.map(empLabel));
+const excluidosLabels = computed({
+  get: () => form.value.parcelas_empreendimentos_excluidos.map(n => {
+    const e = parcelas.empreendimentos.find(x => normNome(x.nome) === normNome(n));
+    return e ? empLabel(e) : `${n} · (sem reserva conhecida)`;
+  }),
+  set: (labels) => { form.value.parcelas_empreendimentos_excluidos = labels.map(l => normNome(String(l).split(' · ')[0])).filter(Boolean); },
+});
 function addSerie() {
   const id = Number(novaSerie.value);
   if (!id || form.value.parcelas_idseries.includes(id)) return;
@@ -273,5 +324,6 @@ onMounted(async () => {
   parcelas.fetchTemplates();
   parcelas.fetchStatus();
   parcelas.fetchRepasseEtapas();
+  parcelas.fetchEmpreendimentos();
 });
 </script>
