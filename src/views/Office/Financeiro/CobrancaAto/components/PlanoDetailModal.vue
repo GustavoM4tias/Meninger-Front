@@ -161,6 +161,7 @@
         O plano é definido no Envio Sienge e não muda pelo CV; só administrador altera, aqui.
         A rodada diária emite cada parcela com a antecedência configurada. Parcela vencida recebe aviso (a reserva pode ser cancelada);
         a nova via sai quando o cliente responde SIM no WhatsApp ou pelo botão Reemitir, sempre com o mesmo valor e vencimento no próximo dia útil.
+        Acabaram as vias novas (ou o aviso ficou sem resposta), o cliente recebe o aviso final com o número de contato e a parcela fica aqui como atraso.
         Quando a venda é faturada no Sienge, ou o repasse no CV chega a “Contrato Emitido CAIXA”, o plano encerra sozinho e o ERP passa a cobrar. Título gerado no Sienge não encerra.
       </p>
     </div>
