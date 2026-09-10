@@ -46,7 +46,7 @@
         </p>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Input v-model="form.usuario" type="email" label="E-mail de acesso"
           :placeholder="store.settings?.usuario_set ? '•••••••• (já cadastrado)' : 'usuario@menin.com.br'"
           hint="O mesmo e-mail usado para entrar no meu.userede.com.br." />
@@ -127,7 +127,7 @@
         </p>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-5">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Input v-model.number="form.valor_maximo" type="number" min="1" :max="limites.max_valor"
           label="Teto por link (R$)"
           :hint="`Acima disto a emissão erra e avisa no CV. Máximo da Rede: R$ ${limites.max_valor.toLocaleString('pt-BR')}.`" />
@@ -139,30 +139,14 @@
           :hint="`Vencimento além disto não emite. Máximo da Rede: ${limites.max_dias_vencimento} dias.`" />
       </div>
 
-      <!-- Séries de crédito. O campo era um <input> cru, com altura e foco
-           diferentes do resto da tela; virou o primitivo, e o selo virou o
-           mesmo ChipId dos outros cartões. -->
-      <div class="min-w-0">
-        <label class="block text-xs font-medium text-ink-muted mb-1.5">
-          IDs de série - Recurso Próprio à Vista (crédito)
-        </label>
-        <div class="flex gap-2 mt-1.5 max-w-sm">
-          <Input v-model.number="novaSerie" type="number" placeholder="Ex.: 3"
-            @keydown.enter.prevent="addSerie" />
-          <Button variant="primary" size="sm" icon="fas fa-plus" @click="addSerie">Adicionar</Button>
-        </div>
-        <div class="flex flex-wrap gap-1 mt-2">
-          <ChipId v-for="id in form.idserie_credito" :key="id" :id="id"
-            removable remove-label="Remover série" @remove="removeSerie(id)" />
-          <span v-if="!form.idserie_credito.length" class="text-xs text-ink-subtle italic self-center">
-            Nenhuma série configurada
-          </span>
-        </div>
-        <p class="mt-1.5 text-xs text-ink-muted leading-relaxed">
-          O link só é criado quando a reserva tem parcela de uma dessas séries. A quantidade de
-          parcelas da série vira o limite de vezes oferecido no link.
-        </p>
-      </div>
+      <!-- Terceiro campo de lista de ids da aba; o mesmo componente dos dois
+           do cartão de séries do ato. -->
+      <ChipListField v-model="form.idserie_credito" class="max-w-md"
+        label="IDs de série - Recurso Próprio à Vista (crédito)"
+        placeholder="Ex.: 3"
+        empty-text="Nenhuma série configurada"
+        remove-label="Remover série"
+        hint="O link só é criado quando a reserva tem parcela de uma dessas séries. A quantidade de parcelas da série vira o limite de vezes oferecido no link." />
     </section>
 
     <!-- ── Automação e salvar ────────────────────────────────────────────── -->
@@ -197,7 +181,7 @@ import { useUseredeStore } from '@/stores/Financeiro/LinkCartao/useredeStore';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Switch from '@/components/UI/Switch.vue';
-import ChipId from './ChipId.vue';
+import ChipListField from './ChipListField.vue';
 
 const store = useUseredeStore();
 
@@ -233,18 +217,8 @@ const estadoCredenciais = computed(() => [
     { rotulo: 'Sessão', ok: !!store.settings?.session_set, estado: sessaoLabel.value },
 ]);
 
-const novaSerie = ref(null);
 
-function addSerie() {
-    const n = Number(novaSerie.value);
-    if (!Number.isFinite(n) || n <= 0) return;
-    if (!form.idserie_credito.includes(n)) form.idserie_credito.push(n);
-    novaSerie.value = null;
-}
-
-function removeSerie(id) {
-    form.idserie_credito = form.idserie_credito.filter(x => x !== id);
-}
+// O campo de lista de ids vive no ChipListField (add/remove e validacao).
 
 async function handleSave() {
     const payload = {

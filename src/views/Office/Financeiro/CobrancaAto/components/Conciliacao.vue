@@ -181,17 +181,20 @@
       </div>
 
       <div>
+        <!-- Ordena EM MEMORIA, como no Histórico. As linhas do período já
+             estão todas aqui, então ordenar é instantâneo e vale para
+             qualquer coluna. Antes tinha `manual-sort` e cada clique no
+             cabeçalho chamava `applySort` -> `search()`, que refaz a consulta
+             AO VIVO na API do Sienge: alguns segundos de espera para reordenar
+             uma lista que já estava na tela. -->
         <DataTable
           :columns="columns"
           :rows="store.linhas"
           row-key="id"
-          manual-sort
           clickable
           density="compact"
           more-label="Ver todos os campos"
           @row-click="abrirDetalhe"
-          v-model:sort-by="ordenarPor"
-          v-model:sort-dir="ordenarDir"
           empty-icon="fas fa-hand-holding-dollar"
           :empty-title="store.searched ? 'Nenhum recebimento no período' : 'Escolha o período'"
           :empty-text="store.searched
@@ -345,14 +348,27 @@ const columns = computed(() => {
   const base = [
     { key: 'data_baixa', label: 'Dt. baixa', priority: 1, sortable: true, numeric: true, width: '104px' },
     { key: 'cliente', label: 'Cliente', priority: 1, sortable: true },
-    { key: 'valor_baixa', label: 'Vl. baixa', priority: 1, sortable: true, numeric: true, width: '120px' },
+    { key: 'valor_baixa', label: 'Vl. baixa', priority: 1, sortable: true, numeric: true, width: '120px',
+      sortValue: (r) => Number(r.valor_baixa) || 0 },
     { key: 'unidade', label: 'Unid. princ', priority: 2, sortable: true, width: '150px' },
     { key: 'documento', label: 'Documento', priority: 2, sortable: true, width: '168px' },
     { key: 'nutitulo', label: 'Título', priority: 3, sortable: true, numeric: true, width: '92px' },
   ];
   if (!conc.value) return base;
-  // Não é ordenável: o dado vem do confronto em memória, não do servidor.
-  base.splice(3, 0, { key: '_ato', label: 'Ato', priority: 1, width: '150px' });
+  /* O Ato passa a ordenar tambem: como a tabela ordena em memoria, da para
+     comparar o SELO (conciliado / divergente / sem ato), que e justamente o
+     agrupamento que quem confere procura. Dentro do mesmo selo, o maior
+     descasamento primeiro. */
+  base.splice(3, 0, {
+    key: '_ato', label: 'Ato', priority: 1, width: '150px', sortable: true,
+    sortValue: (r) => {
+      const c = r.conciliacao;
+      if (!c) return 'z';
+      const ordem = { divergente: 'a', sem_ato: 'b', conciliado: 'c' }[c.status] || 'z';
+      const dif = Math.abs(Number(c.ato?.diferenca) || 0);
+      return `${ordem}${String(Math.round(1e9 - dif)).padStart(12, '0')}`;
+    },
+  });
   return base;
 });
 
@@ -367,8 +383,9 @@ const COLUNAS_SEM_AVC = [
   { key: 'unidade', label: 'Unidade', priority: 2, sortable: true, width: '130px',
     format: (v) => v || '-' },
   { key: 'empreendimento', label: 'Empreendimento', priority: 2, sortable: true, width: '200px' },
-  { key: 'tipo', label: 'Forma', priority: 3, width: '104px' },
-  { key: 'valor', label: 'Valor', priority: 1, sortable: true, numeric: true, width: '128px' },
+  { key: 'tipo', label: 'Forma', priority: 3, sortable: true, width: '104px' },
+  { key: 'valor', label: 'Valor', priority: 1, sortable: true, numeric: true, width: '128px',
+    sortValue: (r) => Number(r.valor) || 0 },
 ];
 
 const ATO_ROTULO = { conciliado: 'Conciliado', divergente: 'Divergente', sem_ato: 'Sem ato' };
@@ -411,15 +428,6 @@ function explicarAto(row) {
   return partes.join('\n');
 }
 
-/* Quem ordena é o servidor (a lista chega ordenada), daí o `manual-sort`. */
-const ordenarPor = computed({
-  get: () => store.sort,
-  set: (v) => store.applySort(v, store.dir),
-});
-const ordenarDir = computed({
-  get: () => store.dir,
-  set: (v) => store.applySort(store.sort, v),
-});
 
 
 // ── Formatadores ──

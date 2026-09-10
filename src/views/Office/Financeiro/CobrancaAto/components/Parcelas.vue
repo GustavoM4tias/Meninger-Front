@@ -114,19 +114,15 @@
           :options="[{ value: '', label: 'Todas as emissões' }, { value: 'success', label: 'Emitidos' }, { value: 'error', label: 'Com erro' }, { value: 'processing', label: 'Em processamento' }]"
           @change="store.fetchBoletos()" />
 
-        <!-- Busca ao digitar. Só reagia ao Enter, e sem botão nenhum ao lado:
-             quem digitava e esperava concluía, com razão, que não buscava.
-             O "limpar" é IRMÃO do campo, não sobreposto: dentro do campo ele
-             ficaria por cima do texto, porque o `class` do Input vai para o
-             wrapper e não dá para reservar padding à direita no <input>. -->
-        <div class="flex-1 min-w-[12rem] flex items-center gap-1.5">
-          <Input v-model="store.boletosFiltro.q" size="sm" class="flex-1 min-w-0"
-            icon-left="fas fa-magnifying-glass"
-            placeholder="Reserva ou titular nas emissões"
-            @keydown.enter="buscarBoletosAgora" />
-          <IconButton v-if="store.boletosFiltro.q" icon="fas fa-xmark" size="sm"
-            label="Limpar a busca" @click="limparBuscaBoletos" />
-        </div>
+        <!-- A busca some daqui: é a MESMA do filtro de cima. Eram duas caixas
+             com o mesmo texto, e o "Reserva ou titular" agora recorta as duas
+             listas de uma vez. Sobram aqui só período e situação, que não têm
+             equivalente lá em cima porque só existem para as emissões. -->
+        <span v-if="store.filtro.q" class="ml-auto inline-flex items-center gap-1.5
+                    text-micro text-ink-subtle">
+          <i class="fas fa-magnifying-glass" style="font-size:9px"></i>
+          filtrando por <b class="text-ink">{{ store.filtro.q }}</b>
+        </span>
       </div>
 
       <div v-if="store.boletosError" class="m-3 rounded-lg border border-data-neg/25 bg-data-neg/10 p-3 text-sm text-data-neg flex items-start gap-2">
@@ -396,7 +392,16 @@ const activeFiltersCount = computed(() => {
 const primeiraCarga = ref(true);
 const carregando = computed(() => primeiraCarga.value || store.loading);
 
-function aplicar() { return store.refresh().finally(() => { primeiraCarga.value = false; }); }
+/* Uma busca só. O `q` do filtro de cima alimenta as DUAS listas: os planos e
+   as emissões do Acompanhamento. Antes eram dois campos com o mesmo texto e
+   escopos diferentes, e ninguém adivinhava qual recortava o quê. */
+function aplicar() {
+  store.boletosFiltro.q = store.filtro.q;
+  return Promise.allSettled([
+    store.refresh(),
+    store.fetchBoletos(),
+  ]).finally(() => { primeiraCarga.value = false; });
+}
 function limpar() {
   store.filtro.status = ['ativo']; store.filtro.empreendimento = []; store.filtro.q = ''; store.filtro.comAtraso = false;
   recorte.value = '';
@@ -431,14 +436,17 @@ const kpiCards = computed(() => {
 
 const pct = (r) => (r.parcelas_total ? Math.round((r.parcelas_pagas / r.parcelas_total) * 100) : 0);
 
+/* Ordena pelo SERVIDOR (`manual-sort` na tabela): a lista e paginada, e sem
+   isso a tabela ordenaria so a pagina que recebeu - pior que nao ordenar.
+   Cada `key` daqui tem que existir em ORDENAVEIS no AtoParcelaService. */
 const COLUNAS = [
   { key: 'idreserva', label: '#Reserva', priority: 1, sortable: true, width: '7rem' },
   { key: 'titular_nome', label: 'Titular / Empreendimento', priority: 1, sortable: true },
-  { key: 'progresso', label: 'Pagas', priority: 2, width: '10rem' },
+  { key: 'progresso', label: 'Pagas', priority: 2, sortable: true, width: '10rem' },
   { key: 'proxima', label: 'Próxima cobrança', priority: 1, sortable: true, width: '11rem' },
   { key: 'atraso', label: 'Atraso', priority: 1, sortable: true, width: '8rem' },
   { key: 'status', label: 'Plano', priority: 2, sortable: true, width: '9rem' },
-  { key: 'sienge', label: 'Sienge', priority: 3, width: '8rem' },
+  { key: 'sienge', label: 'Sienge', priority: 3, sortable: true, width: '8rem' },
 ];
 
 // ── Acompanhamento: rodadas e boletos ─────────────────────────────────────────
@@ -487,20 +495,30 @@ const resumoChips = computed(() => {
   ];
 });
 
+/* Estas duas chegam INTEIRAS numa consulta so (sem paginacao), entao quem
+   ordena e a propria tabela - nada de `manual-sort` aqui. `sortValue` onde a
+   celula e montada no slot e o valor cru da chave nao serve para comparar
+   (`hora` nao existe na linha, `parcela` e "3/12", `emissao` e um selo). */
 const COLUNAS_BOLETOS = [
-  { key: 'hora', label: 'Emitido em', priority: 2, width: '9rem' },
-  { key: 'idreserva', label: '#Reserva', priority: 1, width: '6rem' },
-  { key: 'titular_nome', label: 'Titular / Empreendimento', priority: 1 },
-  { key: 'parcela', label: 'Parcela', priority: 2, width: '5rem' },
-  { key: 'valor', label: 'Valor', priority: 1, numeric: true, width: '8rem' },
-  { key: 'emissao', label: 'Emissão', priority: 1, width: '13rem' },
+  { key: 'hora', label: 'Emitido em', priority: 2, sortable: true, width: '9rem',
+    sortValue: (r) => r.created_at || '' },
+  { key: 'idreserva', label: '#Reserva', priority: 1, sortable: true, numeric: true, width: '6rem' },
+  { key: 'titular_nome', label: 'Titular / Empreendimento', priority: 1, sortable: true },
+  { key: 'parcela', label: 'Parcela', priority: 2, sortable: true, width: '5rem',
+    sortValue: (r) => Number(r.numero) || 0 },
+  { key: 'valor', label: 'Valor', priority: 1, numeric: true, sortable: true, width: '8rem',
+    sortValue: (r) => Number(r.valor) || 0 },
+  { key: 'emissao', label: 'Emissão', priority: 1, sortable: true, width: '13rem',
+    sortValue: (r) => emissaoLabel(r) },
   { key: 'canais', label: 'CV · e-mail · WhatsApp', priority: 2, width: '15rem' },
 ];
 const COLUNAS_RODADAS = [
-  { key: 'inicio', label: 'Rodada', priority: 1, width: '11rem' },
-  { key: 'status', label: 'Resultado', priority: 1, width: '9rem' },
-  { key: 'feito', label: 'O que fez', priority: 1 },
-  { key: 'erros', label: 'Erros', priority: 2 },
+  { key: 'inicio', label: 'Rodada', priority: 1, sortable: true, width: '11rem' },
+  { key: 'status', label: 'Resultado', priority: 1, sortable: true, width: '9rem' },
+  { key: 'feito', label: 'O que fez', priority: 1, sortable: true,
+    sortValue: (r) => (r.emitidas || 0) + (r.reemitidas || 0) },
+  { key: 'erros', label: 'Erros', priority: 2, sortable: true,
+    sortValue: (r) => (r.erros?.length || 0) },
 ];
 
 const emissaoLabel = (r) => {
@@ -533,27 +551,18 @@ const rodadaVariant = (s) => RODADA_VARIANT[s] || 'neutral';
 const skippedLabel = (s) => ({ 'parcelas_ativo=false': 'cobrança de parcelas pausada: nada emitido', fora_da_janela: 'fora da janela do Ecobrança: nada emitido' }[s] || s);
 const duracaoLabel = (s) => (s >= 3600 ? `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}` : s >= 60 ? `${Math.floor(s / 60)} min` : `${s} s`);
 
-/* Busca das emissões: procura ao DIGITAR.
+/* A busca procura ao DIGITAR, nas duas listas.
 
-   O campo só reagia ao Enter e não tinha botão ao lado, então quem digitava e
-   esperava concluía, com razão, que não buscava. 350 ms segura a rajada de
-   teclas sem parecer travado; o Enter continua valendo para quem tem pressa
-   (aí o timer é cancelado, para não disparar a mesma busca duas vezes). */
-let timerBuscaBoletos = null;
-function buscarBoletosAgora() {
-  clearTimeout(timerBuscaBoletos);
-  return store.fetchBoletos();
-}
-watch(() => store.boletosFiltro.q, () => {
-  clearTimeout(timerBuscaBoletos);
-  timerBuscaBoletos = setTimeout(() => store.fetchBoletos(), 350);
+   Antes só reagia ao Enter (e o campo das emissões nem botão tinha), então
+   quem digitava e esperava concluía, com razão, que não buscava. 350 ms
+   segura a rajada de teclas sem parecer travado; Enter e o botão Filtrar
+   continuam valendo para quem tem pressa. */
+let timerBusca = null;
+watch(() => store.filtro.q, () => {
+  clearTimeout(timerBusca);
+  timerBusca = setTimeout(aplicar, 350);
 });
-onBeforeUnmount(() => clearTimeout(timerBuscaBoletos));
-
-function limparBuscaBoletos() {
-  store.boletosFiltro.q = '';
-  buscarBoletosAgora();
-}
+onBeforeUnmount(() => clearTimeout(timerBusca));
 
 function recarregarAcompanhamento() { return Promise.allSettled([store.fetchBoletos(), store.fetchRodadas()]); }
 

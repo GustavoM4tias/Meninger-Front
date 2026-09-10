@@ -174,9 +174,11 @@
             :badge-variant="editingCv ? 'warning' : 'neutral'"
             :description="resumoSeriesAto">
 
-            <div class="space-y-5">
+            <div class="space-y-5 text-sm">
               <!-- ── MODO LEITURA ──────────────────────────────────────── -->
-              <div v-if="!editingCv" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+              <div v-if="!editingCv"
+                class="rounded-lg border border-line bg-surface-sunken/40 p-4
+                       grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                 <CampoConfig label="IDs de série CV (entrada)">
                   <div class="flex flex-wrap gap-1">
                     <ChipId v-for="id in form.idserie_ra" :key="id" :id="id" />
@@ -211,33 +213,13 @@
               </div>
 
               <!-- ── MODO EDIÇÃO ───────────────────────────────────────── -->
-              <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-                <!-- IDs de série: campo de selos (vários por reserva) -->
-                <div class="min-w-0">
-                  <label class="block text-xs font-medium text-ink-muted mb-1.5">
-                    IDs de série CV (entrada)
-                  </label>
-                  <div class="flex gap-2 mt-1.5">
-                    <Input
-                      v-model.number="novaSerieId"
-                      type="number"
-                      placeholder="Ex.: 21"
-                      @keydown.enter.prevent="addSerieId" />
-                    <Button variant="primary" size="sm" icon="fas fa-plus" @click="addSerieId">
-                      Adicionar
-                    </Button>
-                  </div>
-                  <div class="flex flex-wrap gap-1 mt-2">
-                    <ChipId v-for="id in form.idserie_ra" :key="id" :id="id"
-                      removable remove-label="Remover série" @remove="removeSerieId(id)" />
-                    <span v-if="!form.idserie_ra.length" class="text-xs text-ink-subtle italic self-center">
-                      Nenhuma série configurada
-                    </span>
-                  </div>
-                  <p class="mt-1.5 text-xs text-ink-muted leading-relaxed">
-                    Séries cuja parcela de entrada dispara a emissão. Regra: só 1 parcela destas séries por reserva.
-                  </p>
-                </div>
+              <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <ChipListField v-model="form.idserie_ra"
+                  label="IDs de série CV (entrada)"
+                  placeholder="Ex.: 21"
+                  empty-text="Nenhuma série configurada"
+                  remove-label="Remover série"
+                  hint="Séries cuja parcela de entrada dispara a emissão. Regra: só 1 parcela destas séries por reserva." />
 
                 <Input
                   v-model.number="form.cv_idtipo_documento"
@@ -253,33 +235,12 @@
                   placeholder="Ex.: 1"
                   hint="Dias úteis após o vencimento antes de baixar (já considera sábado, domingo e feriado)." />
 
-                <!-- Situações de reserva encerrada: mesmo campo de selos -->
-                <div class="min-w-0">
-                  <label class="block text-xs font-medium text-ink-muted mb-1.5">
-                    Situações CV de reserva encerrada
-                  </label>
-                  <div class="flex gap-2 mt-1.5">
-                    <Input
-                      v-model.number="novaSituacaoMorta"
-                      type="number"
-                      placeholder="Ex.: 4"
-                      @keydown.enter.prevent="addSituacaoMorta" />
-                    <Button variant="primary" size="sm" icon="fas fa-plus" @click="addSituacaoMorta">
-                      Adicionar
-                    </Button>
-                  </div>
-                  <div class="flex flex-wrap gap-1 mt-2">
-                    <ChipId v-for="id in form.cv_situacoes_reserva_morta" :key="id" :id="id"
-                      removable remove-label="Remover situação" @remove="removeSituacaoMorta(id)" />
-                    <span v-if="!form.cv_situacoes_reserva_morta.length" class="text-xs text-ink-subtle italic self-center">
-                      Nenhuma situação configurada
-                    </span>
-                  </div>
-                  <p class="mt-1.5 text-xs text-ink-muted leading-relaxed">
-                    Reserva nessas situações está encerrada: o boleto que ficou pelo caminho sai da fila de trabalho.
-                    Hoje 4 = Cancelada, 11 = Vencida.
-                  </p>
-                </div>
+                <ChipListField v-model="form.cv_situacoes_reserva_morta"
+                  label="Situações CV de reserva encerrada"
+                  placeholder="Ex.: 4"
+                  empty-text="Nenhuma situação configurada"
+                  remove-label="Remover situação"
+                  hint="Reserva nessas situações está encerrada: o boleto que ficou pelo caminho sai da fila de trabalho. Hoje 4 = Cancelada, 11 = Vencida." />
 
                 <Input
                   v-model.number="form.revalidacao_baixado_dias"
@@ -331,7 +292,7 @@
             :badge-variant="store.rules.length ? 'warning' : 'neutral'"
             :description="comissaoModoLabel">
 
-            <div class="space-y-5">
+            <div class="space-y-5 text-sm">
               <p class="text-sm text-ink-muted leading-relaxed">
                 A série do ato traz junto a comissão que o cliente paga à imobiliária.
                 Aqui se define quanto dela sai da cobrança.
@@ -389,7 +350,7 @@
                      vista. É o DataTable do sistema, que no estreito vira
                      cartão e traz a coluna de ações para o topo. -->
                 <DataTable v-else :columns="COLUNAS_REGRAS" :rows="store.rules" row-key="id"
-                  density="compact" :sortable="false"
+                  density="compact"
                   empty-title="Nenhuma regra cadastrada"
                   empty-text="Todos os empreendimentos seguem o padrão geral acima.">
 
@@ -472,12 +433,12 @@
               ? 'Horário de Brasília; fora dele o boleto fica agendado.'
               : 'Emite a qualquer hora, inclusive de madrugada.'">
 
-            <div class="space-y-5">
+            <div class="space-y-5 text-sm">
               <Switch v-model="form.janela_ativa"
                 label="Só emitir dentro do horário comercial"
                 description="Desligado, o webhook do CV vira boleto na hora que chegar." />
 
-              <div v-if="form.janela_ativa" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+              <div v-if="form.janela_ativa" class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <Input
                   v-model.number="form.janela_inicio_hora"
                   type="number" min="0" max="23"
@@ -515,7 +476,7 @@
             :badge-variant="store.whatsappTemplate?.approved_locally ? 'success' : 'warning'"
             description="E-mail e WhatsApp para o titular, logo após a emissão.">
 
-            <div class="space-y-5">
+            <div class="space-y-5 text-sm">
               <div class="rounded-lg border border-line bg-surface-sunken px-3 py-2.5 space-y-2">
                 <p class="flex items-start gap-2 text-xs text-ink-muted leading-relaxed">
                   <i class="fas fa-envelope mt-0.5 text-data-pos shrink-0"></i>
@@ -603,7 +564,7 @@
                 <h3 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">
                   Credenciais Ecobrança
                 </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   <Input
                     v-model="form.eco_usuario"
                     label="Usuário (CPF)"
@@ -1181,8 +1142,6 @@ function startEditCv() {
 
 function cancelEditCv() {
   if (cvSnapshot) Object.assign(form.value, cvSnapshot);
-  novaSerieId.value = null;
-  novaSituacaoMorta.value = null;
   editingCv.value = false;
 }
 
@@ -1195,32 +1154,7 @@ async function handleSaveCv() {
   }
 }
 
-// ── Chip input para IDs de Série ──────────────────────────────────────────────
-const novaSerieId = ref(null);
-
-function addSerieId() {
-  const id = Number(novaSerieId.value);
-  if (!id || form.value.idserie_ra.includes(id)) return;
-  form.value.idserie_ra = [...form.value.idserie_ra, id];
-  novaSerieId.value = null;
-}
-
-function removeSerieId(id) {
-  form.value.idserie_ra = form.value.idserie_ra.filter(s => s !== id);
-}
-
-const novaSituacaoMorta = ref(null);
-
-function addSituacaoMorta() {
-  const id = Number(novaSituacaoMorta.value);
-  if (!id || form.value.cv_situacoes_reserva_morta.includes(id)) return;
-  form.value.cv_situacoes_reserva_morta = [...form.value.cv_situacoes_reserva_morta, id];
-  novaSituacaoMorta.value = null;
-}
-
-function removeSituacaoMorta(id) {
-  form.value.cv_situacoes_reserva_morta = form.value.cv_situacoes_reserva_morta.filter(s => s !== id);
-}
+// Os campos de lista de ids vivem no ChipListField (add/remove e validacao).
 
 async function handleSave() {
   const payload = { ...form.value };
@@ -1489,15 +1423,20 @@ const modoHerdado = (rule) => {
    consulta e o que mais ocupa largura.
 
    Sem ordenação: a lista é curta e vem na ordem que o servidor devolve. */
+/* A lista chega inteira, então quem ordena é a própria tabela. `sortValue`
+   onde a célula é montada no slot e o valor cru não serve para comparar. */
 const COLUNAS_REGRAS = [
-  { key: 'idempreendimento_cv', label: 'ID emp.', priority: 2, numeric: true, width: '88px' },
-  { key: 'empreendimento_nome', label: 'Empreendimento', priority: 1,
+  { key: 'idempreendimento_cv', label: 'ID emp.', priority: 2, numeric: true, sortable: true, width: '88px' },
+  { key: 'empreendimento_nome', label: 'Empreendimento', priority: 1, sortable: true,
     format: (v) => v || '-' },
-  { key: '_modo', label: 'Cálculo', priority: 1, width: '170px' },
-  { key: 'percentual_boleto', label: '% boleto', priority: 2, numeric: true, width: '104px' },
-  { key: 'max_dias_vencimento', label: 'Máx. dias', priority: 2, align: 'center', width: '96px' },
-  { key: 'active', label: 'Ativo', priority: 3, align: 'center', width: '80px' },
-  { key: 'observacao', label: 'Observação', priority: 3, truncate: false,
+  { key: '_modo', label: 'Cálculo', priority: 1, sortable: true, width: '170px',
+    sortValue: (r) => modoLabel(r) },
+  { key: 'percentual_boleto', label: '% boleto', priority: 2, numeric: true, sortable: true, width: '104px',
+    sortValue: (r) => (modoDaRegra(r) === 'percentual' ? Number(r.percentual_boleto) || 0 : -1) },
+  { key: 'max_dias_vencimento', label: 'Máx. dias', priority: 2, align: 'center', sortable: true, width: '96px',
+    sortValue: (r) => Number(r.max_dias_vencimento) || 0 },
+  { key: 'active', label: 'Ativo', priority: 3, align: 'center', sortable: true, width: '80px' },
+  { key: 'observacao', label: 'Observação', priority: 3, truncate: false, sortable: true,
     format: (v) => v || '-' },
 ];
 

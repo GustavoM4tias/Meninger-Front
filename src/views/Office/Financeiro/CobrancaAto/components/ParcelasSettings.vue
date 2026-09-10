@@ -21,7 +21,7 @@
     :badge-variant="editing ? 'warning' : (form.parcelas_ativo ? 'success' : 'neutral')"
     :description="resumoCartao">
 
-    <div class="space-y-5">
+    <div class="space-y-5 text-sm">
 
       <p class="text-sm text-ink-muted leading-relaxed">
         Depois do ato pago, o Office cobra as mensais até o Sienge faturar o contrato.
@@ -38,7 +38,9 @@
       </div>
 
       <!-- ── LEITURA ────────────────────────────────────────────────────── -->
-      <div v-if="!editing" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
+      <div v-if="!editing"
+        class="rounded-lg border border-line bg-surface-sunken/40 p-4
+               grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
         <CampoConfig label="Séries mensais (CV)">
           <div class="flex flex-wrap gap-1">
             <ChipId v-for="id in form.parcelas_idseries" :key="id" :id="id" />
@@ -123,12 +125,12 @@
       </div>
 
       <!-- ── EDIÇÃO ─────────────────────────────────────────────────────── -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+      <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div class="min-w-0">
           <label class="block text-xs font-medium text-ink-muted mb-1.5">
             Séries mensais do CV (IDs)
           </label>
-          <div class="flex gap-2 mt-1.5">
+          <div class="flex gap-2">
             <Input v-model.number="novaSerie" type="number" placeholder="Ex.: 20"
               @keydown.enter.prevent="addSerie" />
             <Button variant="primary" size="sm" icon="fas fa-plus" @click="addSerie">Adicionar</Button>
@@ -232,7 +234,7 @@
             label="CEP recusado pela Caixa: emitir com o endereço de contingência"
             description="A Caixa não aceita o CEP genérico da cidade (86360-000, 14940-000). Ligado, o boleto sai mesmo assim com o endereço abaixo (o da Menin, que também está no contrato), a reserva fica com o alerta CEP a corrigir no CV e o corretor recebe a mensagem no CV. Desligado, a parcela fica em erro até o cadastro ser corrigido." />
           <div v-if="form.parcelas_cep_contingencia_ativo"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-5">
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <Input v-model="form.parcelas_cep_contingencia.cep" label="CEP" placeholder="17500005" />
             <Input v-model="form.parcelas_cep_contingencia.endereco" label="Logradouro"
               class="sm:col-span-2" />

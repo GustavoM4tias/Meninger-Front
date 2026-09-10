@@ -124,21 +124,12 @@ export const useConciliacaoStore = defineStore('conciliacaoAto', () => {
 
     const applyFilters = () => search();
 
-    /* Ordenação EXPLÍCITA (coluna e direção de uma vez), que é o que o DataTable
-       manda. Ele avisa as duas em eventos separados no mesmo clique, então a
-       busca é adiada para a próxima microtarefa: sem isso um clique viraria
-       DUAS consultas, e a segunda chegaria por cima. */
-    let buscaAgendada = null;
-    function applySort(col, direcao) {
-        sort.value = col || 'data_baixa';
-        dir.value = direcao === 'desc' ? 'desc' : 'asc';
-        if (buscaAgendada) return buscaAgendada;
-        buscaAgendada = Promise.resolve().then(() => {
-            buscaAgendada = null;
-            return search();
-        });
-        return buscaAgendada;
-    }
+    /* `sort`/`dir` continuam existindo: definem a ORDEM INICIAL que o servidor
+       devolve (e a do CSV). Reordenar na tela não passa mais por aqui - a
+       tabela ordena em memória, porque as linhas do período já chegaram todas.
+       Havia um `applySort` que refazia a consulta AO VIVO na API do Sienge a
+       cada clique de cabeçalho: alguns segundos para reordenar o que já estava
+       na tela. */
 
     /* Baixa o CSV do recorte atual. O endpoint exige Bearer, então não dá pra
        usar window.open direto: fetch + blob + download programático (mesma
@@ -198,6 +189,6 @@ export const useConciliacaoStore = defineStore('conciliacaoAto', () => {
         // estado
         loading, loadingFiltros, exporting, error, searched, temResultado,
         // ações
-        fetchFiltros, search, applyFilters, applySort, exportCsv, clear,
+        fetchFiltros, search, applyFilters, exportCsv, clear,
     };
 });
