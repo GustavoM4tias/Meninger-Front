@@ -76,7 +76,7 @@
           <template v-if="form.parcelas_encerrar_etapas_repasse.length">repasse do CV em {{ form.parcelas_encerrar_etapas_repasse.length }} etapa{{ form.parcelas_encerrar_etapas_repasse.length === 1 ? '' : 's' }}: {{ etapasResumo }}</template>
           <template v-else>não encerra pela etapa do repasse</template>
         </p>
-        <p class="text-ink-subtle mt-0.5">Qualquer uma das regras basta. Ao encerrar, os boletos em aberto são baixados e o cliente para de receber cobrança do Office.</p>
+        <p class="text-ink-subtle mt-0.5">Qualquer uma das regras basta. Ao encerrar, os boletos em aberto são baixados e o cliente {{ form.parcelas_aviso_encerramento ? 'recebe o aviso de encerramento (e-mail e WhatsApp), com registro no histórico e no CV' : 'NÃO é avisado' }}.</p>
       </div>
       <div>
         <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Cobrar a partir de</p>
@@ -141,6 +141,7 @@
       <div class="space-y-3">
         <Switch v-model="form.parcelas_exigir_ato_pago" label="Só cobrar parcelas com o ato pago" description="Desligado, a adesão cria plano para toda reserva com série mensal (ato pago ou não)." />
         <Switch v-model="form.parcelas_encerrar_quando_faturado" label="Encerrar o plano quando a venda for faturada no Sienge" description="Venda faturada = data com a instituição financeira, a mesma regra do relatório de Faturamento. Aí o ERP passa a cobrar e os boletos em aberto do Office são baixados." />
+        <Switch v-model="form.parcelas_aviso_encerramento" label="Avisar o cliente quando o plano encerrar" description="Ao encerrar por venda faturada ou etapa do repasse, o cliente recebe e-mail e WhatsApp: o contrato chegou à emissão pela Caixa e as parcelas passam para a Confissão de Dívida, com a frase certa para o caso dele (boleto baixado, parcela paga ou sem boleto). Fica no histórico do boleto e vai como mensagem ao corretor no CV. Cancelamento de reserva não avisa." />
       </div>
       <div class="md:col-span-2">
         <label class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5 block">Empreendimentos fora da cobrança de parcelas</label>
@@ -191,7 +192,7 @@
       <div class="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <p class="text-sm font-semibold">Templates de WhatsApp das parcelas</p>
-          <p class="text-ink-muted">Boleto da parcela, lembrete, aviso de atraso, aviso final e aviso de baixa. Até a Meta aprovar, o WhatsApp só sai na janela de 24h; o e-mail sai sempre.</p>
+          <p class="text-ink-muted">Boleto da parcela, lembrete, aviso de atraso, aviso final, aviso de baixa e aviso de encerramento. Até a Meta aprovar, o WhatsApp só sai na janela de 24h; o e-mail sai sempre.</p>
         </div>
         <Button variant="outline" size="sm" icon="fas fa-cloud-arrow-up" :loading="parcelas.templatesLoading" @click="parcelas.syncTemplates()">Criar / sincronizar na Meta</Button>
       </div>
@@ -228,12 +229,12 @@ const CAMPOS = [
   'parcelas_encerrar_quando_faturado', 'parcelas_encerrar_etapas_repasse', 'parcelas_vencidas_na_adesao', 'parcelas_cobrar_a_partir_de',
   'parcelas_hora_rodada', 'parcelas_max_emissoes_rodada', 'parcelas_lote_tamanho', 'parcelas_lote_pausa_min',
   'atraso_reemitir', 'atraso_max_reemissoes',
-  'lembrete_dias_antes', 'aviso_atraso_dias_depois', 'aviso_final_sem_resposta_dias',
+  'lembrete_dias_antes', 'aviso_atraso_dias_depois', 'aviso_final_sem_resposta_dias', 'parcelas_aviso_encerramento',
   'parcelas_cep_contingencia_ativo', 'parcelas_cep_contingencia',
 ];
 const DEFAULTS = {
   parcelas_ativo: false, parcelas_idseries: [20], parcelas_exigir_ato_pago: true, parcelas_empreendimentos_excluidos: [], parcelas_antecedencia_dias: 10,
-  parcelas_encerrar_quando_faturado: true, parcelas_encerrar_etapas_repasse: [45, 27, 57, 47, 48, 46, 54, 33, 34, 35, 36],
+  parcelas_encerrar_quando_faturado: true, parcelas_encerrar_etapas_repasse: [45, 27, 57, 47, 48, 46, 54, 33, 34, 35, 36], parcelas_aviso_encerramento: true,
   parcelas_cep_contingencia_ativo: true,
   parcelas_cep_contingencia: { cep: '17500005', endereco: 'Rua São Luiz', numero: '231', complemento: '', bairro: 'Centro', cidade: 'Marília', estado: 'SP' },
   parcelas_vencidas_na_adesao: 'emitir', parcelas_cobrar_a_partir_de: '',
