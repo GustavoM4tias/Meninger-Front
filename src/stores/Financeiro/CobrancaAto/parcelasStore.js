@@ -146,6 +146,8 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
     const sincronizar = (idreserva) => post(`/planos/${idreserva}/sincronizar`);
     const pausar = (idreserva) => post(`/planos/${idreserva}/pausar`);
     const reativar = (idreserva) => post(`/planos/${idreserva}/reativar`);
+    // Como o cliente lê a parcela: "parcela 3 de 60" ou "parcela de outubro/2026".
+    const definirNumeracao = (idreserva, oculta) => post(`/planos/${idreserva}/numeracao`, { oculta });
     const encerrar = (idreserva, motivo) => post(`/planos/${idreserva}/encerrar`, { motivo });
     const emitirParcela = (id) => post(`/${id}/emitir`);
     const baixarParcela = (id) => post(`/${id}/baixar`);
@@ -245,7 +247,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         fetchPlanos, loadMore, fetchStats, fetchFacets, fetchStatus, setSort, refresh,
         detalhe, detalheLoading, detalheError, fetchDetalhe,
         acting, actionError,
-        criarPlano, sincronizar, pausar, reativar, encerrar, emitirParcela, baixarParcela, marcarPaga, editarParcela, rodarCiclo,
+        criarPlano, sincronizar, pausar, reativar, definirNumeracao, encerrar, emitirParcela, baixarParcela, marcarPaga, editarParcela, rodarCiclo,
         rodadas, rodadasLoading, rodadasError, boletos, boletosLoading, boletosError, boletosFiltro, fetchRodadas, fetchBoletos,
         repasseEtapas, fetchRepasseEtapas,
         empreendimentos, fetchEmpreendimentos,

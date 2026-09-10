@@ -93,6 +93,10 @@
         <Button v-if="det.plano.status === 'ativo'" variant="outline" size="sm" icon="fas fa-pause" :loading="store.acting" @click="pausar">Pausar</Button>
         <Button v-if="det.plano.status === 'pausado' || (det.plano.status === 'encerrado' && det.plano.encerrado_motivo === 'manual')"
           variant="outline" size="sm" icon="fas fa-play" :loading="store.acting" @click="reativar">Reativar</Button>
+        <Button v-if="can('configure') && ['ativo', 'pausado'].includes(det.plano.status)"
+          variant="outline" size="sm" icon="fas fa-eye-slash" :loading="store.acting" @click="alternarNumeracao">
+          {{ det.plano.numeracao_oculta ? 'Voltar a numerar a parcela' : 'Identificar parcela pelo mês' }}
+        </Button>
         <Button v-if="['ativo', 'pausado'].includes(det.plano.status)" variant="danger" size="sm" icon="fas fa-stop" :loading="store.acting" @click="encerrar">Encerrar plano</Button>
         <a :href="cvLink" target="_blank" rel="noopener" class="ml-auto text-xs text-accent hover:underline">
           Abrir reserva no CV <i class="fas fa-arrow-up-right-from-square" style="font-size:10px"></i>
@@ -292,6 +296,17 @@ async function pausar() {
   if (!await pedirConfirmacao({ title: `Pausar o plano da reserva #${props.idreserva}?`, consequence: 'A rodada diária deixa de emitir e reemitir parcelas desta reserva até você reativar. Boletos já emitidos continuam valendo e sendo conferidos.', confirmLabel: 'Pausar', tone: 'primary' })) return;
   try { await store.pausar(props.idreserva); recarregar(); } catch { /* */ }
 }
+// Plano com parcela anterior que o Office nunca cobrou: "parcela 3 de 60"
+// entregaria ao cliente uma dívida de 1 e 2 que ninguém cobrou dele.
+async function alternarNumeracao() {
+  const oculta = !det.value?.plano?.numeracao_oculta;
+  const consequence = oculta
+    ? 'Nos próximos boletos, e-mails e WhatsApps deste cliente a parcela passa a ser chamada pelo mês do vencimento ("parcela de outubro/2026") em vez de "parcela 3 de 60". Boletos já enviados não mudam. A mensagem no CV, o histórico e esta tela continuam numerando.'
+    : 'Nos próximos boletos, e-mails e WhatsApps deste cliente a parcela volta a ser chamada de "parcela 3 de 60". Se ele tem parcela anterior que o Office nunca cobrou, o número deixa isso visível para ele.';
+  if (!await pedirConfirmacao({ title: oculta ? 'Identificar a parcela pelo mês?' : 'Voltar a numerar a parcela?', consequence, confirmLabel: oculta ? 'Usar o mês' : 'Voltar a numerar', tone: 'primary' })) return;
+  try { await store.definirNumeracao(props.idreserva, oculta); recarregar(); } catch { /* */ }
+}
+
 async function reativar() {
   try { await store.reativar(props.idreserva); recarregar(); } catch { /* */ }
 }
