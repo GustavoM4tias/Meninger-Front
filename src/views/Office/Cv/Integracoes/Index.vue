@@ -206,6 +206,33 @@ async function alternarEndpoint(e, campo) {
     }
 }
 
+/**
+ * Teto de silencio: a partir de quantas horas sem evento o Office avisa que
+ * aquele webhook emudeceu. Vazio devolve ao padrao do sistema; 0 desliga a
+ * vigilancia daquela funcionalidade (escolha legitima, e o servidor aceita).
+ */
+async function salvarTeto(e, valor) {
+    const bruto = String(valor ?? '').trim();
+    const horas = bruto === '' ? null : Number(bruto);
+    if (horas !== null && (!Number.isInteger(horas) || horas < 0)) {
+        toast.error('Informe um numero inteiro de horas (0 para nao vigiar).');
+        return;
+    }
+    if (horas === (e.alerta_silencio_horas ?? null)) return;   // nada mudou
+
+    ocupado.value = e.funcionalidade;
+    try {
+        await store.salvarEndpoint(e.funcionalidade, { alerta_silencio_horas: horas });
+        toast.success(horas === null
+            ? 'Teto de silencio no padrao do sistema.'
+            : (horas === 0 ? 'Vigilancia de silencio desligada para esta funcionalidade.' : `Aviso a partir de ${horas}h sem evento.`));
+    } catch (err) {
+        toast.error(err?.message || 'Erro ao salvar o teto de silencio.');
+    } finally {
+        ocupado.value = null;
+    }
+}
+
 async function regenerar(e) {
     if (!await pedirConfirmacao({
         title: `Gerar um token novo para ${e.funcionalidade}?`,
@@ -304,9 +331,11 @@ onMounted(() => {
                         { title: 'Modo escuta', text: 'Endpoint ligado mas sem Sincronizar de verdade apenas guarda o que o CV mandou, sem alterar nada. Serve para conferir o formato do aviso antes de deixar o Office agir sobre ele.' },
                         { title: 'Nomes padronizados', text: 'O padrão é office-funcionalidade-gatilho. Como a API do CV não tem edição, renomear recria o webhook com um id novo - por isso é uma ação explícita e nunca automática.' },
                         { title: 'Histórico', text: 'Registra todas as execuções, de webhook, de cron e de disparo manual. É por ele que se acompanha se o CV está mesmo entregando os avisos.' },
+                        { title: 'Aviso de silêncio', text: 'Cada endpoint ligado tem um teto de horas sem evento. Passando dele, quem estiver na lista de avisos do CV recebe notificação - webhook não quebra com erro, ele para de chegar. Vazio usa o padrão de 24h; 0 não vigia aquela funcionalidade.' },
                     ]"
                     :tips="[
                         'Webhook não substitui os crons: um aviso pode se perder numa queda ou num deploy, e é o cron que depois reconcilia.',
+                        'O gatilho de alteração de situação só avisa quando a ETAPA muda. Ganhar interesse novo, trocar de corretor ou receber uma interação não dispara nada - para esses casos quem atualiza é o cron de delta.',
                         'Webhooks de terceiros (Webropay) aparecem aqui para você enxergar tudo que o CV dispara, mas cuidado ao apagá-los - não são do Office.',
                     ]"
                 />
@@ -445,7 +474,28 @@ onMounted(() => {
                                 <i class="fas fa-clock-rotate-left mr-1 text-ink-subtle"></i>{{ fmt(e.last_event_at) }}
                                 · {{ e.eventos_recebidos }} evento(s)
                             </span>
+                            <!-- O jeito que este webhook quebra e parando de
+                                 chegar. Este selo e o mesmo estado que o vigia
+                                 usa para avisar, para tela e aviso nao
+                                 divergirem. -->
+                            <Badge v-if="e.saude?.em_silencio" variant="danger" size="sm">
+                                {{ e.saude.estado === 'nunca_recebeu'
+                                    ? 'nunca recebeu evento'
+                                    : `sem evento ha ${Math.floor(e.saude.horas_sem_evento)}h` }}
+                            </Badge>
+                            <Badge v-else-if="e.saude?.estado === 'sem_teto'" variant="warning" size="sm">
+                                sem vigilancia
+                            </Badge>
                         </div>
+
+                        <p v-if="e.saude?.em_silencio" class="mt-2 rounded-lg border border-red-500/30 bg-red-500/10
+                                 px-2.5 py-2 text-xs text-red-700 dark:text-red-300">
+                            <i class="fas fa-triangle-exclamation mr-1"></i>
+                            {{ e.saude.estado === 'nunca_recebeu'
+                                ? 'Este endpoint esta ligado e nunca recebeu evento: confira se o webhook existe no CV apontando para a URL acima.'
+                                : `Passou do teto de ${e.saude.teto_horas}h sem evento. Confira se o webhook ainda existe e esta ativo no CV, e se a URL cadastrada la e a atual.` }}
+                            Enquanto isso, quem segura o espelho e o cron de delta.
+                        </p>
 
                         <div class="mt-3 flex flex-wrap items-center gap-3 border-t border-line pt-3">
                             <label class="flex items-center gap-2 text-xs text-ink-muted">
@@ -454,6 +504,20 @@ onMounted(() => {
                                 Sincronizar de verdade
                             </label>
                             <span class="text-xs text-ink-subtle">Desligado = guarda o aviso e não altera nada.</span>
+                            <label class="flex items-center gap-1.5 text-xs text-ink-muted">
+                                Avisar sem evento por
+                                <input type="number" min="0" :max="e.teto_max_horas || 720" step="1"
+                                    :value="e.alerta_silencio_horas ?? ''"
+                                    :disabled="ocupado === e.funcionalidade"
+                                    :placeholder="String(e.saude?.teto_padrao ?? 24)"
+                                    class="w-16 h-8 px-2 text-xs text-center rounded-lg bg-surface border border-line text-ink
+                                           outline-none focus:border-accent focus:ring-2 focus:ring-accent-ring/20 disabled:opacity-50"
+                                    @change="salvarTeto(e, $event.target.value)" />
+                                h
+                            </label>
+                            <span class="text-xs text-ink-subtle">
+                                Vazio usa o padrão ({{ e.saude?.teto_padrao ?? 24 }}h); 0 não vigia.
+                            </span>
                             <Button variant="ghost" size="sm" icon="fas fa-rotate"
                                 :loading="ocupado === e.funcionalidade" @click="regenerar(e)">Novo token</Button>
                         </div>
