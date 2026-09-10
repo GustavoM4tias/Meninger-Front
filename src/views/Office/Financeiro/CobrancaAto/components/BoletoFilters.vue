@@ -218,7 +218,7 @@ onMounted(async () => {
 
       <!-- Data de referência: emissão ou pagamento -->
       <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">
           <i class="fas fa-calendar-day text-micro mr-1 text-ink-subtle"></i>Buscar por data de
         </label>
         <div class="inline-flex rounded-lg border border-line bg-surface-sunken p-0.5 w-full">
@@ -239,7 +239,7 @@ onMounted(async () => {
         :label="local.dateField === 'paid_at' ? 'Pago até' : 'Emitido até'" />
 
       <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">
           <i class="fas fa-money-check-dollar text-micro mr-1 text-ink-subtle"></i>Forma de pagamento
         </label>
         <MultiSelector v-model="selectedFormaLabels"
@@ -247,7 +247,7 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">
           <i class="fas fa-bolt text-micro mr-1 text-ink-subtle"></i>Status da emissão
         </label>
         <MultiSelector v-model="selectedStatusLabels"
@@ -255,7 +255,7 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">
           <i class="fas fa-coins text-micro mr-1 text-ink-subtle"></i>Status de pagamento
         </label>
         <MultiSelector v-model="selectedPaymentLabels"
@@ -263,7 +263,7 @@ onMounted(async () => {
       </div>
 
       <div class="sm:col-span-1">
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">
           <i class="fas fa-city text-micro mr-1 text-ink-subtle"></i>Empreendimento(s)
         </label>
         <MultiSelector :model-value="local.empreendimento"
@@ -273,7 +273,7 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">
           <i class="fas fa-flag text-micro mr-1 text-ink-subtle"></i>Etapa CV (reserva)
         </label>
         <MultiSelector v-model="selectedCvSituacaoLabels"
@@ -281,7 +281,7 @@ onMounted(async () => {
       </div>
 
       <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">
           <i class="fas fa-building-columns text-micro mr-1 text-ink-subtle"></i>Etapa CV (repasse)
         </label>
         <MultiSelector v-model="selectedCvRepasseLabels"

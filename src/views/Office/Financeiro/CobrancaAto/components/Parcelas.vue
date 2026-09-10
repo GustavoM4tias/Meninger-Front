@@ -12,55 +12,48 @@
 <template>
   <div class="space-y-4">
 
-    <!-- Filtros: mesmo formato da aba Conciliação (barra recolhível). -->
-    <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
-      <div class="filters-toolbar">
-        <button @click="filtersExpanded = !filtersExpanded" class="filters-toolbar-trigger">
-          <i class="fas fa-filter text-xs text-ink-muted"></i>
-          <span>Filtros</span>
-          <Badge v-if="activeFiltersCount" variant="accent" size="sm">
-            {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
-          </Badge>
-          <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
-            :class="{ 'rotate-180': filtersExpanded }"></i>
-        </button>
-        <div class="ml-auto flex items-center gap-1.5">
-          <Button v-if="can('operate')" variant="ghost" size="sm" icon="fas fa-plus" @click="novoPlano.open = true">
-            <span class="hidden sm:inline">Novo plano</span>
-          </Button>
-          <Button v-if="can('configure')" variant="ghost" size="sm" icon="fas fa-rotate"
-            :loading="rodando" @click="rodarAgora">
-            <span class="hidden sm:inline">Rodar ciclo</span>
-          </Button>
-          <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="limpar">
-            <span class="hidden sm:inline">Limpar</span>
-          </Button>
-          <Button size="sm" icon="fas fa-magnifying-glass" :loading="store.loading" @click="aplicar">
-            <span class="hidden sm:inline">Filtrar</span>
-          </Button>
-        </div>
+    <!-- Era a casca de filtro copiada da aba Conciliação (`.filters-toolbar` +
+         colapso + selo de ativos, tudo à mão). Virou o primitivo `FilterBar`,
+         o mesmo da aba Histórico: altura fixa na barra (a página não pula
+         quando o selo "N ativos" aparece), começa fechada no celular e a grade
+         de campos já vem responsiva. "Novo plano" e "Rodar ciclo" são ações da
+         tela, não filtros, então vão no slot de ações. -->
+    <FilterBar :active-count="activeFiltersCount" :cols="3" :loading="store.loading"
+      @apply="aplicar" @clear="limpar">
+
+      <template #actions>
+        <Button v-if="can('operate')" variant="ghost" size="sm" icon="fas fa-plus"
+          @click="novoPlano.open = true">
+          <span class="hidden sm:inline">Novo plano</span>
+        </Button>
+        <Button v-if="can('configure')" variant="ghost" size="sm" icon="fas fa-rotate"
+          :loading="rodando" @click="rodarAgora">
+          <span class="hidden sm:inline">Rodar ciclo</span>
+        </Button>
+      </template>
+
+      <div>
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">Situação do plano</label>
+        <MultiSelector v-model="statusLabels" :options="STATUS_OPCOES.map(o => o.label)"
+          placeholder="Todas" />
       </div>
 
-      <div v-show="filtersExpanded" class="p-3 sm:p-4 flex flex-wrap items-end gap-3">
-        <div class="flex-1 min-w-[12rem]">
-          <label class="block text-micro font-medium text-ink-muted mb-1.5">Situação do plano</label>
-          <MultiSelector v-model="statusLabels" :options="STATUS_OPCOES.map(o => o.label)" placeholder="Todas" />
-        </div>
-        <div class="flex-1 min-w-[13rem]">
-          <label class="block text-micro font-medium text-ink-muted mb-1.5">Empreendimento(s)</label>
-          <MultiSelector v-model="store.filtro.empreendimento" :options="empreendimentoOptions"
-            placeholder="Todos" :page-size="200" />
-        </div>
-        <div class="flex-1 min-w-[12rem]">
-          <label class="block text-micro font-medium text-ink-muted mb-1.5">Reserva ou titular</label>
-          <Input v-model="store.filtro.q" placeholder="Ex.: 8050 ou Maria" @keydown.enter="aplicar" />
-        </div>
-        <div class="w-full pt-3 border-t border-line">
-          <Switch v-model="store.filtro.comAtraso" label="Só com parcela em atraso"
-            description="Mostra apenas reservas com parcela vencida sem pagamento." @change="aplicar" />
-        </div>
+      <div>
+        <label class="block text-xs font-medium text-ink-muted mb-1.5">Empreendimento(s)</label>
+        <MultiSelector v-model="store.filtro.empreendimento" :options="empreendimentoOptions"
+          placeholder="Todos" :page-size="200" />
       </div>
-    </section>
+
+      <Input v-model="store.filtro.q" label="Reserva ou titular"
+        placeholder="Ex.: 8050 ou Maria" @keydown.enter="aplicar" />
+
+      <!-- Ocupa a linha inteira: é um interruptor, não um campo, e dividindo
+           coluna com um seletor ficava com metade da largura do seu texto. -->
+      <div class="sm:col-span-2 lg:col-span-3 pt-1 border-t border-line-subtle">
+        <Switch v-model="store.filtro.comAtraso" label="Só com parcela em atraso"
+          description="Mostra apenas reservas com parcela vencida sem pagamento." @change="aplicar" />
+      </div>
+    </FilterBar>
 
     <!-- KPIs: fila de trabalho. Clicar recorta a tabela. -->
     <StatRow v-if="!carregando && store.stats" :items="kpiCards" :cols="{ sm: 2, md: 3, lg: 6 }" size="sm"
@@ -331,6 +324,7 @@ import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Switch from '@/components/UI/Switch.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
 import StatRow from '@/components/UI/StatRow.vue';
 import DataTable from '@/components/UI/DataTable.vue';
 import IconButton from '@/components/UI/IconButton.vue';
@@ -350,7 +344,6 @@ import { planoLabel, planoVariant, motivoLabel, formatCurrency, formatDate, form
 const store = useParcelasStore();
 const can = useCan('/financeiro/cobranca/ato');
 
-const filtersExpanded = ref(false);
 const STATUS_OPCOES = [
   { value: 'ativo', label: 'Ativo' }, { value: 'pausado', label: 'Pausado' },
   { value: 'encerrado', label: 'Encerrado' }, { value: 'cancelado', label: 'Cancelado' },

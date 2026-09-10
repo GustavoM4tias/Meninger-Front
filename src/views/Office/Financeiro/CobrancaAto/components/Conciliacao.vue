@@ -11,80 +11,49 @@
 -->
 <template>
   <div class="space-y-4">
-  <!-- Filtros (barra recolhível, padrão das telas financeiras) -->
-  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
-    <div class="filters-toolbar">
-      <button @click="filtersExpanded = !filtersExpanded" class="filters-toolbar-trigger">
-        <i class="fas fa-filter text-xs text-ink-muted"></i>
-        <span>Filtros</span>
-        <Badge v-if="activeFiltersCount" variant="accent" size="sm">
-          {{ activeFiltersCount }} ativo{{ activeFiltersCount > 1 ? 's' : '' }}
-        </Badge>
-        <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
-          :class="{ 'rotate-180': filtersExpanded }"></i>
-      </button>
-      <div class="ml-auto flex items-center gap-1.5">
-        <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="clearFilters">
-          <span class="hidden sm:inline">Limpar</span>
-        </Button>
-        <Button variant="ghost" size="sm" icon="fas fa-file-csv"
-          :loading="store.exporting" :disabled="!store.temResultado" @click="store.exportCsv()">
-          <span class="hidden sm:inline">Exportar</span>
-        </Button>
-        <Button size="sm" icon="fas fa-magnifying-glass" :loading="store.loading" @click="apply">
-          <span class="hidden sm:inline">Filtrar</span>
-        </Button>
-      </div>
+  <!-- Era a mesma casca de filtro escrita à mão que estava na aba Parcelas.
+       Virou o primitivo `FilterBar`, igual às outras três abas: barra de
+       altura fixa, começa fechada e a grade de campos já vem responsiva.
+       Exportar é ação da tela, não filtro, então vai no slot de ações. -->
+  <FilterBar :active-count="activeFiltersCount" :cols="4" :loading="store.loading"
+    @apply="apply" @clear="clearFilters">
+
+    <template #actions>
+      <Button variant="ghost" size="sm" icon="fas fa-file-csv"
+        :loading="store.exporting" :disabled="!store.temResultado" @click="store.exportCsv()">
+        <span class="hidden sm:inline">Exportar</span>
+      </Button>
+    </template>
+
+    <Input v-model="store.startDate" type="date" label="Recebido de" />
+    <Input v-model="store.endDate" type="date" label="Recebido até" />
+
+    <div>
+      <label class="block text-xs font-medium text-ink-muted mb-1.5">Empresa(s)</label>
+      <MultiSelector :model-value="empresaLabels" @update:modelValue="onEmpresasChange"
+        :options="empresaOptions" placeholder="Todas" :page-size="200" :select-all="true" />
     </div>
 
-    <!-- Uma linha só no desktop: datas e folga com largura de conteúdo, e os
-         dois seletores esticando para ocupar TODA a largura que sobra (é neles
-         que o espaço faz falta - nome de empreendimento é comprido).
-         No celular tudo quebra e cada campo divide a linha, sem estourar. -->
-    <div v-show="filtersExpanded" class="p-3 sm:p-4 flex flex-wrap items-end gap-3">
-      <div class="flex-1 min-w-[8.5rem] sm:flex-none sm:w-[9rem]">
-        <label class="block text-micro font-medium text-ink-muted mb-1.5 whitespace-nowrap">Recebido de</label>
-        <Input v-model="store.startDate" type="date" />
-      </div>
+    <div>
+      <label class="block text-xs font-medium text-ink-muted mb-1.5">Empreendimento(s)</label>
+      <MultiSelector :model-value="empreendimentoLabels" @update:modelValue="onEmpreendimentosChange"
+        :options="empreendimentoOptions" placeholder="Todos" :page-size="200" :select-all="true" />
+    </div>
 
-      <div class="flex-1 min-w-[8.5rem] sm:flex-none sm:w-[9rem]">
-        <label class="block text-micro font-medium text-ink-muted mb-1.5 whitespace-nowrap">Recebido até</label>
-        <Input v-model="store.endDate" type="date" />
-      </div>
-
-      <div class="flex-1 min-w-[13rem]">
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">Empresa(s)</label>
-        <MultiSelector :model-value="empresaLabels" @update:modelValue="onEmpresasChange"
-          :options="empresaOptions" placeholder="Todas" :page-size="200" :select-all="true" />
-      </div>
-
-      <div class="flex-1 min-w-[13rem]">
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">Empreendimento(s)</label>
-        <MultiSelector :model-value="empreendimentoLabels" @update:modelValue="onEmpreendimentosChange"
-          :options="empreendimentoOptions" placeholder="Todos" :page-size="200" :select-all="true" />
-      </div>
-
-      <!-- Sobe para a linha dos filtros: é filtro do confronto, não um ajuste
-           à parte. O atraso do administrativo varia por empreendimento e por
-           época, então a janela é do usuário, não do código. -->
-      <div v-if="store.mesclarAto" class="flex-1 min-w-[7.5rem] sm:flex-none sm:w-[8.5rem]">
-        <label class="block text-micro font-medium text-ink-muted mb-1.5 whitespace-nowrap"
-          title="Quantos dias antes do período o confronto olha, para não acusar de pendente um ato que já foi lançado fora da janela.">
-          Olhar p/ trás (dias)
-        </label>
-        <Input v-model.number="store.folgaDias" type="number" min="0" max="365" />
-      </div>
-
-      <!-- O confronto é o motivo da aba, então nasce ligado; desligar deixa a
-           tela como espelho puro do relatório do Sienge. -->
-      <div class="w-full pt-3 border-t border-line">
-        <Switch
-          v-model="store.mesclarAto"
-          label="Mesclar com o Ato"
+    <!-- O confronto é o motivo da aba, então nasce ligado; desligar deixa a
+         tela como espelho puro do relatório do Sienge. A folga só faz sentido
+         com ele ligado, e as duas andam juntas na mesma linha. -->
+    <div class="sm:col-span-2 lg:col-span-4 pt-1 border-t border-line-subtle
+                flex flex-col sm:flex-row sm:items-end gap-4">
+      <div class="flex-1 min-w-0">
+        <Switch v-model="store.mesclarAto" label="Mesclar com o Ato"
           description="Confronta cada recebimento do Sienge com o ato cobrado no Office e mostra o que ainda falta lançar." />
       </div>
+      <Input v-if="store.mesclarAto" v-model.number="store.folgaDias" type="number"
+        min="0" max="365" class="sm:w-44 shrink-0" label="Olhar p/ trás (dias)"
+        hint="Quantos dias antes do período o confronto olha." />
     </div>
-  </section>
+  </FilterBar>
 
   <!-- Erro: mesmo bloco da aba Histórico, inclusive o "Tentar novamente". -->
   <div v-if="store.error"
@@ -141,44 +110,55 @@
       </div>
 
       <!-- A lista acionável: o que o administrativo ainda tem que digitar no
-           Sienge. É LISTA, não tabela, de propósito - dois DataTable na mesma
-           tela davam duas barras de rolagem horizontal, e o de fora ainda
-           ficava emoldurado por um painel (borda dentro de borda). -->
-      <section v-if="conc.atosSemAvc.length"
-        class="rounded-xl border border-data-warn/30 bg-data-warn/5 overflow-hidden">
-        <header class="px-4 py-3 border-b border-data-warn/20 flex items-center justify-between flex-wrap gap-2">
-          <h3 class="text-sm font-semibold text-ink flex items-center gap-2">
+           Sienge. Era um <ul> escrito à mão, com as larguras das colunas
+           fixadas item a item (`w-20`, `max-w-[14rem]`, `w-24`) e o
+           empreendimento simplesmente escondido no celular (`hidden sm:inline`).
+           Duas tabelas na mesma tela, cada uma com regras próprias de alinhamento
+           e de corte.
+
+           Agora é o DataTable do sistema, como a tabela de baixo: mesma
+           tipografia, mesma densidade, e no celular vira cartão sem esconder
+           campo nenhum. Fica dentro de um Panel de borda âmbar porque é uma
+           fila de trabalho, não o relatório. -->
+      <Panel v-if="conc.atosSemAvc.length" :padded="false"
+        class="!border-data-warn/30">
+        <template #title>
+          <span class="flex items-center gap-2">
             <i class="fas fa-hourglass-half text-data-warn text-xs"></i>
             Atos pagos sem recebimento lançado
             <Badge variant="warning" size="sm">{{ num(conc.atosSemAvc.length) }}</Badge>
-          </h3>
-          <span class="text-sm font-mono tabular-nums font-semibold text-data-warn">
+          </span>
+        </template>
+        <template #actions>
+          <span class="font-mono tabular-nums text-sm font-semibold text-data-warn">
             {{ moeda(conc.resumo.valorAtoSemAvc) }}
           </span>
-        </header>
+        </template>
 
-        <ul class="divide-y divide-line">
-          <li v-for="a in conc.atosSemAvc" :key="a.uid"
-            class="px-4 py-2.5 flex items-baseline gap-x-3 gap-y-1 flex-wrap hover:bg-surface-sunken/40 transition-colors">
-            <span class="font-mono tabular-nums text-xs text-ink-muted w-20 shrink-0">{{ dataBR(a.pago_em) }}</span>
+        <div class="p-3 sm:p-4">
+          <DataTable :columns="COLUNAS_SEM_AVC" :rows="conc.atosSemAvc" row-key="uid"
+            density="compact"
+            empty-title="Nada pendente"
+            empty-text="Todo ato pago no período já tem recebimento lançado no Sienge.">
 
-            <span class="text-sm text-ink flex-1 min-w-[10rem]">
-              {{ a.titular }}
-              <span v-if="a.unidade" class="text-ink-subtle text-xs ml-1">· {{ a.unidade }}</span>
-            </span>
+            <template #cell-pago_em="{ row }">
+              <span class="font-mono tabular-nums text-ink">{{ dataBR(row.pago_em) }}</span>
+            </template>
 
-            <span class="text-xs text-ink-subtle truncate max-w-[14rem] hidden sm:inline">{{ a.empreendimento }}</span>
+            <template #cell-tipo="{ row }">
+              <Badge :variant="row.tipo === 'cartao' ? 'info' : 'neutral'" size="sm">
+                {{ row.tipo === 'cartao' ? 'Cartão' : 'Boleto' }}
+              </Badge>
+            </template>
 
-            <Badge :variant="a.tipo === 'cartao' ? 'info' : 'neutral'" size="sm">
-              {{ a.tipo === 'cartao' ? 'Cartão' : 'Boleto' }}
-            </Badge>
-
-            <span class="font-mono tabular-nums text-sm font-semibold text-data-warn w-24 text-right shrink-0">
-              {{ moeda(a.valor) }}
-            </span>
-          </li>
-        </ul>
-      </section>
+            <template #cell-valor="{ row }">
+              <span class="font-mono tabular-nums font-semibold text-data-warn">
+                {{ moeda(row.valor) }}
+              </span>
+            </template>
+          </DataTable>
+        </div>
+      </Panel>
     </template>
 
     <!-- Detalhe. O DataTable JÁ desenha a própria moldura e já prende o
@@ -286,6 +266,8 @@ import Input from '@/components/UI/Input.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Switch from '@/components/UI/Switch.vue';
 import DataTable from '@/components/UI/DataTable.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
+import Panel from '@/components/UI/Panel.vue';
 import StatRow from '@/components/UI/StatRow.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import RecebimentoDetailModal from './RecebimentoDetailModal.vue';
@@ -374,6 +356,21 @@ const columns = computed(() => {
   return base;
 });
 
+/* Fila de trabalho "falta lançar". `priority` decide a ORDEM no celular:
+   titular e valor abrem o cartão, porque a pergunta é "de quem é e de quanto".
+   O empreendimento era `hidden sm:inline` na lista antiga - ou seja, no celular
+   simplesmente não existia; aqui ele desce para o corpo do cartão, e continua
+   visível. */
+const COLUNAS_SEM_AVC = [
+  { key: 'pago_em', label: 'Pago em', priority: 2, sortable: true, numeric: true, width: '104px' },
+  { key: 'titular', label: 'Titular', priority: 1, sortable: true },
+  { key: 'unidade', label: 'Unidade', priority: 2, sortable: true, width: '130px',
+    format: (v) => v || '-' },
+  { key: 'empreendimento', label: 'Empreendimento', priority: 2, sortable: true, width: '200px' },
+  { key: 'tipo', label: 'Forma', priority: 3, width: '104px' },
+  { key: 'valor', label: 'Valor', priority: 1, sortable: true, numeric: true, width: '128px' },
+];
+
 const ATO_ROTULO = { conciliado: 'Conciliado', divergente: 'Divergente', sem_ato: 'Sem ato' };
 const ATO_VARIANT = { conciliado: 'success', divergente: 'warning', sem_ato: 'neutral' };
 const atoRotulo = (s) => ATO_ROTULO[s] || '-';
@@ -461,14 +458,33 @@ function onEmpreendimentosChange(v) {
 }
 
 // ── Filtros ──
-const filtersExpanded = ref(true);
 
+/* Conta o que está DIFERENTE do padrão, não o que está preenchido. Importa
+   porque a FilterBar desliga o "Limpar" quando a conta é zero: contando só
+   empresa e empreendimento, quem mexesse apenas nas datas ficava sem como
+   voltar ao mês corrente. O período nasce preenchido (mês corrente), então ele
+   só conta quando foi mudado. */
 const activeFiltersCount = computed(() => {
   let n = 0;
   if (store.empresas.length) n++;
   if (store.empreendimentos.length) n++;
+  if (store.startDate !== padraoInicio() || store.endDate !== padraoFim()) n++;
+  if (!store.mesclarAto) n++;
+  if (store.mesclarAto && Number(store.folgaDias) !== 90) n++;
   return n;
 });
+
+/* Mesmas contas do `clear()` do store, para comparar contra o padrão. */
+function padraoInicio() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+}
+/* `toISOString()` (UTC), igual ao store. Com data local, das 21h em diante o
+   Brasil já está no dia seguinte em UTC e a conta acusaria filtro mudado sem
+   ninguém ter mexido. */
+function padraoFim() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function apply() {
   store.applyFilters();

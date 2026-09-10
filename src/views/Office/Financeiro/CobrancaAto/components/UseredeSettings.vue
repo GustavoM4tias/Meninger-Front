@@ -1,93 +1,86 @@
 <template>
-  <!-- Seção de configuração do link de cartão (portal Userede), montada dentro
-       da aba Configurações do Ato. Era uma tela própria até 23/08/2026, quando
-       o boleto e o cartão viraram a mesma tela: são a mesma cobrança, muda só a
-       forma de pagamento. O estado da automação e a ajuda ficam no cabeçalho do
-       Ato, por isso saíram daqui. -->
-  <div class="space-y-5">
+  <!-- Configuração do link de cartão (portal Userede), montada dentro do
+       cartão "Link de cartão" da aba Configurações do Ato. Era uma tela própria
+       até 23/08/2026, quando o boleto e o cartão viraram a mesma tela: são a
+       mesma cobrança, muda só a forma de pagamento. O estado da automação e a
+       ajuda ficam no cabeçalho do Ato, por isso saíram daqui.
 
-    <Surface v-if="store.settingsError" variant="raised" padding="sm"
-      class="border-data-neg/30 bg-data-neg/10">
-      <p class="text-sm text-data-neg">{{ store.settingsError }}</p>
-    </Surface>
+       Como agora mora DENTRO de um cartão, os blocos daqui deixaram de ser
+       cartões: cabeçalho de 11px em caixa alta, igual ao resto da aba, em vez
+       do quadrado de ícone que repetia a hierarquia do cartão de fora. -->
+  <div class="space-y-6">
+
+    <div v-if="store.settingsError"
+      class="rounded-lg border border-data-neg/30 bg-data-neg/10 px-3 py-2.5">
+      <p class="text-xs text-data-neg">{{ store.settingsError }}</p>
+    </div>
 
     <!-- ── Sessão precisa de gente ───────────────────────────────────────── -->
-    <Surface v-if="store.settings?.session_precisa_humano" variant="raised" padding="sm"
-      class="border-data-warn/30 bg-data-warn/10">
-      <div class="flex items-start gap-2.5">
-        <i class="fas fa-triangle-exclamation mt-0.5 text-data-warn"></i>
+    <div v-if="store.settings?.session_precisa_humano"
+      class="rounded-lg border border-data-warn/30 bg-data-warn/10 px-3 py-2.5">
+      <div class="flex items-start gap-2">
+        <i class="fas fa-triangle-exclamation mt-0.5 text-xs text-data-warn shrink-0"></i>
         <div class="min-w-0 space-y-1">
-          <p class="text-sm font-semibold text-data-warn">
+          <p class="text-xs font-semibold text-data-warn">
             O portal pediu verificação e a sessão parou
           </p>
-          <p class="text-xs text-data-warn ">
+          <p class="text-xs text-data-warn leading-relaxed">
             {{ store.settings.session_ultimo_erro }}
           </p>
-          <p class="text-xs text-data-warn ">
+          <p class="text-xs text-data-warn leading-relaxed">
             Acesse <span class="font-mono">meu.userede.com.br</span>, conclua o acesso e clique em
             Testar conexão. As emissões pendentes saem sozinhas depois disso.
           </p>
         </div>
       </div>
-    </Surface>
+    </div>
 
-    <!-- ── Credenciais ───────────────────────────────────────────────────── -->
-    <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
-      <div class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0
-                    bg-accent/10 text-accent border border-accent/20">
-          <i class="fas fa-key"></i>
-        </div>
-        <div class="min-w-0">
-          <h2 class="font-semibold text-ink text-sm">Acesso ao portal Userede</h2>
-          <p class="text-xs text-ink-muted">
-            Gravado criptografado. Depois de salvo, nunca mais é exibido.
-          </p>
-        </div>
+    <!-- ── Acesso ao portal ──────────────────────────────────────────────── -->
+    <section class="space-y-4">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">
+          Acesso ao portal Userede
+        </h3>
+        <p class="text-micro text-ink-subtle">
+          Gravado criptografado; depois de salvo nunca mais é exibido.
+        </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
         <Input v-model="form.usuario" type="email" label="E-mail de acesso"
           :placeholder="store.settings?.usuario_set ? '•••••••• (já cadastrado)' : 'usuario@menin.com.br'"
           hint="O mesmo e-mail usado para entrar no meu.userede.com.br." />
         <Input v-model="form.senha" type="password" label="Senha"
           :placeholder="store.settings?.senha_set ? '•••••••• (já cadastrada)' : 'Senha do portal'"
           hint="Deixe em branco para manter a senha atual." />
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input v-model="form.pv_principal" label="Estabelecimento (PV)"
           placeholder="18309232"
           hint="Número do PV usado na emissão." />
-        <div class="flex items-end">
-          <div class="text-xs text-ink-muted space-y-0.5">
-            <p>
-              <i class="fas fa-circle-check mr-1"
-                :class="store.settings?.usuario_set ? 'text-data-pos' : 'text-ink-subtle'"></i>
-              Usuário {{ store.settings?.usuario_set ? 'cadastrado' : 'não cadastrado' }}
-            </p>
-            <p>
-              <i class="fas fa-circle-check mr-1"
-                :class="store.settings?.senha_set ? 'text-data-pos' : 'text-ink-subtle'"></i>
-              Senha {{ store.settings?.senha_set ? 'cadastrada' : 'não cadastrada' }}
-            </p>
-            <p>
-              <i class="fas fa-circle-check mr-1"
-                :class="store.settings?.session_set ? 'text-data-pos' : 'text-ink-subtle'"></i>
-              Sessão {{ sessaoLabel }}
-            </p>
-          </div>
+
+        <!-- O que já está gravado. Era uma coluna de três linhas encaixada com
+             `items-end` ao lado de um campo, e só ficava alinhada por sorte. -->
+        <div class="rounded-lg border border-line bg-surface-sunken px-3 py-2.5 space-y-1">
+          <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle">
+            O que já está gravado
+          </p>
+          <p v-for="item in estadoCredenciais" :key="item.rotulo"
+            class="flex items-center gap-1.5 text-xs text-ink-muted">
+            <i class="fas fa-circle-check text-xs shrink-0"
+              :class="item.ok ? 'text-data-pos' : 'text-ink-subtle'"></i>
+            <span>{{ item.rotulo }} <span class="text-ink">{{ item.estado }}</span></span>
+          </p>
         </div>
       </div>
 
       <!-- Teste de conexão -->
-      <div class="flex items-center gap-2 flex-wrap pt-1">
+      <div class="flex flex-wrap items-center gap-2">
         <Button variant="primary" size="sm" icon="fas fa-plug-circle-check"
           :loading="store.testing" :disabled="store.testing || !store.settings?.senha_set"
           @click="store.testConnection()">
           Testar conexão
         </Button>
-        <Button v-if="store.settings?.session_set" variant="ghost" size="sm" icon="fas fa-arrow-rotate-left"
+        <Button v-if="store.settings?.session_set" variant="ghost" size="sm"
+          icon="fas fa-arrow-rotate-left"
           :loading="store.resetting" :disabled="store.resetting"
           @click="store.resetSession()">
           Descartar sessão salva
@@ -97,47 +90,44 @@
         </span>
       </div>
 
-      <Surface v-if="store.testResult" variant="raised" padding="sm"
+      <div v-if="store.testResult"
+        class="rounded-lg border px-3 py-2.5"
         :class="store.testResult.ok
           ? 'border-data-pos/30 bg-data-pos/10'
           : 'border-data-neg/30 bg-data-neg/10'">
-        <div class="flex items-start gap-2.5">
-          <i class="mt-0.5"
+        <div class="flex items-start gap-2">
+          <i class="mt-0.5 text-xs shrink-0"
             :class="store.testResult.ok
               ? 'fas fa-circle-check text-data-pos'
               : 'fas fa-circle-xmark text-data-neg'"></i>
-          <div class="min-w-0 space-y-1 text-xs">
-            <p class="font-semibold"
-              :class="store.testResult.ok
-                ? 'text-data-pos'
-                : 'text-data-neg'">
+          <div class="min-w-0 space-y-1">
+            <p class="text-xs font-semibold"
+              :class="store.testResult.ok ? 'text-data-pos' : 'text-data-neg'">
               {{ store.testResult.mensagem }}
             </p>
-            <p v-if="store.testResult.estabelecimento" class="text-ink-muted">
+            <p v-if="store.testResult.estabelecimento" class="text-xs text-ink-muted">
               Estabelecimento: <span class="font-medium text-ink">{{ store.testResult.estabelecimento }}</span>
             </p>
-            <p v-if="store.testResult.duracao_ms" class="text-ink-muted">
+            <p v-if="store.testResult.duracao_ms" class="text-xs text-ink-muted tabular-nums">
               Levou {{ (store.testResult.duracao_ms / 1000).toFixed(1) }}s
             </p>
           </div>
         </div>
-      </Surface>
-    </Surface>
+      </div>
+    </section>
 
     <!-- ── Regras de emissão ─────────────────────────────────────────────── -->
-    <Surface variant="raised" padding="md" class="space-y-4 surface-gradient">
-      <div class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0
-                    bg-accent/10 text-accent border border-accent/20">
-          <i class="fas fa-sliders"></i>
-        </div>
-        <div class="min-w-0">
-          <h2 class="font-semibold text-ink text-sm">Regras de emissão</h2>
-          <p class="text-xs text-ink-muted">Limites aplicados antes de criar o link no portal.</p>
-        </div>
+    <section class="space-y-4 pt-5 border-t border-line-subtle">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 class="text-micro font-mono uppercase tracking-wider text-ink-subtle">
+          Regras de emissão
+        </h3>
+        <p class="text-micro text-ink-subtle">
+          Limites aplicados antes de criar o link no portal.
+        </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-5">
         <Input v-model.number="form.valor_maximo" type="number" min="1" :max="limites.max_valor"
           label="Teto por link (R$)"
           :hint="`Acima disto a emissão erra e avisa no CV. Máximo da Rede: R$ ${limites.max_valor.toLocaleString('pt-BR')}.`" />
@@ -149,71 +139,53 @@
           :hint="`Vencimento além disto não emite. Máximo da Rede: ${limites.max_dias_vencimento} dias.`" />
       </div>
 
-      <div>
+      <!-- Séries de crédito. O campo era um <input> cru, com altura e foco
+           diferentes do resto da tela; virou o primitivo, e o selo virou o
+           mesmo ChipId dos outros cartões. -->
+      <div class="min-w-0">
         <label class="block text-xs font-medium text-ink-muted mb-1.5">
-          IDs de série &mdash; Recurso Próprio à Vista (Crédito)
+          IDs de série - Recurso Próprio à Vista (crédito)
         </label>
-        <div class="flex items-center gap-2 flex-wrap">
-          <span v-for="id in form.idserie_credito" :key="id"
-            class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium
-                   bg-surface-sunken border border-line">
-            {{ id }}
-            <button type="button" class="text-ink-subtle hover:text-data-neg" @click="removeSerie(id)">
-              <i class="fas fa-xmark"></i>
-            </button>
-          </span>
-          <input v-model.number="novaSerie" type="number" placeholder="ID"
-            class="w-24 px-2 py-1 text-xs rounded-lg bg-surface-sunken border border-line
-                   text-ink focus:outline-none focus:ring-1 focus:ring-accent"
-            @keyup.enter="addSerie" />
-          <Button variant="ghost" size="sm" icon="fas fa-plus" @click="addSerie">Adicionar</Button>
+        <div class="flex gap-2 mt-1.5 max-w-sm">
+          <Input v-model.number="novaSerie" type="number" placeholder="Ex.: 3"
+            @keydown.enter.prevent="addSerie" />
+          <Button variant="primary" size="sm" icon="fas fa-plus" @click="addSerie">Adicionar</Button>
         </div>
-        <p class="text-xs text-ink-muted mt-1.5">
+        <div class="flex flex-wrap gap-1 mt-2">
+          <ChipId v-for="id in form.idserie_credito" :key="id" :id="id"
+            removable remove-label="Remover série" @remove="removeSerie(id)" />
+          <span v-if="!form.idserie_credito.length" class="text-xs text-ink-subtle italic self-center">
+            Nenhuma série configurada
+          </span>
+        </div>
+        <p class="mt-1.5 text-xs text-ink-muted leading-relaxed">
           O link só é criado quando a reserva tem parcela de uma dessas séries. A quantidade de
           parcelas da série vira o limite de vezes oferecido no link.
         </p>
       </div>
-    </Surface>
+    </section>
 
-    <!-- ── Automação ─────────────────────────────────────────────────────── -->
-    <Surface variant="raised" padding="md" class="surface-gradient">
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="h-9 w-9 rounded-xl grid place-items-center shrink-0"
-            :class="form.active
-              ? 'bg-data-pos/10 text-data-pos border border-data-pos/20'
-              : 'bg-surface-sunken text-ink-subtle border border-line'">
-            <i class="fas fa-robot"></i>
-          </div>
-          <div class="min-w-0">
-            <h2 class="font-semibold text-ink text-sm">Automação</h2>
-            <p class="text-xs text-ink-muted">
-              {{ form.active
-                ? 'O webhook do CV gera links automaticamente.'
-                : 'Nada é gerado automaticamente enquanto estiver pausada.' }}
-            </p>
-          </div>
-        </div>
-        <button type="button" @click="form.active = !form.active"
-          class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0"
-          :class="form.active ? 'bg-data-pos' : 'bg-surface-sunken border border-line'">
-          <span class="inline-block h-4 w-4 transform rounded-full bg-surface-raised shadow transition-transform"
-            :class="form.active ? 'translate-x-6' : 'translate-x-1'"></span>
-        </button>
+    <!-- ── Automação e salvar ────────────────────────────────────────────── -->
+    <section class="space-y-4 pt-5 border-t border-line-subtle">
+      <div class="rounded-lg border border-line bg-surface-sunken p-3">
+        <Switch v-model="form.active"
+          label="Gerar link de cartão automaticamente"
+          :description="form.active
+            ? 'O webhook do CV gera links sem ninguém pedir.'
+            : 'Nada é gerado automaticamente enquanto estiver pausada.'" />
       </div>
-    </Surface>
 
-    <!-- ── Salvar ────────────────────────────────────────────────────────── -->
-    <div class="flex items-center gap-3 flex-wrap">
-      <Button variant="primary" icon="fas fa-floppy-disk"
-        :loading="store.settingsLoading" :disabled="store.settingsLoading"
-        @click="handleSave">
-        Salvar configurações
-      </Button>
-      <span v-if="store.settingsSaved" class="text-sm text-data-pos">
-        <i class="fas fa-check mr-1"></i>Salvo.
-      </span>
-    </div>
+      <div class="flex flex-wrap items-center justify-end gap-3">
+        <span v-if="store.settingsSaved" class="flex items-center gap-1.5 text-xs text-data-pos">
+          <i class="fas fa-check"></i>Salvo.
+        </span>
+        <Button variant="primary" size="sm" icon="fas fa-floppy-disk"
+          :loading="store.settingsLoading" :disabled="store.settingsLoading"
+          @click="handleSave">
+          Salvar link de cartão
+        </Button>
+      </div>
+    </section>
 
   </div>
 </template>
@@ -222,9 +194,10 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useUseredeStore } from '@/stores/Financeiro/LinkCartao/useredeStore';
 
-import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
+import Switch from '@/components/UI/Switch.vue';
+import ChipId from './ChipId.vue';
 
 const store = useUseredeStore();
 
@@ -251,6 +224,14 @@ const sessaoLabel = computed(() => {
     if (!em) return 'salva';
     return `válida desde ${new Date(em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`;
 });
+
+/* As tres linhas de "o que ja esta gravado". Viraram lista porque escritas a
+   mao elas repetiam a marcacao tres vezes e cada uma tinha um espacamento. */
+const estadoCredenciais = computed(() => [
+    { rotulo: 'Usuário', ok: !!store.settings?.usuario_set, estado: store.settings?.usuario_set ? 'cadastrado' : 'não cadastrado' },
+    { rotulo: 'Senha', ok: !!store.settings?.senha_set, estado: store.settings?.senha_set ? 'cadastrada' : 'não cadastrada' },
+    { rotulo: 'Sessão', ok: !!store.settings?.session_set, estado: sessaoLabel.value },
+]);
 
 const novaSerie = ref(null);
 
