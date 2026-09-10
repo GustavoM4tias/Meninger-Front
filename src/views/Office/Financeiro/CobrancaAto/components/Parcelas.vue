@@ -18,8 +18,8 @@
          quando o selo "N ativos" aparece), começa fechada no celular e a grade
          de campos já vem responsiva. "Novo plano" e "Rodar ciclo" são ações da
          tela, não filtros, então vão no slot de ações. -->
-    <FilterBar :active-count="activeFiltersCount" :cols="3" :loading="store.loading"
-      @apply="aplicar" @clear="limpar">
+    <FilterBar title="Filtros dos planos" :active-count="activeFiltersCount" :cols="3"
+      :loading="store.loading" @apply="aplicar" @clear="limpar">
 
       <template #actions>
         <Button v-if="can('operate')" variant="ghost" size="sm" icon="fas fa-plus"
@@ -45,6 +45,7 @@
       </div>
 
       <Input v-model="store.filtro.q" label="Reserva ou titular"
+        icon-left="fas fa-magnifying-glass"
         placeholder="Ex.: 8050 ou Maria" @keydown.enter="aplicar" />
 
       <!-- Ocupa a linha inteira: é um interruptor, não um campo, e dividindo
@@ -79,21 +80,54 @@
     </div>
 
     <!-- Acompanhamento: o que a rodada fez, boleto a boleto, e o histórico das
-         rodadas. É a resposta concreta para "saiu? para quem? e o que falhou?". -->
+         rodadas. É a resposta concreta para "saiu? para quem? e o que falhou?".
+
+         Os controles daqui ficavam no `#actions` do cabeçalho do Panel, que é
+         uma linha de altura fixa (3rem) e `shrink-0`: um SegmentedControl, um
+         Select de 144px, um campo de 160px e um botão espremidos ao lado do
+         título. Abaixo de ~900px aquilo embolava e estourava a altura da
+         barra. Agora é uma barra própria, abaixo do cabeçalho.
+
+         E ela diz o que filtra: "emissões do período". Antes era um segundo
+         campo com o MESMO placeholder do filtro de planos lá em cima, e as
+         duas caixas pareciam a mesma busca repetida - eram escopos
+         diferentes (planos x emissões da rodada). -->
     <Panel title="Acompanhamento" icon="fas fa-list-check"
       :subtitle="ultimaRodadaResumo" :padded="false">
       <template #actions>
-        <div class="flex flex-wrap items-center gap-2">
-          <SegmentedControl v-model="store.boletosFiltro.periodo" size="sm"
-            :options="[{ value: 'hoje', label: 'Hoje' }, { value: '7d', label: '7 dias' }, { value: '30d', label: '30 dias' }]"
-            @change="store.fetchBoletos()" />
-          <Select v-model="store.boletosFiltro.status" size="sm" class="w-36"
-            :options="[{ value: '', label: 'Todos' }, { value: 'success', label: 'Emitidos' }, { value: 'error', label: 'Com erro' }, { value: 'processing', label: 'Em processamento' }]"
-            @change="store.fetchBoletos()" />
-          <Input v-model="store.boletosFiltro.q" size="sm" class="w-40" placeholder="Reserva ou titular" @keydown.enter="store.fetchBoletos()" />
-          <IconButton icon="fas fa-rotate-right" size="sm" label="Atualizar" :disabled="store.boletosLoading" @click="recarregarAcompanhamento" />
-        </div>
+        <IconButton icon="fas fa-rotate-right" size="sm" label="Atualizar"
+          :disabled="store.boletosLoading" @click="recarregarAcompanhamento" />
       </template>
+
+      <div class="px-3 sm:px-4 py-2.5 border-b border-line
+                  flex flex-wrap items-center gap-2">
+        <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle
+                     w-full sm:w-auto sm:mr-1">
+          Emissões do período
+        </span>
+
+        <SegmentedControl v-model="store.boletosFiltro.periodo" size="sm"
+          :options="[{ value: 'hoje', label: 'Hoje' }, { value: '7d', label: '7 dias' }, { value: '30d', label: '30 dias' }]"
+          @change="store.fetchBoletos()" />
+
+        <Select v-model="store.boletosFiltro.status" size="sm" class="w-full sm:w-40"
+          :options="[{ value: '', label: 'Todas as emissões' }, { value: 'success', label: 'Emitidos' }, { value: 'error', label: 'Com erro' }, { value: 'processing', label: 'Em processamento' }]"
+          @change="store.fetchBoletos()" />
+
+        <!-- Busca ao digitar. Só reagia ao Enter, e sem botão nenhum ao lado:
+             quem digitava e esperava concluía, com razão, que não buscava.
+             O "limpar" é IRMÃO do campo, não sobreposto: dentro do campo ele
+             ficaria por cima do texto, porque o `class` do Input vai para o
+             wrapper e não dá para reservar padding à direita no <input>. -->
+        <div class="flex-1 min-w-[12rem] flex items-center gap-1.5">
+          <Input v-model="store.boletosFiltro.q" size="sm" class="flex-1 min-w-0"
+            icon-left="fas fa-magnifying-glass"
+            placeholder="Reserva ou titular nas emissões"
+            @keydown.enter="buscarBoletosAgora" />
+          <IconButton v-if="store.boletosFiltro.q" icon="fas fa-xmark" size="sm"
+            label="Limpar a busca" @click="limparBuscaBoletos" />
+        </div>
+      </div>
 
       <div v-if="store.boletosError" class="m-3 rounded-lg border border-data-neg/25 bg-data-neg/10 p-3 text-sm text-data-neg flex items-start gap-2">
         <i class="fas fa-circle-exclamation mt-0.5 shrink-0"></i>
@@ -316,7 +350,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useParcelasStore } from '@/stores/Financeiro/CobrancaAto/parcelasStore';
 import { useCan } from '@/composables/useCan';
 import Badge from '@/components/UI/Badge.vue';
@@ -498,6 +532,28 @@ const rodadaLabel = (s) => RODADA_LABEL[s] || s;
 const rodadaVariant = (s) => RODADA_VARIANT[s] || 'neutral';
 const skippedLabel = (s) => ({ 'parcelas_ativo=false': 'cobrança de parcelas pausada: nada emitido', fora_da_janela: 'fora da janela do Ecobrança: nada emitido' }[s] || s);
 const duracaoLabel = (s) => (s >= 3600 ? `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}` : s >= 60 ? `${Math.floor(s / 60)} min` : `${s} s`);
+
+/* Busca das emissões: procura ao DIGITAR.
+
+   O campo só reagia ao Enter e não tinha botão ao lado, então quem digitava e
+   esperava concluía, com razão, que não buscava. 350 ms segura a rajada de
+   teclas sem parecer travado; o Enter continua valendo para quem tem pressa
+   (aí o timer é cancelado, para não disparar a mesma busca duas vezes). */
+let timerBuscaBoletos = null;
+function buscarBoletosAgora() {
+  clearTimeout(timerBuscaBoletos);
+  return store.fetchBoletos();
+}
+watch(() => store.boletosFiltro.q, () => {
+  clearTimeout(timerBuscaBoletos);
+  timerBuscaBoletos = setTimeout(() => store.fetchBoletos(), 350);
+});
+onBeforeUnmount(() => clearTimeout(timerBuscaBoletos));
+
+function limparBuscaBoletos() {
+  store.boletosFiltro.q = '';
+  buscarBoletosAgora();
+}
 
 function recarregarAcompanhamento() { return Promise.allSettled([store.fetchBoletos(), store.fetchRodadas()]); }
 
