@@ -74,8 +74,8 @@ export function visuaisPossiveis(dataset) {
 
   if (p.categoricas.length >= 1 && p.numericas.length >= 1) {
     out.add('bar'); out.add('column'); out.add('rank');
-    if (p.numericas.length === 1 && p.linhas <= 8 && somaFazSentido(dataset, p.numericas[0])) { out.add('donut'); out.add('pie'); }
-    if (p.numericas.length === 1 && p.linhas <= 8 && p.linhas >= 2) out.add('funnel');
+    // Rosca e funil usam a PRIMEIRA numérica; as demais ficam para a tabela.
+    if (p.linhas <= 8 && p.linhas >= 2 && somaFazSentido(dataset, p.numericas[0])) { out.add('donut'); out.add('pie'); out.add('funnel'); }
     if (p.numericas.length >= 2) out.add('comparison');
   }
   if (p.temporais.length === 1 && p.numericas.length >= 1) {

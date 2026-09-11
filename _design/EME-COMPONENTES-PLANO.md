@@ -205,3 +205,32 @@ Apagar os 28 renderers antigos e o switch; `ChatMessage.vue` só conhece
 4. Fase 3 em dois PRs (cards/detail/choice/confirm; depois form/timeline/map).
 5. Fase 4 tool a tool, uma por PR, com caso de avaliação para cada `visual`.
 6. Fase 5.
+
+## 9. Execução (registro)
+
+**11/09/2026 - fases 1, 2 e 3 (parcial) entregues; fase 4 iniciada.**
+
+- Fase 1: `viz/emeBlock.js`, `viz/escolherVisual.js`, `viz/legacyAdapter.js`,
+  `viz/ChatBlock.vue`, `viz/VizFrame.vue`; `ChatMessage.vue` só conhece
+  `ChatBlock`. Testes: `tests/emeViz.test.mjs` (`npm test`, node --test -
+  o front não tinha teste nenhum).
+- Fase 2: `VizTable`, `VizChart` (bar, column, line, area, pie, donut,
+  heatmap, combo, comparison), `VizRank`, `VizFunnel`, `VizKpis`.
+  **Decisão**: a família de gráficos é UM componente (`VizChart` + prop
+  `visual`) em vez de nove arquivos - o ECharts é carregado uma vez e as
+  regras da paleta ficam num lugar. A tabela da seção 3 vale como lista de
+  visuais, não de arquivos. Galeria em Cérebro da Eme > Galeria.
+- Fase 3: `VizCards`, `VizDetail`, `VizChoice`, `VizConfirm`, `VizNav`,
+  `VizTimeline`, `VizMap`. **Falta `VizForm`** (o `ChatAlertEditor` de 1.205
+  linhas continua atrás do bloco `legacy`).
+- Fase 4: back ganhou `services/OfficeAI/blocks.js` (construtores) e o arg
+  `visual`. Já devolvem `blocks`: `query_desempenho_vendas`,
+  `query_vendas_vs_projecao`, `correspondentes_search`,
+  `query_condition_sheets`. Regra de transição: `blocks` vai JUNTO do formato
+  antigo (`type: 'table'`), porque alertas (`AlertReportService.buildReport`)
+  e relatórios (`ReportDataService`) ainda leem `rows/labels`. O chat prefere
+  `blocks`. `summarizeForGemini` tem ramo para tool que só fale `blocks`.
+- Pendente da fase 4, por ordem de uso: pré-cadastros, leads, reservas,
+  boletos, custos, empreendimentos, imobiliárias, pessoas, checklists,
+  relatórios, academy, agenda. Depois: migrar alertas/relatórios para ler
+  `blocks` e apagar o formato antigo (fase 5).

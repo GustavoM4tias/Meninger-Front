@@ -73,6 +73,10 @@ test('visuaisPossiveis e visualDoBloco: tabela sempre; pedido inválido cai na r
   const poss = visuaisPossiveis(d);
   assert.ok(poss.includes('table') && poss.includes('donut') && poss.includes('rank'));
   assert.ok(!poss.includes('line'));
+  // Duas numéricas: rosca continua possível (usa a primeira); pedido de donut vale.
+  const d2 = ds([cat(), num(), num('b')], linhas(4, (i) => ({ nome: `c${i}`, valor: i + 1, b: 2 })));
+  assert.ok(visuaisPossiveis(d2).includes('donut'));
+  assert.equal(visualDoBloco({ kind: 'dataset', visual: { type: 'donut' }, dataset: d2 }), 'donut');
   assert.equal(visualDoBloco({ kind: 'dataset', visual: { type: 'bar' }, dataset: d }), 'bar');
   assert.equal(visualDoBloco({ kind: 'dataset', visual: { type: 'line' }, dataset: d }), 'donut');
   assert.equal(visualDoBloco({ kind: 'nav', visual: null }), null);
