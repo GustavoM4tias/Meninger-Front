@@ -21,6 +21,9 @@ export const FONTE_LABEL = {
   query_people: 'Pessoas',
   query_events: 'Eventos',
   imobiliarias_search: 'Imobiliárias parceiras',
+  correspondentes_search: 'Correspondentes (CCAs)',
+  query_desempenho_vendas: 'Desempenho de vendas',
+  query_vendas_vs_projecao: 'Vendas x Projeção',
 }
 
 // A exportação reconsulta em modo lista, sem group_by: datasets da mesma fonte
