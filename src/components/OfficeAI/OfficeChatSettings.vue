@@ -29,6 +29,22 @@ const MODO_DESC = {
   smart: 'Sempre o modelo avançado. Raciocínio mais cuidadoso, alguns segundos a mais por resposta.',
 };
 
+// Janela usada quando a pergunta não diz período. null = o padrão do Cérebro.
+const PERIODOS = [
+  { value: '', label: 'Padrão' },
+  { value: 'mes_atual', label: 'Mês atual' },
+  { value: 'ultimos_30', label: '30 dias' },
+  { value: 'ultimos_90', label: '90 dias' },
+  { value: 'ano_atual', label: 'Ano' },
+  { value: 'tudo', label: 'Tudo' },
+];
+async function setPeriodo(v) {
+  salvando.value = true;
+  try { await aiStore.saveSettings({ default_period: v || null }); }
+  catch (e) { erro.value = e?.message || 'Não salvou.'; }
+  finally { salvando.value = false; }
+}
+
 const salvando = ref(false);
 const novo = ref({ key: '', value: '' });
 const editando = ref(null);   // { id, value }
@@ -127,6 +143,19 @@ const storagePercent = computed(() => aiStore.storageUsage?.percent ?? 0);
         <SegmentedControl :model-value="aiStore.settings.model_mode" :options="MODOS" size="sm" block
           @change="setModo" />
         <p class="text-xs text-ink-subtle mt-2 leading-relaxed">{{ MODO_DESC[aiStore.settings.model_mode] }}</p>
+      </section>
+
+      <!-- Período -->
+      <section>
+        <h3 class="text-sm font-semibold text-ink flex items-center gap-2">
+          <i class="far fa-calendar text-accent text-xs"></i> Período padrão
+        </h3>
+        <p class="text-xs text-ink-muted mt-0.5 mb-3">
+          Quando você pergunta sem dizer período ("quantas pastas temos?"), a Eme usa esta janela.
+          Para uma pergunta só, diga na frase: "no todo", "mês passado", "este ano".
+        </p>
+        <SegmentedControl :model-value="aiStore.settings.default_period || ''" :options="PERIODOS" size="sm" block
+          @change="setPeriodo" />
       </section>
 
       <!-- Memória -->

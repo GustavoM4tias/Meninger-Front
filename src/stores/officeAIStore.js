@@ -35,7 +35,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   // Modal Configurações da Eme (OfficeChatSettings.vue). A memória só cresce
   // por addMemory - o clique da pessoa; a Eme propõe, nunca grava.
   const settingsOpen = ref(false)
-  const settings = ref({ memory_enabled: true, model_mode: 'auto' })
+  const settings = ref({ memory_enabled: true, model_mode: 'auto', default_period: null })
   const memories = ref([])
 
   async function loadSettings() {

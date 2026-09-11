@@ -61,8 +61,14 @@ const retrieval = reactive({
   blocks: { enabled: true, top_k: 6, min_sim: 0.30 },
   glossary: { enabled: true, top_k: 12, min_sim: 0.30 },
   memory: { enabled: true },
+  periodo: { padrao: 'mes_atual' },
   index: {},
 })
+const periodoOptions = [
+  { value: 'mes_atual', label: 'Mês atual' }, { value: 'mes_anterior', label: 'Mês anterior' },
+  { value: 'ultimos_30', label: 'Últimos 30 dias' }, { value: 'ultimos_90', label: 'Últimos 90 dias' },
+  { value: 'ano_atual', label: 'Ano atual' }, { value: 'tudo', label: 'Tudo' },
+]
 
 // Avaliação: casos + rodadas. A rodada corre no servidor; aqui só se acompanha.
 const evalState = reactive({ loaded: false, cases: [], runs: [], run: null, running: false, poll: null })
@@ -200,7 +206,7 @@ async function loadRetrieval() {
 async function saveRetrieval() {
   busy.value = true
   try {
-    const { settings } = await api.saveRetrieval({ tools: retrieval.tools, blocks: retrieval.blocks, glossary: retrieval.glossary, memory: retrieval.memory })
+    const { settings } = await api.saveRetrieval({ tools: retrieval.tools, blocks: retrieval.blocks, glossary: retrieval.glossary, memory: retrieval.memory, periodo: retrieval.periodo })
     Object.assign(retrieval, settings)
     notify('Recuperação salva. Vale na hora, sem publicar.')
   } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
@@ -817,6 +823,11 @@ onMounted(load)
                 <Input v-model="retrieval.glossary.top_k" type="number" size="sm" label="Máx. termos" />
                 <Input v-model="retrieval.glossary.min_sim" type="number" step="0.05" size="sm" label="Limiar (0-1)" />
               </div>
+            </Surface>
+            <Surface variant="sunken" padding="sm">
+              <p class="text-sm font-semibold text-ink mb-2"><i class="far fa-calendar text-accent mr-1.5"></i>Período padrão</p>
+              <p class="text-micro text-ink-subtle mb-2">Janela das consultas quando a pergunta não diz período e a pessoa não escolheu a dela em Configurações da Eme. "No todo" na frase sempre abre tudo.</p>
+              <Select :model-value="retrieval.periodo.padrao" :options="periodoOptions" size="sm" @change="(v) => retrieval.periodo.padrao = v" />
             </Surface>
             <Surface variant="sunken" padding="sm">
               <div class="flex items-center justify-between mb-2"><p class="text-sm font-semibold text-ink"><i class="fas fa-bookmark text-accent mr-1.5"></i>Memória</p><Switch :model-value="retrieval.memory.enabled" size="sm" @change="(v) => retrieval.memory.enabled = v" /></div>
