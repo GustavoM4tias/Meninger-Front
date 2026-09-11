@@ -127,3 +127,21 @@ export const setIncidentReviewed = async (incidentId, reviewed) => {
   if (!response.ok) throw new Error('Erro ao atualizar incidente.')
   return response.json()
 }
+
+// ── Configurações da pessoa (modal Configurações da Eme) ──────────────────────
+async function json(path, opts = {}) {
+  const response = await fetch(`${BASE}${path}`, {
+    ...opts,
+    headers: { ...authHeader(), 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  })
+  if (!response.ok) {
+    const e = await response.json().catch(() => ({}))
+    throw new Error(e.error || `Erro ${response.status}`)
+  }
+  return response.json()
+}
+export const getMySettings = () => json('/me/settings')
+export const saveMySettings = (patch) => json('/me/settings', { method: 'PUT', body: JSON.stringify(patch) })
+// Memórias: a ÚNICA porta de entrada é o clique da pessoa (card ou modal).
+export const addMemory = (data) => json('/memories', { method: 'POST', body: JSON.stringify(data) })
+export const updateMemory = (id, patch) => json(`/memories/${id}`, { method: 'PUT', body: JSON.stringify(patch) })

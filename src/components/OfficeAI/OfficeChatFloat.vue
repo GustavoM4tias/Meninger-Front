@@ -30,6 +30,7 @@ const OfficeChatSession = defineAsyncComponent({
     delay: 120,
 });
 const OfficeChatHistory = defineAsyncComponent(() => import('./OfficeChatHistory.vue'));
+const OfficeChatSettings = defineAsyncComponent(() => import('./OfficeChatSettings.vue'));
 const ChatTitleEditor = defineAsyncComponent(() => import('./ChatTitleEditor.vue'));
 import IconButton from '@/components/UI/IconButton.vue';
 import { setEmeScreen, instalarCapturaCtrlClique } from '@/composables/useEmeScreenContext';
@@ -650,6 +651,8 @@ function rename(title) { aiStore.renameSession(title); }
             <IconButton icon="fas fa-edit" size="sm" label="Novo chat" @click="aiStore.newSession()" />
             <IconButton icon="fas fa-clock-rotate-left" size="sm" label="Histórico"
               @click="aiStore.historyOpen = !aiStore.historyOpen" />
+            <IconButton icon="fas fa-sliders" size="sm" label="Configurações da Eme"
+              @click="aiStore.settingsOpen = true" />
             <IconButton icon="fas fa-up-right-and-down-left-from-center" size="sm" label="Voltar à home"
               @click="backToHome" />
             <IconButton v-if="podeDocar"
@@ -689,6 +692,7 @@ function rename(title) { aiStore.renameSession(title); }
           </transition>
 
           <OfficeChatSession :compact="true" class="flex-1 min-h-0" />
+          <OfficeChatSettings />
         </div>
 
         <!-- ── Modo pill (FAB) — arrastável ────────────────────────── -->

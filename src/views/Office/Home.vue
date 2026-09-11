@@ -10,6 +10,7 @@ import 'dayjs/locale/pt-br';
 
 import WeatherInfo from '@/components/Home/WeatherInfo.vue';
 import OfficeChatHistory from '@/components/OfficeAI/OfficeChatHistory.vue';
+import OfficeChatSettings from '@/components/OfficeAI/OfficeChatSettings.vue';
 import FeedbackModal from '@/components/OfficeAI/FeedbackModal.vue';
 
 import ChatComposer from '@/components/OfficeAI/ChatComposer.vue';
@@ -270,6 +271,8 @@ async function confirmFeedback({ comment }) {
         <div class="absolute top-2 left-2 flex items-center gap-0.5 z-10">
           <IconButton icon="fas fa-clock-rotate-left" label="Histórico"
             @click="aiStore.historyOpen = !aiStore.historyOpen" />
+          <IconButton icon="fas fa-sliders" label="Configurações da Eme"
+            @click="aiStore.settingsOpen = true" />
           <IconButton icon="fas fa-edit" label="Novo chat" @click="aiStore.newSession()" />
 
           <div v-if="aiStore.currentSessionId" class="ml-1">
@@ -321,6 +324,7 @@ async function confirmFeedback({ comment }) {
       @confirm="confirmFeedback" @close="closeFeedback" />
 
     <!-- Modal histórico -->
+    <OfficeChatSettings />
     <Modal :open="aiStore.historyOpen" size="sm" hide-close
       @close="aiStore.historyOpen = false">
       <OfficeChatHistory />

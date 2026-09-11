@@ -44,6 +44,7 @@ const ChatChecklistCards = defineAsyncComponent(() => import('./renderers/ChatCh
 const ChatAssistantTasks = defineAsyncComponent(() => import('./renderers/ChatAssistantTasks.vue'));
 const ChatAssistantInvites = defineAsyncComponent(() => import('./renderers/ChatAssistantInvites.vue'));
 const ChatMeetingCard = defineAsyncComponent(() => import('./renderers/ChatMeetingCard.vue'));
+const ChatMemoryProposal = defineAsyncComponent(() => import('./renderers/ChatMemoryProposal.vue'));
 import EmeAgentStatus from './EmeAgentStatus.vue';
 
 const props = defineProps({
@@ -236,6 +237,9 @@ const stepsOpen = ref(false);
 
         <!-- Reunião: o link de entrada vira botão, não URL colada na frase. -->
         <ChatMeetingCard v-if="action?.type === 'meeting_card'" :action="action" />
+
+        <!-- Memória: a Eme propôs guardar uma preferência; a pessoa decide aqui. -->
+        <ChatMemoryProposal v-if="action?.type === 'memory_proposal'" :action="action" />
 
         <!-- "O que a Eme fez" — transparência pós-resposta -->
         <div v-if="!streaming && steps.length" class="text-micro text-ink-subtle">

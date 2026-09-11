@@ -52,3 +52,17 @@ export const deactivate = () => req('/deactivate', { method: 'POST' })
 // Sandbox
 export const sandboxPreview = (role, city) => req('/sandbox/preview', { method: 'POST', body: JSON.stringify({ role, city }) })
 export const sandboxChat = (message, role, city) => req('/sandbox/chat', { method: 'POST', body: JSON.stringify({ message, role, city }) })
+
+// Recuperação (roteamento semântico, blocos/glossário por similaridade, memória)
+export const getRetrieval = () => req('/retrieval')
+export const saveRetrieval = (settings) => req('/retrieval', { method: 'PUT', body: JSON.stringify({ settings }) })
+export const reindexRetrieval = (kind) => req('/retrieval/reindex', { method: 'POST', body: JSON.stringify({ kind }) })
+
+// Avaliação (conjunto de casos + rodadas)
+export const getEvalCases = () => req('/eval/cases')
+export const createEvalCase = (data) => req('/eval/cases', { method: 'POST', body: JSON.stringify(data) })
+export const updateEvalCase = (id, data) => req(`/eval/cases/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+export const deleteEvalCase = (id) => req(`/eval/cases/${id}`, { method: 'DELETE' })
+export const getEvalRuns = () => req('/eval/runs')
+export const getEvalRun = (id) => req(`/eval/runs/${id}`)
+export const runEval = (caseIds, label) => req('/eval/run', { method: 'POST', body: JSON.stringify({ case_ids: caseIds || null, label: label || null }) })

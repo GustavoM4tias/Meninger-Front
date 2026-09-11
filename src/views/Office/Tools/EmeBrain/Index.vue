@@ -52,6 +52,23 @@ const newTerm = reactive({ kind: 'vocabulary', term: '', canonical: '' })
 const glossaryFilter = ref('all')
 const sbox = reactive({ role: 'admin', city: '', message: '', prompt: '', answer: '', note: '' })
 
+// Recuperação: roteamento semântico das tools, blocos/glossário por
+// similaridade e a chave geral da memória. Lido ao vivo pelo runtime (não
+// precisa publicar).
+const retrieval = reactive({
+  loaded: false,
+  tools: { enabled: true, peso: 300, min_sim: 0.35, top_k: 28 },
+  blocks: { enabled: true, top_k: 6, min_sim: 0.30 },
+  glossary: { enabled: true, top_k: 12, min_sim: 0.30 },
+  memory: { enabled: true },
+  index: {},
+})
+
+// Avaliação: casos + rodadas. A rodada corre no servidor; aqui só se acompanha.
+const evalState = reactive({ loaded: false, cases: [], runs: [], run: null, running: false, poll: null })
+const caseModal = reactive({ open: false, id: null, form: {} })
+const CASE_VAZIO = () => ({ title: '', message: '', expected_tool: '', expected_args: '{}', expected_no_tool: false, expected_text: '', forbidden_text: '', tags: '', note: '', enabled: true })
+
 // Insights (feedbacks dos usuários)
 const fb = reactive({ loading: false, items: [], stats: { up: 0, down: 0, total: 0 }, total: 0, page: 1, filter: '', loaded: false })
 const detail = reactive({ open: false, item: null })
@@ -73,6 +90,8 @@ const tabOptions = computed(() => [
   { value: 'insights', label: 'Insights', icon: 'fas fa-comments' },
   { value: 'validation', label: 'Validação', icon: 'fas fa-shield-halved', count: inc.stats.pending || undefined },
   { value: 'versions', label: 'Versões', icon: 'fas fa-code-branch', count: versions.value.length },
+  { value: 'retrieval', label: 'Recuperação', icon: 'fas fa-magnifying-glass-chart' },
+  { value: 'eval', label: 'Avaliação', icon: 'fas fa-vial-circle-check', count: evalState.cases.length || undefined },
   { value: 'sandbox', label: 'Sandbox', icon: 'fas fa-flask' },
 ])
 
@@ -170,6 +189,114 @@ async function saveBehavior() {
     notify('Comportamento salvo no rascunho.')
   } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
 }
+
+// ── Recuperação ──
+async function loadRetrieval() {
+  try {
+    const { settings, index } = await api.getRetrieval()
+    Object.assign(retrieval, settings, { index: index || {}, loaded: true })
+  } catch (e) { notify(e.message || 'Erro ao carregar a recuperação.', 'err') }
+}
+async function saveRetrieval() {
+  busy.value = true
+  try {
+    const { settings } = await api.saveRetrieval({ tools: retrieval.tools, blocks: retrieval.blocks, glossary: retrieval.glossary, memory: retrieval.memory })
+    Object.assign(retrieval, settings)
+    notify('Recuperação salva. Vale na hora, sem publicar.')
+  } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
+}
+async function reindex(kind) {
+  const ok = await pedirConfirmacao({
+    title: kind ? `Reindexar ${kind}?` : 'Reindexar tudo?',
+    consequence: 'O índice é apagado agora e refeito aos poucos nos próximos turnos da Eme (até 25 itens por pergunta). Nesse intervalo o roteamento cai na afinidade por palavra, como antes.',
+    confirmLabel: 'Reindexar', tone: 'warning',
+  })
+  if (!ok) return
+  busy.value = true
+  try { const { index } = await api.reindexRetrieval(kind); retrieval.index = index || {}; notify('Índice apagado; a Eme reindexa nos próximos turnos.') }
+  catch (e) { notify(e.message, 'err') } finally { busy.value = false }
+}
+async function toggleAlways(b) {
+  const alwaysInPrompt = b.alwaysInPrompt === false
+  try { await api.updateBlock(b.id, { alwaysInPrompt }); b.alwaysInPrompt = alwaysInPrompt; notify(alwaysInPrompt ? 'Bloco vai em todo turno.' : 'Bloco entra só quando a pergunta tem a ver.') }
+  catch (e) { notify(e.message, 'err') }
+}
+
+// ── Avaliação ──
+async function loadEval() {
+  try {
+    const [{ cases }, { runs }] = await Promise.all([api.getEvalCases(), api.getEvalRuns()])
+    evalState.cases = cases || []
+    evalState.runs = runs || []
+    evalState.loaded = true
+    evalState.running = evalState.runs.some(r => r.status === 'running')
+    if (evalState.running) startPoll()
+  } catch (e) { notify(e.message || 'Erro ao carregar a avaliação.', 'err') }
+}
+function startPoll() {
+  if (evalState.poll) return
+  evalState.poll = setInterval(async () => {
+    try {
+      const { runs } = await api.getEvalRuns()
+      evalState.runs = runs || []
+      evalState.running = evalState.runs.some(r => r.status === 'running')
+      if (evalState.run) evalState.run = (await api.getEvalRun(evalState.run.id)).run
+      if (!evalState.running) { clearInterval(evalState.poll); evalState.poll = null }
+    } catch { /* tenta no próximo tick */ }
+  }, 4000)
+}
+async function runAll() {
+  const habilitados = evalState.cases.filter(c => c.enabled).length
+  const ok = await pedirConfirmacao({
+    title: 'Rodar a avaliação?',
+    consequence: `${habilitados} pergunta(s) vão passar pelo chat real, com o modelo e as ferramentas de verdade, usando a sua alçada. Leva alguns minutos e consome cota do Gemini. As conversas de teste não aparecem no seu histórico.`,
+    confirmLabel: 'Rodar', tone: 'primary',
+  })
+  if (!ok) return
+  busy.value = true
+  try { const { run } = await api.runEval(null); evalState.run = run; evalState.running = true; await loadEval(); startPoll() }
+  catch (e) { notify(e.message, 'err') } finally { busy.value = false }
+}
+async function openRun(r) {
+  try { evalState.run = (await api.getEvalRun(r.id)).run } catch (e) { notify(e.message, 'err') }
+}
+function openCase(c = null) {
+  caseModal.id = c?.id || null
+  caseModal.form = c ? {
+    title: c.title, message: c.message, expected_tool: c.expected_tool || '',
+    expected_args: JSON.stringify(c.expected_args || {}, null, 0), expected_no_tool: !!c.expected_no_tool,
+    expected_text: (c.expected_text || []).join('\n'), forbidden_text: (c.forbidden_text || []).join('\n'),
+    tags: (c.tags || []).join(', '), note: c.note || '', enabled: c.enabled !== false,
+  } : CASE_VAZIO()
+  caseModal.open = true
+}
+async function saveCase() {
+  const f = caseModal.form
+  let args = {}
+  try { args = f.expected_args?.trim() ? JSON.parse(f.expected_args) : {} } catch { notify('Argumentos esperados precisam ser JSON válido.', 'err'); return }
+  const body = { ...f, expected_args: args, tags: toList(f.tags, ',') }
+  busy.value = true
+  try {
+    if (caseModal.id) await api.updateEvalCase(caseModal.id, body); else await api.createEvalCase(body)
+    caseModal.open = false
+    await loadEval()
+    notify('Caso salvo.')
+  } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
+}
+async function toggleCase(c, v) {
+  try { await api.updateEvalCase(c.id, { enabled: v }); c.enabled = v } catch (e) { notify(e.message, 'err') }
+}
+async function removeCase(c) {
+  const ok = await pedirConfirmacao({ title: 'Apagar este caso?', consequence: `"${c.title}" sai do conjunto. As rodadas antigas continuam mostrando o resultado dele.`, confirmLabel: 'Apagar', tone: 'danger' })
+  if (!ok) return
+  try { await api.deleteEvalCase(c.id); await loadEval() } catch (e) { notify(e.message, 'err') }
+}
+const runVariant = (r) => r.status === 'running' ? 'accent' : r.status === 'failed' ? 'danger' : r.failed ? 'warning' : 'success'
+const pct = (r) => r.total ? Math.round((r.passed / r.total) * 100) : 0
+watch(tab, (t) => {
+  if (t === 'retrieval' && !retrieval.loaded) loadRetrieval()
+  if (t === 'eval' && !evalState.loaded) loadEval()
+})
 
 // ── Blocos ──
 function openEdit(b) { if (edit.key === b.key) { edit.key = null; return } edit.key = b.key; edit.content = b.content || '' }
@@ -419,6 +546,12 @@ onMounted(load)
               <i v-if="b.isDynamic" class="fas fa-bolt text-data-warn text-xs" title="Dinâmico"></i>
               <i v-else-if="b.locked" class="fas fa-lock text-ink-subtle text-xs" title="Núcleo"></i>
               <div class="ml-auto flex items-center gap-2">
+                <button v-if="!b.isDynamic" type="button" @click="toggleAlways(b)"
+                  class="h-7 px-2 rounded-md text-micro font-medium border transition-colors"
+                  :class="b.alwaysInPrompt === false ? 'border-accent/40 bg-accent-soft text-accent' : 'border-line text-ink-subtle hover:text-ink'"
+                  :title="b.alwaysInPrompt === false ? 'Entra só quando a pergunta tem a ver (similaridade). Clique para ir em todo turno.' : 'Vai em todo turno. Clique para entrar só por similaridade.'">
+                  <i :class="b.alwaysInPrompt === false ? 'fas fa-wand-magic-sparkles' : 'fas fa-thumbtack'" class="mr-1"></i>{{ b.alwaysInPrompt === false ? 'similar' : 'sempre' }}
+                </button>
                 <Switch :model-value="b.enabled" :disabled="b.isDynamic" size="sm" @change="(v) => toggleBlock(b, v)" />
                 <Button v-if="!b.isDynamic" variant="ghost" size="sm" @click="openEdit(b)">{{ edit.key === b.key ? 'Fechar' : 'Editar' }}</Button>
               </div>
@@ -654,6 +787,123 @@ onMounted(load)
       </section>
 
       <!-- SANDBOX -->
+      <!-- RECUPERAÇÃO -->
+      <section v-show="tab === 'retrieval'" class="space-y-4">
+        <Surface variant="raised" padding="md">
+          <h2 class="text-base font-semibold text-ink mb-1">Recuperação por similaridade</h2>
+          <p class="text-xs text-ink-muted leading-relaxed">A pergunta da pessoa vira um vetor e é comparada com o vetor de cada tool, bloco e termo. O que se parece com a pergunta entra no turno; o resto fica de fora. <strong>Vale na hora</strong>, sem publicar. Quando desligado, a Eme volta ao roteamento por palavra-chave e ao prompt inteiro.</p>
+          <div class="grid sm:grid-cols-2 gap-4 mt-4">
+            <Surface variant="sunken" padding="sm">
+              <div class="flex items-center justify-between mb-2"><p class="text-sm font-semibold text-ink"><i class="fas fa-toolbox text-accent mr-1.5"></i>Tools</p><Switch :model-value="retrieval.tools.enabled" size="sm" @change="(v) => retrieval.tools.enabled = v" /></div>
+              <p class="text-micro text-ink-subtle mb-2">Escolhe as tools do turno pela semelhança com a pergunta (somado à afinidade por palavra).</p>
+              <div class="grid grid-cols-3 gap-2">
+                <Input v-model="retrieval.tools.top_k" type="number" size="sm" label="Máx. tools" />
+                <Input v-model="retrieval.tools.min_sim" type="number" step="0.05" size="sm" label="Limiar (0-1)" />
+                <Input v-model="retrieval.tools.peso" type="number" size="sm" label="Peso" />
+              </div>
+            </Surface>
+            <Surface variant="sunken" padding="sm">
+              <div class="flex items-center justify-between mb-2"><p class="text-sm font-semibold text-ink"><i class="fas fa-scroll text-accent mr-1.5"></i>Blocos</p><Switch :model-value="retrieval.blocks.enabled" size="sm" @change="(v) => retrieval.blocks.enabled = v" /></div>
+              <p class="text-micro text-ink-subtle mb-2">Só os blocos marcados <em>similar</em> na aba Políticas são recortados; <em>sempre</em> vai em todo turno.</p>
+              <div class="grid grid-cols-2 gap-2">
+                <Input v-model="retrieval.blocks.top_k" type="number" size="sm" label="Máx. blocos" />
+                <Input v-model="retrieval.blocks.min_sim" type="number" step="0.05" size="sm" label="Limiar (0-1)" />
+              </div>
+            </Surface>
+            <Surface variant="sunken" padding="sm">
+              <div class="flex items-center justify-between mb-2"><p class="text-sm font-semibold text-ink"><i class="fas fa-book text-accent mr-1.5"></i>Glossário</p><Switch :model-value="retrieval.glossary.enabled" size="sm" @change="(v) => retrieval.glossary.enabled = v" /></div>
+              <p class="text-micro text-ink-subtle mb-2">Palavras proibidas vão sempre; vocabulário e voz entram quando parecem com a pergunta. Só com versão publicada.</p>
+              <div class="grid grid-cols-2 gap-2">
+                <Input v-model="retrieval.glossary.top_k" type="number" size="sm" label="Máx. termos" />
+                <Input v-model="retrieval.glossary.min_sim" type="number" step="0.05" size="sm" label="Limiar (0-1)" />
+              </div>
+            </Surface>
+            <Surface variant="sunken" padding="sm">
+              <div class="flex items-center justify-between mb-2"><p class="text-sm font-semibold text-ink"><i class="fas fa-bookmark text-accent mr-1.5"></i>Memória</p><Switch :model-value="retrieval.memory.enabled" size="sm" @change="(v) => retrieval.memory.enabled = v" /></div>
+              <p class="text-micro text-ink-subtle">Chave geral. A Eme só propõe; a pessoa confirma num botão e gerencia tudo em Configurações da Eme. Desligada aqui, ninguém usa memória.</p>
+            </Surface>
+          </div>
+          <div class="flex items-center gap-3 mt-4 flex-wrap">
+            <Button variant="primary" :loading="busy" icon="fas fa-save" @click="saveRetrieval">Salvar recuperação</Button>
+            <span class="text-xs text-ink-subtle font-mono">
+              índice: tools {{ retrieval.index.tool?.total ?? 0 }} · blocos {{ retrieval.index.block?.total ?? 0 }} · glossário {{ retrieval.index.glossary?.total ?? 0 }}
+            </span>
+            <Button variant="ghost" size="sm" icon="fas fa-rotate" :loading="busy" @click="reindex(null)">Reindexar tudo</Button>
+          </div>
+        </Surface>
+      </section>
+
+      <!-- AVALIAÇÃO -->
+      <section v-show="tab === 'eval'" class="space-y-4">
+        <Surface variant="raised" padding="md">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 class="text-base font-semibold text-ink">Conjunto de avaliação</h2>
+              <p class="text-xs text-ink-muted">Perguntas reais com o que se espera de cada uma. Mudou o prompt? Rode e compare com a rodada anterior.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <Button variant="outline" size="sm" icon="fas fa-plus" @click="openCase()">Novo caso</Button>
+              <Button variant="primary" size="sm" icon="fas fa-play" :loading="busy || evalState.running" :disabled="!evalState.cases.some(c => c.enabled)" @click="runAll">{{ evalState.running ? 'Rodando…' : 'Rodar todos' }}</Button>
+            </div>
+          </div>
+        </Surface>
+
+        <div class="grid lg:grid-cols-5 gap-4">
+          <!-- Rodadas -->
+          <div class="lg:col-span-2 space-y-2">
+            <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Rodadas</p>
+            <Surface v-for="r in evalState.runs" :key="r.id" variant="raised" padding="sm" class="cursor-pointer hover:border-accent/40 transition-colors" :class="evalState.run?.id === r.id ? 'border-accent/50' : ''" @click="openRun(r)">
+              <div class="flex items-center gap-2">
+                <Badge :variant="runVariant(r)" size="sm">{{ r.status === 'running' ? `${r.passed + r.failed}/${r.total}` : r.status === 'failed' ? 'falhou' : `${pct(r)}%` }}</Badge>
+                <span class="text-sm text-ink truncate">{{ r.label }}</span>
+                <span class="ml-auto text-micro text-ink-subtle font-mono shrink-0">{{ fromNow(r.created_at) }}</span>
+              </div>
+              <p class="text-micro text-ink-subtle mt-1">{{ r.passed }} ok · {{ r.failed }} falhas{{ r.brain_label ? ` · ${r.brain_label}` : ' · sem versão publicada' }}{{ r.duration_ms ? ` · ${Math.round(r.duration_ms / 1000)}s` : '' }}</p>
+            </Surface>
+            <EmptyState v-if="evalState.loaded && !evalState.runs.length" size="sm" icon="fas fa-vial" title="Nenhuma rodada" description="Clique em Rodar todos." />
+          </div>
+
+          <!-- Detalhe da rodada ou lista de casos -->
+          <div class="lg:col-span-3 space-y-2">
+            <template v-if="evalState.run">
+              <div class="flex items-center justify-between">
+                <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Resultado · {{ evalState.run.label }}</p>
+                <Button variant="ghost" size="sm" @click="evalState.run = null">Ver casos</Button>
+              </div>
+              <Surface v-for="res in evalState.run.results" :key="res.case_id" variant="raised" padding="sm" :class="res.ok ? '' : 'border-data-neg/30'">
+                <div class="flex items-center gap-2">
+                  <i :class="res.ok ? 'fas fa-circle-check text-data-pos' : 'fas fa-circle-xmark text-data-neg'"></i>
+                  <span class="text-sm text-ink font-medium truncate">{{ res.title }}</span>
+                  <span class="ml-auto text-micro text-ink-subtle font-mono shrink-0">{{ (res.ms / 1000).toFixed(1) }}s{{ res.model ? ` · ${res.model}` : '' }}</span>
+                </div>
+                <p class="text-micro text-ink-subtle font-mono mt-1">tools: {{ res.tool_called?.length ? res.tool_called.join(', ') : 'nenhuma' }}</p>
+                <ul v-if="res.motivos?.length" class="mt-1 space-y-0.5">
+                  <li v-for="(m, i) in res.motivos" :key="i" class="text-xs text-data-neg"><i class="fas fa-arrow-right text-[9px] mr-1"></i>{{ m }}</li>
+                </ul>
+                <p v-if="res.text" class="text-xs text-ink-muted mt-1.5 line-clamp-3">{{ res.text }}</p>
+              </Surface>
+              <p v-if="evalState.run.status === 'running'" class="text-xs text-ink-subtle"><i class="fas fa-circle-notch fa-spin mr-1"></i>Rodando… {{ evalState.run.results?.length || 0 }} de {{ evalState.run.total }}</p>
+            </template>
+            <template v-else>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Casos ({{ evalState.cases.length }})</p>
+              <Surface v-for="c in evalState.cases" :key="c.id" variant="raised" padding="sm" :class="!c.enabled ? 'opacity-60' : ''">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-ink font-medium truncate">{{ c.title }}</span>
+                  <Badge v-if="c.expected_tool" variant="accent" size="sm"><code class="font-mono">{{ c.expected_tool }}</code></Badge>
+                  <Badge v-else-if="c.expected_no_tool" variant="neutral" size="sm">sem tool</Badge>
+                  <div class="ml-auto flex items-center gap-1.5 shrink-0">
+                    <Switch :model-value="c.enabled" size="sm" @change="(v) => toggleCase(c, v)" />
+                    <IconButton icon="fas fa-pen" size="sm" label="Editar" @click="openCase(c)" />
+                    <IconButton icon="fas fa-trash" size="sm" label="Apagar" @click="removeCase(c)" />
+                  </div>
+                </div>
+                <p class="text-xs text-ink-muted mt-1 italic">"{{ c.message }}"</p>
+              </Surface>
+            </template>
+          </div>
+        </div>
+      </section>
+
       <Surface v-show="tab === 'sandbox'" variant="raised" padding="md">
         <h2 class="text-base font-semibold text-ink mb-1">🧪 Sandbox</h2>
         <p class="text-xs text-ink-muted mb-4">Testa o <strong>rascunho</strong> com um usuário simulado, sem afetar a Eme ao vivo nem salvar nada.</p>
@@ -677,6 +927,28 @@ onMounted(load)
         </details>
       </Surface>
     </PageContainer>
+
+    <!-- Modal do caso de avaliação -->
+    <Modal :open="caseModal.open" size="lg" :title="caseModal.id ? 'Editar caso' : 'Novo caso'" subtitle="A pergunta e o que se espera dela" @close="caseModal.open = false">
+      <div class="space-y-3">
+        <Input v-model="caseModal.form.title" label="Título" placeholder="Gestor de um empreendimento" />
+        <div><label :class="LABEL">Pergunta (como a pessoa escreveria)</label><textarea v-model="caseModal.form.message" :class="TA" rows="2"></textarea></div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <Input v-model="caseModal.form.expected_tool" label="Tool esperada" placeholder="query_condition_sheets" :disabled="caseModal.form.expected_no_tool" />
+          <div class="flex items-end pb-2"><Switch :model-value="caseModal.form.expected_no_tool" label="Não pode chamar tool" size="sm" @change="(v) => caseModal.form.expected_no_tool = v" /></div>
+        </div>
+        <div><label :class="LABEL">Argumentos esperados (JSON; texto casa por "contém", sem acento)</label><textarea v-model="caseModal.form.expected_args" :class="TA_MONO" rows="2" placeholder='{"empreendimento": "ing"}'></textarea></div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div><label :class="LABEL">Texto precisa conter (um por linha)</label><textarea v-model="caseModal.form.expected_text" :class="TA" rows="2"></textarea></div>
+          <div><label :class="LABEL">Texto não pode conter (um por linha)</label><textarea v-model="caseModal.form.forbidden_text" :class="TA" rows="2"></textarea></div>
+        </div>
+        <Input v-model="caseModal.form.tags" label="Tags (separadas por vírgula)" placeholder="fichas, comercial" />
+        <div class="flex justify-end gap-2 pt-1">
+          <Button variant="ghost" @click="caseModal.open = false">Cancelar</Button>
+          <Button variant="primary" :loading="busy" :disabled="!caseModal.form.title || !caseModal.form.message" @click="saveCase">Salvar caso</Button>
+        </div>
+      </div>
+    </Modal>
 
     <!-- Modal detalhe do feedback -->
     <Modal :open="detail.open" size="lg" @close="detail.open = false">

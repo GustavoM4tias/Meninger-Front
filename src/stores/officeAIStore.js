@@ -8,6 +8,12 @@ import {
   removeSession,
   getStorageUsage,
   submitFeedback,
+  getMySettings,
+  saveMySettings,
+  getMemories,
+  addMemory as apiAddMemory,
+  updateMemory as apiUpdateMemory,
+  deleteMemory as apiDeleteMemory,
 } from '@/utils/OfficeAI/apiOfficeChat'
 import API_URL from '@/config/apiUrl'
 import { emeScreenSnapshot, limparReferencias } from '@/composables/useEmeScreenContext'
@@ -24,6 +30,35 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   const pendingWarning = ref(null)
   const storageUsage = ref(null)
   const historyOpen = ref(false)
+
+  // ── Configurações da pessoa + memória ─────────────────────────────────────
+  // Modal Configurações da Eme (OfficeChatSettings.vue). A memória só cresce
+  // por addMemory - o clique da pessoa; a Eme propõe, nunca grava.
+  const settingsOpen = ref(false)
+  const settings = ref({ memory_enabled: true, model_mode: 'auto' })
+  const memories = ref([])
+
+  async function loadSettings() {
+    try { settings.value = (await getMySettings()).settings } catch { /* padrões */ }
+  }
+  async function saveSettings(patch) {
+    settings.value = (await saveMySettings(patch)).settings
+  }
+  async function loadMemories() {
+    try { memories.value = (await getMemories()).memories || [] } catch { /* silencioso */ }
+  }
+  async function addMemory(data) {
+    await apiAddMemory(data)
+    await loadMemories()
+  }
+  async function updateMemory(id, patch) {
+    await apiUpdateMemory(id, patch)
+    await loadMemories()
+  }
+  async function removeMemory(m) {
+    await apiDeleteMemory(m.key)
+    memories.value = memories.value.filter(x => x.id !== m.id)
+  }
 
   // ── Transparência do agente ───────────────────────────────────────────────
   // O que a Eme está fazendo agora: passos de tool (tool_start/tool_result do
@@ -462,6 +497,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   return {
     mode, sessions, currentSessionId, messages, isStreaming, streamingText,
     pendingAction, storageUsage, historyOpen, composerDraft,
+    settingsOpen, settings, memories, loadSettings, saveSettings, loadMemories, addMemory, updateMemory, removeMemory,
     agentSteps, streamStartedAt, streamStale,
     isAtStorageLimit, hasSession,
     carregandoMensagens, erroMensagens,
