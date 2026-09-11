@@ -17,34 +17,12 @@ import { ehEscrita } from '@/utils/OfficeAI/toolKind';
 // mais de 600 KB. Numa conversa comum nenhum deles é usado, e mesmo assim
 // todos eram baixados e interpretados só para abrir o chat.
 import ChatText from './renderers/ChatText.vue';
-// Estes dois são os pesados da casa: ChatChart traz o echarts e ChatTable traz o
-// exceljs (1,5 MB somados). A maioria das respostas da Eme é texto. Assíncronos,
-// eles só são baixados na primeira resposta que realmente tem gráfico ou tabela.
-const ChatTable = defineAsyncComponent(() => import('./renderers/ChatTable.vue'));
-const ChatChart = defineAsyncComponent(() => import('./renderers/ChatChart.vue'));
-const ChatNavAction = defineAsyncComponent(() => import('./renderers/ChatNavAction.vue'));
-const ChatLeadsActions = defineAsyncComponent(() => import('./renderers/ChatLeadsActions.vue'));
-const ChatEventsActions = defineAsyncComponent(() => import('./renderers/ChatEventsActions.vue'));
-const ChatEnterprisesActions = defineAsyncComponent(() => import('./renderers/ChatEnterprisesActions.vue'));
-const ChatEnterpriseDetail = defineAsyncComponent(() => import('./renderers/ChatEnterpriseDetail.vue'));
-const ChatMcmvActions = defineAsyncComponent(() => import('./renderers/ChatMcmvActions.vue'));
-const ChatPrecadastrosSummary = defineAsyncComponent(() => import('./renderers/ChatPrecadastrosSummary.vue'));
-const ChatPrecadastrosActions = defineAsyncComponent(() => import('./renderers/ChatPrecadastrosActions.vue'));
-const ChatReservasSummary = defineAsyncComponent(() => import('./renderers/ChatReservasSummary.vue'));
-const ChatReservasActions = defineAsyncComponent(() => import('./renderers/ChatReservasActions.vue'));
-const ChatAlertEditor = defineAsyncComponent(() => import('./renderers/ChatAlertEditor.vue'));
-const ChatAcademyCards = defineAsyncComponent(() => import('./renderers/ChatAcademyCards.vue'));
-const ChatImobiliariaCards = defineAsyncComponent(() => import('./renderers/ChatImobiliariaCards.vue'));
-const ChatConditionSheet = defineAsyncComponent(() => import('./renderers/ChatConditionSheet.vue'));
-const ChatCampaignCards = defineAsyncComponent(() => import('./renderers/ChatCampaignCards.vue'));
-const ChatPersonCards = defineAsyncComponent(() => import('./renderers/ChatPersonCards.vue'));
-const ChatNotificationPrefs = defineAsyncComponent(() => import('./renderers/ChatNotificationPrefs.vue'));
-const ChatReportCards = defineAsyncComponent(() => import('./renderers/ChatReportCards.vue'));
-const ChatChecklistCards = defineAsyncComponent(() => import('./renderers/ChatChecklistCards.vue'));
-const ChatAssistantTasks = defineAsyncComponent(() => import('./renderers/ChatAssistantTasks.vue'));
-const ChatAssistantInvites = defineAsyncComponent(() => import('./renderers/ChatAssistantInvites.vue'));
-const ChatMeetingCard = defineAsyncComponent(() => import('./renderers/ChatMeetingCard.vue'));
-const ChatMemoryProposal = defineAsyncComponent(() => import('./renderers/ChatMemoryProposal.vue'));
+// Tudo que não é texto passa pelo dispatcher da galeria (viz/ChatBlock.vue):
+// a action vira EmeBlock[] (blocksDe) e cada bloco escolhe o componente. Os
+// renderers antigos continuam existindo atrás do bloco `legacy` até a tool
+// deles devolver `blocks` (fase 4 do plano).
+import ChatBlock from './viz/ChatBlock.vue';
+import { blocksDe } from './viz/legacyAdapter.js';
 import EmeAgentStatus from './EmeAgentStatus.vue';
 
 const props = defineProps({
@@ -88,18 +66,11 @@ const warningStyle = computed(() => ({
   },
 }[warning.value?.kind || 'notice']));
 
-// Detecta o módulo da action olhando em vários lugares (context.source, source
-// top-level e tipo) — robusto a variações entre tools.
-const actionSource = computed(() => {
-  const a = action.value;
-  if (!a) return null;
-  if (a.context?.source) return a.context.source;
-  if (a.source) return a.source;
-  if (a.type === 'precadastros_summary') return 'precadastros';
-  if (a.type === 'reservas_summary') return 'reservas';
-  if (a.type === 'enterprise_detail') return 'enterprises';
-  return null;
-});
+// Blocos da resposta. Navegação vai ANTES do texto (era assim no switch
+// antigo: o botão de abrir a tela aparece em cima da frase que o explica).
+const blocos = computed(() => blocksDe(action.value));
+const blocosAntes = computed(() => blocos.value.filter(bl => bl.kind === 'nav'));
+const blocosDepois = computed(() => blocos.value.filter(bl => bl.kind !== 'nav'));
 
 // "O que a Eme fez": passos de tool + tempo total, gravados pelo store no done.
 const steps = computed(() => props.message.metadata?.steps || []);
@@ -151,7 +122,7 @@ const stepsOpen = ref(false);
         <!-- Timeline do agente (só durante o streaming) -->
         <EmeAgentStatus v-if="streaming" :compact="compact" />
 
-        <ChatNavAction v-if="action?.type === 'navigate'" :action="action" />
+        <ChatBlock v-for="bl in blocosAntes" :key="bl.id" :block="bl" :compact="compact" />
         <ChatText v-if="message.content" :content="message.content" :streaming="streaming" />
 
         <!-- Resposta interrompida (cancelamento/timeout preservou o parcial) -->
@@ -176,70 +147,7 @@ const stepsOpen = ref(false);
           </div>
         </div>
 
-        <ChatTable v-if="action?.type === 'table'"
-          :title="action.title" :subtitle="action.subtitle"
-          :columns="action.columns" :rows="action.rows" :total="action.total" />
-
-        <ChatChart v-if="action?.type === 'chart'"
-          :chart-type="action.chartType" :title="action.title" :subtitle="action.subtitle"
-          :labels="action.labels" :data="action.data"
-          :total="action.total" :top-breakdown="action.top_breakdown || []" />
-
-        <ChatLeadsActions v-if="actionSource === 'leads'" :context="action.context || {}" />
-        <ChatEventsActions v-if="actionSource === 'events'"
-          :context="action.context || {}" :rows="action.rows || action.rawRows || []" />
-        <ChatEnterprisesActions v-if="actionSource === 'enterprises'" :context="action.context || {}" />
-        <ChatEnterpriseDetail v-if="action?.type === 'detail'" :action="action" />
-        <ChatMcmvActions v-if="actionSource === 'mcmv'" :context="action.context || {}" />
-
-        <!-- Pré-cadastros -->
-        <ChatPrecadastrosSummary v-if="action?.type === 'precadastros_summary'" :action="action" />
-        <ChatPrecadastrosActions v-if="actionSource === 'precadastros'" :context="action.context || {}" />
-
-        <!-- Reservas -->
-        <ChatReservasSummary v-if="action?.type === 'reservas_summary'" :action="action" />
-        <ChatReservasActions v-if="actionSource === 'reservas'" :context="action.context || {}" />
-
-        <!-- Editor de Alerta inline -->
-        <ChatAlertEditor v-if="action?.type === 'open_alert_editor'" :action="action" />
-
-        <!-- Academy: cards de processos / certificados / comunidade -->
-        <ChatAcademyCards v-if="action?.type === 'academy_cards'" :action="action" />
-
-        <!-- Imobiliárias: cards de parceiras / cadastros e convites -->
-        <ChatImobiliariaCards v-if="action?.type === 'imobiliaria_cards'" :action="action" />
-
-        <!-- Ficha Comercial: card com dados + sugestões + abrir ficha.
-             precisa_desambiguar não renderiza card (viria com header vazio). -->
-        <ChatConditionSheet v-if="action?.type === 'condition_sheet' && !action?.precisa_desambiguar" :action="action" />
-
-        <!-- Campanhas das fichas (busca plural): cards com descrição/regulamento -->
-        <ChatCampaignCards v-if="action?.type === 'campaign_cards'" :action="action" />
-
-        <!-- Pessoas/Organograma: cards com modal de detalhe -->
-        <ChatPersonCards v-if="action?.type === 'person_cards'" :action="action" />
-
-        <!-- Preferências de notificação: painel de toggles -->
-        <ChatNotificationPrefs v-if="action?.type === 'notification_prefs'" :action="action" />
-
-        <!-- Relatórios: cards de resumo -->
-        <ChatReportCards v-if="action?.type === 'report_cards'" :action="action" />
-
-        <!-- Checklist: cards de checklist / tarefas -->
-        <ChatChecklistCards v-if="action?.type === 'checklist_cards' || action?.type === 'checklist_tasks'" :action="action" />
-
-        <!-- Assistente pessoal: a parte se risca AQUI, sem sair do chat. -->
-        <ChatAssistantTasks
-          v-if="action?.type === 'assistant_tasks' || action?.type === 'assistant_task'"
-          :action="action" />
-
-        <ChatAssistantInvites v-if="action?.type === 'assistant_invites'" :action="action" />
-
-        <!-- Reunião: o link de entrada vira botão, não URL colada na frase. -->
-        <ChatMeetingCard v-if="action?.type === 'meeting_card'" :action="action" />
-
-        <!-- Memória: a Eme propôs guardar uma preferência; a pessoa decide aqui. -->
-        <ChatMemoryProposal v-if="action?.type === 'memory_proposal'" :action="action" />
+        <ChatBlock v-for="bl in blocosDepois" :key="bl.id" :block="bl" :compact="compact" />
 
         <!-- "O que a Eme fez" — transparência pós-resposta -->
         <div v-if="!streaming && steps.length" class="text-micro text-ink-subtle">

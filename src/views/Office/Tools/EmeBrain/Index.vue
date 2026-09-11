@@ -20,6 +20,7 @@ import SegmentedControl from '@/components/UI/SegmentedControl.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
 import Modal from '@/components/UI/Modal.vue'
 import { pedirConfirmacao } from '@/composables/useConfirm';
+import VizGaleria from './VizGaleria.vue';
 import { useToast } from 'vue-toastification';
 
 
@@ -98,6 +99,7 @@ const tabOptions = computed(() => [
   { value: 'versions', label: 'Versões', icon: 'fas fa-code-branch', count: versions.value.length },
   { value: 'retrieval', label: 'Recuperação', icon: 'fas fa-magnifying-glass-chart' },
   { value: 'eval', label: 'Avaliação', icon: 'fas fa-vial-circle-check', count: evalState.cases.length || undefined },
+  { value: 'galeria', label: 'Galeria', icon: 'fas fa-shapes' },
   { value: 'sandbox', label: 'Sandbox', icon: 'fas fa-flask' },
 ])
 
@@ -914,6 +916,9 @@ onMounted(load)
           </div>
         </div>
       </section>
+
+      <!-- GALERIA -->
+      <section v-if="tab === 'galeria'"><VizGaleria /></section>
 
       <Surface v-show="tab === 'sandbox'" variant="raised" padding="md">
         <h2 class="text-base font-semibold text-ink mb-1">🧪 Sandbox</h2>

@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "node --test \"tests/**/*.test.mjs\"",
     "check": "node _design/imports-pendurados.mjs && node _design/dialogos-a-mao.mjs && node _design/identificadores-soltos.mjs",
     "check:imports": "node _design/imports-pendurados.mjs",
     "check:ui": "node _design/mapscreens.mjs",
