@@ -35,10 +35,20 @@
             <select :value="form.manager_user_id" @change="set('manager_user_id', numOrNull($event))" class="inp"
               :disabled="readonly">
               <option value="">Selecionar gestor...</option>
-              <option v-for="u in activeUsers" :key="u.id" :value="u.id">
-                {{ u.username }}{{ u.position ? ` — ${u.position}` : '' }}
+              <option v-for="u in optionsWith(form.manager_user_id)" :key="u.id" :value="u.id">
+                {{ userLabel(u) }}
               </option>
             </select>
+            <p v-if="managerInativo"
+              class="mt-2 flex items-start gap-2 rounded-lg border border-data-warn/25 bg-data-warn/10 px-3 py-2 text-xs text-data-warn">
+              <i class="fas fa-user-slash mt-0.5"></i>
+              <span>
+                <strong>{{ managerInativo.username }}</strong>
+                {{ managerInativo.sumiu ? 'não existe mais no Office' : 'está inativo no Office' }}.
+                A ficha continua válida, mas ele não recebe notificação nem é cobrado pelo Plano de
+                Eventos — escolha outro gestor.
+              </span>
+            </p>
           </div>
 
           <!-- Manual: campos livres -->
@@ -68,8 +78,8 @@
           <select :value="form.adm_user_id" @change="set('adm_user_id', numOrNull($event))" class="inp"
             :disabled="readonly">
             <option value="">Selecionar administrativo...</option>
-            <option v-for="u in activeUsers" :key="u.id" :value="u.id">
-              {{ u.username }}{{ u.position ? ` — ${u.position}` : '' }}
+            <option v-for="u in optionsWith(form.adm_user_id)" :key="u.id" :value="u.id">
+              {{ userLabel(u) }}
             </option>
           </select>
         </div>
@@ -129,8 +139,8 @@
             <select :value="form.contract_registered_by_user_id"
               @change="set('contract_registered_by_user_id', numOrNull($event))" class="inp" :disabled="readonly">
               <option value="">Selecionar pessoa...</option>
-              <option v-for="u in activeUsers" :key="u.id" :value="u.id">
-                {{ u.username }}{{ u.position ? ` — ${u.position}` : '' }}
+              <option v-for="u in optionsWith(form.contract_registered_by_user_id)" :key="u.id" :value="u.id">
+                {{ userLabel(u) }}
               </option>
             </select>
           </div>
@@ -420,6 +430,34 @@ const emit = defineEmits(['update']);
 const activeUsers = computed(() =>
   (props.officeUsers ?? []).filter(u => u.status !== false)
 );
+
+// Quem já está escolhido continua na lista mesmo depois de sair da empresa.
+// Sem isso o <select> não acha a opção, mostra vazio, e a ficha parece não ter
+// responsável nenhum - foi assim que dois empreendimentos ficaram "sem gestor"
+// sem ninguém perceber.
+function optionsWith(selectedId) {
+  const opts = activeUsers.value;
+  const id = Number(selectedId);
+  if (!Number.isFinite(id) || id <= 0) return opts;
+  if (opts.some(u => Number(u.id) === id)) return opts;
+  const u = (props.officeUsers ?? []).find(x => Number(x.id) === id);
+  return u ? [{ ...u, _inativo: true }, ...opts] : opts;
+}
+
+const userLabel = (u) =>
+  `${u.username}${u.position ? ` — ${u.position}` : ''}${u._inativo ? ' (inativo)' : ''}`;
+
+// Gestor apontado que não entra mais no Office: a ficha segue válida, mas o
+// responsável precisa ser trocado - ele não recebe notificação nem é cobrado
+// pelo Plano de Eventos.
+const managerInativo = computed(() => {
+  if (managerMode.value !== 'sistema') return null;
+  const id = Number(props.form.manager_user_id);
+  if (!Number.isFinite(id) || id <= 0) return null;
+  const u = (props.officeUsers ?? []).find(x => Number(x.id) === id);
+  if (!u) return { username: `Usuário #${id}`, sumiu: true };
+  return u.status === false ? u : null;
+});
 
 const contractOptions = [
   { value: 'cca', label: 'CCA' },

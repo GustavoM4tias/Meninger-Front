@@ -35,6 +35,7 @@ const loading = ref(true);
 const search = ref('');
 const filterStatus = ref('');
 const filterMonth = ref(currentMonthYm());
+const filterGestor = ref('');
 const showClosed = ref(false);
 
 // ── Criação ──────────────────────────────────────────
@@ -192,14 +193,35 @@ const monthGroups = computed(() =>
     .filter(g => g.shown)
 );
 
+// ── Gestor responsável ───────────────────────────────────────────────────────
+// Vem resolvido da API (services/comercial/conditionManagers.js): o campo mora
+// nos MÓDULOS da ficha, então um empreendimento com etapas pode ter mais de um.
+const gestoresDe = (g) => g?.shown?.gestores ?? [];
+
+const gestorOptions = computed(() => {
+  const nomes = new Set();
+  for (const g of monthGroups.value) for (const x of gestoresDe(g)) nomes.add(x.nome);
+  return [
+    { value: '', label: 'Todos os responsáveis' },
+    ...[...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(n => ({ value: n, label: n })),
+    { value: '__sem__', label: 'Sem gestor definido' },
+  ];
+});
+
 const filteredGroups = computed(() => {
   let r = monthGroups.value;
   if (filterStatus.value) r = r.filter(g => g.shown?.status === filterStatus.value);
+  if (filterGestor.value) {
+    r = filterGestor.value === '__sem__'
+      ? r.filter(g => !gestoresDe(g).length)
+      : r.filter(g => gestoresDe(g).some(x => x.nome === filterGestor.value));
+  }
   if (search.value.trim()) {
     const s = search.value.toLowerCase();
     r = r.filter(g =>
       g.enterprise?.nome?.toLowerCase().includes(s) ||
-      g.enterprise?.cidade?.toLowerCase().includes(s)
+      g.enterprise?.cidade?.toLowerCase().includes(s) ||
+      gestoresDe(g).some(x => x.nome.toLowerCase().includes(s))
     );
   }
   return r;
@@ -274,11 +296,14 @@ function alternarStatus(chave) {
 }
 
 const filtrosAtivos = computed(() =>
-    (search.value.trim() ? 1 : 0) + (filterMonth.value !== currentMonthYm() ? 1 : 0)
+    (search.value.trim() ? 1 : 0)
+    + (filterMonth.value !== currentMonthYm() ? 1 : 0)
+    + (filterGestor.value ? 1 : 0)
 );
 
 function limparFiltros() {
     search.value = '';
+    filterGestor.value = '';
     filterMonth.value = availableMonths.value.includes(currentMonthYm())
         ? currentMonthYm()
         : (availableMonths.value[0] ?? currentMonthYm());
@@ -338,6 +363,8 @@ onMounted(async () => {
             :tips="[
               'Ficha avulsa é produto sem cadastro no CV: leva o ícone de cubo e também evolui sozinha todo mês.',
               'O número no chip de módulo é a quantidade de unidades daquele módulo.',
+              'O gestor responsável aparece no cartão e recorta a lista pelo filtro — ele é definido dentro da ficha, na aba Módulos > Operacional.',
+              'Nome de gestor em laranja é quem já saiu do Office: a ficha ainda aponta para ele, mas ele não recebe notificação nenhuma.',
               'Quem define quem edita e quem autoriza é a tela de Configurações, no canto superior.',
             ]"
           />
@@ -365,16 +392,17 @@ onMounted(async () => {
       <!-- Filtros -->
       <!-- `auto-apply`: a tela recorta ao digitar, então não há botão Buscar.
            Como o primitivo esconde os dois botões juntos, o Limpar volta aqui. -->
-      <FilterBar :active-count="filtrosAtivos" :cols="2" auto-apply>
+      <FilterBar :active-count="filtrosAtivos" :cols="3" auto-apply>
         <template #actions>
           <Button v-if="filtrosAtivos" variant="ghost" size="sm" icon="fas fa-eraser"
             @click="limparFiltros">
             <span class="hidden sm:inline">Limpar</span>
           </Button>
         </template>
-        <Input v-model="search" label="Buscar" placeholder="Empreendimento ou cidade..."
+        <Input v-model="search" label="Buscar" placeholder="Empreendimento, cidade ou gestor..."
           iconLeft="fas fa-magnifying-glass" />
         <Select v-model="filterMonth" :options="monthOptions" label="Mês de referência" />
+        <Select v-model="filterGestor" :options="gestorOptions" label="Gestor responsável" />
       </FilterBar>
 
       <!-- Linha de estado: quantas fichas você está vendo, de quantas, e por quê. -->
@@ -388,6 +416,12 @@ onMounted(async () => {
         <Badge v-if="filterStatus" variant="accent" size="sm">
           {{ statusLabel(filterStatus) }}
           <button class="ml-1.5 opacity-70 hover:opacity-100" @click="filterStatus = ''" title="Limpar recorte">
+            <i class="fas fa-xmark text-micro"></i>
+          </button>
+        </Badge>
+        <Badge v-if="filterGestor" variant="accent" size="sm">
+          {{ filterGestor === '__sem__' ? 'sem gestor' : filterGestor }}
+          <button class="ml-1.5 opacity-70 hover:opacity-100" @click="filterGestor = ''" title="Limpar recorte">
             <i class="fas fa-xmark text-micro"></i>
           </button>
         </Badge>
@@ -446,6 +480,26 @@ onMounted(async () => {
                   </Badge>
                 </div>
               </div>
+
+              <!-- Gestor responsável: quem responde pelo empreendimento. Vive
+                   na ficha (não há cadastro à parte), e sem esta linha só se
+                   descobria abrindo uma por uma. -->
+              <p class="flex items-center gap-1.5 mb-3 text-xs min-w-0"
+                :class="group.shown.gestores?.length ? 'text-ink-muted' : 'text-ink-subtle italic'">
+                <i class="fas fa-user-tie text-micro text-ink-subtle flex-shrink-0"></i>
+                <template v-if="group.shown.gestores?.length">
+                  <span class="truncate">
+                    <template v-for="(g, i) in group.shown.gestores" :key="g.user_id ?? g.nome">
+                      <span v-if="i" class="text-ink-subtle"> · </span>
+                      <span :class="{ 'text-data-warn': !g.ativo }">{{ g.nome }}</span>
+                      <i v-if="!g.ativo" class="fas fa-triangle-exclamation text-micro text-data-warn ml-1"
+                        v-tippy="'Inativo no Office — a ficha precisa de um gestor novo'"></i>
+                      <span v-else-if="g.externo" class="text-ink-subtle"> (externo)</span>
+                    </template>
+                  </span>
+                </template>
+                <span v-else>Sem gestor definido</span>
+              </p>
 
               <!-- Módulos: o que a ficha cobre, e quantas unidades cada um pesa -->
               <div v-if="group.shown.modules?.length" class="flex flex-wrap gap-1.5">

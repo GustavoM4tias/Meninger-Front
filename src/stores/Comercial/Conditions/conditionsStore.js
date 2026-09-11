@@ -385,8 +385,11 @@ export const useConditionsStore = defineStore('conditions', () => {
             // Usa o mesmo endpoint do menu de Configurações/Usuários
             const data = await requestWithAuth(`${API_URL}/auth/users`);
             const all = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-            // Filtra apenas usuários ativos e com nome
-            officeUsers.value = all.filter(u => u.status !== false && u.username);
+            // Guarda ATIVOS e INATIVOS. Quem escolhe gestor só vê os ativos (o
+            // filtro vive no select), mas a ficha que aponta para alguém que
+            // saiu precisa continuar exibindo o nome: filtrando aqui, o gestor
+            // sumia do formulário e do PDF como se a ficha não tivesse um.
+            officeUsers.value = all.filter(u => u.username);
         } catch (e) {
             console.warn('[conditions] fetchOfficeUsers:', e.message);
         }

@@ -191,7 +191,9 @@ function aplicarDoServidor() {
 onMounted(async () => {
     try {
         await Promise.all([store.fetchSettings(), store.fetchOfficeUsers()]);
-        officeUsers.value = store.officeUsers;
+        // Só ativos: aqui se ESCOLHE quem edita e quem autoriza, e não faz
+        // sentido nomear alguém que não entra mais no Office.
+        officeUsers.value = store.officeUsers.filter(u => u.status !== false);
         aplicarDoServidor();
     } finally {
         loading.value = false;
