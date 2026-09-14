@@ -1,748 +1,19 @@
-<template>
-  <div class="min-h-[calc(100vh-3.5rem)]">
-    <PageContainer size="full">
-
-      <PageHeader
-        subtitle="Pagamentos por centro de custo no período (por data de pagamento)"
-        icon="fas fa-building">
-        <template #title>
-          Custos por Empreendimento
-          <Favorite :router="'/financeiro/custos'" :section="'Custos'" />
-        </template>
-        <template #actions>
-          <PageHelp
-            storage-key="custos"
-            title="Como ler os custos"
-            intro="O que foi pago no período, lido ao vivo do backup do Sienge. Os números seguem o espelho mais recente, não o instante atual do Sienge."
-            :steps="[
-              { title: 'Recorte o período', text: 'Tudo aqui é por data de pagamento. O total muda com o recorte, não com o filtro de exibição.' },
-              { title: 'Leia o que não soma', text: 'Alguns lançamentos aparecem marcados como fora do total: eles existem, mas não entram na conta do período de propósito.' },
-              { title: 'Abra o lançamento', text: 'O detalhe mostra a origem no Sienge e a personalização feita aqui, quando houver.' },
-            ]"
-            :tips="[
-              'O que você enxerga depende da visibilidade de departamento configurada nas Alçadas.',
-              'Diferença contra o Sienge quase sempre é defasagem do backup — confira a data do espelho antes de tratar como erro.',
-            ]" />
-        </template>
-      </PageHeader>
-
-      <!-- Filtros Card -->
-      <Surface variant="raised" padding="md" class="mb-5 surface-gradient">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
-          <div>
-            <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-city text-ink-subtle text-[10px]"></i>
-              Empreendimento
-            </label>
-            <MultiSelector :model-value="selectedEnterpriseNames" @update:modelValue="handleEnterpriseChange"
-              :options="enterpriseOptions" placeholder="Todos os empreendimentos" :page-size="200" />
-          </div>
-
-          <div>
-            <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-sitemap text-ink-subtle text-[10px]"></i>
-              Departamento(s)
-            </label>
-            <MultiSelector :model-value="store.selectedDepartments"
-              @update:modelValue="v => (store.selectedDepartments = Array.isArray(v) ? v : [])"
-              :options="store.departmentOptions" placeholder="Todos os departamentos" :page-size="200" />
-          </div>
-
-          <div>
-            <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-calendar-day text-ink-subtle text-[10px]"></i>
-              De
-            </label>
-            <Input v-model="store.startDate" type="date" />
-          </div>
-
-          <div>
-            <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-              <i class="fas fa-calendar-check text-ink-subtle text-[10px]"></i>
-              Até
-            </label>
-            <Input v-model="store.endDate" type="date" />
-          </div>
-
-          <div>
-            <Button variant="primary" icon="fas fa-filter" block
-              class="!bg-data-pos hover:!bg-data-pos"
-              :loading="store.isLoading"
-              :disabled="store.isLoading"
-              @click="store.fetchExpenses">
-              {{ store.isLoading ? 'Carregando...' : 'Filtrar' }}
-            </Button>
-          </div>
-        </div>
-
-        <Surface v-if="store.error" variant="raised" padding="sm"
-          class="mt-3 border-data-neg/30 bg-data-neg/10">
-          <div class="text-sm text-data-neg flex items-center gap-2">
-            <i class="fas fa-circle-exclamation"></i>{{ store.error }}
-          </div>
-        </Surface>
-      </Surface>
-
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        <Surface variant="raised" padding="md" class="border-data-pos/30 bg-data-pos/10 surface-gradient">
-          <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-data-pos mb-2">
-            <i class="fas fa-dollar-sign"></i> Total de Gastos
-          </div>
-          <div class="text-2xl font-bold text-data-pos font-mono tabular-nums">
-            {{ filteredTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-          </div>
-          <div class="text-micro text-data-pos  mt-1">Pago no período</div>
-        </Surface>
-
-        <Surface v-if="filteredCancelledTotal > 0" variant="raised" padding="md" class="border-data-neg/30 bg-data-neg/10 surface-gradient">
-          <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-data-neg mb-2">
-            <i class="fas fa-ban"></i> Cancelados
-          </div>
-          <div class="text-2xl font-bold text-data-neg font-mono tabular-nums">
-            {{ filteredCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-          </div>
-          <div class="text-micro text-data-neg  mt-1">Não somam no total</div>
-        </Surface>
-
-        <Surface variant="raised" padding="md" class="surface-gradient">
-          <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-ink-muted mb-2">
-            <i class="fas fa-building text-data-pos"></i> Empreendimentos
-          </div>
-          <div class="text-2xl font-bold text-ink font-mono tabular-nums">{{ filteredGroups.length }}</div>
-          <div class="text-micro text-ink-subtle mt-1">Com lançamentos</div>
-        </Surface>
-
-        <Surface variant="raised" padding="md" class="surface-gradient">
-          <div class="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-ink-muted mb-2">
-            <i class="fas fa-list-ul text-data-pos"></i> Total de Lançamentos
-          </div>
-          <div class="text-2xl font-bold text-ink font-mono tabular-nums">
-            {{ filteredGroups.reduce((sum, g) => sum + g.expenses.length, 0) }}
-          </div>
-          <div class="text-micro text-ink-subtle mt-1">Custos registrados</div>
-        </Surface>
-      </div>
-
-      <!-- Table Card -->
-      <Surface variant="raised" padding="none" class="overflow-hidden surface-gradient">
-        <div class="px-5 sm:px-6 py-3.5 border-b border-line bg-surface-sunken/40">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <h3 class="text-base font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-table text-data-pos"></i>
-              Detalhamento por Empreendimento
-            </h3>
-            <span class="text-xs text-ink-muted">
-              <span class="font-mono tabular-nums">{{ filteredGroups.length }}</span> empreendimento(s)
-            </span>
-          </div>
-        </div>
-
-        <!-- Celular: cartao por empreendimento -->
-        <div class="md:hidden">
-          <ul v-if="sortedGroups.length" class="divide-y divide-line">
-            <li v-for="group in sortedGroups" :key="`m-${group.costCenterId}`" class="p-3 flex flex-col gap-2">
-              <div class="flex items-start gap-3">
-                <div class="h-9 w-9 rounded-lg bg-data-pos/10 border border-data-pos/20 grid place-items-center text-data-pos shrink-0">
-                  <i class="fas fa-building text-xs"></i>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <div class="text-sm font-semibold text-ink break-words">
-                    {{ group.costCenterName || resolveEnterpriseName(group.costCenterId) || '—' }}
-                  </div>
-                  <div class="text-micro text-ink-subtle font-mono">
-                    CC {{ group.costCenterId }} · {{ group.expenses.length }} lançamento(s)
-                  </div>
-                </div>
-              </div>
-
-              <div class="rounded-lg bg-surface-sunken/40 px-2.5 py-2">
-                <div class="metric-label">Total</div>
-                <div class="text-lg font-bold text-data-pos font-mono tabular-nums leading-tight">
-                  {{ Number(group.total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-                </div>
-                <div v-if="Number(group.cancelledTotal) > 0"
-                  class="text-micro text-data-neg font-mono tabular-nums mt-0.5">
-                  <i class="fas fa-ban mr-0.5"></i>{{ Number(group.cancelledTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }} cancelado
-                </div>
-              </div>
-
-              <!-- alvo de 40px -->
-              <button @click="openDetails(group)"
-                class="h-10 w-full rounded-lg border border-line text-xs font-medium text-ink
-                       inline-flex items-center justify-center gap-1.5 hover:bg-surface-sunken transition-colors">
-                <i class="fas fa-eye text-[10px]"></i>Ver detalhes
-              </button>
-            </li>
-          </ul>
-          <div v-else-if="!store.isLoading" class="px-4 py-10">
-            <EmptyState icon="fas fa-inbox" title="Nenhum gasto encontrado"
-              description="Ajuste os filtros e tente novamente." />
-          </div>
-        </div>
-
-        <div class="hidden md:block overflow-x-auto">
-          <table class="min-w-full">
-            <thead class="bg-surface-sunken/60 border-b border-line">
-              <tr>
-                <th @click="handleSort('name')"
-                  class="px-5 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors">
-                  <div class="flex items-center gap-2">
-                    Empreendimento <i :class="getSortIcon('name')"></i>
-                  </div>
-                </th>
-                <th @click="handleSort('total')"
-                  class="px-5 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink transition-colors">
-                  <div class="flex items-center justify-end gap-2">
-                    Total <i :class="getSortIcon('total')"></i>
-                  </div>
-                </th>
-                <th class="px-5 py-3 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">
-                  Lançamentos
-                </th>
-                <th class="px-5 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line">
-              <tr v-for="group in sortedGroups" :key="group.costCenterId"
-                class="hover:bg-surface-hover/40 transition-colors">
-                <td class="px-5 py-3 whitespace-nowrap">
-                  <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-lg bg-data-pos/10 border border-data-pos/20 grid place-items-center text-data-pos shrink-0">
-                      <i class="fas fa-building"></i>
-                    </div>
-                    <div class="min-w-0">
-                      <div class="text-sm font-semibold text-ink">
-                        {{ group.costCenterName || resolveEnterpriseName(group.costCenterId) || '—' }}
-                      </div>
-                      <div class="text-xs text-ink-subtle font-mono">
-                        CC {{ group.costCenterId }} · {{ group.expenses.length }} item(ns)
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-5 py-3 whitespace-nowrap text-right">
-                  <div class="text-base font-bold text-data-pos font-mono tabular-nums">
-                    {{ Number(group.total || 0).toLocaleString('pt-BR', {
-                      style: 'currency', currency: 'BRL'
-                    }) }}
-                  </div>
-                  <div v-if="Number(group.cancelledTotal) > 0"
-                    class="text-micro text-data-neg font-mono tabular-nums mt-0.5">
-                    <i class="fas fa-ban mr-0.5"></i>{{ Number(group.cancelledTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }} cancelado
-                  </div>
-                </td>
-                <td class="px-5 py-3 whitespace-nowrap text-center">
-                  <Badge variant="info" size="sm">
-                    <span class="font-mono tabular-nums">{{ group.expenses.length }}</span>
-                  </Badge>
-                </td>
-                <td class="px-5 py-3 whitespace-nowrap text-right">
-                  <Button variant="secondary" size="sm" icon="fas fa-eye" @click="openDetails(group)">
-                    Ver Detalhes
-                  </Button>
-                </td>
-              </tr>
-
-              <tr v-if="!filteredGroups.length && !store.isLoading">
-                <td colspan="4" class="px-6 py-12">
-                  <EmptyState
-                    icon="fas fa-inbox"
-                    title="Nenhum gasto encontrado"
-                    description="Ajuste os filtros e tente novamente." />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </Surface>
-    </PageContainer>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         MODAL DE DETALHES
-    ════════════════════════════════════════════════════════════ -->
-    <Modal :open="!!selectedGroup"
-      size="full"
-      :title="selectedGroup ? (resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || 'Empreendimento') : ''"
-      @close="closeDetails">
-
-      <template #subtitle>
-        <div v-if="selectedGroup" class="flex flex-wrap items-center gap-3 text-xs text-ink-muted">
-          <span><i class="fas fa-hashtag text-[10px] mr-1"></i>CC <span class="font-mono">{{ selectedGroup.costCenterId }}</span></span>
-          <span class="opacity-50">|</span>
-          <span><i class="fas fa-list-ul text-[10px] mr-1"></i><span class="font-mono tabular-nums">{{ modalExpenses.length }}</span> de <span class="font-mono tabular-nums">{{ selectedGroup.expenses.length }}</span> lançamento(s)</span>
-          <span class="opacity-50">|</span>
-          <span class="font-semibold text-data-pos">
-            <i class="fas fa-dollar-sign text-[10px] mr-1"></i>
-            <span class="font-mono tabular-nums">{{ modalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
-          </span>
-          <template v-if="modalCancelledTotal > 0">
-            <span class="opacity-50">|</span>
-            <span class="font-semibold text-data-neg">
-              <i class="fas fa-ban text-[10px] mr-1"></i>Cancelado
-              <span class="font-mono tabular-nums">{{ modalCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
-            </span>
-          </template>
-        </div>
-      </template>
-
-      <div v-if="selectedGroup" class="-m-4 sm:-m-5">
-
-        <!-- Toolbar: busca + filtros -->
-        <div class="border-b border-line bg-surface-sunken/40 px-4 sm:px-5 py-3 space-y-3">
-
-          <div class="flex flex-col md:flex-row gap-2 items-stretch md:items-end">
-            <div class="flex-1 min-w-0">
-              <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-                <i class="fas fa-magnifying-glass text-ink-subtle text-[10px]"></i>
-                Buscar
-              </label>
-              <Input
-                v-model="modalSearch"
-                placeholder="Fornecedor, documento, CNPJ, observação..."
-                icon-left="fas fa-magnifying-glass" />
-            </div>
-
-            <div class="w-full md:w-48">
-              <label class="text-micro font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
-                <i class="fas fa-sitemap text-ink-subtle text-[10px]"></i>
-                Departamento
-              </label>
-              <Select
-                v-model="modalFilterDept"
-                :options="modalDeptSelectOptions"
-                placeholder="Todos departamentos" />
-            </div>
-
-            <Button v-if="hasModalFilters" variant="ghost" size="sm" icon="fas fa-times"
-              class="md:mb-1" @click="clearModalFilters">
-              Limpar
-            </Button>
-
-            <Button variant="secondary" size="sm" icon="fas fa-download"
-              class="md:mb-1" @click="showExport = true">
-              Exportar
-            </Button>
-          </div>
-
-          <!-- Filtro de data -->
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <span class="text-micro font-medium text-ink-muted whitespace-nowrap flex items-center gap-1.5">
-              <i class="fas fa-calendar-days text-ink-subtle text-[10px]"></i>
-              Pagamento entre
-            </span>
-            <div class="flex items-center gap-2 flex-1">
-              <Input v-model="modalFilterDateFrom" type="date" />
-              <span class="text-ink-subtle text-sm">até</span>
-              <Input v-model="modalFilterDateTo" type="date" />
-              <IconButton v-if="modalFilterDateFrom || modalFilterDateTo"
-                icon="fas fa-times-circle"
-                label="Limpar datas"
-                variant="ghost"
-                size="sm"
-                @click="modalFilterDateFrom = ''; modalFilterDateTo = ''" />
-            </div>
-
-            <!-- Chips de atalho rápido -->
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <button v-for="preset in datePresets" :key="preset.value"
-                @click="setModalDatePreset(preset.value)"
-                class="px-2.5 py-1 text-micro rounded-lg border transition-colors"
-                :class="modalDatePreset === preset.value
-                  ? 'bg-data-pos text-white border-data-pos'
-                  : 'border-line text-ink-muted hover:bg-surface-hover'">
-                {{ preset.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bulk action bar -->
-        <transition name="slide-down">
-          <div v-if="selectedExpenseIds.length"
-            class="bg-data-pos text-white px-4 sm:px-5 py-3 border-b border-data-pos">
-            <div class="flex flex-wrap items-center gap-3">
-              <span class="text-sm font-semibold">
-                <i class="fas fa-square-check mr-1"></i>
-                <span class="font-mono tabular-nums">{{ selectedExpenseIds.length }}</span> selecionado(s)
-              </span>
-              <span class="opacity-40">|</span>
-
-              <button @click="removeSelectedExpenses"
-                class="px-3 py-1.5 bg-data-neg hover:bg-data-neg/85 text-white font-semibold rounded-lg text-sm transition-colors">
-                <i class="fas fa-trash mr-1"></i> Excluir
-              </button>
-
-              <button @click="selectedExpenseIds = []"
-                class="ml-auto px-3 py-1.5 bg-surface-raised/20 hover:bg-surface-raised/30 rounded-lg text-sm transition-colors">
-                <i class="fas fa-times mr-1"></i> Desmarcar
-              </button>
-            </div>
-          </div>
-        </transition>
-
-        <!-- Tabela -->
-        <div class="overflow-auto" style="max-height: calc(92vh - 280px)">
-          <!-- Celular: cartao por lancamento. Dez colunas nao cabem em 375px. -->
-          <ul class="md:hidden divide-y divide-line/60">
-            <li v-for="exp in modalExpenses" :key="`m-${exp.id}`"
-              :class="['p-3 flex flex-col gap-2', selectedExpenseIds.includes(exp.id) ? 'bg-data-pos/10' : '']">
-
-              <div class="flex items-start gap-2.5">
-                <input type="checkbox" :checked="selectedExpenseIds.includes(exp.id)"
-                  @change="toggleExpenseSelection(exp.id)"
-                  class="w-5 h-5 mt-0.5 shrink-0 text-data-pos border-line rounded focus:ring-data-pos cursor-pointer" />
-                <div class="min-w-0 flex-1">
-                  <div v-if="exp.bill" class="text-sm font-semibold text-ink break-words">
-                    {{ exp.bill.creditor_json?.tradeName || exp.bill.creditor_json?.name || '—' }}
-                  </div>
-                  <div v-else class="text-sm text-ink-subtle italic">sem vínculo</div>
-                  <div v-if="exp.bill" class="text-micro text-ink-muted break-words mt-0.5">
-                    {{ exp.bill.document_identification_id }} {{ exp.bill.document_number }}
-                    <span class="text-ink-subtle">· #{{ exp.bill.id }}</span>
-                  </div>
-                </div>
-                <div class="text-right shrink-0">
-                  <div class="font-bold font-mono tabular-nums text-sm"
-                    :class="exp.status === 'cancelled' ? 'text-ink-subtle line-through' : 'text-data-pos'">
-                    {{ Number(exp.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-                  </div>
-                  <Badge :variant="expStatusVariant(exp.status)" size="sm" class="mt-0.5">
-                    {{ expStatusLabel(exp.status) }}
-                  </Badge>
-                </div>
-              </div>
-
-              <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5">
-                <div class="min-w-0">
-                  <dt class="metric-label">Pago em</dt>
-                  <dd class="text-xs text-ink font-mono tabular-nums">{{ formatDate(exp.paidAt) }}</dd>
-                </div>
-                <div class="min-w-0">
-                  <dt class="metric-label">Vencimento</dt>
-                  <dd class="text-xs text-ink-muted font-mono tabular-nums">{{ formatDate(exp.dueDate) }}</dd>
-                </div>
-                <div class="min-w-0">
-                  <dt class="metric-label">Parcela</dt>
-                  <dd class="text-xs text-ink-muted font-mono">
-                    {{ exp.installmentsNumber > 1 ? `${exp.installmentNumber}/${exp.installmentsNumber}` : '1/1' }}
-                  </dd>
-                </div>
-                <div class="min-w-0">
-                  <dt class="metric-label">Departamento</dt>
-                  <dd class="text-xs text-ink-muted break-words">
-                    {{ exp.departmentName || exp.bill?.mainDepartmentName || '—' }}
-                  </dd>
-                </div>
-                <div v-if="exp.bill?.totalInvoiceAmount" class="min-w-0">
-                  <dt class="metric-label">V. Título</dt>
-                  <dd class="text-xs text-ink-muted font-mono tabular-nums">
-                    {{ Number(exp.bill.totalInvoiceAmount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-                  </dd>
-                </div>
-                <div v-if="exp.bill?.creditor_json?.cnpj" class="min-w-0">
-                  <dt class="metric-label">CNPJ</dt>
-                  <dd class="text-xs text-ink-muted font-mono break-all">{{ exp.bill.creditor_json.cnpj }}</dd>
-                </div>
-                <div v-if="exp.description" class="col-span-2 min-w-0">
-                  <dt class="metric-label">Observação</dt>
-                  <dd class="text-xs text-ink-muted break-words">{{ exp.description }}</dd>
-                </div>
-              </dl>
-
-              <!-- Sem hover no celular: os dois botoes ficam visiveis, 40px -->
-              <div class="grid grid-cols-2 gap-1.5">
-                <button @click="openEditModal(exp)"
-                  class="h-10 rounded-lg border border-line text-micro font-medium text-ink-muted
-                         inline-flex items-center justify-center gap-1.5">
-                  <i class="fas fa-pen text-[10px]"></i>Editar
-                </button>
-                <button @click="removeExpense(exp)"
-                  class="h-10 rounded-lg border border-data-neg/30 text-micro font-medium text-data-neg
-                         inline-flex items-center justify-center gap-1.5">
-                  <i class="fas fa-trash text-[10px]"></i>Excluir
-                </button>
-              </div>
-            </li>
-
-            <li v-if="!modalExpenses.length" class="px-4 py-10">
-              <EmptyState icon="fas fa-magnifying-glass" title="Nenhum lançamento encontrado"
-                description="Ajuste os filtros de busca acima.">
-                <button @click="clearModalFilters" class="text-xs text-data-pos hover:underline mt-2">
-                  Limpar filtros
-                </button>
-              </EmptyState>
-            </li>
-          </ul>
-
-          <table class="hidden md:table min-w-full text-sm">
-            <thead class="sticky top-0 z-10 bg-surface-sunken/95 backdrop-blur-sm border-b border-line">
-              <tr>
-                <th class="px-3 py-3 w-10">
-                  <input type="checkbox"
-                    :checked="modalExpenses.length > 0 && selectedExpenseIds.length === modalExpenses.length"
-                    :indeterminate="selectedExpenseIds.length > 0 && selectedExpenseIds.length < modalExpenses.length"
-                    @change="toggleSelectAllExpenses"
-                    class="w-4 h-4 text-data-pos border-line rounded focus:ring-data-pos cursor-pointer" />
-                </th>
-                <th @click="handleModalSort('date')"
-                  class="px-3 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink whitespace-nowrap">
-                  <span class="flex items-center gap-1">Pagamento <i :class="getModalSortIcon('date')"></i></span>
-                </th>
-                <th @click="handleModalSort('title')"
-                  class="px-3 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink">
-                  <span class="flex items-center gap-1">Fornecedor / Título <i :class="getModalSortIcon('title')"></i></span>
-                </th>
-                <th class="px-3 py-3 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap">
-                  Parcela
-                </th>
-                <th @click="handleModalSort('amount')"
-                  class="px-3 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink whitespace-nowrap">
-                  <span class="flex items-center justify-end gap-1">Valor <i :class="getModalSortIcon('amount')"></i></span>
-                </th>
-                <th class="px-3 py-3 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle whitespace-nowrap">V. Título</th>
-                <th @click="handleModalSort('department')"
-                  class="px-3 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle cursor-pointer hover:text-ink">
-                  <span class="flex items-center gap-1">Departamento <i :class="getModalSortIcon('department')"></i></span>
-                </th>
-                <th class="px-3 py-3 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle min-w-[80px]">Observação</th>
-                <th class="px-3 py-3 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Ações</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line/60">
-              <tr v-for="exp in modalExpenses" :key="exp.id"
-                class="hover:bg-surface-hover/40 transition-colors group"
-                :class="{ 'bg-data-pos/10': selectedExpenseIds.includes(exp.id) }">
-
-                <td class="px-3 py-3">
-                  <input type="checkbox" :checked="selectedExpenseIds.includes(exp.id)"
-                    @change="toggleExpenseSelection(exp.id)"
-                    class="w-4 h-4 text-data-pos border-line rounded focus:ring-data-pos cursor-pointer" />
-                </td>
-
-                <td class="px-3 py-3 whitespace-nowrap">
-                  <div class="font-medium text-ink font-mono tabular-nums">
-                    {{ formatDate(exp.paidAt) }}
-                  </div>
-                  <div class="text-micro text-ink-subtle mt-0.5">
-                    Vencimento: {{ formatDate(exp.dueDate) }}
-                  </div>
-                  <div v-if="exp.bill?.issueDate" class="text-micro text-ink-subtle">
-                    Emissão: {{ formatDate(exp.bill.issueDate) }}
-                  </div>
-                </td>
-
-                <td class="px-3 py-3 max-w-[240px]">
-                  <div v-if="exp.bill">
-                    <div class="font-semibold text-ink truncate"
-                      :title="exp.bill.creditor_json?.tradeName || exp.bill.creditor_json?.name">
-                      {{ exp.bill.creditor_json?.tradeName || exp.bill.creditor_json?.name || '—' }}
-                    </div>
-                    <div class="text-xs text-ink-muted mt-0.5">
-                      {{ exp.bill.document_identification_id }} {{ exp.bill.document_number }}
-                      <span class="text-ink-subtle">· #{{ exp.bill.id }}</span>
-                    </div>
-                    <div v-if="exp.bill.creditor_json?.cnpj" class="text-micro text-ink-subtle font-mono">
-                      CNPJ: {{ exp.bill.creditor_json.cnpj }}
-                    </div>
-                    <div v-if="exp.bill.notes" class="text-micro text-ink-subtle truncate mt-0.5"
-                      :title="exp.bill.notes">
-                      <i class="fas fa-sticky-note mr-1"></i>{{ exp.bill.notes }}
-                    </div>
-                  </div>
-                  <div v-else class="text-xs text-ink-subtle italic">sem vínculo</div>
-                </td>
-
-                <td class="px-3 py-3 text-center whitespace-nowrap">
-                  <Badge v-if="exp.installmentsNumber > 1" variant="accent" size="sm" class="font-mono">
-                    <i class="fas fa-layer-group text-[9px] mr-0.5 opacity-70"></i>
-                    {{ exp.installmentNumber }}/{{ exp.installmentsNumber }}
-                  </Badge>
-                  <Badge v-else variant="neutral" size="sm" class="font-mono">1/1</Badge>
-                </td>
-
-                <td class="px-3 py-3 whitespace-nowrap text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <span class="font-bold font-mono tabular-nums"
-                      :class="{
-                        'text-data-pos': exp.status !== 'cancelled',
-                        'text-ink-subtle line-through': exp.status === 'cancelled',
-                      }">
-                      {{ Number(exp.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-                    </span>
-                    <Badge :variant="expStatusVariant(exp.status)" size="sm">
-                      {{ expStatusLabel(exp.status) }}
-                    </Badge>
-                  </div>
-                </td>
-
-                <td class="px-3 py-3 whitespace-nowrap text-right text-xs text-ink-muted font-mono tabular-nums">
-                  <span v-if="exp.bill?.totalInvoiceAmount">
-                    {{ Number(exp.bill.totalInvoiceAmount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-                  </span>
-                  <span v-else>—</span>
-                </td>
-
-                <td class="px-3 py-3 max-w-20 whitespace-nowrap">
-                  <Badge v-if="exp.departmentName || exp.bill?.mainDepartmentName" variant="info" size="sm">
-                    <span class="truncate max-w-[120px]">{{ exp.departmentName || exp.bill?.mainDepartmentName }}</span>
-                  </Badge>
-                  <span v-else class="text-xs text-ink-subtle">—</span>
-                </td>
-
-                <td class="px-3 py-3">
-                  <div v-if="exp.description"
-                    class="text-xs text-ink-muted truncate max-w-[120px]"
-                    :title="exp.description">
-                    {{ exp.description }}
-                  </div>
-                  <span v-else class="text-xs text-ink-subtle italic">—</span>
-                </td>
-
-                <td class="px-3 py-3 whitespace-nowrap text-center">
-                  <div class="flex items-center justify-end gap-1">
-                    <IconButton icon="fas fa-pen" label="Editar"
-                      variant="ghost" size="sm" class="!h-7 !w-7"
-                      @click="openEditModal(exp)" />
-                    <IconButton icon="fas fa-trash" label="Excluir"
-                      variant="danger" size="sm" class="!h-7 !w-7"
-                      @click="removeExpense(exp)" />
-                  </div>
-                </td>
-              </tr>
-
-              <tr v-if="!modalExpenses.length">
-                <td colspan="10" class="px-6 py-12">
-                  <EmptyState
-                    icon="fas fa-magnifying-glass"
-                    title="Nenhum lançamento encontrado"
-                    description="Ajuste os filtros de busca acima.">
-                    <button @click="clearModalFilters"
-                      class="text-xs text-data-pos hover:underline mt-2">
-                      Limpar filtros
-                    </button>
-                  </EmptyState>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- ── EXPORT MODAL (padrão do sistema) ─────────────────── -->
-        <Export v-model="showExport" :source="modalExpenses" title="Custos"
-          :subtitle="`${resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || 'Empreendimento'} (CC ${selectedGroup.costCenterId})`"
-          initial-delimiter=";" initial-array-mode="join"
-          :filters="exportFilters"
-          :preselect="[
-            'paidAt', 'dueDate', 'amount', 'status',
-            'installmentNumber', 'installmentsNumber',
-            'departmentName', 'description',
-            'bill.creditor_json.name', 'bill.creditor_json.cnpj',
-            'bill.document_identification_id', 'bill.document_number',
-            'bill.totalInvoiceAmount',
-          ]" />
-      </div>
-
-      <template #footer>
-        <div class="flex items-center justify-between gap-3 w-full">
-          <div class="text-xs text-ink-muted">
-            Mostrando <span class="font-mono tabular-nums">{{ modalExpenses.length }}</span>
-            de <span class="font-mono tabular-nums">{{ selectedGroup?.expenses.length }}</span> lançamentos
-            · Total ativo:
-            <span class="font-semibold text-data-pos font-mono tabular-nums">
-              {{ modalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}
-            </span>
-            <template v-if="modalCancelledTotal > 0">
-              · <span class="text-data-neg">Cancelado:
-                <span class="font-mono tabular-nums">{{ modalCancelledTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</span>
-              </span>
-            </template>
-          </div>
-          <Button variant="ghost" @click="closeDetails">Fechar</Button>
-        </div>
-      </template>
-    </Modal>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         MODAL DE EDIÇÃO
-    ════════════════════════════════════════════════════════════ -->
-    <Modal :open="!!editingExpense"
-      size="md"
-      title="Editar Lançamento"
-      :subtitle="editingExpense ? (editingExpense.bill?.creditor_json?.tradeName || editingExpense.bill?.creditor_json?.name || editingExpense.description || '#' + editingExpense.id) : ''"
-      @close="closeEditModal">
-
-      <div v-if="editingExpense" class="space-y-4">
-        <!-- Info readonly -->
-        <Surface variant="raised" padding="sm" class="bg-surface-sunken/40">
-          <div class="grid grid-cols-2 gap-3 text-xs text-ink-muted">
-            <div>
-              <span class="font-mono uppercase text-micro tracking-wider text-ink-subtle block mb-0.5">Vencimento</span>
-              <span class="font-mono tabular-nums">{{ formatDate(editingExpense.dueDate) }}</span>
-              <span class="text-ink-subtle block">Pagamento: {{ formatDate(editingExpense.paidAt) }}</span>
-            </div>
-            <div>
-              <span class="font-mono uppercase text-micro tracking-wider text-ink-subtle block mb-0.5">Parcela</span>
-              <span v-if="editingExpense.installmentsNumber > 1" class="font-mono tabular-nums">
-                {{ editingExpense.installmentNumber }}/{{ editingExpense.installmentsNumber }}
-              </span>
-              <span v-else>—</span>
-            </div>
-            <div>
-              <span class="font-mono uppercase text-micro tracking-wider text-ink-subtle block mb-0.5">Documento</span>
-              {{ editingExpense.bill?.document_identification_id }} {{ editingExpense.bill?.document_number || '—' }}
-            </div>
-            <div>
-              <span class="font-mono uppercase text-micro tracking-wider text-ink-subtle block mb-0.5">V. Título</span>
-              <span class="font-mono tabular-nums">
-                {{ editingExpense.bill?.totalInvoiceAmount
-                  ? Number(editingExpense.bill.totalInvoiceAmount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                  : '—' }}
-              </span>
-            </div>
-          </div>
-        </Surface>
-
-        <!-- Departamento (vem do Sienge — somente leitura) -->
-        <div>
-          <label class="text-micro font-medium text-ink-muted mb-1.5 block">
-            <i class="fas fa-sitemap text-ink-subtle mr-1"></i> Departamento
-            <span class="text-micro text-ink-subtle font-normal">· do Sienge</span>
-          </label>
-          <div class="px-3.5 py-2.5 rounded-lg border border-line bg-surface-sunken/40 text-sm text-ink">
-            {{ editingExpense.departmentName || editingExpense.bill?.mainDepartmentName || '(sem departamento)' }}
-          </div>
-        </div>
-
-        <!-- Observação -->
-        <div>
-          <label class="text-micro font-medium text-ink-muted mb-1.5 block">
-            <i class="fas fa-note-sticky text-ink-subtle mr-1"></i> Observação
-          </label>
-          <textarea v-model="editForm.description" rows="3"
-            placeholder="Digite uma observação sobre este lançamento..."
-            class="w-full px-3.5 py-2.5 rounded-lg border border-line bg-surface-raised text-sm text-ink placeholder:text-ink-subtle resize-none focus:outline-none focus:ring-2 focus:ring-accent-ring/40 focus:border-accent transition-colors">
-          </textarea>
-        </div>
-      </div>
-
-      <template #footer>
-        <Button variant="ghost" @click="closeEditModal">Cancelar</Button>
-        <Button variant="primary" icon="fas fa-check"
-          :loading="editSaving"
-          :disabled="editSaving"
-          @click="saveEdit">
-          {{ editSaving ? 'Salvando...' : 'Salvar alterações' }}
-        </Button>
-      </template>
-    </Modal>
-  </div>
-</template>
-
 <script setup>
+/**
+ * Custos por Empreendimento - o que foi pago no período, por centro de custo.
+ *
+ * Painel (parte do celular): filtros fechados com selo de quantos estão
+ * ativos, quatro números no topo e a tabela de empreendimentos logo abaixo.
+ * Clicar em "Cancelados" recorta a tabela para os empreendimentos que têm
+ * lançamento cancelado; clicar de novo desfaz.
+ *
+ * O detalhe do centro de custo é um modal de tela cheia que é, ele próprio,
+ * uma listagem: um painel de filtro só, DataTable ordenável com o registro
+ * inteiro abrindo na própria linha, scroll de 50 em 50 e seleção com a ação
+ * no rodapé do modal.
+ */
 import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useExpensesStore } from '@/stores/Financeiro/Expenses/expensesStore';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
 import { useCostCenterNamesStore } from '@/stores/Financeiro/costCenterNamesStore';
@@ -751,29 +22,66 @@ import { useToast } from 'vue-toastification';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
-import Surface from '@/components/UI/Surface.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
+import Spinner from '@/components/UI/Spinner.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Favorite from '@/components/config/Favorite.vue';
 import Export from '@/components/config/Export.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
+import { useIncrementalList } from '@/composables/useIncrementalList';
 
 const store = useExpensesStore();
 const contractsStore = useContractsStore();
 const ccNames = useCostCenterNamesStore();
+const route = useRoute();
+const router = useRouter();
 
 const toast = (() => {
   try { return useToast(); }
   catch { return { success: console.log, error: console.error }; }
 })();
 
-// ── Empreendimento filter ─────────────────────────────────
+/* ── Formatadores ────────────────────────────────────────────────────────── */
+const nf = new Intl.NumberFormat('pt-BR');
+const fmtMoney = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-';
+};
+function formatDate(d) {
+  if (!d) return '-';
+  const s = String(d);
+  const date = new Date(s + (s.length === 10 ? 'T12:00:00' : ''));
+  return isNaN(date) ? '-' : date.toLocaleDateString('pt-BR');
+}
+
+/* Ordenação de tela: a tabela recebe a lista já fatiada pelo scroll, então
+   quem ordena é a tela. Nulo e "-" vão para o fim nas duas direções. */
+function ordenar(lista, colunas, { by, dir }) {
+  if (!by) return lista;
+  const col = colunas.find((c) => c.key === by);
+  const mul = dir === 'asc' ? 1 : -1;
+  const valor = (r) => (col?.value ? col.value(r) : r[by]);
+  const nula = (v) => v == null || v === '' || v === '-';
+  return [...lista].sort((a, b) => {
+    const va = valor(a), vb = valor(b);
+    if (nula(va) && nula(vb)) return 0;
+    if (nula(va)) return 1;
+    if (nula(vb)) return -1;
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mul;
+    return String(va).localeCompare(String(vb), 'pt-BR', { numeric: true, sensitivity: 'base' }) * mul;
+  });
+}
+
+/* ── Empreendimentos (filtro e nome efetivo) ─────────────────────────────── */
 const selectedEnterpriseNames = ref([]);
 
 // Nome efetivo = override admin (se houver) senão o nome do enterprise_cities
@@ -816,93 +124,208 @@ function resolveEnterpriseName(costCenterId) {
   return ccNames.displayName(costCenterId, enterpriseNameById.value.get(Number(costCenterId)) || null);
 }
 
-function handleEnterpriseChange(v) {
-  selectedEnterpriseNames.value = Array.isArray(v) ? v : [];
-}
+const nomeDoGrupo = (g) => g.costCenterName || resolveEnterpriseName(g.costCenterId) || '-';
 
 const selectedEnterpriseIds = computed(() =>
   selectedEnterpriseNames.value
-    .map(name => enterpriseIdByName.value.get(name))
+    .map((name) => enterpriseIdByName.value.get(name))
     .filter(Boolean)
 );
 
-const sortConfig = ref({ key: 'total', direction: 'desc' });
+/* ── Filtros: URL + busca ───────────────────────────────────────────────────
+   `activeCount` conta dimensões preenchidas, não valores: três empreendimentos
+   marcados são 1 filtro. O período não conta - ele é o recorte da tela, não
+   um filtro sobre ele. */
+const filtrosAtivos = computed(() =>
+  (selectedEnterpriseNames.value.length ? 1 : 0)
+  + (store.selectedDepartments.length ? 1 : 0)
+);
 
-const editDepartmentOptions = computed(() => [
-  { value: '', label: '(sem departamento)' },
-  ...(store.departmentOptions || []).map(d => ({ value: d, label: d })),
-]);
+function syncUrlFromFilters() {
+  const q = {};
+  if (selectedEnterpriseIds.value.length) q.emp = selectedEnterpriseIds.value.join(',');
+  if (store.selectedDepartments.length) q.dept = store.selectedDepartments.join(',');
+  if (store.startDate) q.de = store.startDate;
+  if (store.endDate) q.ate = store.endDate;
+  if (!Object.keys(q).length && !Object.keys(route.query).length) return;
+  router.replace({ query: q });
+}
 
-// ── Date presets ──────────────────────────────────────────
-const datePresets = [
-  { value: 'this-month', label: 'Este mês' },
-  { value: 'last-month', label: 'Mês anterior' },
-  { value: 'quarter',    label: 'Trimestre' },
-  { value: 'all',        label: 'Todos' },
-];
+/* Datas e departamentos entram na hora; o empreendimento depende da lista de
+   enterprise_cities, então o rótulo é montado depois que ela chega. */
+function syncPeriodoFromUrl() {
+  const q = route.query;
+  if (q.de) store.startDate = String(q.de);
+  if (q.ate) store.endDate = String(q.ate);
+  if (q.dept) store.selectedDepartments = String(q.dept).split(',').filter(Boolean);
+}
+function syncEmpreendimentosFromUrl() {
+  const q = route.query;
+  if (!q.emp) return;
+  const ids = String(q.emp).split(',').map(Number).filter(Number.isFinite);
+  selectedEnterpriseNames.value = ids.map((id) => enterpriseEntries.value.get(id)).filter(Boolean);
+}
 
-// ── Grupos filtrados (página principal) ──────────────────
+/* Nasce CARREGANDO: com `false` o primeiro quadro mostraria "nenhum gasto"
+   antes de o esqueleto aparecer. */
+const loading = ref(true);
+
+async function buscar() {
+  syncUrlFromFilters();
+  loading.value = true;
+  try { await store.fetchExpenses(); }
+  finally { loading.value = false; }
+}
+
+function limpar() {
+  selectedEnterpriseNames.value = [];
+  store.selectedDepartments = [];
+  recorte.value = '';
+  router.replace({ query: {} });
+  buscar();
+}
+
+/* ── Grupos filtrados (página) ──────────────────────────────────────────── */
 const filteredGroups = computed(() => {
   const base = store.groups || [];
   const selIds = selectedEnterpriseIds.value;
 
   return base
-    .map(g => {
-      let exps = g.expenses || [];
-      // Cancelados continuam na lista, mas NÃO somam no total ativo — vão num total à parte
+    .map((g) => {
+      const exps = g.expenses || [];
+      // Cancelados continuam na lista, mas NÃO somam no total ativo - vão num total à parte
       const total = exps.reduce(
         (sum, e) => sum + (e.status === 'cancelled' ? 0 : Number(e.amount || 0)), 0);
       const cancelledTotal = exps.reduce(
         (sum, e) => sum + (e.status === 'cancelled' ? Number(e.amount || 0) : 0), 0);
       return { ...g, expenses: exps, total, cancelledTotal };
     })
-    .filter(g => g.expenses.length > 0)
-    .filter(g => !selIds.length || selIds.includes(Number(g.costCenterId)));
+    .filter((g) => g.expenses.length > 0)
+    .filter((g) => !selIds.length || selIds.includes(Number(g.costCenterId)));
 });
 
 const filteredTotal = computed(() =>
   filteredGroups.value.reduce((sum, g) => sum + Number(g.total || 0), 0)
 );
-
 const filteredCancelledTotal = computed(() =>
   filteredGroups.value.reduce((sum, g) => sum + Number(g.cancelledTotal || 0), 0)
 );
+const totalLancamentos = computed(() =>
+  filteredGroups.value.reduce((sum, g) => sum + g.expenses.length, 0)
+);
 
-const sortedGroups = computed(() => {
-  const groups = [...filteredGroups.value];
-  const { key, direction } = sortConfig.value;
+/* ── Recorte pelo KPI ───────────────────────────────────────────────────────
+   Clicar num cartão recorta a TABELA, não os cartões. O único recorte com
+   sentido aqui é "com cancelados"; qualquer outro cartão volta ao conjunto. */
+const recorte = ref('');
+const RECORTES = {
+  cancel: { label: 'com cancelados', teste: (g) => Number(g.cancelledTotal) > 0 },
+};
+const recorteAtivo = computed(() => RECORTES[recorte.value] || null);
 
-  groups.sort((a, b) => {
-    let aVal = key === 'total' ? Number(a.total || 0)
-      : key === 'name' ? (a.costCenterName || resolveEnterpriseName(a.costCenterId) || '').toLowerCase()
-        : a[key];
-    let bVal = key === 'total' ? Number(b.total || 0)
-      : key === 'name' ? (b.costCenterName || resolveEnterpriseName(b.costCenterId) || '').toLowerCase()
-        : b[key];
-    if (direction === 'asc') return aVal > bVal ? 1 : -1;
-    return aVal < bVal ? 1 : -1;
-  });
+function aoClicarKpi(item) {
+  recorte.value = (item.key !== 'cancel' || recorte.value === 'cancel') ? '' : 'cancel';
+}
 
-  return groups;
+const lista = computed(() => (recorteAtivo.value
+  ? filteredGroups.value.filter(recorteAtivo.value.teste)
+  : filteredGroups.value));
+
+/* ── Série e variação dos cartões ─────────────────────────────────────────
+   12 baldes ao longo do próprio período, por data de pagamento. A variação
+   compara a segunda metade com a primeira - não existe "período anterior"
+   quando o filtro é quem define as datas. */
+const NUM_BALDES = 12;
+
+const serieDoPeriodo = computed(() => {
+  const ini = new Date(`${store.startDate}T12:00:00`).getTime();
+  const fim = new Date(`${store.endDate}T12:00:00`).getTime();
+  if (!Number.isFinite(ini) || !Number.isFinite(fim)) return [];
+  const span = Math.max(1, fim - ini);
+  const baldes = Array.from({ length: NUM_BALDES }, () => ({ pago: 0, cancelado: 0, qtd: 0 }));
+  for (const g of filteredGroups.value) {
+    for (const e of g.expenses) {
+      const d = e.paidAt || e.dueDate;
+      if (!d) continue;
+      const t = new Date(`${String(d).slice(0, 10)}T12:00:00`).getTime();
+      if (!Number.isFinite(t)) continue;
+      const idx = Math.max(0, Math.min(NUM_BALDES - 1, Math.floor(((t - ini) / span) * NUM_BALDES)));
+      const b = baldes[idx];
+      b.qtd++;
+      if (e.status === 'cancelled') b.cancelado += Number(e.amount || 0);
+      else b.pago += Number(e.amount || 0);
+    }
+  }
+  return baldes;
 });
 
-function handleSort(key) {
-  if (sortConfig.value.key === key) {
-    sortConfig.value.direction = sortConfig.value.direction === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortConfig.value = { key, direction: 'desc' };
-  }
+function variacao(valores, { maiorEhMelhor = true } = {}) {
+  const v = valores.filter((n) => Number.isFinite(n));
+  if (v.length < 4) return null;
+  const meio = Math.floor(v.length / 2);
+  const media = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+  const antes = media(v.slice(0, meio));
+  const depois = media(v.slice(meio));
+  if (!antes) return null;
+  const pct = ((depois - antes) / antes) * 100;
+  if (!Number.isFinite(pct) || Math.abs(pct) < 0.05) return null;
+  return {
+    value: pct, dir: pct > 0 ? 'up' : 'down',
+    good: pct > 0 ? maiorEhMelhor : !maiorEhMelhor,
+    label: 'segunda metade do período contra a primeira',
+  };
 }
 
-function getSortIcon(key) {
-  if (sortConfig.value.key !== key) return 'fas fa-sort text-ink-subtle';
-  return sortConfig.value.direction === 'asc' ? 'fas fa-sort-up text-data-pos' : 'fas fa-sort-down text-data-pos';
-}
+const kpiCards = computed(() => {
+  const s = serieDoPeriodo.value;
+  const sPago = s.map((b) => b.pago);
+  const sCancel = s.map((b) => b.cancelado);
+  const sQtd = s.map((b) => b.qtd);
+  const n = filteredGroups.value.length;
+  return [
+    { key: 'total', label: 'Total pago', raw: filteredTotal.value, format: fmtMoney, decimals: 2,
+      hint: 'pago no período', icon: 'fas fa-coins', tone: 'accent',
+      series: sPago, sparkMode: 'bars', delta: variacao(sPago, { maiorEhMelhor: false }),
+      tooltip: 'Clique para ver todos os empreendimentos' },
+    { key: 'cancel', label: 'Cancelados', raw: filteredCancelledTotal.value, format: fmtMoney, decimals: 2,
+      hint: 'não somam no total', icon: 'fas fa-ban', tone: 'neg',
+      series: sCancel, sparkMode: 'bars', delta: variacao(sCancel, { maiorEhMelhor: false }),
+      tooltip: 'Clique para ver só os empreendimentos com lançamento cancelado' },
+    { key: 'emps', label: 'Empreendimentos', raw: n,
+      hint: 'com lançamentos no período', icon: 'fas fa-building', tone: 1,
+      tooltip: 'Clique para ver todos os empreendimentos' },
+    { key: 'lanc', label: 'Lançamentos', raw: totalLancamentos.value,
+      hint: `${n ? nf.format(Math.round(totalLancamentos.value / n)) : 0} por empreendimento`,
+      icon: 'fas fa-list-ul', tone: 2, series: sQtd, sparkMode: 'bars', delta: variacao(sQtd),
+      tooltip: 'Clique para ver todos os empreendimentos' },
+  ];
+});
 
-// ── Modal de detalhes ─────────────────────────────────────
+/* ── Tabela da página ─────────────────────────────────────────────────── */
+const ordem = ref({ by: 'total', dir: 'desc' });
+
+const COLUNAS = [
+  { key: 'nome', label: 'Empreendimento', priority: 1, sortable: true, value: nomeDoGrupo },
+  { key: 'total', label: 'Pago', priority: 1, numeric: true, sortable: true, width: '11rem',
+    value: (g) => Number(g.total || 0) },
+  { key: 'cancelledTotal', label: 'Cancelado', priority: 2, numeric: true, sortable: true, width: '10rem',
+    value: (g) => Number(g.cancelledTotal || 0) },
+  { key: 'qtd', label: 'Lançamentos', priority: 2, numeric: true, sortable: true, width: '8rem',
+    value: (g) => g.expenses.length },
+  { key: 'costCenterId', label: 'Centro de custo', priority: 3, sortable: true, width: '8rem',
+    value: (g) => Number(g.costCenterId) },
+];
+
+const ordenada = computed(() => ordenar(lista.value, COLUNAS, ordem.value));
+const inc = useIncrementalList(ordenada, { step: 50 });
+
+const periodoLabel = computed(() => `${formatDate(store.startDate)} → ${formatDate(store.endDate)}`);
+
+/* ── Modal de detalhes ───────────────────────────────────────────────── */
 const selectedGroup = ref(null);
 const selectedExpenseIds = ref([]);
-const modalSort = ref({ key: 'date', direction: 'asc' });
+const scrollRoot = ref(null);
+const modalOrdem = ref({ by: 'paidAt', dir: 'asc' });
 
 // Filtros do modal
 const modalSearch = ref('');
@@ -911,13 +334,19 @@ const modalFilterDateFrom = ref('');
 const modalFilterDateTo = ref('');
 const modalDatePreset = ref('all');
 
-const hasModalFilters = computed(() =>
-  !!(modalSearch.value || modalFilterDept.value
-    || modalFilterDateFrom.value || modalFilterDateTo.value)
-);
+const PRESET_OPTIONS = [
+  { value: 'all',        label: 'Todo o período' },
+  { value: 'this-month', label: 'Este mês' },
+  { value: 'last-month', label: 'Mês anterior' },
+  { value: 'quarter',    label: 'Trimestre' },
+  { value: 'custom',     label: 'Personalizado' },
+];
 
-// Bulk actions
-const bulkDepartment = ref('');
+const modalFiltrosAtivos = computed(() =>
+  (modalSearch.value.trim() ? 1 : 0)
+  + (modalFilterDept.value ? 1 : 0)
+  + ((modalFilterDateFrom.value || modalFilterDateTo.value) ? 1 : 0)
+);
 
 // Exportação (modal universal do sistema)
 const showExport = ref(false);
@@ -942,7 +371,7 @@ const exportFilters = computed(() => {
 
 const modalDeptOptions = computed(() => {
   if (!selectedGroup.value) return [];
-  const hidden = new Set((store.data?.hiddenDepartments || []).map(d => (d || '').toLowerCase()));
+  const hidden = new Set((store.data?.hiddenDepartments || []).map((d) => (d || '').toLowerCase()));
   const set = new Set();
   for (const exp of selectedGroup.value.expenses || []) {
     const d = exp.departmentName || exp.bill?.mainDepartmentName;
@@ -953,7 +382,7 @@ const modalDeptOptions = computed(() => {
 
 const modalDeptSelectOptions = computed(() => [
   { value: '', label: 'Todos departamentos' },
-  ...modalDeptOptions.value.map(d => ({ value: d, label: d })),
+  ...modalDeptOptions.value.map((d) => ({ value: d, label: d })),
 ]);
 
 function clearModalFilters() {
@@ -964,40 +393,67 @@ function clearModalFilters() {
   modalDatePreset.value = 'all';
 }
 
+/* Mexer na data à mão vira "Personalizado"; escolher um atalho grava as datas. */
+function setModalDate(campo, v) {
+  if (campo === 'from') modalFilterDateFrom.value = v || '';
+  else modalFilterDateTo.value = v || '';
+  modalDatePreset.value = 'custom';
+}
+
 function setModalDatePreset(preset) {
   modalDatePreset.value = preset;
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
+  const iso = (d) => d.toISOString().slice(0, 10);
 
   if (preset === 'this-month') {
-    modalFilterDateFrom.value = new Date(y, m, 1).toISOString().slice(0, 10);
-    modalFilterDateTo.value = new Date(y, m + 1, 0).toISOString().slice(0, 10);
+    modalFilterDateFrom.value = iso(new Date(y, m, 1));
+    modalFilterDateTo.value = iso(new Date(y, m + 1, 0));
   } else if (preset === 'last-month') {
-    modalFilterDateFrom.value = new Date(y, m - 1, 1).toISOString().slice(0, 10);
-    modalFilterDateTo.value = new Date(y, m, 0).toISOString().slice(0, 10);
+    modalFilterDateFrom.value = iso(new Date(y, m - 1, 1));
+    modalFilterDateTo.value = iso(new Date(y, m, 0));
   } else if (preset === 'quarter') {
-    modalFilterDateFrom.value = new Date(y, m - 2, 1).toISOString().slice(0, 10);
-    modalFilterDateTo.value = new Date(y, m + 1, 0).toISOString().slice(0, 10);
-  } else {
+    modalFilterDateFrom.value = iso(new Date(y, m - 2, 1));
+    modalFilterDateTo.value = iso(new Date(y, m + 1, 0));
+  } else if (preset === 'all') {
     modalFilterDateFrom.value = '';
     modalFilterDateTo.value = '';
   }
 }
 
-const modalExpenses = computed(() => {
+const nomeFornecedor = (e) => e.bill?.creditor_json?.tradeName || e.bill?.creditor_json?.name || '';
+const deptDoLancamento = (e) => e.departmentName || e.bill?.mainDepartmentName || '';
+const parcelaDoLancamento = (e) =>
+  (e.installmentsNumber > 1 ? `${e.installmentNumber}/${e.installmentsNumber}` : '1/1');
+
+/* Colunas do lançamento. O que não cabe numa linha (vencimento, emissão,
+   CNPJ, observação, nota do título) abre na própria linha com `expandable`,
+   sem trocar de tela e sem perder a ordenação. */
+const COLUNAS_LANC = [
+  { key: 'sel', label: 'Sel.', priority: 2, align: 'center', width: '3.25rem', truncate: false },
+  { key: 'fornecedor', label: 'Fornecedor / Título', priority: 1, sortable: true, value: nomeFornecedor },
+  { key: 'amount', label: 'Valor', priority: 1, numeric: true, sortable: true, width: '13rem',
+    value: (e) => Number(e.amount || 0) },
+  { key: 'paidAt', label: 'Pagamento', priority: 2, sortable: true, width: '7.5rem',
+    value: (e) => e.paidAt || e.dueDate || '', format: formatDate },
+  { key: 'departamento', label: 'Departamento', priority: 2, sortable: true, width: '12rem', value: deptDoLancamento },
+  { key: 'parcela', label: 'Parcela', priority: 2, align: 'center', width: '5.5rem', value: parcelaDoLancamento },
+];
+
+const modalFiltrados = computed(() => {
   if (!selectedGroup.value) return [];
   let list = [...(selectedGroup.value.expenses || [])];
 
   const q = modalSearch.value.trim().toLowerCase();
   if (q) {
-    list = list.filter(exp => {
-      const name = (exp.bill?.creditor_json?.tradeName || exp.bill?.creditor_json?.name || '').toLowerCase();
+    list = list.filter((exp) => {
+      const name = nomeFornecedor(exp).toLowerCase();
       const doc = `${exp.bill?.document_identification_id || ''} ${exp.bill?.document_number || ''}`.toLowerCase();
       const obs = (exp.description || '').toLowerCase();
       const notes = (exp.bill?.notes || '').toLowerCase();
       const cnpj = (exp.bill?.creditor_json?.cnpj || '').toLowerCase();
-      const dept = (exp.departmentName || exp.bill?.mainDepartmentName || '').toLowerCase();
+      const dept = deptDoLancamento(exp).toLowerCase();
       const billId = String(exp.bill?.id || '');
       const amount = String(exp.amount || '');
       return name.includes(q) || doc.includes(q) || obs.includes(q) || notes.includes(q)
@@ -1007,83 +463,51 @@ const modalExpenses = computed(() => {
 
   if (modalFilterDept.value) {
     const d = modalFilterDept.value.toLowerCase();
-    list = list.filter(exp =>
-      (exp.departmentName || exp.bill?.mainDepartmentName || '').toLowerCase() === d
-    );
+    list = list.filter((exp) => deptDoLancamento(exp).toLowerCase() === d);
   }
 
   if (modalFilterDateFrom.value) {
-    list = list.filter(exp => {
+    list = list.filter((exp) => {
       const d = exp.paidAt || exp.dueDate;
       return d && d >= modalFilterDateFrom.value;
     });
   }
   if (modalFilterDateTo.value) {
-    list = list.filter(exp => {
+    list = list.filter((exp) => {
       const d = exp.paidAt || exp.dueDate;
       return d && d <= modalFilterDateTo.value;
     });
   }
-
-  const { key, direction } = modalSort.value;
-  list.sort((a, b) => {
-    let aVal, bVal;
-    switch (key) {
-      case 'date':
-        aVal = a.paidAt || a.dueDate || '';
-        bVal = b.paidAt || b.dueDate || '';
-        break;
-      case 'title':
-        aVal = (a.bill?.creditor_json?.tradeName || a.bill?.creditor_json?.name || '').toLowerCase();
-        bVal = (b.bill?.creditor_json?.tradeName || b.bill?.creditor_json?.name || '').toLowerCase();
-        break;
-      case 'amount':
-        aVal = Number(a.amount || 0);
-        bVal = Number(b.amount || 0);
-        break;
-      case 'department':
-        aVal = (a.departmentName || a.bill?.mainDepartmentName || '').toLowerCase();
-        bVal = (b.departmentName || b.bill?.mainDepartmentName || '').toLowerCase();
-        break;
-      default:
-        return 0;
-    }
-    if (aVal === bVal) return 0;
-    return direction === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
-  });
-
   return list;
 });
+
+/* Ordem: filtrar -> ordenar -> fatiar. */
+const modalExpenses = computed(() => ordenar(modalFiltrados.value, COLUNAS_LANC, modalOrdem.value));
+const incModal = useIncrementalList(modalExpenses, { step: 50, root: scrollRoot });
 
 const modalTotal = computed(() =>
   modalExpenses.value.reduce(
     (sum, e) => sum + (e.status === 'cancelled' ? 0 : Number(e.amount || 0)), 0)
 );
-
 const modalCancelledTotal = computed(() =>
   modalExpenses.value.reduce(
     (sum, e) => sum + (e.status === 'cancelled' ? Number(e.amount || 0) : 0), 0)
 );
 
-function handleModalSort(key) {
-  if (modalSort.value.key === key) {
-    modalSort.value.direction = modalSort.value.direction === 'asc' ? 'desc' : 'asc';
-  } else {
-    modalSort.value = { key, direction: 'asc' };
-  }
-}
-
-function getModalSortIcon(key) {
-  if (modalSort.value.key !== key) return 'fas fa-sort text-ink-subtle';
-  return modalSort.value.direction === 'asc' ? 'fas fa-sort-up text-accent' : 'fas fa-sort-down text-accent';
-}
+const modalKpis = computed(() => [
+  { key: 'ativo', label: 'Total ativo', raw: modalTotal.value, format: fmtMoney, decimals: 2,
+    hint: 'do que está na lista', icon: 'fas fa-coins', tone: 'accent' },
+  { key: 'cancel', label: 'Cancelado', raw: modalCancelledTotal.value, format: fmtMoney, decimals: 2,
+    hint: 'não soma no total', icon: 'fas fa-ban', tone: 'neg' },
+  { key: 'qtd', label: 'Lançamentos', raw: modalExpenses.value.length,
+    hint: `de ${nf.format(selectedGroup.value?.expenses?.length || 0)} no período`,
+    icon: 'fas fa-list-ul', tone: 2 },
+]);
 
 function openDetails(group) {
   selectedGroup.value = group;
   selectedExpenseIds.value = [];
   clearModalFilters();
-  modalDatePreset.value = 'all';
-  bulkDepartment.value = '';
 }
 
 function closeDetails() {
@@ -1093,33 +517,37 @@ function closeDetails() {
   clearModalFilters();
 }
 
+/* ── Seleção ──────────────────────────────────────────────────────────────
+   "Selecionar todos" marca o RECORTE inteiro (todos os filtrados), não só as
+   50 linhas montadas pelo scroll. */
+const selecionados = computed(() => new Set(selectedExpenseIds.value));
+const todosMarcados = computed(() =>
+  modalExpenses.value.length > 0 && modalExpenses.value.every((e) => selecionados.value.has(e.id))
+);
+const algunsMarcados = computed(() =>
+  !todosMarcados.value && modalExpenses.value.some((e) => selecionados.value.has(e.id))
+);
+
 function toggleExpenseSelection(id) {
-  if (selectedExpenseIds.value.includes(id)) {
-    selectedExpenseIds.value = selectedExpenseIds.value.filter(x => x !== id);
+  if (selecionados.value.has(id)) {
+    selectedExpenseIds.value = selectedExpenseIds.value.filter((x) => x !== id);
   } else {
     selectedExpenseIds.value = [...selectedExpenseIds.value, id];
   }
 }
 
 function toggleSelectAllExpenses() {
-  const allIds = modalExpenses.value.map(e => e.id);
-  selectedExpenseIds.value = selectedExpenseIds.value.length === allIds.length ? [] : allIds;
+  selectedExpenseIds.value = todosMarcados.value ? [] : modalExpenses.value.map((e) => e.id);
 }
 
-// ── Modal de edição ───────────────────────────────────────
+/* ── Modal de edição ─────────────────────────────────────────────────── */
 const editingExpense = ref(null);
 const editSaving = ref(false);
-const editForm = ref({
-  departmentName: '',
-  description: '',
-});
+const editForm = ref({ description: '' });
 
 function openEditModal(exp) {
   editingExpense.value = exp;
-  editForm.value = {
-    departmentName: exp.departmentName || exp.bill?.mainDepartmentName || '',
-    description: exp.description || '',
-  };
+  editForm.value = { description: exp.description || '' };
 }
 
 function closeEditModal() {
@@ -1134,10 +562,9 @@ async function saveEdit() {
     await store.updateExpense(editingExpense.value.id, {
       description: editForm.value.description || null,
     });
-
     toast.success('Lançamento atualizado!');
     closeEditModal();
-    await refreshAfterEdit();
+    refreshAfterEdit();
   } catch (e) {
     toast.error(e.message || 'Erro ao salvar.');
   } finally {
@@ -1145,7 +572,7 @@ async function saveEdit() {
   }
 }
 
-// ── Delete ────────────────────────────────────────────────
+/* ── Exclusão ────────────────────────────────────────────────────────── */
 async function removeExpense(exp) {
   const billId = exp.billId ?? exp.bill?.id ?? null;
   const parts = Number(exp.installmentsNumber || 0);
@@ -1164,40 +591,40 @@ async function removeExpense(exp) {
   try {
     await store.deleteExpense(exp.id);
     toast.success(billId && parts > 1 ? `Todas as parcelas do título ${billId} excluídas.` : 'Custo excluído!');
-    await refreshAfterEdit();
+    refreshAfterEdit();
   } catch (e) {
     toast.error(e.message || 'Erro ao excluir.');
   }
 }
 
 async function removeSelectedExpenses() {
-  if (!selectedExpenseIds.value.length) return;
+  const n = selectedExpenseIds.value.length;
+  if (!n) return;
   if (!await pedirConfirmacao({
-    title: `Excluir ${selectedExpenseIds.value.length} custo(s) selecionado(s)?`,
-    consequence: 'Todos saem do total do periodo de uma vez.',
+    title: `Excluir ${n} custo(s) selecionado(s)?`,
+    consequence: `Os ${n} saem do total do periodo de uma vez.`,
     confirmLabel: 'Excluir selecionados',
   })) return;
 
   try {
-    await Promise.all(selectedExpenseIds.value.map(id => store.deleteExpense(id)));
+    await Promise.all(selectedExpenseIds.value.map((id) => store.deleteExpense(id)));
     toast.success('Custos excluídos!');
     selectedExpenseIds.value = [];
-    await refreshAfterEdit();
+    refreshAfterEdit();
   } catch (e) {
     toast.error(e.message || 'Erro ao excluir.');
   }
 }
 
-// ── Refresh helper ────────────────────────────────────────
-async function refreshAfterEdit() {
-  await store.fetchExpenses();
-  if (selectedGroup.value) {
-    const updated = store.groups.find(g => g.costCenterId === selectedGroup.value.costCenterId);
-    selectedGroup.value = updated?.expenses?.length ? updated : null;
-  }
+/* A store já recarrega o mês ao salvar/excluir; aqui só se re-aponta o grupo
+   aberto para a versão nova (ou fecha, se ele ficou sem lançamento). */
+function refreshAfterEdit() {
+  if (!selectedGroup.value) return;
+  const updated = filteredGroups.value.find((g) => g.costCenterId === selectedGroup.value.costCenterId);
+  selectedGroup.value = updated?.expenses?.length ? updated : null;
 }
 
-// ── Status helpers ────────────────────────────────────────
+/* ── Status ──────────────────────────────────────────────────────────── */
 function expStatusVariant(status) {
   switch (status) {
     case 'paid':      return 'success';
@@ -1210,52 +637,443 @@ function expStatusLabel(status) {
     case 'paid':      return 'Pago';
     case 'cancelled': return 'Cancelado';
     case 'open':      return 'Em aberto';
-    default:          return '—';
+    default:          return '-';
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────
-function formatDate(d) {
-  if (!d) return '—';
-  const s = String(d);
-  const date = new Date(s + (s.length === 10 ? 'T12:00:00' : ''));
-  return date.toLocaleDateString('pt-BR');
-}
-
-function formatMonth(d) {
-  if (!d) return '—';
-  const s = String(d);
-  const date = new Date(s + (s.length === 10 ? 'T12:00:00' : ''));
-  return date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-}
-
-// ── Mount ─────────────────────────────────────────────────
+/* ── Mount ───────────────────────────────────────────────────────────────
+   Quem manda na primeira busca: a URL, quando traz filtro (link compartilhado,
+   favorito); senão o período padrão da store. */
 onMounted(async () => {
   store.selectedDepartments = [];
-  await Promise.all([
-    contractsStore.fetchEnterpriseCities(),
-    ccNames.fetchOverrideMap(),
-    store.fetchExpenses(),
-  ]);
+  const temQuery = Object.keys(route.query).length > 0;
+  if (temQuery) syncPeriodoFromUrl();
+  loading.value = true;
+  try {
+    await Promise.all([
+      Promise.all([contractsStore.fetchEnterpriseCities(), ccNames.fetchOverrideMap()])
+        .then(() => { if (temQuery) syncEmpreendimentosFromUrl(); }),
+      store.fetchExpenses(),
+    ]);
+    if (!temQuery) syncUrlFromFilters();
+  } finally {
+    loading.value = false;
+  }
 });
 </script>
 
-<style scoped>
-.slide-down-enter-active,
-.slide-down-leave-active {
-  transition: all 0.2s ease;
-  overflow: hidden;
-}
+<template>
+  <PageContainer size="full">
 
-.slide-down-enter-from,
-.slide-down-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
+    <PageHeader
+      subtitle="O que foi pago no período, por centro de custo, lido do backup do Sienge."
+      icon="fas fa-building">
+      <template #title>
+        <span>Custos por Empreendimento</span>
+        <Favorite :router="'/financeiro/custos'" :section="'Custos'" />
+      </template>
+      <template #actions>
+        <PageHelp
+          storage-key="custos"
+          title="Como ler os custos"
+          intro="O que foi pago no período, lido ao vivo do backup do Sienge. Os números seguem o espelho mais recente, não o instante atual do Sienge."
+          :steps="[
+            { title: 'Recorte o período', text: 'Abra Filtros, defina as datas de pagamento e, se quiser, empreendimento e departamento. Clique em Filtrar. A barra fica fechada para os números aparecerem primeiro.' },
+            { title: 'Leia os quatro cartões', text: 'Total pago, cancelados, empreendimentos e lançamentos do período. As barras mostram como o valor se distribuiu ao longo das datas.' },
+            { title: 'Clique em Cancelados para recortar', text: 'A tabela passa a mostrar só os empreendimentos com lançamento cancelado. Clicar de novo desfaz o recorte.' },
+            { title: 'Ordene a tabela', text: 'Clique no título da coluna para ordenar por valor, cancelado ou quantidade. No celular o controle de ordenação fica acima da lista.' },
+            { title: 'Abra o empreendimento', text: 'Clique na linha para ver os lançamentos. Lá dá para buscar, filtrar por departamento e data, abrir a linha para ler o título inteiro, editar a observação e excluir.' },
+          ]"
+          :tips="[
+            'O que você enxerga depende da visibilidade de departamento configurada nas Alçadas.',
+            'Cancelados aparecem na lista, mas não entram no total do período de propósito.',
+            'Diferença contra o Sienge quase sempre é defasagem do backup - confira a data do espelho antes de tratar como erro.',
+            'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
+          ]" />
+      </template>
+    </PageHeader>
 
-.slide-down-enter-to,
-.slide-down-leave-from {
-  max-height: 80px;
-  opacity: 1;
-}
-</style>
+    <div class="mb-4">
+      <FilterBar :active-count="filtrosAtivos" :loading="store.isLoading" :cols="4"
+        @apply="buscar" @clear="limpar">
+        <MultiSelector label="Empreendimento" :model-value="selectedEnterpriseNames"
+          @update:modelValue="v => (selectedEnterpriseNames = Array.isArray(v) ? v : [])"
+          :options="enterpriseOptions" placeholder="Todos os empreendimentos" :page-size="200" />
+        <MultiSelector label="Departamento" :model-value="store.selectedDepartments"
+          @update:modelValue="v => (store.selectedDepartments = Array.isArray(v) ? v : [])"
+          :options="store.departmentOptions" placeholder="Todos os departamentos" :page-size="200" />
+        <Input v-model="store.startDate" type="date" label="Pago de" />
+        <Input v-model="store.endDate" type="date" label="Pago até" />
+      </FilterBar>
+    </div>
+
+    <div v-if="store.error"
+      class="mb-4 rounded-xl border border-data-neg/25 bg-data-neg/10 p-4 text-sm text-data-neg
+             flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-start gap-2 min-w-0">
+        <i class="fas fa-circle-exclamation mt-0.5 shrink-0"></i><span class="min-w-0">{{ store.error }}</span>
+      </div>
+      <Button variant="outline" size="sm" icon="fas fa-rotate-right" class="shrink-0" @click="buscar()">
+        Tentar novamente
+      </Button>
+    </div>
+
+    <div v-else-if="loading" class="space-y-4">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        <Skeleton v-for="i in 4" :key="i" variant="stat" />
+      </div>
+      <Skeleton variant="table" :lines="8" />
+    </div>
+
+    <div v-else class="space-y-4">
+      <!-- Cartões: clicar em Cancelados recorta a tabela -->
+      <StatRow :items="kpiCards" :cols="{ sm: 2, md: 2, lg: 4 }"
+        selectable :active-key="recorte" @select="aoClicarKpi" />
+
+      <!-- Linha de estado: o que está na tabela agora -->
+      <div class="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+        <span class="tabular-nums">
+          <b class="text-ink">{{ nf.format(lista.length) }}</b>
+          de {{ nf.format(filteredGroups.length) }} empreendimento{{ filteredGroups.length === 1 ? '' : 's' }}
+        </span>
+        <span class="font-mono text-ink-subtle tabular-nums">{{ periodoLabel }}</span>
+        <button v-if="recorteAtivo" type="button"
+          class="inline-flex items-center gap-1.5 h-7 px-2 rounded-md bg-accent-soft text-accent
+                 text-micro font-medium hover:bg-accent/15 transition-colors duration-120 focus-ring"
+          @click="recorte = ''">
+          só {{ recorteAtivo.label }}
+          <i class="fas fa-xmark text-micro"></i>
+        </button>
+      </div>
+
+      <DataTable :columns="COLUNAS" :rows="inc.visiveis.value" row-key="costCenterId"
+        manual-sort clickable density="compact"
+        v-model:sort-by="ordem.by" v-model:sort-dir="ordem.dir"
+        more-label="Ver mais campos"
+        empty-icon="fas fa-inbox"
+        empty-title="Nenhum gasto encontrado"
+        empty-text="Ajuste os filtros ou o recorte para ver resultados."
+        @row-click="openDetails">
+
+        <template #cell-nome="{ row }">
+          <span class="flex items-center gap-2.5 min-w-0">
+            <span class="h-8 w-8 rounded-lg bg-accent-soft text-accent grid place-items-center shrink-0">
+              <i class="fas fa-building text-xs"></i>
+            </span>
+            <span class="min-w-0">
+              <span class="block font-medium text-ink truncate" :title="nomeDoGrupo(row)">{{ nomeDoGrupo(row) }}</span>
+              <span class="block text-micro font-mono text-ink-subtle tabular-nums">CC {{ row.costCenterId }}</span>
+            </span>
+          </span>
+        </template>
+
+        <template #cell-total="{ row }">
+          <span class="metric text-sm text-ink">{{ fmtMoney(row.total) }}</span>
+        </template>
+
+        <template #cell-cancelledTotal="{ row }">
+          <span v-if="Number(row.cancelledTotal) > 0" class="metric text-sm text-data-neg">{{ fmtMoney(row.cancelledTotal) }}</span>
+          <span v-else class="text-ink-subtle">-</span>
+        </template>
+
+        <template #cell-qtd="{ row }">
+          <span class="tabular-nums">{{ nf.format(row.expenses.length) }}</span>
+        </template>
+
+        <template #cell-costCenterId="{ row }">
+          <span class="font-mono tabular-nums">{{ row.costCenterId }}</span>
+        </template>
+
+        <template #actions="{ row }">
+          <IconButton icon="fas fa-list" size="sm" label="Ver lançamentos" @click.stop="openDetails(row)" />
+        </template>
+      </DataTable>
+
+      <!-- Gatilho do scroll incremental -->
+      <div v-if="!inc.acabou.value" :ref="el => inc.observar(el)"
+        class="py-6 flex items-center justify-center gap-2 text-micro text-ink-subtle">
+        <Spinner size="sm" />
+        carregando mais {{ Math.min(inc.step, inc.restantes.value) }} de {{ inc.restantes.value }} restantes
+      </div>
+    </div>
+  </PageContainer>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       DETALHE DO EMPREENDIMENTO - listagem em tela cheia
+  ════════════════════════════════════════════════════════════════════ -->
+  <Modal :open="!!selectedGroup" size="screen" :padded="false" @close="closeDetails">
+    <template #header>
+      <div v-if="selectedGroup" class="flex items-center gap-3 min-w-0">
+        <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
+          <i class="fas fa-building text-sm"></i>
+        </div>
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink truncate">
+            {{ resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || 'Empreendimento' }}
+          </h2>
+          <p class="text-xs text-ink-muted mt-0.5">
+            CC <span class="font-mono tabular-nums text-ink">{{ selectedGroup.costCenterId }}</span> &middot;
+            <span class="tabular-nums text-ink">{{ nf.format(selectedGroup.expenses.length) }}</span> lançamento(s) &middot;
+            <span class="font-mono tabular-nums text-ink-subtle">{{ periodoLabel }}</span>
+          </p>
+        </div>
+        <div class="ml-auto shrink-0 flex items-center gap-1.5">
+          <IconButton icon="fas fa-download" size="sm" label="Exportar lançamentos" @click="showExport = true" />
+        </div>
+      </div>
+    </template>
+
+    <!-- Este é o container que rola, e é ele que o scroll incremental observa. -->
+    <div v-if="selectedGroup" ref="scrollRoot" class="h-full overflow-y-auto">
+
+      <div class="px-4 sm:px-5 pt-4">
+        <StatRow :items="modalKpis" :cols="{ sm: 3, md: 3, lg: 3 }" size="sm" />
+      </div>
+
+      <!-- UM caminho de filtro: busca, departamento e datas no mesmo painel -->
+      <div class="px-4 sm:px-5 pt-4">
+        <FilterBar :active-count="modalFiltrosAtivos" :cols="5" auto-apply @clear="clearModalFilters">
+          <Input v-model="modalSearch" label="Busca"
+            placeholder="Fornecedor, documento, CNPJ, observação..."
+            icon-left="fas fa-magnifying-glass" />
+          <Select v-model="modalFilterDept" label="Departamento"
+            :options="modalDeptSelectOptions" placeholder="Todos departamentos" />
+          <Input :model-value="modalFilterDateFrom" type="date" label="Pago de"
+            @update:modelValue="v => setModalDate('from', v)" />
+          <Input :model-value="modalFilterDateTo" type="date" label="Pago até"
+            @update:modelValue="v => setModalDate('to', v)" />
+          <Select :model-value="modalDatePreset" label="Atalho de período"
+            :options="PRESET_OPTIONS" @update:modelValue="setModalDatePreset" />
+        </FilterBar>
+      </div>
+
+      <!-- Selecionar todos vive fora da tabela porque precisa existir nas DUAS
+           larguras: no celular não há cabeçalho de coluna onde encaixá-lo. -->
+      <div class="px-4 sm:px-5 pt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-muted">
+        <label v-if="modalExpenses.length" class="inline-flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" class="checkbox checkbox-sm"
+            :checked="todosMarcados" :indeterminate.prop="algunsMarcados"
+            @change="toggleSelectAllExpenses" />
+          <span>Selecionar todos ({{ nf.format(modalExpenses.length) }})</span>
+        </label>
+        <span class="tabular-nums">
+          <b class="text-ink">{{ nf.format(modalExpenses.length) }}</b>
+          de {{ nf.format(selectedGroup.expenses.length) }} lançamento{{ selectedGroup.expenses.length === 1 ? '' : 's' }}
+        </span>
+      </div>
+
+      <div class="px-4 sm:px-5 py-4">
+        <DataTable :columns="COLUNAS_LANC" :rows="incModal.visiveis.value" row-key="id"
+          expandable manual-sort density="compact"
+          v-model:sort-by="modalOrdem.by" v-model:sort-dir="modalOrdem.dir"
+          more-label="Ver o título inteiro"
+          empty-icon="fas fa-magnifying-glass"
+          empty-title="Nenhum lançamento encontrado"
+          empty-text="Ajuste a busca ou os filtros para ver resultados.">
+
+          <template #emptyActions>
+            <Button variant="outline" size="sm" icon="fas fa-eraser" @click="clearModalFilters">
+              Limpar filtros
+            </Button>
+          </template>
+
+          <!-- Seleção: o clique nunca chega na linha, então marcar não abre. -->
+          <template #cell-sel="{ row }">
+            <input type="checkbox" class="checkbox checkbox-sm" :checked="selecionados.has(row.id)"
+              :aria-label="`Selecionar lançamento ${row.id}`"
+              @click.stop @change="toggleExpenseSelection(row.id)" />
+          </template>
+
+          <template #cell-fornecedor="{ row }">
+            <span class="block min-w-0">
+              <span v-if="row.bill" class="block font-medium text-ink truncate" :title="nomeFornecedor(row) || undefined">
+                {{ nomeFornecedor(row) || '-' }}
+              </span>
+              <span v-else class="block text-ink-subtle italic">sem vínculo</span>
+              <span v-if="row.bill" class="block text-micro text-ink-subtle truncate">
+                {{ row.bill.document_identification_id }} {{ row.bill.document_number }}
+                <span class="font-mono tabular-nums">&middot; #{{ row.bill.id }}</span>
+              </span>
+            </span>
+          </template>
+
+          <template #cell-amount="{ row }">
+            <span class="inline-flex items-center justify-end gap-2">
+              <span class="metric text-sm"
+                :class="row.status === 'cancelled' ? 'text-ink-subtle line-through' : 'text-ink'">
+                {{ fmtMoney(row.amount) }}
+              </span>
+              <Badge :variant="expStatusVariant(row.status)" size="sm">{{ expStatusLabel(row.status) }}</Badge>
+            </span>
+          </template>
+
+          <template #cell-paidAt="{ row }">
+            <span class="font-mono tabular-nums">{{ formatDate(row.paidAt || row.dueDate) }}</span>
+          </template>
+
+          <template #cell-departamento="{ row }">
+            <Badge v-if="deptDoLancamento(row)" variant="info" size="sm" class="max-w-full">
+              <span class="truncate">{{ deptDoLancamento(row) }}</span>
+            </Badge>
+            <span v-else class="text-ink-subtle">-</span>
+          </template>
+
+          <template #cell-parcela="{ row }">
+            <Badge :variant="row.installmentsNumber > 1 ? 'accent' : 'neutral'" size="sm" class="font-mono">
+              {{ parcelaDoLancamento(row) }}
+            </Badge>
+          </template>
+
+          <!-- O título inteiro, na própria linha -->
+          <template #expanded="{ row }">
+            <dl class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2.5 pt-3">
+              <div class="min-w-0">
+                <dt class="metric-label">Vencimento</dt>
+                <dd class="text-xs text-ink font-mono tabular-nums">{{ formatDate(row.dueDate) }}</dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="metric-label">Emissão</dt>
+                <dd class="text-xs text-ink font-mono tabular-nums">{{ formatDate(row.bill?.issueDate) }}</dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="metric-label">Valor do título</dt>
+                <dd class="text-xs text-ink font-mono tabular-nums">
+                  {{ row.bill?.totalInvoiceAmount ? fmtMoney(row.bill.totalInvoiceAmount) : '-' }}
+                </dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="metric-label">CNPJ</dt>
+                <dd class="text-xs text-ink font-mono break-all">{{ row.bill?.creditor_json?.cnpj || '-' }}</dd>
+              </div>
+              <div class="min-w-0 col-span-2">
+                <dt class="metric-label">Observação</dt>
+                <dd class="text-xs text-ink break-words">{{ row.description || '-' }}</dd>
+              </div>
+              <div class="min-w-0 col-span-2">
+                <dt class="metric-label">Nota do título</dt>
+                <dd class="text-xs text-ink break-words">{{ row.bill?.notes || '-' }}</dd>
+              </div>
+            </dl>
+          </template>
+
+          <template #actions="{ row }">
+            <span class="inline-flex items-center gap-1">
+              <IconButton icon="fas fa-pen" size="sm" label="Editar observação" @click.stop="openEditModal(row)" />
+              <IconButton icon="fas fa-trash" size="sm" variant="danger" label="Excluir" @click.stop="removeExpense(row)" />
+            </span>
+          </template>
+        </DataTable>
+
+        <div v-if="!incModal.acabou.value" :ref="el => incModal.observar(el)"
+          class="py-6 flex items-center justify-center gap-2 text-micro text-ink-subtle">
+          <Spinner size="sm" />
+          carregando mais {{ Math.min(incModal.step, incModal.restantes.value) }} de {{ incModal.restantes.value }} restantes
+        </div>
+      </div>
+
+      <Export v-model="showExport" :source="modalExpenses" title="Custos"
+        :subtitle="`${resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || 'Empreendimento'} (CC ${selectedGroup.costCenterId})`"
+        initial-delimiter=";" initial-array-mode="join"
+        :filters="exportFilters"
+        :preselect="[
+          'paidAt', 'dueDate', 'amount', 'status',
+          'installmentNumber', 'installmentsNumber',
+          'departmentName', 'description',
+          'bill.creditor_json.name', 'bill.creditor_json.cnpj',
+          'bill.document_identification_id', 'bill.document_number',
+          'bill.totalInvoiceAmount',
+        ]" />
+    </div>
+
+    <!-- Rodapé: a ação da seleção mora aqui, onde o polegar alcança. Sem
+         seleção, o rodapé resume o que está na lista. -->
+    <template #footer>
+      <div v-if="selectedExpenseIds.length" class="flex flex-wrap items-center gap-3 w-full">
+        <span class="text-sm font-medium text-ink tabular-nums">
+          {{ nf.format(selectedExpenseIds.length) }} selecionado{{ selectedExpenseIds.length === 1 ? '' : 's' }}
+        </span>
+        <div class="ml-auto flex items-center gap-1.5">
+          <Button variant="ghost" size="sm" icon="fas fa-xmark" @click="selectedExpenseIds = []">
+            <span class="hidden sm:inline">Desmarcar</span>
+          </Button>
+          <Button variant="danger" size="sm" icon="fas fa-trash" @click="removeSelectedExpenses">
+            Excluir {{ nf.format(selectedExpenseIds.length) }}
+          </Button>
+        </div>
+      </div>
+      <div v-else class="flex flex-wrap items-center justify-between gap-3 w-full">
+        <div class="text-xs text-ink-muted tabular-nums">
+          Total ativo
+          <span class="font-semibold text-ink font-mono">{{ fmtMoney(modalTotal) }}</span>
+          <template v-if="modalCancelledTotal > 0">
+            &middot; cancelado
+            <span class="font-semibold text-data-neg font-mono">{{ fmtMoney(modalCancelledTotal) }}</span>
+          </template>
+        </div>
+        <Button variant="ghost" size="sm" @click="closeDetails">Fechar</Button>
+      </div>
+    </template>
+  </Modal>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       EDIÇÃO DO LANÇAMENTO
+  ════════════════════════════════════════════════════════════════════ -->
+  <Modal :open="!!editingExpense"
+    size="md"
+    title="Editar lançamento"
+    :subtitle="editingExpense ? (nomeFornecedor(editingExpense) || editingExpense.description || '#' + editingExpense.id) : ''"
+    @close="closeEditModal">
+
+    <div v-if="editingExpense" class="space-y-4">
+      <!-- O que vem do Sienge, só leitura -->
+      <dl class="grid grid-cols-2 gap-3 rounded-lg border border-line bg-surface-sunken/40 p-3">
+        <div class="min-w-0">
+          <dt class="metric-label">Pagamento</dt>
+          <dd class="text-xs text-ink font-mono tabular-nums">{{ formatDate(editingExpense.paidAt) }}</dd>
+          <dd class="text-micro text-ink-subtle">vence {{ formatDate(editingExpense.dueDate) }}</dd>
+        </div>
+        <div class="min-w-0">
+          <dt class="metric-label">Parcela</dt>
+          <dd class="text-xs text-ink font-mono tabular-nums">{{ parcelaDoLancamento(editingExpense) }}</dd>
+        </div>
+        <div class="min-w-0">
+          <dt class="metric-label">Documento</dt>
+          <dd class="text-xs text-ink break-words">
+            {{ editingExpense.bill?.document_identification_id }} {{ editingExpense.bill?.document_number || '-' }}
+          </dd>
+        </div>
+        <div class="min-w-0">
+          <dt class="metric-label">Valor do título</dt>
+          <dd class="text-xs text-ink font-mono tabular-nums">
+            {{ editingExpense.bill?.totalInvoiceAmount ? fmtMoney(editingExpense.bill.totalInvoiceAmount) : '-' }}
+          </dd>
+        </div>
+        <div class="min-w-0 col-span-2">
+          <dt class="metric-label">Departamento <span class="normal-case tracking-normal">(do Sienge)</span></dt>
+          <dd class="text-xs text-ink break-words">{{ deptDoLancamento(editingExpense) || '(sem departamento)' }}</dd>
+        </div>
+      </dl>
+
+      <div>
+        <label for="custo-obs" class="text-micro font-medium text-ink-muted mb-1.5 block">
+          <i class="fas fa-note-sticky text-ink-subtle mr-1"></i> Observação
+        </label>
+        <textarea id="custo-obs" v-model="editForm.description" rows="3"
+          placeholder="Digite uma observação sobre este lançamento..."
+          class="w-full px-3.5 py-2.5 rounded-lg border border-line bg-surface-raised text-sm text-ink
+                 placeholder:text-ink-subtle resize-none focus:outline-none focus:ring-2
+                 focus:ring-accent-ring/40 focus:border-accent transition-colors"></textarea>
+      </div>
+    </div>
+
+    <template #footer>
+      <Button variant="ghost" @click="closeEditModal">Cancelar</Button>
+      <Button variant="primary" icon="fas fa-check"
+        :loading="editSaving"
+        :disabled="editSaving"
+        @click="saveEdit">
+        {{ editSaving ? 'Salvando...' : 'Salvar alterações' }}
+      </Button>
+    </template>
+  </Modal>
+</template>

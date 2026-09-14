@@ -1,6 +1,6 @@
 # Checklist de padronização visual - Menin Office
 
-Gerado por `_design/mapscreens.mjs` em 2026-09-03. Para atualizar os números depois de
+Gerado por `_design/mapscreens.mjs` em 2026-09-14. Para atualizar os números depois de
 mexer nas telas, rode de novo e o checklist se refaz.
 
 - **73** telas pontuadas (+ 6 especiais fora do score)
@@ -17,7 +17,7 @@ carga com `Skeleton`, alvo de toque >= 40px e PageHelp escrito.
 
 ---
 
-## Onda 3 - Acabamento  `3 telas`
+## Onda 3 - Acabamento  `4 telas`
 
 Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tabela.
 
@@ -25,6 +25,11 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
 
 - [ ] **Relatório de Faturamento** `/comercial/relatorios/faturamento` · ` 94`
       <sub>views/Office/Comercial/Faturamento/Index.vue · 5573L (+8 comp.) · 15 cor fixa, 1 gráfico</sub>
+
+### Operação · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
+
+- [ ] **Ato** `/cobranca/ato` · ` 90`
+      <sub>views/Office/Financeiro/CobrancaAto/Index.vue · 5565L (+11 comp.) · 2 tabela sem mobile</sub>
 
 ### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
 
@@ -36,7 +41,7 @@ Score 75 a 94. Perto do padrão; falta gráfico com tema, help ou detalhe de tab
 - [ ] **Frota** `/frota` · ` 75`
       <sub>views/Office/Frota/Index.vue · 1744L (+9 comp.) · 64 cor fixa</sub>
 
-## Onda 4 - Manutenção  `70 telas`
+## Onda 4 - Manutenção  `69 telas`
 
 Score 95+. Já são referência. Só revalidar depois que os primitivos novos existirem.
 
@@ -60,7 +65,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Stand de Vendas Detalhe** `/stand-vendas/:id` · `100`
       <sub>views/Office/Marketing/StandVendas/Detail.vue · 2507L (+11 comp.) · ok</sub>
 - [ ] **Ficha Comercial Detalhe** `/conditions/:id` · `100`
-      <sub>views/Office/Comercial/Conditions/Detail.vue · 8522L (+9 comp.) · sem container, sem header</sub>
+      <sub>views/Office/Comercial/Conditions/Detail.vue · 8560L (+9 comp.) · sem container, sem header</sub>
 - [ ] **Reportar** `/report` · `100`
       <sub>views/Office/Support/Report.vue · 512L · ok</sub>
 - [ ] **Detalhes Suporte** `/support/:id` · `100`
@@ -76,16 +81,14 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
       <sub>views/Office/Checklist/Detail.vue · 2607L (+13 comp.) · 1 tabela</sub>
 - [ ] **Imobiliárias** `/imobiliarias` · `100`
       <sub>views/Office/Comercial/Imobiliarias/Index.vue · 1691L (+7 comp.) · 2 tabela</sub>
+- [ ] **Empreendimentos** `/buildings` · `100`
+      <sub>views/Office/Comercial/Buildings/Index.vue · 1384L (+5 comp.) · 1 tabela</sub>
 - [ ] **Viabilidade** `/viabilidade` · `100`
       <sub>views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue · 1096L (+2 comp.) · 1 tabela</sub>
 - [ ] **Projeção** `/projections` · `100`
       <sub>views/Office/Comercial/Projections/Index.vue · 963L (+3 comp.) · 1 tabela</sub>
 - [ ] **Projeção Detalhes** `/projections/:id` · `100`
       <sub>views/Office/Comercial/Projections/ProjectionDetail.vue · 1373L (+3 comp.) · 1 tabela</sub>
-- [ ] **Custos** `/custos` · `100`
-      <sub>views/Office/Financeiro/Custos/Index.vue · 1262L · 1 tabela</sub>
-- [ ] **Ato** `/cobranca/ato` · `100`
-      <sub>views/Office/Financeiro/CobrancaAto/Index.vue · 3805L (+5 comp.) · 2 tabela</sub>
 - [ ] **SharePoint** `/sharepoint` · `100`
       <sub>views/Office/Microsoft/Sharepoint/Index.vue · 1588L (+3 comp.) · 1 tabela</sub>
 - [ ] **BucketUpload** `/bucket-upload` · `100`
@@ -93,9 +96,9 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Visão Executiva** `/sobre/relatorio` · `100`
       <sub>views/Office/Sobre/Relatorio.vue · 247L · 1 tabela</sub>
 - [ ] **Pré-Cadastros** `/comercial/relatorios/precadastros` · `100`
-      <sub>views/Office/Comercial/Precadastros/Index.vue · 1020L (+2 comp.) · 1 tabela</sub>
+      <sub>views/Office/Comercial/Precadastros/Index.vue · 1027L (+2 comp.) · 1 tabela</sub>
 - [ ] **Reservas** `/comercial/relatorios/reservas` · `100`
-      <sub>views/Office/Comercial/Reservas/Index.vue · 1025L (+1 comp.) · 1 tabela</sub>
+      <sub>views/Office/Comercial/Reservas/Index.vue · 1032L (+1 comp.) · 1 tabela</sub>
 
 ### Configuração · parte do DESKTOP <sub>(mais usada por administradores)</sub>
 
@@ -104,7 +107,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **MCMV Configurações** `/mcmv/settings` · `100`
       <sub>views/Office/Comercial/Mcmv/Settings.vue · 229L · ok</sub>
 - [ ] **Fichas Comerciais Configurações** `/conditions/settings` · `100`
-      <sub>views/Office/Comercial/Conditions/Settings.vue · 7391L (+9 comp.) · ok</sub>
+      <sub>views/Office/Comercial/Conditions/Settings.vue · 7431L (+9 comp.) · ok</sub>
 - [ ] **Usuários** `/users` · `100`
       <sub>views/Office/Settings/Users/Index.vue · 1384L (+2 comp.) · ok</sub>
 - [ ] **Minha Conta** `/account` · `100`
@@ -129,7 +132,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 ### Ferramenta · parte do DESKTOP <sub>(mais usada por analistas e administrativo)</sub>
 
 - [ ] **Aditivos** `/aditivos` · ` 97`
-      <sub>views/Office/Comercial/Aditivos/Index.vue · 248L · ok</sub>
+      <sub>views/Office/Comercial/Aditivos/Index.vue · 249L · ok</sub>
 - [ ] **Eme Atende** `/eme-atende` · ` 99`
       <sub>views/Office/Tools/EmeAtende/Index.vue · 1188L · 2 cor fixa</sub>
 - [ ] **Mural de Avisos** `/mural` · `100`
@@ -139,15 +142,13 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Builder de Relatório** `/relatorios/:id` · `100`
       <sub>views/Office/Relatorios/Builder.vue · 332L · sem container, sem header</sub>
 - [ ] **Central Meta** `/meta` · `100`
-      <sub>views/Office/Meta/Central/Index.vue · 612L (+1 comp.) · ok</sub>
+      <sub>views/Office/Meta/Central/Index.vue · 631L (+1 comp.) · ok</sub>
 - [ ] **CV CRM** `/configuracoes` · `100`
       <sub>views/Office/Cv/Central/Index.vue · 134L · ok</sub>
 - [ ] **CV CRM - Integracoes** `/integracoes` · `100`
       <sub>views/Office/Cv/Integracoes/Index.vue · 588L · ok</sub>
 - [ ] **Correspondentes** `/correspondentes` · `100`
       <sub>views/Office/Comercial/Correspondentes/Index.vue · 1612L (+6 comp.) · ok</sub>
-- [ ] **Empreendimentos** `/buildings` · `100`
-      <sub>views/Office/Comercial/Buildings/Index.vue · 996L (+4 comp.) · ok</sub>
 - [ ] **Grupos de Workflow** `/workflow/groups` · `100`
       <sub>views/Office/Comercial/Workflow/Index.vue · 407L · ok</sub>
 - [ ] **Plano de Eventos** `/plano-eventos` · `100`
@@ -161,11 +162,13 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Cancelamentos CV × Sienge** `/cancelamento-reservas` · `100`
       <sub>views/Office/Comercial/CancelamentoReservas/Index.vue · 1251L (+1 comp.) · ok</sub>
 - [ ] **Fichas Comerciais** `/conditions` · `100`
-      <sub>views/Office/Comercial/Conditions/Index.vue · 7648L (+9 comp.) · ok</sub>
+      <sub>views/Office/Comercial/Conditions/Index.vue · 7740L (+9 comp.) · ok</sub>
 - [ ] **MCMV — Limites por Cidade** `/mcmv` · `100`
       <sub>views/Office/Comercial/Mcmv/Index.vue · 222L · ok</sub>
 - [ ] **Títulos** `/titulos` · `100`
       <sub>views/Office/Financeiro/Titulos/Index.vue · 340L · ok</sub>
+- [x] **Custos** `/custos` · `100`
+      <sub>views/Office/Financeiro/Custos/Index.vue · 1080L · ok</sub>
 - [ ] **Consulta de nº CEF** `/consulta-cef` · `100`
       <sub>views/Office/Financeiro/ConsultaCef/Index.vue · 330L · ok</sub>
 - [ ] **Fluxo de Pagamento** `/paymentflow` · `100`
@@ -181,7 +184,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Validador** `/validator` · `100`
       <sub>views/Office/Tools/Validator/Index.vue · 484L (+3 comp.) · ok</sub>
 - [ ] **Cérebro da Eme** `/eme-brain` · `100`
-      <sub>views/Office/Tools/EmeBrain/Index.vue · 810L · ok</sub>
+      <sub>views/Office/Tools/EmeBrain/Index.vue · 1198L (+1 comp.) · ok</sub>
 - [ ] **Suporte** `/support` · `100`
       <sub>views/Office/Support/Support.vue · 201L · ok</sub>
 - [ ] **Documentação** `/docs` · `100`
@@ -210,7 +213,7 @@ Não seguem o esqueleto de página por natureza (login, shell, home da Eme, inst
 - [ ] **Config** `/` · `--`
       <sub>views/Office/Config/OfficeShell.vue · 130L · sem container, sem header, sem help</sub>
 - [ ] **Home**  · `--`
-      <sub>views/Office/Home.vue · 324L · sem container, sem header, sem help</sub>
+      <sub>views/Office/Home.vue · 339L · sem container, sem header, sem help</sub>
 - [ ] **layouts** `/academy` · `--`
       <sub>views/Academy/layouts/AcademyOfficeArea.vue · 380L (+2 comp.) · sem container, sem header, sem help, 90 cor fixa</sub>
 
