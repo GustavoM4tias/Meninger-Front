@@ -35,6 +35,34 @@
 // "implementado Web Push com VAPID".
 
 export const releases = [
+  // ── Atualização de 01/10/2026 ──────────────────────────────────────────────
+  // Roadmap enquanto `date` for null (não vai ao mural). Publicar = trocar por
+  // new Date('2026-10-01T00:00:00'). Plano: Meninger-Back/_design/ALERTAS-WHATSAPP-PLANO.md
+  {
+    version: 'v3.17.0',
+    date: null,
+    theme: 'Alertas no WhatsApp',
+    description: 'O relatório do seu alerta chega no WhatsApp pronto para ler: em PDF, com os números certos, e a planilha a um toque.',
+    type: 'minor',
+    categories: ['backend', 'frontend'],
+    features: [
+      { id: 1, title: 'O relatório chega em PDF', description: 'Na hora do alerta, o WhatsApp recebe o relatório completo em PDF: indicadores, gráfico e a tabela inteira, com o botão "Abrir no Office" que leva à tela já filtrada. Não precisa mais responder SIM e esperar.', link: '/settings/alerts' },
+      { id: 2, title: 'Planilha a um toque', description: 'Responda PLANILHA à mensagem do alerta e os dados completos chegam em Excel, com valores em número, prontos para somar e filtrar.' },
+      { id: 3, title: 'Você escolhe como receber', description: 'Em cada alerta dá para definir se ele chega em PDF, só em texto ou em planilha, e se a Eme deve perguntar antes de mandar. O padrão da empresa fica no portal do WhatsApp.', link: '/settings/alerts' },
+    ],
+    improvements: [
+      { id: 1, category: 'Alertas', description: 'O resumo em texto ficou legível: valor em reais, percentual e data no formato que a gente lê, lista com os principais itens e o total no topo.' },
+      { id: 2, category: 'Alertas', description: 'Quando a resposta não é entendida, em vez de pedir SIM ou NÃO a Eme oferece as opções: ver o resumo, receber o PDF, receber a planilha ou abrir no Office.' },
+    ],
+    fixes: [
+      { id: 1, description: 'Alerta de reservas, pré-cadastros, repasses e de outras consultas chegava no WhatsApp como um bloco de código ilegível em vez do relatório.' },
+      { id: 2, description: 'Alerta de repasses mandava só uma frase e escondia os valores financiados, previstos e o prazo médio.' },
+    ],
+    breakingChanges: [
+      { id: 1, description: 'O alerta deixa de perguntar "quer receber?" e manda o relatório direto. Quem preferir a pergunta antes liga "Perguntar antes de mandar" no próprio alerta.' },
+    ],
+    knownIssues: [],
+  },
   {
     version: 'v3.16.0',
     date: new Date('2026-08-24T00:00:00'),
