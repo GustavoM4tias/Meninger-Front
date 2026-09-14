@@ -132,3 +132,33 @@ export const getBuildingById = async (id) => {
 
     return response.json();
 };
+
+// ── Tabelas de preço (histórico espelhado do CV) ────────────────────────────
+const authHeaders = () => ({
+    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    'Content-Type': 'application/json',
+});
+
+// Todas as tabelas que já passaram pelo CV para o empreendimento (sem unidades)
+export const getPriceTables = async (idempreendimento) => {
+    const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/tabelas`, {
+        method: 'GET', headers: authHeaders(),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao listar tabelas de preço');
+    }
+    return response.json();
+};
+
+// Uma tabela com as unidades e as séries de pagamento
+export const getPriceTable = async (idtabela) => {
+    const response = await fetch(`${API_URL}/cv/price-tables/${idtabela}`, {
+        method: 'GET', headers: authHeaders(),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao buscar tabela de preço');
+    }
+    return response.json();
+};

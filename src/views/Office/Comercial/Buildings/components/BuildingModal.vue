@@ -1,16 +1,15 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useCan } from '@/composables/useCan';
 import { useBuildingStore } from '@/stores/Comercial/Building/buildingStore';
-import { syncPriceTables } from '@/utils/Building/apiBuilding';
 
 import Modal from '@/components/UI/Modal.vue';
 import Surface from '@/components/UI/Surface.vue';
-import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
-import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 
 import WeatherInfo from './UI/WeatherInfo.vue';
+import PriceTablesTab from './PriceTablesTab.vue';
 
 const props = defineProps({
   building: { type: Object, required: true },
@@ -19,8 +18,21 @@ const emit = defineEmits(['close']);
 
 const buildingStore = useBuildingStore();
 
-// ── Abas do modal ──────────────────────────────────────────
-const activeTab = ref('geral');
+// ── Abas ───────────────────────────────────────────────────
+// A aba mora na URL (?open=<id>&tab=<aba>&tabela=<idtabela>): dá para mandar
+// o link de uma tabela específica e o F5 volta no mesmo lugar.
+const route = useRoute();
+const router = useRouter();
+const TABS = ['geral', 'unidades', 'tabelas', 'materiais'];
+const activeTab = computed({
+  get: () => (TABS.includes(route.query.tab) ? route.query.tab : 'geral'),
+  set: (tab) => router.replace({ query: { ...route.query, tab: tab === 'geral' ? undefined : tab, tabela: undefined } }),
+});
+const tabelaAberta = computed({
+  get: () => { const n = Number(route.query.tabela); return Number.isFinite(n) && n > 0 ? n : null; },
+  set: (id) => router.replace({ query: { ...route.query, tab: 'tabelas', tabela: id || undefined } }),
+});
+const priceTablesCount = ref(null);
 
 const closeModal = () => emit('close');
 
@@ -95,9 +107,10 @@ const materialsCount = computed(() =>
   (props.building.materiais_campanha?.length || 0) + (props.building.plantas_mapeadas?.length || 0));
 
 const tabOptions = computed(() => [
-  { value: 'geral',     label: 'Visão geral', icon: 'fas fa-grip' },
-  { value: 'unidades',  label: 'Unidades',    icon: 'fas fa-house',  count: totalUnits.value },
-  { value: 'materiais', label: 'Materiais & Plantas', icon: 'fas fa-images', count: materialsCount.value },
+  { value: 'geral',     label: 'Visão geral',        icon: 'fas fa-grip',   hint: 'Números, empresa, endereço e cronograma' },
+  { value: 'unidades',  label: 'Unidades',           icon: 'fas fa-house',  count: totalUnits.value, hint: 'Disponibilidade por etapa e bloco' },
+  { value: 'tabelas',   label: 'Tabelas de preço',   icon: 'fas fa-tags',   count: priceTablesCount.value ?? undefined, hint: 'Histórico de tabelas lidas do CV' },
+  { value: 'materiais', label: 'Materiais & Plantas', icon: 'fas fa-images', count: materialsCount.value, hint: 'Campanha, plantas e mapa' },
 ]);
 
 const statusBreakdown = computed(() => [
@@ -112,31 +125,10 @@ const cvLink = computed(() =>
   `https://menin.cvcrm.com.br/gestor/cadastros/empreendimentos/${props.building.idempreendimento}/cadastro_simplificado`
 );
 
-// ── Sync de tabelas de preço (CV → Office) — somente admin ──
-// Acao da tela (lib/screenCapabilities.js no back). Ver composables/useCan.js.
+// Sync manual das tabelas (CV → Office) é ação da tela, só para quem tem a
+// capacidade `sync` (lib/screenCapabilities.js no back). O botão vive na aba
+// Tabelas, ao lado do que ele atualiza.
 const can = useCan('/crm/buildings');
-const syncingTables = ref(false);
-const syncResult = ref(null); // { ok, synced } | { ok: false, error }
-
-const syncTables = async () => {
-  syncingTables.value = true;
-  syncResult.value = null;
-  try {
-    const r = await syncPriceTables(props.building.idempreendimento);
-    syncResult.value = { ok: true, synced: r.synced ?? 0 };
-  } catch (e) {
-    syncResult.value = { ok: false, error: e.message || 'Erro ao sincronizar tabelas.' };
-  } finally {
-    syncingTables.value = false;
-  }
-};
-
-const syncLabel = computed(() => {
-  if (syncingTables.value) return 'Sincronizando...';
-  if (syncResult.value?.ok) return `${syncResult.value.synced} tabela(s) sincronizada(s)`;
-  if (syncResult.value && !syncResult.value.ok) return 'Erro — tentar de novo';
-  return 'Sincronizar tabelas';
-});
 
 const stage = computed(() => props.building.situacao_comercial?.[0]?.nome ?? null);
 const stageChips = computed(() => [
@@ -150,27 +142,41 @@ onMounted(fetchWeather);
 </script>
 
 <template>
-  <Modal :open="true" size="full" hide-close @close="closeModal">
-    <template #header><div class="hidden"></div></template>
+  <!-- `screen`: o empreendimento toma a tela inteira, como toda listagem do
+       Office. O Fechar mora no canto de cima (padrão do Modal), e as ações
+       ficam no cabeçalho, sempre à vista. -->
+  <Modal :open="true" size="screen" :padded="false" @close="closeModal">
+    <template #header>
+      <div class="flex items-center gap-3 min-w-0">
+        <img :src="building.logo || building.foto || '/noimg.jpg'" :alt="building.nome"
+          class="h-9 w-9 rounded-lg object-cover border border-line shrink-0 bg-surface-sunken" />
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink truncate">{{ building.nome }}</h2>
+          <p class="text-xs text-ink-muted mt-0.5 truncate">
+            <span v-if="stage" class="text-ink">{{ stage }}</span><span v-if="stage"> · </span>{{ building.cidade }}<template v-if="building.estado">/{{ building.estado }}</template>
+          </p>
+        </div>
+        <div class="ml-auto shrink-0 flex items-center gap-2">
+          <a :href="cvLink" target="_blank" rel="noopener" v-tippy="'Abrir no CV CRM'"
+            class="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors shadow-soft">
+            <img src="/CVLogo.png" alt="CV CRM" class="h-4 brightness-0 invert" />
+            <span class="hidden sm:inline">Abrir no CV</span>
+            <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
+        </div>
+      </div>
+    </template>
 
-    <div class="-m-4 sm:-m-5">
+    <div class="h-full overflow-y-auto">
 
       <!-- Hero com foto + gradient (faixa de identidade, não protagonista).
            Sem overflow-hidden: o tooltip do clima precisa escapar do hero. -->
-      <div class="relative h-40 sm:h-48">
+      <div class="relative h-36 sm:h-44">
         <img :src="building.foto || '/noimg.jpg'" :alt="building.nome"
           class="absolute inset-0 w-full h-full object-cover" />
 
         <!-- Fade leve só na base, para o título ficar legível sem sombrear a foto -->
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-
-        <!-- Close button -->
-        <button @click="closeModal" aria-label="Fechar"
-          class="absolute top-4 right-4 h-9 w-9 grid place-items-center rounded-lg
-                 bg-surface-raised/15 hover:bg-surface-raised/30 backdrop-blur-md text-white border border-white/20
-                 transition-colors z-10">
-          <i class="fas fa-xmark text-sm"></i>
-        </button>
 
         <!-- Weather (hover tooltip) — acima da barra de abas sticky (z-30) para o tooltip abrir por cima -->
         <div class="absolute bottom-4 right-4 text-3xl z-40">
@@ -204,16 +210,42 @@ onMounted(fetchWeather);
         </div>
       </div>
 
-      <!-- Barra de abas — sticky no scroll único do Modal -->
-      <div class="sticky top-0 z-30 px-4 sm:px-6 py-2.5 border-b border-line bg-surface overflow-x-auto">
-        <SegmentedControl v-model="activeTab" :options="tabOptions" size="sm" />
-      </div>
+      <!-- Abas — sticky no scroll único, todas à vista (no celular em duas
+           colunas, nunca escondidas atrás de rolagem lateral). -->
+      <nav class="sticky top-0 z-30 border-b border-line bg-surface" role="tablist" aria-label="Seções do empreendimento">
+        <div class="grid grid-cols-2 md:flex md:items-stretch px-2 sm:px-4">
+          <button v-for="t in tabOptions" :key="t.value" type="button" role="tab"
+            :aria-selected="activeTab === t.value"
+            @click="activeTab = t.value"
+            class="relative flex items-center gap-2.5 px-3 sm:px-4 py-3 text-left min-h-[52px] transition-colors focus-ring rounded-md"
+            :class="activeTab === t.value ? 'text-accent' : 'text-ink-muted hover:text-ink'">
+            <i :class="t.icon" class="text-sm w-4 text-center shrink-0"></i>
+            <span class="min-w-0">
+              <span class="block text-sm font-semibold leading-tight truncate">
+                {{ t.label }}
+                <span v-if="t.count !== undefined" class="ml-1 px-1.5 py-0.5 rounded-md text-micro font-mono align-middle"
+                  :class="activeTab === t.value ? 'bg-accent-soft text-accent' : 'bg-line/50 text-ink-subtle'">{{ t.count }}</span>
+              </span>
+              <span class="hidden lg:block text-micro text-ink-subtle leading-tight mt-0.5 truncate">{{ t.hint }}</span>
+            </span>
+            <span class="absolute left-2 right-2 bottom-0 h-0.5 rounded-t"
+              :class="activeTab === t.value ? 'bg-accent' : 'bg-transparent'"></span>
+          </button>
+        </div>
+      </nav>
 
       <!-- Conteúdo: rola junto com o body do Modal (um scroll só) -->
       <div class="p-4 sm:p-6 space-y-5">
 
+          <!-- ── Aba: Tabelas de preço (histórico) ───────────────── -->
+          <PriceTablesTab v-if="activeTab === 'tabelas'"
+            :idempreendimento="building.idempreendimento"
+            v-model:tabela="tabelaAberta"
+            :can-sync="can('sync')"
+            @loaded="priceTablesCount = $event" />
+
           <!-- ── Aba: Visão geral ─────────────────────────────────── -->
-          <template v-if="activeTab === 'geral'">
+          <template v-else-if="activeTab === 'geral'">
 
           <!-- Números do empreendimento (KPIs + status das unidades) -->
           <Surface variant="raised" padding="md">
@@ -501,23 +533,5 @@ onMounted(fetchWeather);
           </template>
       </div>
     </div>
-
-    <template #footer>
-      <button v-if="can('sync')" @click="syncTables" :disabled="syncingTables"
-        v-tippy="'Puxa do CV as tabelas de preço deste empreendimento (usadas nas fichas comerciais)'"
-        class="mr-auto inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-line bg-surface-raised hover:bg-surface-hover text-sm font-medium transition-colors shadow-soft disabled:opacity-50"
-        :class="syncResult && !syncResult.ok ? 'text-data-neg border-data-neg/25' : 'text-ink'">
-        <i class="fas text-xs"
-          :class="syncingTables ? 'fa-spinner fa-spin' : syncResult?.ok ? 'fa-check text-data-pos' : syncResult ? 'fa-triangle-exclamation' : 'fa-rotate'"></i>
-        <span>{{ syncLabel }}</span>
-      </button>
-      <Button variant="ghost" @click="closeModal">Fechar</Button>
-      <a :href="cvLink" target="_blank" rel="noopener" v-tippy="'Abrir no CV CRM'"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors shadow-soft">
-        <img src="/CVLogo.png" alt="CV CRM" class="h-4 brightness-0 invert" />
-        <span>Abrir no CV CRM</span>
-        <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
-      </a>
-    </template>
   </Modal>
 </template>

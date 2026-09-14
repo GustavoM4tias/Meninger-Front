@@ -82,7 +82,7 @@ const openBuildingModal = async (building) => {
 };
 const closeBuildingModal = () => {
   selectedBuilding.value = null;
-  if (route.query.open) router.replace({ query: { ...route.query, open: undefined } });
+  if (route.query.open) router.replace({ query: { ...route.query, open: undefined, tab: undefined, tabela: undefined } });
 };
 
 // Deep-link: /crm/buildings?open=<idempreendimento> abre o modal do
@@ -131,11 +131,13 @@ const sectionMeta = (key) => ({
             intro="Cada cartão é um empreendimento, agrupado pela etapa comercial em que ele está. É a visão de onde o portfólio está parado e onde está andando."
             :steps="[
               { title: 'Leia por etapa', text: 'A etapa é a fase comercial: da prospecção ao encerramento. A cor do cartão acompanha essa fase.' },
-              { title: 'Abra o empreendimento', text: 'Clique no cartão para ver unidades, blocos e a situação de cada uma.' },
+              { title: 'Abra o empreendimento', text: 'Clique no cartão: ele abre em tela cheia, com as seções à vista: visão geral, unidades, tabelas de preço e materiais.' },
+              { title: 'Consulte as tabelas', text: 'A seção Tabelas de preço guarda toda tabela que já passou pelo CV, vigente ou não. Clique numa para ver as unidades e as séries de pagamento.' },
             ]"
             :tips="[
               'O que aparece aqui vem do CV: empreendimento cadastrado errado lá aparece errado aqui.',
               'Empreendimento sem etapa definida cai no grupo neutro, e não some da lista.',
+              'O link da tela guarda o empreendimento, a seção e a tabela abertos: dá para mandar por WhatsApp e a pessoa cai no mesmo lugar.',
             ]" />
           <Badge variant="neutral" size="sm">
             <i class="fas fa-grip text-[9px]"></i>
