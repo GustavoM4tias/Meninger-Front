@@ -133,6 +133,7 @@ const cabecalho = computed(() => CABECALHO[secaoValida.value] || CABECALHO.caixa
             { title: 'Caixa', text: 'Aviso automático, comunicado do mural e o retorno dos seus alertas, na mesma lista. Filtre por origem quando procurar algo específico.' },
             { title: 'Confirme o que é obrigatório', text: 'Comunicado que pede ciência traz o botão no próprio card: confirmar não tira você da lista.' },
             { title: 'Alertas', text: 'Alerta é uma pergunta que a Eme repete sozinha no horário marcado e te avisa do resultado. Cria-se pela conversa com ela.' },
+            { title: 'Relatório no WhatsApp', text: 'No horário, o relatório chega em PDF com o botão Abrir no Office. Responda PLANILHA para receber o Excel ou RESUMO para ler no próprio WhatsApp. Em cada alerta você escolhe o formato e se a Eme deve perguntar antes de mandar.' },
             { title: 'Preferências', text: 'Cada tipo de aviso liga e desliga por canal: no app, e-mail e WhatsApp.' },
           ]"
           :tips="[

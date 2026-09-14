@@ -10,6 +10,9 @@ import { useToast } from 'vue-toastification';
 
 import Modal from '@/components/UI/Modal.vue';
 import Spinner from '@/components/UI/Spinner.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Switch from '@/components/UI/Switch.vue';
+import { DELIVERY_OPTIONS, deliveryDoForm, deliveryParaApi } from '@/config/alertDelivery';
 
 const props = defineProps({ rule: { type: Object, required: true } });
 const emit = defineEmits(['close', 'saved']);
@@ -36,6 +39,8 @@ const form = ref({
     email:    !!props.rule.channels?.email,
     whatsapp: !!props.rule.channels?.whatsapp,
   },
+  // Entrega no WhatsApp: format '' = padrão da empresa (portal WhatsApp).
+  delivery: deliveryDoForm(props.rule.delivery),
 });
 
 const advancedOpen = ref(false);
@@ -123,6 +128,7 @@ async function save() {
       cooldown_minutes: form.value.cooldown_minutes,
       enabled: form.value.enabled,
       channels: form.value.channels,
+      delivery: deliveryParaApi(form.value.delivery),
     });
     toast.success('Alterações salvas');
     emit('saved');
@@ -229,9 +235,27 @@ async function save() {
             <i class="fa-brands fa-whatsapp"></i>
             <div>
               <p class="channel-name">whatsapp</p>
-              <p class="channel-desc">com SIM/NÃO</p>
+              <p class="channel-desc">relatório em anexo</p>
             </div>
           </label>
+        </div>
+
+        <!-- Como entregar no WhatsApp: formato + perguntar antes -->
+        <div v-if="form.channels.whatsapp" class="delivery-box">
+          <div class="delivery-row">
+            <span class="advanced-label">como entregar</span>
+            <SegmentedControl v-model="form.delivery.format" :options="DELIVERY_OPTIONS" size="sm" />
+          </div>
+          <p class="advanced-hint">
+            <template v-if="form.delivery.format === ''">Segue o padrão da empresa, definido em Configurações › WhatsApp › Automações.</template>
+            <template v-else-if="form.delivery.format === 'pdf'">O PDF chega na própria mensagem, com o botão "Abrir no Office". Responder PLANILHA manda o Excel.</template>
+            <template v-else-if="form.delivery.format === 'xlsx'">A planilha chega na própria mensagem. Responder RESUMO mostra o texto; PDF manda o relatório.</template>
+            <template v-else>Só o resumo em texto, depois de responder SIM. Sem anexo.</template>
+          </p>
+          <div class="delivery-row">
+            <Switch v-model="form.delivery.ask_first" size="sm" label="Perguntar antes de mandar" />
+            <span class="advanced-hint">a Eme avisa e só manda o relatório quando você responde SIM</span>
+          </div>
         </div>
       </section>
 
@@ -527,6 +551,15 @@ async function save() {
   color: rgb(var(--ink-subtle));
   margin: 2px 0 0 0;
 }
+
+.delivery-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px dashed rgb(var(--line));
+  border-radius: 8px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.delivery-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 /* ═══════════ ADVANCED ═══════════ */
 .advanced-toggle {

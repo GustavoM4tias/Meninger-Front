@@ -12,6 +12,9 @@ import * as api from '@/utils/Alerts/apiAlerts';
 import API_URL from '@/config/apiUrl';
 
 import Spinner from '@/components/UI/Spinner.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Switch from '@/components/UI/Switch.vue';
+import { DELIVERY_OPTIONS, deliveryDoForm, deliveryParaApi } from '@/config/alertDelivery';
 import ChatText from './ChatText.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
@@ -50,6 +53,8 @@ const form = ref({
     email:    !!props.action.channels?.email,
     whatsapp: !!props.action.channels?.whatsapp,
   },
+  // Entrega no WhatsApp: format '' = padrão da empresa (portal WhatsApp).
+  delivery: deliveryDoForm(props.action.delivery),
   cooldown_minutes: 0,
   enabled: true,
 });
@@ -145,6 +150,7 @@ async function loadAlert(id) {
         email:    !!rule.channels?.email,
         whatsapp: !!rule.channels?.whatsapp,
       },
+      delivery: deliveryDoForm(rule.delivery),
       cooldown_minutes: rule.cooldown_minutes ?? 0,
       enabled: rule.enabled !== false,
     };
@@ -194,6 +200,7 @@ async function save() {
         cron: form.value.cron,
         timezone: form.value.timezone,
         channels: form.value.channels,
+        delivery: deliveryParaApi(form.value.delivery),
         cooldown_minutes: form.value.cooldown_minutes,
         enabled: form.value.enabled,
       });
@@ -215,6 +222,7 @@ async function save() {
           title_template: form.value.title_template || form.value.name,
           preview_template: form.value.preview_template || '{{preview}}',
           channels: form.value.channels,
+          delivery: deliveryParaApi(form.value.delivery),
           cooldown_minutes: form.value.cooldown_minutes,
           enabled: form.value.enabled,
         }),
@@ -438,9 +446,27 @@ const MINUTES = [0, 15, 30, 45];
             <i class="fa-brands fa-whatsapp"></i>
             <div>
               <p class="channel-name">whatsapp</p>
-              <p class="channel-desc">com SIM/NÃO</p>
+              <p class="channel-desc">relatório em anexo</p>
             </div>
           </label>
+        </div>
+
+        <!-- Como entregar no WhatsApp: formato + perguntar antes -->
+        <div v-if="form.channels.whatsapp" class="delivery-box">
+          <div class="delivery-row">
+            <span class="delivery-label">como entregar</span>
+            <SegmentedControl v-model="form.delivery.format" :options="DELIVERY_OPTIONS" size="sm" />
+          </div>
+          <p class="delivery-hint">
+            <template v-if="form.delivery.format === ''">Segue o padrão da empresa (Configurações › WhatsApp › Automações).</template>
+            <template v-else-if="form.delivery.format === 'pdf'">O PDF chega na própria mensagem, com o botão "Abrir no Office". Responder PLANILHA manda o Excel.</template>
+            <template v-else-if="form.delivery.format === 'xlsx'">A planilha chega na própria mensagem. Responder RESUMO mostra o texto; PDF manda o relatório.</template>
+            <template v-else>Só o resumo em texto, depois de responder SIM. Sem anexo.</template>
+          </p>
+          <div class="delivery-row">
+            <Switch v-model="form.delivery.ask_first" size="sm" label="Perguntar antes de mandar" />
+            <span class="delivery-hint">a Eme avisa e só manda quando você responde SIM</span>
+          </div>
         </div>
       </section>
 
@@ -937,6 +963,23 @@ const MINUTES = [0, 15, 30, 45];
   display: flex; align-items: center; gap: 5px;
 }
 .preview-hint i { font-size: 9px; }
+
+.delivery-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px dashed rgb(var(--line));
+  border-radius: 8px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.delivery-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.delivery-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgb(var(--ink-muted));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.delivery-hint { font-size: 11px; color: rgb(var(--ink-subtle)); margin: 0; }
 
 /* ═════════════════════════════════════════════════════════════════════════
    ADVANCED (collapsible)

@@ -19,6 +19,7 @@ import AlertEditModal from './components/AlertEditModal.vue';
 import AlertLogsModal from './components/AlertLogsModal.vue';
 import AlertShareModal from './components/AlertShareModal.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
+import { deliveryResumo } from '@/config/alertDelivery';
 
 import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useAlertStore();
@@ -89,10 +90,10 @@ async function onFire(rule) {
   catch { toast.error('Falha ao disparar.'); }
 }
 
-const channelIcons = (ch = {}) => [
+const channelIcons = (ch = {}, delivery = null) => [
   ch.inapp    && { icon: 'fas fa-bell',           label: 'Sistema',  cls: 'text-accent' },
   ch.email    && { icon: 'fas fa-envelope',       label: 'E-mail',   cls: 'text-accent' },
-  ch.whatsapp && { icon: 'fa-brands fa-whatsapp', label: 'WhatsApp', cls: 'text-data-pos' },
+  ch.whatsapp && { icon: 'fa-brands fa-whatsapp', label: `WhatsApp · ${deliveryResumo(delivery)}`, cls: 'text-data-pos' },
 ].filter(Boolean);
 </script>
 
@@ -172,7 +173,7 @@ const channelIcons = (ch = {}) => [
 
     <!-- Channels -->
     <div class="hidden sm:flex items-center gap-2">
-      <i v-for="c in channelIcons(rule.channels)" :key="c.label"
+      <i v-for="c in channelIcons(rule.channels, rule.delivery)" :key="c.label"
         :class="[c.icon, c.cls, 'text-sm']"
         v-tippy="c.label"></i>
     </div>

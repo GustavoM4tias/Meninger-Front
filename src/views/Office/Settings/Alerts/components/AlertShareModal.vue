@@ -73,7 +73,7 @@ async function submit() {
 const channelDefs = [
   { key: 'inapp',    icon: 'fas fa-bell',           name: 'Sino',     desc: 'no painel' },
   { key: 'email',    icon: 'fas fa-envelope',       name: 'E-mail',   desc: 'caixa de entrada' },
-  { key: 'whatsapp', icon: 'fa-brands fa-whatsapp', name: 'WhatsApp', desc: 'com SIM/NÃO' },
+  { key: 'whatsapp', icon: 'fa-brands fa-whatsapp', name: 'WhatsApp', desc: 'relatório em anexo' },
 ];
 </script>
 

@@ -12,6 +12,8 @@ import Switch from '@/components/UI/Switch.vue'
 import Input from '@/components/UI/Input.vue'
 import Select from '@/components/UI/Select.vue'
 import EmptyState from '@/components/UI/EmptyState.vue'
+import SegmentedControl from '@/components/UI/SegmentedControl.vue'
+import { DELIVERY_OPTIONS } from '@/config/alertDelivery'
 import { pedirConfirmacao } from '@/composables/useConfirm';
 import { useToast } from 'vue-toastification';
 
@@ -60,10 +62,18 @@ async function load() {
   } catch (e) { notify(e.message, 'err') } finally { loading.value = false }
 }
 
+// Entrega padrão dos alertas (só a automação alert_generic). Opções sem o
+// "Padrão": aqui É o padrão da empresa.
+const deliveryOptions = DELIVERY_OPTIONS.filter(o => o.value)
+
 function openEdit(a) {
   if (editId.value === a.id) { editId.value = null; return }
   editId.value = a.id
   if (!a.triggerConfig) a.triggerConfig = {}
+  if (a.key === 'alert_generic') {
+    if (!a.settings) a.settings = {}
+    if (!a.settings.delivery) a.settings.delivery = { format: 'pdf', ask_first: false }
+  }
   json.variableMapping = pretty(a.variableMapping)
   json.buttons = pretty(a.buttons)
   json.replyActions = pretty(a.replyActions)
@@ -85,6 +95,7 @@ async function save(a) {
       buttons: parseJson('Botões', json.buttons),
       replyActions: parseJson('Ações de resposta', json.replyActions),
       recipients: parseJson('Destinatários', json.recipients),
+      ...(a.key === 'alert_generic' ? { settings: { ...(a.settings || {}), delivery: a.settings?.delivery } } : {}),
     }
     const { automation } = await api.updateAutomation(a.id, payload)
     Object.assign(a, automation)
@@ -182,6 +193,17 @@ onMounted(load)
             <Input v-model="a.templateLanguage" label="Idioma do template" placeholder="pt_BR" />
             <Select :model-value="a.category" :options="categoryOptions" label="Categoria" @change="(v) => a.category = v" />
           </div>
+          <!-- Entrega padrão dos alertas da Eme: vale para toda regra que não escolheu o seu -->
+          <Surface v-if="a.key === 'alert_generic' && a.settings?.delivery" variant="flat" padding="sm" class="space-y-3">
+            <div>
+              <label :class="LABEL">Entrega padrão dos alertas no WhatsApp</label>
+              <SegmentedControl v-model="a.settings.delivery.format" :options="deliveryOptions" size="sm" />
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+              <Switch v-model="a.settings.delivery.ask_first" size="sm" label="Perguntar antes de mandar" />
+              <span class="text-xs text-ink-subtle">Com isso ligado, o alerta avisa e só manda o relatório depois do SIM (fluxo antigo). Cada alerta pode escolher o seu em Configurações › Alertas.</span>
+            </div>
+          </Surface>
           <div class="grid sm:grid-cols-2 gap-4">
             <div><label :class="LABEL">Mapeamento de variáveis (JSON)</label><textarea v-model="json.variableMapping" :class="TA" rows="4" placeholder='{ "1": "owner.username", "2": "title" }'></textarea></div>
             <div><label :class="LABEL">Destinatários (JSON)</label><textarea v-model="json.recipients" :class="TA" rows="4" placeholder='{ "mode": "owner" }'></textarea></div>
