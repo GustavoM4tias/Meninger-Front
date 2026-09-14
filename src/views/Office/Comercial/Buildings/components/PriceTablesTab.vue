@@ -14,6 +14,8 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { getPriceTables, getPriceTable, syncPriceTables } from '@/utils/Building/apiBuilding';
 
 import DataTable from '@/components/UI/DataTable.vue';
+import Panel from '@/components/UI/Panel.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
 import StatRow from '@/components/UI/StatRow.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Button from '@/components/UI/Button.vue';
@@ -126,6 +128,9 @@ const errorDetail = ref('');
 const busca = ref('');
 const situacaoUnidade = ref('todas');
 
+const filtrosUnidade = computed(() => (busca.value ? 1 : 0) + (situacaoUnidade.value !== 'todas' ? 1 : 0));
+const limparUnidade = () => { busca.value = ''; situacaoUnidade.value = 'todas'; };
+
 const abrir = (t) => emit('update:tabela', t.idtabela);
 const voltar = () => emit('update:tabela', null);
 
@@ -230,60 +235,56 @@ onMounted(carregarLista);
 
       <template v-else-if="detail">
         <!-- Identidade da tabela -->
-        <div class="rounded-xl border border-line bg-surface-raised shadow-soft p-4 space-y-3">
-          <div class="flex flex-wrap items-start gap-3">
-            <div class="min-w-0 flex-1">
-              <h3 class="text-lg font-semibold text-ink leading-tight">{{ detail.nome }}</h3>
-              <p class="text-xs text-ink-muted mt-1">{{ detail.forma || 'Forma de pagamento não informada' }}</p>
-            </div>
-            <div class="flex flex-wrap gap-1.5">
+        <Panel :title="detail.nome" :subtitle="detail.forma || 'Forma de pagamento não informada'" icon="fas fa-tags">
+          <template #actions>
+            <div class="flex flex-wrap gap-1.5 justify-end">
               <Badge :variant="sit(detail).variant" size="sm">
                 <span class="h-1.5 w-1.5 rounded-full" :class="sit(detail).dot"></span>{{ sit(detail).label }}
               </Badge>
               <Badge :variant="detail.aprovado ? 'success' : 'danger'" size="sm">{{ detail.aprovado ? 'Aprovada' : 'Pendente' }}</Badge>
               <Badge v-if="detail.tabela_minima" variant="warning" size="sm">Tabela mínima</Badge>
             </div>
-          </div>
-          <dl class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-            <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-              <dt class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Vigência</dt>
-              <dd class="font-mono text-ink">{{ vigencia(detail) }}</dd>
+          </template>
+          <dl class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3 text-sm">
+            <div class="min-w-0">
+              <dt class="text-micro text-ink-muted">Vigência</dt>
+              <dd class="font-mono text-ink tabular-nums">{{ vigencia(detail) }}</dd>
             </div>
-            <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-              <dt class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Parcelas</dt>
+            <div class="min-w-0">
+              <dt class="text-micro text-ink-muted">Parcelas</dt>
               <dd class="text-ink tabular-nums">
                 <template v-if="detail.quantidade_parcelas_max || detail.maximo_parcelas">até {{ detail.quantidade_parcelas_max || detail.maximo_parcelas }}</template>
                 <template v-else>-</template>
                 <span v-if="detail.juros_mes != null" class="text-ink-muted"> · {{ detail.juros_mes }}% a.m.</span>
               </dd>
             </div>
-            <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-              <dt class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Primeira leitura</dt>
-              <dd class="font-mono text-ink">{{ fmtDateTime(detail.primeira_sincronizacao) }}</dd>
+            <div class="min-w-0">
+              <dt class="text-micro text-ink-muted">Primeira leitura</dt>
+              <dd class="font-mono text-ink tabular-nums">{{ fmtDateTime(detail.primeira_sincronizacao) }}</dd>
             </div>
-            <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-              <dt class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Última sincronização</dt>
-              <dd class="font-mono text-ink">{{ fmtDateTime(detail.ultima_sincronizacao) }}</dd>
+            <div class="min-w-0">
+              <dt class="text-micro text-ink-muted">Última sincronização</dt>
+              <dd class="font-mono text-ink tabular-nums">{{ fmtDateTime(detail.ultima_sincronizacao) }}</dd>
             </div>
           </dl>
-        </div>
+        </Panel>
 
         <StatRow :items="kpisDetalhe" :cols="{ sm: 2, md: 2, lg: 4 }" />
 
         <!-- Unidades da tabela -->
-        <div class="space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-            <div class="sm:max-w-xs flex-1">
-              <Input v-model="busca" placeholder="Buscar unidade, bloco ou etapa..." iconLeft="fas fa-magnifying-glass" size="sm" />
-            </div>
-            <div class="sm:w-56">
-              <Select v-model="situacaoUnidade" :options="situacoesUnidade" size="sm" placeholder="Todas as situações" />
-            </div>
-            <span class="text-xs text-ink-subtle font-mono sm:ml-auto">
-              {{ unidadesFiltradas.length }} de {{ detail.unidades.length }} unidade(s)
-            </span>
-          </div>
+        <FilterBar :active-count="filtrosUnidade" auto-apply :cols="2" @clear="limparUnidade">
+          <Input v-model="busca" label="Busca" placeholder="Unidade, bloco ou etapa" iconLeft="fas fa-magnifying-glass" />
+          <Select v-model="situacaoUnidade" label="Situação" :options="situacoesUnidade" />
+          <template #actions>
+            <Button v-if="filtrosUnidade" variant="ghost" size="sm" icon="fas fa-eraser" @click="limparUnidade">Limpar</Button>
+          </template>
+        </FilterBar>
 
+        <Panel title="Unidades da tabela" icon="fas fa-house" :padded="false">
+          <template #actions>
+            <span class="text-xs text-ink-subtle font-mono tabular-nums">{{ unidadesFiltradas.length }} de {{ detail.unidades.length }}</span>
+          </template>
+          <div class="p-3 sm:p-4">
           <DataTable :columns="COLUNAS_UNIDADE" :rows="unidadesFiltradas" row-key="idunidade"
             sort-by="unidade" expandable
             empty-icon="fas fa-house" empty-title="Nenhuma unidade nesta tabela"
@@ -318,38 +319,36 @@ onMounted(carregarLista);
               <p v-else class="text-xs text-ink-subtle">Sem séries de pagamento nesta unidade.</p>
             </template>
           </DataTable>
-        </div>
+          </div>
+        </Panel>
       </template>
     </template>
 
     <!-- ══ LISTA de todas as tabelas ═══════════════════════════════════ -->
     <template v-else>
-      <div class="flex flex-col lg:flex-row lg:items-center gap-3">
-        <div class="min-w-0">
-          <p class="text-sm text-ink">
-            <b class="tabular-nums">{{ tables.length }}</b> tabela(s) de preço já lidas do CV
-            <template v-if="periodo"> · histórico de <span class="font-mono">{{ fmtDate(periodo.de) }}</span> a <span class="font-mono">{{ fmtDate(periodo.ate) }}</span></template>
-          </p>
-          <p class="text-xs text-ink-muted mt-0.5">Clique numa tabela para ver as unidades e as séries. Tabela que saiu do CV continua aqui.</p>
-        </div>
-        <div class="lg:ml-auto flex flex-wrap items-center gap-2">
-          <SegmentedControl v-model="filtro" :options="filtroOptions" size="sm" />
-          <Button v-if="canSync" variant="secondary" size="sm" :loading="syncing"
-            :icon="syncMsg?.ok ? 'fas fa-check' : 'fas fa-rotate'" @click="sincronizar"
-            v-tippy="'Lê agora as tabelas deste empreendimento no CV. O robô faz isso todo dia às 9h.'">
-            {{ syncing ? 'Lendo o CV...' : 'Sincronizar com o CV' }}
-          </Button>
-        </div>
-      </div>
-      <p v-if="syncMsg" class="text-xs" :class="syncMsg.ok ? 'text-data-pos' : 'text-data-neg'">
-        <i class="fas" :class="syncMsg.ok ? 'fa-check' : 'fa-triangle-exclamation'"></i> {{ syncMsg.text }}
-      </p>
+      <Panel title="Histórico de tabelas" icon="fas fa-tags" :padded="false"
+        :subtitle="periodo ? `Vigências de ${fmtDate(periodo.de)} a ${fmtDate(periodo.ate)} · tabela que saiu do CV continua aqui` : 'Toda tabela lida do CV fica guardada, vigente ou não'">
+        <template #actions>
+          <div class="flex flex-wrap items-center gap-2 justify-end">
+            <SegmentedControl v-model="filtro" :options="filtroOptions" size="sm" />
+            <Button v-if="canSync" variant="secondary" size="sm" :loading="syncing"
+              :icon="syncMsg?.ok ? 'fas fa-check' : 'fas fa-rotate'" @click="sincronizar"
+              v-tippy="'Lê agora as tabelas deste empreendimento no CV. O robô faz isso todo dia às 9h.'">
+              <span class="hidden sm:inline">{{ syncing ? 'Lendo o CV...' : 'Sincronizar com o CV' }}</span>
+            </Button>
+          </div>
+        </template>
 
-      <EmptyState v-if="error" icon="fas fa-triangle-exclamation" title="Não deu para listar as tabelas" :description="error">
-        <template #actions><Button size="sm" @click="carregarLista">Tentar de novo</Button></template>
-      </EmptyState>
+        <div class="p-3 sm:p-4 space-y-3">
+        <p v-if="syncMsg" class="text-xs" :class="syncMsg.ok ? 'text-data-pos' : 'text-data-neg'">
+          <i class="fas" :class="syncMsg.ok ? 'fa-check' : 'fa-triangle-exclamation'"></i> {{ syncMsg.text }}
+        </p>
 
-      <DataTable v-else :columns="COLUNAS" :rows="listaFiltrada" row-key="idtabela" :loading="loading"
+        <EmptyState v-if="error" icon="fas fa-triangle-exclamation" title="Não deu para listar as tabelas" :description="error">
+          <template #actions><Button size="sm" @click="carregarLista">Tentar de novo</Button></template>
+        </EmptyState>
+
+        <DataTable v-else :columns="COLUNAS" :rows="listaFiltrada" row-key="idtabela" :loading="loading"
         clickable sort-by="vigencia" sort-dir="desc" density="comfortable" @row-click="abrir"
         empty-icon="fas fa-tags" empty-title="Nenhuma tabela lida do CV"
         :empty-text="canSync ? 'Sincronize para ler as tabelas deste empreendimento no CV.' : 'O robô lê o CV todo dia às 9h. Se o empreendimento tem tabela lá, ela aparece aqui depois disso.'">
@@ -365,7 +364,11 @@ onMounted(carregarLista);
             <span class="h-1.5 w-1.5 rounded-full" :class="sit(row).dot"></span>{{ sit(row).label }}
           </Badge>
         </template>
-      </DataTable>
+        </DataTable>
+        </div>
+
+        <template #footer>Clique numa tabela para ver as unidades e as séries de pagamento.</template>
+      </Panel>
     </template>
   </div>
 </template>

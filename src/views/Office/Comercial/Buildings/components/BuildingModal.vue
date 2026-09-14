@@ -1,12 +1,30 @@
 <script setup>
+/**
+ * Detalhe do empreendimento, em tela cheia (Modal `screen`).
+ *
+ * Quatro seções, todas à vista na barra de abas: Visão geral, Unidades,
+ * Tabelas de preço e Materiais & Plantas. A seção e a tabela abertas moram na
+ * URL (?open=<id>&tab=<aba>&tabela=<idtabela>), então o link leva a pessoa
+ * ao mesmo lugar.
+ *
+ * Tudo aqui é feito com os primitivos de UI/ (Panel, StatRow, FunnelStrip,
+ * FilterBar, DataTable, Badge): nada de card escrito à mão.
+ */
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCan } from '@/composables/useCan';
 import { useBuildingStore } from '@/stores/Comercial/Building/buildingStore';
 
 import Modal from '@/components/UI/Modal.vue';
-import Surface from '@/components/UI/Surface.vue';
+import Panel from '@/components/UI/Panel.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import FunnelStrip from '@/components/UI/FunnelStrip.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
+import DataTable from '@/components/UI/DataTable.vue';
 import Badge from '@/components/UI/Badge.vue';
+import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+import IconButton from '@/components/UI/IconButton.vue';
 
 import WeatherInfo from './UI/WeatherInfo.vue';
 import PriceTablesTab from './PriceTablesTab.vue';
@@ -19,8 +37,6 @@ const emit = defineEmits(['close']);
 const buildingStore = useBuildingStore();
 
 // ── Abas ───────────────────────────────────────────────────
-// A aba mora na URL (?open=<id>&tab=<aba>&tabela=<idtabela>): dá para mandar
-// o link de uma tabela específica e o F5 volta no mesmo lugar.
 const route = useRoute();
 const router = useRouter();
 const TABS = ['geral', 'unidades', 'tabelas', 'materiais'];
@@ -45,66 +61,84 @@ const fetchWeather = async () => {
   }
 };
 
-const formatDate = (d) => d || 'Não informado';
+// ── Formatadores ───────────────────────────────────────────
 const fmtMoney = (v) => {
   const n = Number(v);
-  return Number.isFinite(n)
+  return Number.isFinite(n) && v !== null && v !== ''
     ? n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-    : 'R$ —';
+    : '-';
 };
+const fmtArea = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) && v !== null && v !== ''
+    ? `${n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`
+    : '-';
+};
+const fmtMB = (bytes) => (bytes > 0 ? `${(bytes / 1024 / 1024).toFixed(2)} MB` : '-');
 
-// ── Status helpers ─────────────────────────────────────────
+// ── Situação das unidades (situacao_mapa_disponibilidade do CV) ─
+// Mesmas cores da legenda em toda a tela: barra, selo e filtro.
 const UNIT_STATUS = {
-  1: { text: 'Disponível',     dot: 'bg-data-pos', cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' },
-  2: { text: 'Reserva início', dot: 'bg-accent',    cls: 'bg-accent/10 text-accent border-accent/20' },
-  3: { text: 'Vendido',        dot: 'bg-data-neg',    cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' },
-  4: { text: 'Bloqueado',      dot: 'bg-data-neutral',   cls: 'bg-surface-sunken text-ink-muted border-line' },
-  5: { text: 'Reserva ativa',  dot: 'bg-data-warn',  cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' },
+  1: { key: 'disponivel',     label: 'Disponível',     icon: 'fas fa-circle-check', variant: 'success', bar: 'bg-data-pos/70',     text: 'text-data-pos' },
+  2: { key: 'reserva_inicio', label: 'Reserva início', icon: 'fas fa-hourglass-start', variant: 'accent', bar: 'bg-accent/70', text: 'text-accent' },
+  5: { key: 'reserva_ativa',  label: 'Reserva ativa',  icon: 'fas fa-hourglass-half', variant: 'warning', bar: 'bg-data-warn/70', text: 'text-data-warn' },
+  3: { key: 'vendida',        label: 'Vendida',        icon: 'fas fa-flag-checkered', variant: 'danger', bar: 'bg-data-neg/70',  text: 'text-data-neg' },
+  4: { key: 'bloqueada',      label: 'Bloqueada',      icon: 'fas fa-lock',          variant: 'neutral', bar: 'bg-data-neutral/70', text: 'text-ink-muted' },
 };
-const getUnitStatus = (u) => UNIT_STATUS[u.situacao?.situacao_mapa_disponibilidade] || {
-  text: 'Não informado', dot: 'bg-data-neutral', cls: 'bg-surface-sunken text-ink-muted border-line',
-};
+const UNKNOWN_STATUS = { key: 'sem_status', label: 'Não informado', icon: 'fas fa-circle-question', variant: 'neutral', bar: 'bg-data-neutral/40', text: 'text-ink-subtle' };
+const statusOf = (u) => UNIT_STATUS[u.situacao?.situacao_mapa_disponibilidade] || UNKNOWN_STATUS;
 
-// ── Resumo ─────────────────────────────────────────────────
-const totalUnits = computed(() => {
-  if (!props.building.etapas) return 0;
-  return props.building.etapas.reduce((total, etapa) =>
-    total + (etapa.blocos?.reduce((b, bloco) =>
-      b + (bloco.paginacao_unidade?.total || 0), 0) || 0), 0);
+// ── Unidades achatadas (uma linha por unidade) ─────────────
+const units = computed(() => {
+  const out = [];
+  for (const etapa of props.building.etapas || []) {
+    for (const bloco of etapa.blocos || []) {
+      for (const u of bloco.unidades || []) {
+        out.push({
+          ...u,
+          etapa: etapa.nome,
+          bloco: bloco.nome,
+          idetapa: etapa.idetapa,
+          status: statusOf(u),
+          area_num: u.area_privativa != null ? Number(u.area_privativa) : null,
+          valor_num: u.valor != null ? Number(u.valor) : null,
+        });
+      }
+    }
+  }
+  return out;
 });
 
-const totalBlocks = computed(() => {
-  if (!props.building.etapas) return 0;
-  return props.building.etapas.reduce((total, etapa) => total + (etapa.blocos?.length || 0), 0);
-});
+const totalUnits = computed(() => units.value.length);
+const totalBlocks = computed(() =>
+  (props.building.etapas || []).reduce((t, e) => t + (e.blocos?.length || 0), 0));
 
-const unitStatusCounts = computed(() => {
-  const c = { disponivel: 0, reserva_inicio: 0, vendido: 0, bloqueado: 0, reserva_ativa: 0 };
-  if (!props.building.etapas) return c;
-  props.building.etapas.forEach(etapa => {
-    etapa.blocos?.forEach(bloco => {
-      bloco.unidades?.forEach(u => {
-        const s = u.situacao?.situacao_mapa_disponibilidade;
-        if (s === 1) c.disponivel++;
-        else if (s === 2) c.reserva_inicio++;
-        else if (s === 3) c.vendido++;
-        else if (s === 4) c.bloqueado++;
-        else if (s === 5) c.reserva_ativa++;
-      });
-    });
-  });
-  return c;
+const statusStages = computed(() => {
+  const count = {};
+  for (const u of units.value) count[u.status.key] = (count[u.status.key] || 0) + 1;
+  const ordem = [UNIT_STATUS[1], UNIT_STATUS[2], UNIT_STATUS[5], UNIT_STATUS[3], UNIT_STATUS[4], UNKNOWN_STATUS];
+  return ordem
+    .map((s) => ({ ...s, count: count[s.key] || 0 }))
+    .filter((s) => s.count > 0 || s.key !== 'sem_status');
 });
-
-const kpiCards = computed(() => [
-  { label: 'Unidades',       value: totalUnits.value, icon: 'fas fa-house', accent: 'text-accent bg-accent-soft' },
-  { label: 'Blocos',         value: totalBlocks.value, icon: 'fas fa-building', accent: 'text-data-pos bg-data-pos/10' },
-  { label: 'Etapas',         value: props.building.etapas?.length || 0, icon: 'fas fa-layer-group', accent: 'text-accent bg-accent/10' },
-  { label: 'Materiais',      value: props.building.materiais_campanha?.length || 0, icon: 'fas fa-images', accent: 'text-data-warn bg-data-warn/10' },
-]);
 
 const materialsCount = computed(() =>
   (props.building.materiais_campanha?.length || 0) + (props.building.plantas_mapeadas?.length || 0));
+
+const kpiCards = computed(() => {
+  const disp = statusStages.value.find((s) => s.key === 'disponivel')?.count || 0;
+  const vend = statusStages.value.find((s) => s.key === 'vendida')?.count || 0;
+  return [
+    { key: 'unidades', label: 'Unidades', raw: totalUnits.value, icon: 'fas fa-house', tone: 'accent',
+      hint: `${totalBlocks.value} bloco(s) · ${props.building.etapas?.length || 0} etapa(s)` },
+    { key: 'disp', label: 'Disponíveis', raw: disp, icon: 'fas fa-circle-check', tone: 'pos',
+      hint: totalUnits.value ? `${((disp / totalUnits.value) * 100).toFixed(0)}% do estoque` : '' },
+    { key: 'vend', label: 'Vendidas', raw: vend, icon: 'fas fa-flag-checkered', tone: 'neg',
+      hint: totalUnits.value ? `${((vend / totalUnits.value) * 100).toFixed(0)}% do total` : '' },
+    { key: 'mat', label: 'Materiais', raw: materialsCount.value, icon: 'fas fa-images', tone: 'warn',
+      hint: `${props.building.plantas_mapeadas?.length || 0} planta(s) mapeada(s)` },
+  ];
+});
 
 const tabOptions = computed(() => [
   { value: 'geral',     label: 'Visão geral',        icon: 'fas fa-grip',   hint: 'Números, empresa, endereço e cronograma' },
@@ -113,30 +147,128 @@ const tabOptions = computed(() => [
   { value: 'materiais', label: 'Materiais & Plantas', icon: 'fas fa-images', count: materialsCount.value, hint: 'Campanha, plantas e mapa' },
 ]);
 
-const statusBreakdown = computed(() => [
-  { key: 'disponivel',     label: 'Disponíveis',    value: unitStatusCounts.value.disponivel,     dot: 'bg-data-pos', text: 'text-data-pos' },
-  { key: 'reserva_inicio', label: 'Reserva início', value: unitStatusCounts.value.reserva_inicio, dot: 'bg-accent',    text: 'text-accent' },
-  { key: 'reserva_ativa',  label: 'Reservas ativas', value: unitStatusCounts.value.reserva_ativa, dot: 'bg-data-warn',  text: 'text-data-warn' },
-  { key: 'vendido',        label: 'Vendidas',       value: unitStatusCounts.value.vendido,        dot: 'bg-data-neg',    text: 'text-data-neg' },
-  { key: 'bloqueado',      label: 'Bloqueadas',     value: unitStatusCounts.value.bloqueado,      dot: 'bg-data-neutral',   text: 'text-ink-muted' },
-]);
+// ── Filtros da aba Unidades ────────────────────────────────
+const busca = ref('');
+const filtroEtapa = ref('todas');
+const filtroBloco = ref('todos');
+const filtroStatus = ref([]); // chaves de UNIT_STATUS; vazio = todas
 
+const etapaOptions = computed(() => [
+  { value: 'todas', label: 'Todas as etapas' },
+  ...(props.building.etapas || []).map((e) => ({ value: String(e.idetapa), label: e.nome })),
+]);
+const blocoOptions = computed(() => {
+  const set = new Map();
+  for (const u of units.value) {
+    if (filtroEtapa.value !== 'todas' && String(u.idetapa) !== filtroEtapa.value) continue;
+    set.set(u.idbloco, u.bloco);
+  }
+  return [{ value: 'todos', label: 'Todos os blocos' }, ...[...set].map(([v, l]) => ({ value: String(v), label: l }))];
+});
+const statusOptions = computed(() => [
+  { value: 'todas', label: 'Todas as situações' },
+  ...statusStages.value.map((s) => ({ value: s.key, label: s.label })),
+]);
+const filtroStatusSelect = computed({
+  get: () => (filtroStatus.value.length === 1 ? filtroStatus.value[0] : 'todas'),
+  set: (v) => { filtroStatus.value = v === 'todas' ? [] : [v]; },
+});
+const toggleStatus = (stage) => {
+  const i = filtroStatus.value.indexOf(stage.key);
+  if (i >= 0) filtroStatus.value.splice(i, 1);
+  else filtroStatus.value.push(stage.key);
+};
+const filtrosAtivos = computed(() =>
+  (busca.value ? 1 : 0) + (filtroEtapa.value !== 'todas' ? 1 : 0) + (filtroBloco.value !== 'todos' ? 1 : 0) + (filtroStatus.value.length ? 1 : 0));
+const limparFiltros = () => { busca.value = ''; filtroEtapa.value = 'todas'; filtroBloco.value = 'todos'; filtroStatus.value = []; };
+
+const unitsFiltradas = computed(() => {
+  const q = busca.value.trim().toLowerCase();
+  return units.value.filter((u) => {
+    if (filtroEtapa.value !== 'todas' && String(u.idetapa) !== filtroEtapa.value) return false;
+    if (filtroBloco.value !== 'todos' && String(u.idbloco) !== filtroBloco.value) return false;
+    if (filtroStatus.value.length && !filtroStatus.value.includes(u.status.key)) return false;
+    if (!q) return true;
+    return [u.nome, u.bloco, u.etapa, u.idunidade_int, u.tipologia].some((v) => String(v ?? '').toLowerCase().includes(q));
+  });
+});
+
+// Do funil da Visão geral direto para a lista já recortada
+const verUnidades = (stage) => {
+  filtroStatus.value = stage ? [stage.key] : [];
+  activeTab.value = 'unidades';
+};
+
+const resumoFiltrado = computed(() => {
+  const comValor = unitsFiltradas.value.filter((u) => u.valor_num != null);
+  const vgv = comValor.reduce((s, u) => s + u.valor_num, 0);
+  const area = comValor.reduce((s, u) => s + (u.area_num || 0), 0);
+  return { n: unitsFiltradas.value.length, vgv, comValor: comValor.length, m2: area > 0 ? vgv / area : null };
+});
+
+const COLUNAS_UNIDADES = [
+  { key: 'nome',           label: 'Unidade',   priority: 1, sortable: true },
+  { key: 'status',         label: 'Situação',  priority: 1, sortable: true, sortValue: (u) => u.status.label, width: '140px' },
+  { key: 'valor_num',      label: 'Valor',     priority: 1, numeric: true, sortable: true, format: fmtMoney, width: '150px' },
+  { key: 'bloco',          label: 'Bloco',     priority: 2, sortable: true, width: '150px' },
+  { key: 'etapa',          label: 'Etapa',     priority: 3, sortable: true, width: '130px' },
+  { key: 'andar',          label: 'Andar',     priority: 2, sortable: true, width: '80px', align: 'center' },
+  { key: 'area_num',       label: 'Área',      priority: 2, numeric: true, sortable: true, format: fmtArea, width: '110px' },
+  { key: 'tipologia',      label: 'Tipologia', priority: 3, sortable: true },
+  { key: 'vagas_garagem',  label: 'Vagas',     priority: 3, numeric: true, sortable: true, width: '70px' },
+  { key: 'idunidade_int',  label: 'ID Sienge', priority: 3, width: '90px' },
+];
+
+// ── Materiais e plantas ────────────────────────────────────
+const materiais = computed(() => (props.building.materiais_campanha || []).map((m) => ({
+  ...m,
+  href: m.tipo === 'youtube' ? m.servidor : m.arquivo,
+  tamanho_num: Number(m.tamanho) || 0,
+})));
+const COLUNAS_MATERIAIS = [
+  { key: 'nome',        label: 'Material', priority: 1, sortable: true },
+  { key: 'tipo',        label: 'Tipo',     priority: 2, sortable: true, width: '120px' },
+  { key: 'tamanho_num', label: 'Tamanho',  priority: 2, numeric: true, sortable: true, format: fmtMB, width: '110px' },
+];
+const COLUNAS_PLANTAS = [
+  { key: 'nome', label: 'Planta', priority: 1, sortable: true },
+];
+const abrirLink = (href) => { if (href) window.open(href, '_blank', 'noopener'); };
+
+// ── Cabeçalho ──────────────────────────────────────────────
 const cvLink = computed(() =>
   `https://menin.cvcrm.com.br/gestor/cadastros/empreendimentos/${props.building.idempreendimento}/cadastro_simplificado`
 );
-
-// Sync manual das tabelas (CV → Office) é ação da tela, só para quem tem a
-// capacidade `sync` (lib/screenCapabilities.js no back). O botão vive na aba
-// Tabelas, ao lado do que ele atualiza.
 const can = useCan('/crm/buildings');
-
 const stage = computed(() => props.building.situacao_comercial?.[0]?.nome ?? null);
 const stageChips = computed(() => [
-  props.building.situacao_comercial?.[0]?.nome,
   props.building.tipo_empreendimento?.[0]?.nome,
   props.building.situacao_obra?.[0]?.nome,
   props.building.segmento?.[0]?.nome,
 ].filter(Boolean));
+
+// Campos de leitura das seções da Visão geral
+const camposEmpresa = computed(() => [
+  { label: 'Empresa',      value: props.building.nome_empresa },
+  { label: 'ID Empresa',   value: props.building.idempresa_int, mono: true },
+  { label: 'CDC Sienge',   value: props.building.idempreendimento_int, mono: true },
+  { label: 'ID CV',        value: props.building.idempreendimento, mono: true },
+  { label: 'Matrícula',    value: props.building.matricula, mono: true },
+  { label: 'CNPJ',         value: props.building.cnpj_empesa, mono: true },
+]);
+const camposEndereco = computed(() => [
+  { label: 'Endereço', value: [props.building.endereco_emp, props.building.numero].filter(Boolean).join(', ') },
+  { label: 'Bairro',   value: props.building.bairro },
+  { label: 'Cidade',   value: [props.building.cidade, props.building.estado].filter(Boolean).join(' · ') },
+  { label: 'CEP',      value: props.building.cep, mono: true },
+  { label: 'Região',   value: props.building.regiao },
+]);
+const camposCronograma = computed(() => [
+  { label: 'Previsão de entrega', value: props.building.data_entrega, mono: true, tone: 'text-data-warn' },
+  { label: 'Início das vendas',   value: props.building.periodo_venda_inicio, mono: true },
+  { label: 'Tabela no CV',        value: props.building.tabela?.nome },
+  { label: 'Vigência da tabela',  value: props.building.tabela ? `${props.building.tabela.data_vigencia_de} → ${props.building.tabela.data_vigencia_ate}` : null, mono: true },
+]);
 
 onMounted(fetchWeather);
 </script>
@@ -158,7 +290,7 @@ onMounted(fetchWeather);
         </div>
         <div class="ml-auto shrink-0 flex items-center gap-2">
           <a :href="cvLink" target="_blank" rel="noopener" v-tippy="'Abrir no CV CRM'"
-            class="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors shadow-soft">
+            class="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors shadow-soft focus-ring">
             <img src="/CVLogo.png" alt="CV CRM" class="h-4 brightness-0 invert" />
             <span class="hidden sm:inline">Abrir no CV</span>
             <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
@@ -174,31 +306,23 @@ onMounted(fetchWeather);
       <div class="relative h-36 sm:h-44">
         <img :src="building.foto || '/noimg.jpg'" :alt="building.nome"
           class="absolute inset-0 w-full h-full object-cover" />
-
-        <!-- Fade leve só na base, para o título ficar legível sem sombrear a foto -->
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
-        <!-- Weather (hover tooltip) — acima da barra de abas sticky (z-30) para o tooltip abrir por cima -->
+        <!-- Clima (tooltip no hover), acima da barra de abas sticky (z-30) -->
         <div class="absolute bottom-4 right-4 text-3xl z-40">
           <WeatherInfo :weather="buildingStore.weather" :city="building.cidade" />
         </div>
 
-        <!-- Title + Chips -->
         <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-5 z-10">
           <div class="flex flex-wrap gap-1.5 mb-2">
             <span v-if="stage"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md
-                     bg-surface-raised/20 backdrop-blur-md border border-white/30
-                     text-white text-xs font-semibold">
-              <span class="h-1.5 w-1.5 rounded-full bg-surface-raised"></span>
-              {{ stage }}
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-raised/20 backdrop-blur-md border border-white/30 text-white text-xs font-semibold">
+              <span class="h-1.5 w-1.5 rounded-full bg-surface-raised"></span>{{ stage }}
             </span>
-            <span v-for="chip in stageChips.slice(1)" :key="chip"
-              class="inline-flex items-center px-2 py-0.5 rounded-md
-                     bg-surface-raised/15 backdrop-blur-md border border-white/20
-                     text-white/90 text-micro font-medium">
+            <span v-for="chip in stageChips" :key="chip"
+              class="inline-flex items-center px-2 py-0.5 rounded-md bg-surface-raised/15 backdrop-blur-md border border-white/20 text-white/90 text-micro font-medium">
               {{ chip }}
-            </span> 
+            </span>
           </div>
           <h1 class="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight drop-shadow-lg">
             {{ building.nome }}
@@ -210,7 +334,7 @@ onMounted(fetchWeather);
         </div>
       </div>
 
-      <!-- Abas — sticky no scroll único, todas à vista (no celular em duas
+      <!-- Abas: sticky no scroll único, todas à vista (no celular em duas
            colunas, nunca escondidas atrás de rolagem lateral). -->
       <nav class="sticky top-0 z-30 border-b border-line bg-surface" role="tablist" aria-label="Seções do empreendimento">
         <div class="grid grid-cols-2 md:flex md:items-stretch px-2 sm:px-4">
@@ -234,303 +358,152 @@ onMounted(fetchWeather);
         </div>
       </nav>
 
-      <!-- Conteúdo: rola junto com o body do Modal (um scroll só) -->
-      <div class="p-4 sm:p-6 space-y-5">
+      <div class="p-4 sm:p-6 space-y-4">
 
-          <!-- ── Aba: Tabelas de preço (histórico) ───────────────── -->
-          <PriceTablesTab v-if="activeTab === 'tabelas'"
-            :idempreendimento="building.idempreendimento"
-            v-model:tabela="tabelaAberta"
-            :can-sync="can('sync')"
-            @loaded="priceTablesCount = $event" />
+        <!-- ── Tabelas de preço (histórico) ─────────────────────── -->
+        <PriceTablesTab v-if="activeTab === 'tabelas'"
+          :idempreendimento="building.idempreendimento"
+          v-model:tabela="tabelaAberta"
+          :can-sync="can('sync')"
+          @loaded="priceTablesCount = $event" />
 
-          <!-- ── Aba: Visão geral ─────────────────────────────────── -->
-          <template v-else-if="activeTab === 'geral'">
+        <!-- ── Visão geral ──────────────────────────────────────── -->
+        <template v-else-if="activeTab === 'geral'">
+          <StatRow :items="kpiCards" :cols="{ sm: 2, md: 2, lg: 4 }" />
 
-          <!-- Números do empreendimento (KPIs + status das unidades) -->
-          <Surface variant="raised" padding="md">
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-              <div v-for="k in kpiCards" :key="k.label" class="flex items-center gap-3 p-2.5 rounded-xl bg-surface-sunken border border-line">
-                <span class="h-10 w-10 rounded-lg grid place-items-center text-base shrink-0" :class="k.accent">
-                  <i :class="k.icon"></i>
-                </span>
-                <div class="min-w-0">
-                  <p class="text-2xl font-semibold text-ink tabular-nums leading-none">{{ k.value }}</p>
-                  <p class="text-micro uppercase tracking-wider font-mono text-ink-subtle mt-1">{{ k.label }}</p>
-                </div>
-              </div>
-            </div>
-            <div v-if="building.etapas?.length" class="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 pt-3 border-t border-line">
-              <span v-for="s in statusBreakdown" :key="s.key" class="inline-flex items-center gap-1.5 text-xs">
-                <span class="h-2 w-2 rounded-full" :class="s.dot"></span>
-                <span class="font-semibold tabular-nums" :class="s.text">{{ s.value }}</span>
-                <span class="text-ink-subtle">{{ s.label }}</span>
-              </span>
-            </div>
-          </Surface>
+          <Panel title="Situação das unidades" icon="fas fa-chart-bar"
+            subtitle="Clique numa faixa para abrir a lista de unidades já recortada"
+            :empty="!totalUnits" empty-icon="fas fa-house" empty-title="Nenhuma unidade cadastrada no CV">
+            <FunnelStrip :stages="statusStages" :total="totalUnits" unit="unidades" @select="verUnidades" />
+          </Panel>
 
-          <!-- Grid de informações: 3 colunas (Sienge / Localização / Cronograma) -->
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-            <!-- Sienge / Empresa -->
-            <Surface variant="raised" padding="md" class="space-y-3">
-              <div class="flex items-center gap-2 mb-1">
-                <i class="fas fa-building-circle-check text-accent text-sm"></i>
-                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Sienge / Empresa</h3>
-              </div>
-              <div class="space-y-2">
-                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Empresa</p>
-                  <p class="text-sm font-semibold text-ink truncate">{{ building.nome_empresa || '—' }}</p>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                  <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                    <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">ID Empresa</p>
-                    <p class="text-base font-bold text-accent tabular-nums">{{ building.idempresa_int || '—' }}</p>
-                  </div>
-                  <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                    <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">CDC Sienge</p>
-                    <p class="text-base font-bold text-accent tabular-nums">{{ building.idempreendimento_int || '—' }}</p>
-                  </div>
-                </div>
-                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Matrícula</p>
-                  <p class="text-sm text-ink font-mono truncate">{{ building.matricula || '—' }}</p>
-                </div>
-                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">CNPJ</p>
-                  <p class="text-sm text-ink font-mono truncate">{{ building.cnpj_empesa || '—' }}</p>
-                </div>
-              </div>
-            </Surface>
-
-            <!-- Localização -->
-            <Surface variant="raised" padding="md" class="space-y-3">
-              <div class="flex items-center gap-2 mb-1">
-                <i class="fas fa-location-dot text-accent text-sm"></i>
-                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Localização</h3>
-              </div>
-              <ul class="space-y-2 text-sm">
-                <li class="flex items-start gap-2.5">
-                  <i class="fas fa-road text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
-                  <span class="text-ink-muted">
-                    {{ building.endereco_emp || 'Endereço não informado' }}<template v-if="building.numero">, {{ building.numero }}</template>
-                  </span>
-                </li>
-                <li v-if="building.bairro" class="flex items-start gap-2.5">
-                  <i class="fas fa-map-pin text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
-                  <span class="text-ink-muted">{{ building.bairro }}</span>
-                </li>
-                <li class="flex items-start gap-2.5">
-                  <i class="fas fa-city text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
-                  <span class="text-ink-muted">
-                    {{ building.cidade || '—' }}<template v-if="building.estado"> · {{ building.estado }}</template>
-                  </span>
-                </li>
-                <li v-if="building.cep" class="flex items-start gap-2.5">
-                  <i class="fas fa-mailbox text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
-                  <span class="text-ink-muted font-mono">{{ building.cep }}</span>
-                </li>
-                <li v-if="building.regiao" class="flex items-start gap-2.5">
-                  <i class="fas fa-globe-americas text-[11px] text-ink-subtle mt-1 w-4 text-center"></i>
-                  <span class="text-ink-muted">{{ building.regiao }}</span>
-                </li>
-              </ul>
-
-              <!-- Botão Google Maps -->
-              <a v-if="building.latitude && building.longitude"
-                :href="`https://www.google.com/maps?q=${building.latitude},${building.longitude}`"
-                target="_blank" rel="noopener"
-                class="inline-flex items-center gap-1.5 mt-1 text-xs text-accent hover:text-accent-hover transition-colors">
-                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
-                Abrir no Google Maps
-              </a>
-            </Surface>
-
-            <!-- Cronograma + Tabela de preços -->
-            <Surface variant="raised" padding="md" class="space-y-3">
-              <div class="flex items-center gap-2 mb-1">
-                <i class="far fa-calendar-check text-accent text-sm"></i>
-                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Cronograma</h3>
-              </div>
-              <div class="space-y-2">
-                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Previsão de entrega</p>
-                  <p class="text-base font-bold text-data-warn tabular-nums">
-                    {{ formatDate(building.data_entrega) }}
-                  </p>
-                </div>
-                <div v-if="building.periodo_venda_inicio" class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Início das vendas</p>
-                  <p class="text-sm font-semibold text-ink font-mono">{{ formatDate(building.periodo_venda_inicio) }}</p>
-                </div>
-              </div>
-
-              <!-- Tabela de preços (se existir) -->
-              <template v-if="building.tabela">
-                <div class="border-t border-line pt-3 flex items-center gap-2">
-                  <i class="fas fa-tags text-accent text-sm"></i>
-                  <h4 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Tabela de preços</h4>
-                  <Badge :variant="building.tabela.aprovado === 'S' ? 'success' : 'danger'" size="sm" class="ml-auto">
-                    {{ building.tabela.aprovado === 'S' ? 'Aprovada' : 'Pendente' }}
-                  </Badge>
-                </div>
-                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Nome</p>
-                  <p class="text-sm font-semibold text-ink truncate">{{ building.tabela.nome }}</p>
-                </div>
-                <div class="rounded-lg border border-line bg-surface-sunken p-2.5">
-                  <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Vigência</p>
-                  <p class="text-xs text-ink font-mono">
-                    {{ building.tabela.data_vigencia_de }} <span class="text-ink-subtle">→</span> {{ building.tabela.data_vigencia_ate }}
-                  </p>
-                </div>
+            <Panel v-for="sec in [
+                { title: 'Sienge / Empresa', icon: 'fas fa-building-circle-check', campos: camposEmpresa },
+                { title: 'Localização',      icon: 'fas fa-location-dot',          campos: camposEndereco },
+                { title: 'Cronograma',       icon: 'far fa-calendar-check',        campos: camposCronograma },
+              ]" :key="sec.title" :title="sec.title" :icon="sec.icon">
+              <template v-if="sec.title === 'Localização' && building.latitude && building.longitude" #actions>
+                <a :href="`https://www.google.com/maps?q=${building.latitude},${building.longitude}`" target="_blank" rel="noopener"
+                  class="inline-flex items-center gap-1.5 text-xs text-accent hover:text-accent-hover transition-colors focus-ring rounded">
+                  <i class="fas fa-arrow-up-right-from-square text-[10px]"></i> Google Maps
+                </a>
               </template>
-            </Surface>
+              <template v-else-if="sec.title === 'Cronograma' && building.tabela" #actions>
+                <Badge :variant="building.tabela.aprovado === 'S' ? 'success' : 'danger'" size="sm">
+                  {{ building.tabela.aprovado === 'S' ? 'Tabela aprovada' : 'Tabela pendente' }}
+                </Badge>
+              </template>
+              <dl class="divide-y divide-line-subtle -my-1">
+                <div v-for="c in sec.campos" :key="c.label" class="flex items-baseline justify-between gap-3 py-1.5 text-sm">
+                  <dt class="text-ink-muted shrink-0">{{ c.label }}</dt>
+                  <dd class="text-right min-w-0 truncate" :class="[c.mono ? 'font-mono tabular-nums' : 'font-medium', c.value ? (c.tone || 'text-ink') : 'text-ink-subtle']"
+                    :title="c.value ? String(c.value) : ''">
+                    {{ c.value || '-' }}
+                  </dd>
+                </div>
+              </dl>
+            </Panel>
           </div>
+        </template>
+
+        <!-- ── Unidades ─────────────────────────────────────────── -->
+        <template v-else-if="activeTab === 'unidades'">
+          <Panel v-if="!totalUnits" empty empty-icon="fas fa-house"
+            empty-title="Nenhuma etapa/unidade cadastrada no CV" />
+
+          <template v-else>
+            <Panel title="Situação" icon="fas fa-chart-bar" subtitle="Clique numa faixa para filtrar a lista; clique de novo para tirar">
+              <FunnelStrip :stages="statusStages" :total="totalUnits" unit="unidades"
+                :active="filtroStatus" @select="toggleStatus" @clear="filtroStatus = []" />
+            </Panel>
+
+            <FilterBar :active-count="filtrosAtivos" auto-apply :cols="4" @clear="limparFiltros">
+              <Input v-model="busca" label="Busca" placeholder="Unidade, bloco, etapa, tipologia ou ID" iconLeft="fas fa-magnifying-glass" />
+              <Select v-model="filtroEtapa" label="Etapa" :options="etapaOptions" />
+              <Select v-model="filtroBloco" label="Bloco" :options="blocoOptions" />
+              <Select v-model="filtroStatusSelect" label="Situação" :options="statusOptions" />
+              <template #actions>
+                <IconButton v-if="filtrosAtivos" icon="fas fa-eraser" size="sm" label="Limpar filtros" @click="limparFiltros" />
+              </template>
+            </FilterBar>
+
+            <Panel title="Unidades" icon="fas fa-house" :padded="false">
+              <template #actions>
+                <span class="text-xs text-ink-subtle font-mono tabular-nums">
+                  {{ resumoFiltrado.n }} de {{ totalUnits }}
+                  <template v-if="resumoFiltrado.comValor"> · {{ fmtMoney(resumoFiltrado.vgv) }}<span v-if="resumoFiltrado.m2"> · {{ fmtMoney(resumoFiltrado.m2) }}/m²</span></template>
+                </span>
+              </template>
+              <div class="p-3 sm:p-4">
+                <DataTable :columns="COLUNAS_UNIDADES" :rows="unitsFiltradas" row-key="idunidade" sort-by="nome"
+                  empty-icon="fas fa-filter" empty-title="Nenhuma unidade com esses filtros" empty-text="Ajuste a busca ou limpe os filtros.">
+                  <template #emptyActions>
+                    <IconButton icon="fas fa-eraser" label="Limpar filtros" @click="limparFiltros" />
+                  </template>
+                  <template #cell-nome="{ row }"><span class="font-medium text-ink">{{ row.nome }}</span></template>
+                  <template #cell-status="{ row }">
+                    <Badge :variant="row.status.variant" size="sm"><i :class="row.status.icon" class="text-[9px]"></i>{{ row.status.label }}</Badge>
+                  </template>
+                  <template #cell-valor_num="{ value, row }">
+                    <b :class="row.valor_num != null ? 'text-ink' : 'text-ink-subtle'">{{ value }}</b>
+                  </template>
+                </DataTable>
+              </div>
+            </Panel>
           </template>
+        </template>
 
-          <!-- ── Aba: Materiais & Plantas ─────────────────────────── -->
-          <template v-else-if="activeTab === 'materiais'">
-
+        <!-- ── Materiais & Plantas ──────────────────────────────── -->
+        <template v-else-if="activeTab === 'materiais'">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Materiais campanha -->
-            <Surface v-if="building.materiais_campanha?.length" variant="raised" padding="md" class="space-y-3">
-              <div class="flex items-center gap-2 mb-1">
-                <i class="fas fa-images text-data-warn text-sm"></i>
-                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Materiais de campanha</h3>
-                <Badge variant="neutral" size="sm" class="ml-auto">{{ building.materiais_campanha.length }}</Badge>
+            <Panel title="Materiais de campanha" icon="fas fa-images" :padded="false"
+              :empty="!materiais.length" empty-icon="fas fa-images" empty-title="Nenhum material de campanha no CV">
+              <template #actions><Badge variant="neutral" size="sm">{{ materiais.length }}</Badge></template>
+              <div class="p-3 sm:p-4">
+                <DataTable :columns="COLUNAS_MATERIAIS" :rows="materiais" row-key="idarquivo" clickable sort-by="nome"
+                  @row-click="abrirLink($event.href)">
+                  <template #cell-nome="{ row }">
+                    <span class="inline-flex items-center gap-2 min-w-0">
+                      <i :class="row.tipo === 'youtube' ? 'fab fa-youtube text-data-neg' : 'fas fa-file text-accent'" class="text-sm shrink-0"></i>
+                      <span class="font-medium text-ink truncate">{{ row.nome }}</span>
+                    </span>
+                  </template>
+                  <template #actions="{ row }">
+                    <IconButton icon="fas fa-arrow-up-right-from-square" size="sm" label="Abrir" @click.stop="abrirLink(row.href)" />
+                  </template>
+                </DataTable>
               </div>
-              <div class="space-y-2">
-                <a v-for="mat in building.materiais_campanha" :key="mat.idarquivo"
-                  :href="mat.tipo === 'youtube' ? mat.servidor : mat.arquivo"
-                  target="_blank" rel="noopener" @click.stop
-                  class="flex items-center gap-2.5 rounded-lg border border-line bg-surface-sunken p-2.5
-                         hover:bg-surface-hover hover:border-accent/30 transition-colors group">
-                  <i :class="mat.tipo === 'youtube' ? 'fab fa-youtube text-data-neg' : 'fas fa-file text-accent'"
-                    class="text-base shrink-0"></i>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-ink truncate group-hover:text-accent transition-colors">{{ mat.nome }}</p>
-                    <p class="text-micro text-ink-subtle font-mono">
-                      {{ mat.tipo }}<span v-if="mat.tamanho > 0"> · {{ (mat.tamanho / 1024 / 1024).toFixed(2) }} MB</span>
-                    </p>
-                  </div>
-                  <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle group-hover:text-accent transition-colors"></i>
-                </a>
-              </div>
-            </Surface>
+            </Panel>
 
-            <!-- Plantas -->
-            <Surface v-if="building.plantas_mapeadas?.length" variant="raised" padding="md" class="space-y-3">
-              <div class="flex items-center gap-2">
-                <i class="fas fa-drafting-compass text-series-3 text-sm"></i>
-                <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Plantas mapeadas</h3>
-                <Badge variant="neutral" size="sm" class="ml-auto">{{ building.plantas_mapeadas.length }}</Badge>
+            <Panel title="Plantas mapeadas" icon="fas fa-drafting-compass" :padded="false"
+              :empty="!building.plantas_mapeadas?.length" empty-icon="fas fa-drafting-compass" empty-title="Nenhuma planta mapeada no CV">
+              <template #actions><Badge variant="neutral" size="sm">{{ building.plantas_mapeadas?.length || 0 }}</Badge></template>
+              <div class="p-3 sm:p-4">
+                <DataTable :columns="COLUNAS_PLANTAS" :rows="building.plantas_mapeadas || []" row-key="idplanta_mapeada" clickable sort-by="nome"
+                  @row-click="abrirLink($event.link)">
+                  <template #cell-nome="{ row }"><span class="font-medium text-ink">{{ row.nome }}</span></template>
+                  <template #actions="{ row }">
+                    <IconButton icon="fas fa-arrow-up-right-from-square" size="sm" label="Abrir" @click.stop="abrirLink(row.link)" />
+                  </template>
+                </DataTable>
               </div>
-              <div class="space-y-2">
-                <a v-for="planta in building.plantas_mapeadas" :key="planta.idplanta_mapeada"
-                  :href="planta.link" target="_blank" rel="noopener"
-                  class="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface-sunken p-2.5
-                         hover:bg-surface-hover hover:border-accent/30 transition-colors group">
-                  <span class="text-sm font-medium text-ink truncate group-hover:text-accent transition-colors">
-                    {{ planta.nome }}
-                  </span>
-                  <i class="fas fa-arrow-up-right-from-square text-[10px] text-ink-subtle group-hover:text-accent transition-colors"></i>
-                </a>
-              </div>
-            </Surface>
+            </Panel>
           </div>
 
-          <!-- Mapa -->
-          <Surface v-if="building.latitude && building.longitude" variant="raised" padding="md" class="space-y-2">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-map-location-dot text-accent text-sm"></i>
-              <h3 class="text-xs uppercase tracking-wider font-mono text-ink-muted">Mapa</h3>
-            </div>
-            <div class="rounded-lg overflow-hidden border border-line">
-              <iframe
-                :src="`https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1579.2792625838822!2d${building.longitude}!3d${building.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1spt-BR!2sbr!4v1738328467636!5m2!1spt-BR!2sbr`"
-                allowfullscreen="" loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                class="w-full h-64"></iframe>
-            </div>
-          </Surface>
-
-          <div v-if="!materialsCount && !(building.latitude && building.longitude)"
-            class="py-12 flex flex-col items-center gap-2 text-ink-subtle text-center">
-            <i class="fas fa-images text-xl"></i>
-            <p class="text-sm">Nenhum material, planta ou mapa cadastrado</p>
-          </div>
-          </template>
-
-          <!-- ── Aba: Unidades (disponibilidade detalhada) ────────── -->
-          <template v-else-if="activeTab === 'unidades'">
-
-          <div v-if="!building.etapas?.length" class="py-12 flex flex-col items-center gap-2 text-ink-subtle text-center">
-            <i class="fas fa-house text-xl"></i>
-            <p class="text-sm">Nenhuma etapa/unidade cadastrada no CV</p>
-          </div>
-
-          <div v-else class="space-y-5">
-                  <div v-for="etapa in building.etapas" :key="etapa.idetapa">
-                    <div class="flex items-center gap-2 mb-3">
-                      <i class="fas fa-layer-group text-accent text-xs"></i>
-                      <h4 class="text-sm font-semibold text-ink">{{ etapa.nome }}</h4>
-                      <Badge variant="accent" size="sm">{{ etapa.blocos?.length || 0 }} bloco{{ (etapa.blocos?.length || 0) === 1 ? '' : 's' }}</Badge>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3" v-if="etapa.blocos?.length">
-                      <div v-for="bloco in etapa.blocos" :key="bloco.idbloco"
-                        class="rounded-xl border border-line bg-surface-sunken overflow-hidden">
-                        <div class="px-3 py-2.5 border-b border-line flex items-center justify-between gap-2">
-                          <h5 class="text-sm font-semibold text-ink truncate">{{ bloco.nome }}</h5>
-                          <Badge variant="success" size="sm">
-                            <span class="font-mono tabular-nums">{{ bloco.paginacao_unidade?.total || 0 }}</span> un.
-                          </Badge>
-                        </div>
-
-                        <div class="p-2.5 space-y-1.5"
-                          v-if="bloco.unidades?.length">
-                          <div v-for="unidade in bloco.unidades" :key="unidade.idunidade"
-                            class="rounded-lg border border-line bg-surface-raised p-2.5
-                                   hover:border-accent/30 transition-colors">
-                            <div class="flex items-start justify-between gap-2">
-                              <div class="flex-1 min-w-0">
-                                <p class="text-sm font-semibold text-ink">{{ unidade.nome }}</p>
-                                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-micro text-ink-muted">
-                                  <span v-if="unidade.area_privativa" class="inline-flex items-center gap-1 font-mono">
-                                    <i class="fas fa-ruler-combined text-[9px] text-ink-subtle"></i>
-                                    {{ parseFloat(unidade.area_privativa).toFixed(2) }} m²
-                                  </span>
-                                  <span v-if="unidade.vagas_garagem" class="inline-flex items-center gap-1 font-mono">
-                                    <i class="fas fa-car text-[9px] text-ink-subtle"></i>
-                                    {{ unidade.vagas_garagem }} vaga(s)
-                                  </span>
-                                  <span v-if="unidade.idunidade_int" class="inline-flex items-center gap-1 font-mono text-ink-subtle">
-                                    ID {{ unidade.idunidade_int }}
-                                  </span>
-                                </div>
-                                <p v-if="unidade.valor"
-                                  class="text-sm font-semibold text-data-pos mt-1 tabular-nums">
-                                  {{ fmtMoney(unidade.valor) }}
-                                </p>
-                              </div>
-                              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-micro font-medium border shrink-0"
-                                :class="getUnitStatus(unidade).cls">
-                                <span class="h-1.5 w-1.5 rounded-full" :class="getUnitStatus(unidade).dot"></span>
-                                {{ getUnitStatus(unidade).text }}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <p v-else class="text-xs text-ink-subtle text-center py-4">
-                          Nenhuma unidade encontrada
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-          </div>
-          </template>
+          <Panel v-if="building.latitude && building.longitude" title="Mapa" icon="fas fa-map-location-dot" :padded="false">
+            <template #actions>
+              <a :href="`https://www.google.com/maps?q=${building.latitude},${building.longitude}`" target="_blank" rel="noopener"
+                class="inline-flex items-center gap-1.5 text-xs text-accent hover:text-accent-hover transition-colors focus-ring rounded">
+                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i> Google Maps
+              </a>
+            </template>
+            <iframe
+              :src="`https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1579.2792625838822!2d${building.longitude}!3d${building.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1spt-BR!2sbr!4v1738328467636!5m2!1spt-BR!2sbr`"
+              allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+              class="w-full h-72 block"></iframe>
+          </Panel>
+        </template>
       </div>
     </div>
   </Modal>
