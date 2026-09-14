@@ -807,7 +807,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 161,
+      "lines": 162,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -842,7 +842,7 @@
           "skeleton": true
         }
       ],
-      "totalLines": 434,
+      "totalLines": 435,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -2128,7 +2128,7 @@
         },
         {
           "file": "views/Office/Comercial/Buildings/components/BuildingModal.vue",
-          "lines": 538,
+          "lines": 511,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -2143,7 +2143,7 @@
         },
         {
           "file": "views/Office/Comercial/Buildings/components/PriceTablesTab.vue",
-          "lines": 372,
+          "lines": 375,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -2187,7 +2187,7 @@
           "skeleton": false
         }
       ],
-      "totalLines": 1384,
+      "totalLines": 1360,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -4593,7 +4593,7 @@
       "group": "",
       "cat": "",
       "sub": "",
-      "lines": 1080,
+      "lines": 1002,
       "telaCheia": false,
       "pageContainer": true,
       "pageHeader": true,
@@ -4609,10 +4609,26 @@
       "chart": false,
       "spinner": true,
       "skeleton": true,
-      "breakpoints": 16,
+      "breakpoints": 15,
       "divClick": 0,
-      "kids": [],
-      "totalLines": 1080,
+      "kids": [
+        {
+          "file": "views/Office/Financeiro/Custos/components/LancamentoDetailModal.vue",
+          "lines": 211,
+          "hardcoded": 0,
+          "tinyText": 0,
+          "nativo": 0,
+          "chart": false,
+          "table": false,
+          "tableMobile": false,
+          "chartTheme": false,
+          "pageContainer": false,
+          "pageHeader": false,
+          "pageHelp": false,
+          "skeleton": false
+        }
+      ],
+      "totalLines": 1213,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,
@@ -6132,7 +6148,7 @@
       "kids": [
         {
           "file": "views/Office/Settings/Whatsapp/components/AutomationsPanel.vue",
-          "lines": 209,
+          "lines": 231,
           "hardcoded": 0,
           "tinyText": 0,
           "nativo": 0,
@@ -6251,7 +6267,7 @@
           "skeleton": true
         }
       ],
-      "totalLines": 1859,
+      "totalLines": 1881,
       "totalHardcoded": 0,
       "totalTiny": 0,
       "totalNativo": 0,

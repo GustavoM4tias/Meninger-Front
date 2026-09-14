@@ -82,7 +82,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Imobiliárias** `/imobiliarias` · `100`
       <sub>views/Office/Comercial/Imobiliarias/Index.vue · 1691L (+7 comp.) · 2 tabela</sub>
 - [ ] **Empreendimentos** `/buildings` · `100`
-      <sub>views/Office/Comercial/Buildings/Index.vue · 1384L (+5 comp.) · 1 tabela</sub>
+      <sub>views/Office/Comercial/Buildings/Index.vue · 1360L (+5 comp.) · 1 tabela</sub>
 - [ ] **Viabilidade** `/viabilidade` · `100`
       <sub>views/Office/Financeiro/DeptSpending/DeptSpendingDashboard.vue · 1096L (+2 comp.) · 1 tabela</sub>
 - [ ] **Projeção** `/projections` · `100`
@@ -123,7 +123,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Alçadas** `/permissions` · `100`
       <sub>views/Office/Settings/Permissions/Index.vue · 2094L (+4 comp.) · ok</sub>
 - [ ] **WhatsApp** `/whatsapp` · `100`
-      <sub>views/Office/Settings/Whatsapp/Index.vue · 1859L (+8 comp.) · 1 tabela</sub>
+      <sub>views/Office/Settings/Whatsapp/Index.vue · 1881L (+8 comp.) · 1 tabela</sub>
 - [ ] **Configurações DocuSign** `/docusign` · `100`
       <sub>views/Office/Settings/Docusign/Index.vue · 313L · ok</sub>
 - [ ] **Sienge** `/sienge` · `100`
@@ -136,7 +136,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Eme Atende** `/eme-atende` · ` 99`
       <sub>views/Office/Tools/EmeAtende/Index.vue · 1188L · 2 cor fixa</sub>
 - [ ] **Mural de Avisos** `/mural` · `100`
-      <sub>views/Office/Notifications/Index.vue · 434L (+1 comp.) · ok</sub>
+      <sub>views/Office/Notifications/Index.vue · 435L (+1 comp.) · ok</sub>
 - [ ] **Relatórios** `/relatorios [Office/Relatorios]` · `100`
       <sub>views/Office/Relatorios/Index.vue · 338L · ok</sub>
 - [ ] **Builder de Relatório** `/relatorios/:id` · `100`
@@ -168,7 +168,7 @@ Score 95+. Já são referência. Só revalidar depois que os primitivos novos ex
 - [ ] **Títulos** `/titulos` · `100`
       <sub>views/Office/Financeiro/Titulos/Index.vue · 340L · ok</sub>
 - [x] **Custos** `/custos` · `100`
-      <sub>views/Office/Financeiro/Custos/Index.vue · 1080L · ok</sub>
+      <sub>views/Office/Financeiro/Custos/Index.vue · 1213L (+1 comp.) · ok</sub>
 - [ ] **Consulta de nº CEF** `/consulta-cef` · `100`
       <sub>views/Office/Financeiro/ConsultaCef/Index.vue · 330L · ok</sub>
 - [ ] **Fluxo de Pagamento** `/paymentflow` · `100`

@@ -8,9 +8,9 @@
  * lançamento cancelado; clicar de novo desfaz.
  *
  * O detalhe do centro de custo é um modal de tela cheia que é, ele próprio,
- * uma listagem: um painel de filtro só, DataTable ordenável com o registro
- * inteiro abrindo na própria linha, scroll de 50 em 50 e seleção com a ação
- * no rodapé do modal.
+ * uma listagem: um painel de filtro só, DataTable ordenável, scroll de 50 em
+ * 50 e seleção com a ação no rodapé do modal. Clicar na linha abre o
+ * lançamento inteiro num modal de registro, onde a observação se edita.
  */
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -36,6 +36,7 @@ import Select from '@/components/UI/Select.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Favorite from '@/components/config/Favorite.vue';
 import Export from '@/components/config/Export.vue';
+import LancamentoDetailModal from './components/LancamentoDetailModal.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 import { useIncrementalList } from '@/composables/useIncrementalList';
 
@@ -428,8 +429,7 @@ const parcelaDoLancamento = (e) =>
   (e.installmentsNumber > 1 ? `${e.installmentNumber}/${e.installmentsNumber}` : '1/1');
 
 /* Colunas do lançamento. O que não cabe numa linha (vencimento, emissão,
-   CNPJ, observação, nota do título) abre na própria linha com `expandable`,
-   sem trocar de tela e sem perder a ordenação. */
+   CNPJ, observação, nota do título) fica no modal do registro, a um clique. */
 const COLUNAS_LANC = [
   { key: 'sel', label: 'Sel.', priority: 2, align: 'center', width: '3.25rem', truncate: false },
   { key: 'fornecedor', label: 'Fornecedor / Título', priority: 1, sortable: true, value: nomeFornecedor },
@@ -540,35 +540,32 @@ function toggleSelectAllExpenses() {
   selectedExpenseIds.value = todosMarcados.value ? [] : modalExpenses.value.map((e) => e.id);
 }
 
-/* ── Modal de edição ─────────────────────────────────────────────────── */
-const editingExpense = ref(null);
-const editSaving = ref(false);
-const editForm = ref({ description: '' });
+/* ── Registro: o lançamento inteiro ───────────────────────────────────── */
+const detailItem = ref(null);
+const detailVisible = ref(false);
+const detailSaving = ref(false);
 
-function openEditModal(exp) {
-  editingExpense.value = exp;
-  editForm.value = { description: exp.description || '' };
+function abrirLancamento(exp) {
+  detailItem.value = exp;
+  detailVisible.value = true;
 }
 
-function closeEditModal() {
-  editingExpense.value = null;
-  editSaving.value = false;
+function fecharLancamento() {
+  detailVisible.value = false;
+  detailSaving.value = false;
 }
 
-async function saveEdit() {
-  if (!editingExpense.value) return;
-  editSaving.value = true;
+async function salvarObservacao(description) {
+  if (!detailItem.value) return;
+  detailSaving.value = true;
   try {
-    await store.updateExpense(editingExpense.value.id, {
-      description: editForm.value.description || null,
-    });
-    toast.success('Lançamento atualizado!');
-    closeEditModal();
+    await store.updateExpense(detailItem.value.id, { description: description || null });
+    toast.success('Observação salva!');
     refreshAfterEdit();
   } catch (e) {
     toast.error(e.message || 'Erro ao salvar.');
   } finally {
-    editSaving.value = false;
+    detailSaving.value = false;
   }
 }
 
@@ -616,12 +613,17 @@ async function removeSelectedExpenses() {
   }
 }
 
-/* A store já recarrega o mês ao salvar/excluir; aqui só se re-aponta o grupo
-   aberto para a versão nova (ou fecha, se ele ficou sem lançamento). */
+/* A store já recarrega o mês ao salvar/excluir; aqui só se re-apontam o grupo
+   e o lançamento abertos para a versão nova (ou fecham, se sumiram). */
 function refreshAfterEdit() {
   if (!selectedGroup.value) return;
   const updated = filteredGroups.value.find((g) => g.costCenterId === selectedGroup.value.costCenterId);
   selectedGroup.value = updated?.expenses?.length ? updated : null;
+  if (detailItem.value) {
+    const exp = selectedGroup.value?.expenses?.find((e) => e.id === detailItem.value.id) || null;
+    detailItem.value = exp;
+    if (!exp) detailVisible.value = false;
+  }
 }
 
 /* ── Status ──────────────────────────────────────────────────────────── */
@@ -682,7 +684,7 @@ onMounted(async () => {
             { title: 'Leia os quatro cartões', text: 'Total pago, cancelados, empreendimentos e lançamentos do período. As barras mostram como o valor se distribuiu ao longo das datas.' },
             { title: 'Clique em Cancelados para recortar', text: 'A tabela passa a mostrar só os empreendimentos com lançamento cancelado. Clicar de novo desfaz o recorte.' },
             { title: 'Ordene a tabela', text: 'Clique no título da coluna para ordenar por valor, cancelado ou quantidade. No celular o controle de ordenação fica acima da lista.' },
-            { title: 'Abra o empreendimento', text: 'Clique na linha para ver os lançamentos. Lá dá para buscar, filtrar por departamento e data, abrir a linha para ler o título inteiro, editar a observação e excluir.' },
+            { title: 'Abra o empreendimento', text: 'Clique na linha para ver os lançamentos. Lá dá para buscar, filtrar por departamento e data, e clicar num lançamento para abrir o registro inteiro, com a observação editável e a exclusão.' },
           ]"
           :tips="[
             'O que você enxerga depende da visibilidade de departamento configurada nas Alçadas.',
@@ -864,12 +866,13 @@ onMounted(async () => {
 
       <div class="px-4 sm:px-5 py-4">
         <DataTable :columns="COLUNAS_LANC" :rows="incModal.visiveis.value" row-key="id"
-          expandable manual-sort density="compact"
+          clickable manual-sort density="compact"
           v-model:sort-by="modalOrdem.by" v-model:sort-dir="modalOrdem.dir"
-          more-label="Ver o título inteiro"
+          more-label="Ver mais campos"
           empty-icon="fas fa-magnifying-glass"
           empty-title="Nenhum lançamento encontrado"
-          empty-text="Ajuste a busca ou os filtros para ver resultados.">
+          empty-text="Ajuste a busca ou os filtros para ver resultados."
+          @row-click="abrirLancamento">
 
           <template #emptyActions>
             <Button variant="outline" size="sm" icon="fas fa-eraser" @click="clearModalFilters">
@@ -924,41 +927,9 @@ onMounted(async () => {
             </Badge>
           </template>
 
-          <!-- O título inteiro, na própria linha -->
-          <template #expanded="{ row }">
-            <dl class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2.5 pt-3">
-              <div class="min-w-0">
-                <dt class="metric-label">Vencimento</dt>
-                <dd class="text-xs text-ink font-mono tabular-nums">{{ formatDate(row.dueDate) }}</dd>
-              </div>
-              <div class="min-w-0">
-                <dt class="metric-label">Emissão</dt>
-                <dd class="text-xs text-ink font-mono tabular-nums">{{ formatDate(row.bill?.issueDate) }}</dd>
-              </div>
-              <div class="min-w-0">
-                <dt class="metric-label">Valor do título</dt>
-                <dd class="text-xs text-ink font-mono tabular-nums">
-                  {{ row.bill?.totalInvoiceAmount ? fmtMoney(row.bill.totalInvoiceAmount) : '-' }}
-                </dd>
-              </div>
-              <div class="min-w-0">
-                <dt class="metric-label">CNPJ</dt>
-                <dd class="text-xs text-ink font-mono break-all">{{ row.bill?.creditor_json?.cnpj || '-' }}</dd>
-              </div>
-              <div class="min-w-0 col-span-2">
-                <dt class="metric-label">Observação</dt>
-                <dd class="text-xs text-ink break-words">{{ row.description || '-' }}</dd>
-              </div>
-              <div class="min-w-0 col-span-2">
-                <dt class="metric-label">Nota do título</dt>
-                <dd class="text-xs text-ink break-words">{{ row.bill?.notes || '-' }}</dd>
-              </div>
-            </dl>
-          </template>
-
           <template #actions="{ row }">
             <span class="inline-flex items-center gap-1">
-              <IconButton icon="fas fa-pen" size="sm" label="Editar observação" @click.stop="openEditModal(row)" />
+              <IconButton icon="fas fa-eye" size="sm" label="Abrir lançamento" @click.stop="abrirLancamento(row)" />
               <IconButton icon="fas fa-trash" size="sm" variant="danger" label="Excluir" @click.stop="removeExpense(row)" />
             </span>
           </template>
@@ -1016,64 +987,15 @@ onMounted(async () => {
   </Modal>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       EDIÇÃO DO LANÇAMENTO
+       O LANÇAMENTO - registro inteiro, sobre a listagem
   ════════════════════════════════════════════════════════════════════ -->
-  <Modal :open="!!editingExpense"
-    size="md"
-    title="Editar lançamento"
-    :subtitle="editingExpense ? (nomeFornecedor(editingExpense) || editingExpense.description || '#' + editingExpense.id) : ''"
-    @close="closeEditModal">
-
-    <div v-if="editingExpense" class="space-y-4">
-      <!-- O que vem do Sienge, só leitura -->
-      <dl class="grid grid-cols-2 gap-3 rounded-lg border border-line bg-surface-sunken/40 p-3">
-        <div class="min-w-0">
-          <dt class="metric-label">Pagamento</dt>
-          <dd class="text-xs text-ink font-mono tabular-nums">{{ formatDate(editingExpense.paidAt) }}</dd>
-          <dd class="text-micro text-ink-subtle">vence {{ formatDate(editingExpense.dueDate) }}</dd>
-        </div>
-        <div class="min-w-0">
-          <dt class="metric-label">Parcela</dt>
-          <dd class="text-xs text-ink font-mono tabular-nums">{{ parcelaDoLancamento(editingExpense) }}</dd>
-        </div>
-        <div class="min-w-0">
-          <dt class="metric-label">Documento</dt>
-          <dd class="text-xs text-ink break-words">
-            {{ editingExpense.bill?.document_identification_id }} {{ editingExpense.bill?.document_number || '-' }}
-          </dd>
-        </div>
-        <div class="min-w-0">
-          <dt class="metric-label">Valor do título</dt>
-          <dd class="text-xs text-ink font-mono tabular-nums">
-            {{ editingExpense.bill?.totalInvoiceAmount ? fmtMoney(editingExpense.bill.totalInvoiceAmount) : '-' }}
-          </dd>
-        </div>
-        <div class="min-w-0 col-span-2">
-          <dt class="metric-label">Departamento <span class="normal-case tracking-normal">(do Sienge)</span></dt>
-          <dd class="text-xs text-ink break-words">{{ deptDoLancamento(editingExpense) || '(sem departamento)' }}</dd>
-        </div>
-      </dl>
-
-      <div>
-        <label for="custo-obs" class="text-micro font-medium text-ink-muted mb-1.5 block">
-          <i class="fas fa-note-sticky text-ink-subtle mr-1"></i> Observação
-        </label>
-        <textarea id="custo-obs" v-model="editForm.description" rows="3"
-          placeholder="Digite uma observação sobre este lançamento..."
-          class="w-full px-3.5 py-2.5 rounded-lg border border-line bg-surface-raised text-sm text-ink
-                 placeholder:text-ink-subtle resize-none focus:outline-none focus:ring-2
-                 focus:ring-accent-ring/40 focus:border-accent transition-colors"></textarea>
-      </div>
-    </div>
-
-    <template #footer>
-      <Button variant="ghost" @click="closeEditModal">Cancelar</Button>
-      <Button variant="primary" icon="fas fa-check"
-        :loading="editSaving"
-        :disabled="editSaving"
-        @click="saveEdit">
-        {{ editSaving ? 'Salvando...' : 'Salvar alterações' }}
-      </Button>
-    </template>
-  </Modal>
+  <LancamentoDetailModal
+    :expense="detailItem"
+    :visivel="detailVisible"
+    :enterprise-name="selectedGroup ? (resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || '') : ''"
+    :cost-center-id="selectedGroup?.costCenterId || ''"
+    :saving="detailSaving"
+    @fechar="fecharLancamento"
+    @salvar="salvarObservacao"
+    @excluir="detailItem && removeExpense(detailItem)" />
 </template>
