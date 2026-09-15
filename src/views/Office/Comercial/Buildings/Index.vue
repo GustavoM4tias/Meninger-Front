@@ -132,6 +132,7 @@ const sectionMeta = (key) => ({
             :steps="[
               { title: 'Leia por etapa', text: 'A etapa é a fase comercial: da prospecção ao encerramento. A cor do cartão acompanha essa fase.' },
               { title: 'Abra o empreendimento', text: 'Clique no cartão: ele abre em tela cheia, com as seções à vista: visão geral, unidades, tabelas de preço e materiais.' },
+              { title: 'Leia o espelho', text: 'A seção Espelho mostra cada torre como uma grade: andares de cima para baixo, finais da esquerda para a direita, cor pela situação. Escolha o que a célula mostra (preço, R$/m², área, dormitórios ou sol) e clique numa unidade para abrir a ficha.' },
               { title: 'Consulte as tabelas', text: 'A seção Tabelas de preço guarda toda tabela que já passou pelo CV, vigente ou não. Clique numa para ver as unidades e as séries de pagamento.' },
             ]"
             :tips="[

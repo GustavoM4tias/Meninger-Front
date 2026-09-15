@@ -2,8 +2,8 @@
 /**
  * Detalhe do empreendimento, em tela cheia (Modal `screen`).
  *
- * Quatro seções, todas à vista na barra de abas: Visão geral, Unidades,
- * Tabelas de preço e Materiais & Plantas. A seção e a tabela abertas moram na
+ * Cinco seções, todas à vista na barra de abas: Visão geral, Espelho,
+ * Unidades, Tabelas de preço e Materiais & Plantas. A seção e a tabela abertas moram na
  * URL (?open=<id>&tab=<aba>&tabela=<idtabela>), então o link leva a pessoa
  * ao mesmo lugar.
  *
@@ -28,6 +28,7 @@ import IconButton from '@/components/UI/IconButton.vue';
 
 import WeatherInfo from './UI/WeatherInfo.vue';
 import PriceTablesTab from './PriceTablesTab.vue';
+import MirrorTab from './MirrorTab.vue';
 
 const props = defineProps({
   building: { type: Object, required: true },
@@ -39,7 +40,7 @@ const buildingStore = useBuildingStore();
 // ── Abas ───────────────────────────────────────────────────
 const route = useRoute();
 const router = useRouter();
-const TABS = ['geral', 'unidades', 'tabelas', 'materiais'];
+const TABS = ['geral', 'espelho', 'unidades', 'tabelas', 'materiais'];
 const activeTab = computed({
   get: () => (TABS.includes(route.query.tab) ? route.query.tab : 'geral'),
   set: (tab) => router.replace({ query: { ...route.query, tab: tab === 'geral' ? undefined : tab, tabela: undefined } }),
@@ -142,6 +143,7 @@ const kpiCards = computed(() => {
 
 const tabOptions = computed(() => [
   { value: 'geral',     label: 'Visão geral',        icon: 'fas fa-grip',   hint: 'Números, empresa, endereço e cronograma' },
+  { value: 'espelho',   label: 'Espelho',            icon: 'fas fa-table-cells', hint: 'Torres x andares: preço, sol e dormitórios' },
   { value: 'unidades',  label: 'Unidades',           icon: 'fas fa-house',  count: totalUnits.value, hint: 'Disponibilidade por etapa e bloco' },
   { value: 'tabelas',   label: 'Tabelas de preço',   icon: 'fas fa-tags',   count: priceTablesCount.value ?? undefined, hint: 'Histórico de tabelas lidas do CV' },
   { value: 'materiais', label: 'Materiais & Plantas', icon: 'fas fa-images', count: materialsCount.value, hint: 'Campanha, plantas e mapa' },
@@ -366,6 +368,11 @@ onMounted(fetchWeather);
           v-model:tabela="tabelaAberta"
           :can-sync="can('sync')"
           @loaded="priceTablesCount = $event" />
+
+        <!-- ── Espelho de vendas ────────────────────────────────── -->
+        <MirrorTab v-else-if="activeTab === 'espelho'"
+          :idempreendimento="building.idempreendimento"
+          :can-configure="can('configure')" />
 
         <!-- ── Visão geral ──────────────────────────────────────── -->
         <template v-else-if="activeTab === 'geral'">

@@ -162,3 +162,27 @@ export const getPriceTable = async (idtabela) => {
     }
     return response.json();
 };
+
+// ── Espelho de vendas (torres x andares x finais) ───────────────────────────
+export const getMirror = async (idempreendimento) => {
+    const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/espelho`, {
+        method: 'GET', headers: authHeaders(),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao montar o espelho');
+    }
+    return response.json();
+};
+
+// Grava a configuração do espelho (faces, dormitórios, dígitos, R$/m² por andar)
+export const saveMirrorSettings = async (idempreendimento, settings) => {
+    const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/espelho/config`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify({ settings }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao salvar a configuração do espelho');
+    }
+    return response.json(); // espelho remontado
+};
