@@ -139,9 +139,13 @@ const authHeaders = () => ({
     'Content-Type': 'application/json',
 });
 
+// Por padrão o back devolve o preço já com a adimplência premiada (Desconto
+// Construtora) descontada; `descontar: false` pede o preço cheio do CV.
+const qsDescontar = (descontar) => (descontar === false ? '?descontar=0' : '');
+
 // Todas as tabelas que já passaram pelo CV para o empreendimento (sem unidades)
-export const getPriceTables = async (idempreendimento) => {
-    const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/tabelas`, {
+export const getPriceTables = async (idempreendimento, { descontar = true } = {}) => {
+    const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/tabelas${qsDescontar(descontar)}`, {
         method: 'GET', headers: authHeaders(),
     });
     if (!response.ok) {
@@ -152,13 +156,39 @@ export const getPriceTables = async (idempreendimento) => {
 };
 
 // Uma tabela com as unidades e as séries de pagamento
-export const getPriceTable = async (idtabela) => {
-    const response = await fetch(`${API_URL}/cv/price-tables/${idtabela}`, {
+export const getPriceTable = async (idtabela, { descontar = true } = {}) => {
+    const response = await fetch(`${API_URL}/cv/price-tables/${idtabela}${qsDescontar(descontar)}`, {
         method: 'GET', headers: authHeaders(),
     });
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Erro ao buscar tabela de preço');
+    }
+    return response.json();
+};
+
+// ── Adimplência premiada (Desconto Construtora) por unidade ─────────────────
+// O CV guarda na unidade e não expõe por API: o cadastro é do Office, com
+// vigência (trocar o valor encerra o período anterior).
+export const getAdimplencia = async (idempreendimento) => {
+    const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/adimplencia`, {
+        method: 'GET', headers: authHeaders(),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao listar a adimplência premiada');
+    }
+    return response.json();
+};
+
+// payload: { vigencia_de?: 'YYYY-MM-DD', observacao?, unidades: [{ idunidade, tipo: 'valor'|'percentual', valor }] }
+export const saveAdimplencia = async (idempreendimento, payload) => {
+    const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/adimplencia`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao gravar a adimplência premiada');
     }
     return response.json();
 };

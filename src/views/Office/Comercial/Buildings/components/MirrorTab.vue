@@ -180,7 +180,11 @@ const fichaLinhas = computed(() => {
     { label: 'Tipologia', value: c.tipologia || '-', hint: FONTE[c.tipologia_fonte] || '' },
     { label: 'Dormitórios', value: c.dorm ?? '-', hint: FONTE[c.dorm_fonte] || '' },
     { label: 'Face / sol', value: c.face ? `${c.face} · ${c.sol_label}` : '-', hint: c.face ? '' : 'configure a face do final' },
-    { label: 'Preço', value: c.valor != null ? fmtBRL2(c.valor) : '-', hint: c.valor_fonte === 'cv' ? 'valor da unidade no CV' : c.valor_fonte === 'tabela' ? 'tabela de preço' : c.valor_fonte === 'estimado' ? 'estimado: R$/m² do andar x área' : '' },
+    { label: 'Preço', value: c.valor != null ? fmtBRL2(c.valor) : '-', hint: `${c.valor_fonte === 'cv' ? 'valor da unidade no CV' : c.valor_fonte === 'tabela' ? 'tabela de preço' : c.valor_fonte === 'estimado' ? 'estimado: R$/m² do andar x área' : ''}${c.adimplencia_premiada ? ' · já com a adimplência premiada descontada' : ''}` },
+    ...(c.adimplencia_premiada ? [
+      { label: 'Adimplência premiada', value: `- ${fmtBRL2(c.adimplencia_premiada)}`, hint: 'Desconto Construtora, cadastrado na aba Tabelas de preço' },
+      { label: 'Preço cheio', value: fmtBRL2(c.valor_cheio), hint: 'antes da adimplência' },
+    ] : []),
     { label: 'R$/m²', value: c.valor_m2 != null ? fmtBRL(c.valor_m2) : '-' },
     { label: 'ID Sienge', value: c.idunidade_int || '-' },
     { label: 'Bloqueio', value: c.data_bloqueio ? String(c.data_bloqueio).slice(0, 10).split('-').reverse().join('/') : null },

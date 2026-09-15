@@ -9,9 +9,15 @@
  *
  * Duas telas na mesma aba: a LISTA (todas as tabelas) e o DETALHE (uma tabela
  * com as unidades). `?tabela=<id>` na URL guarda qual está aberta.
+ *
+ * ADIMPLÊNCIA PREMIADA (Desconto Construtora): cadastro por unidade do Office
+ * (AdimplenciaModal). Por padrão os preços aqui já vêm com ela descontada; a
+ * chave "Descontar adimplência" mostra o cheio do CV. Tabela encerrada usa a
+ * cópia congelada quando foi lida; vigente usa o cadastro de hoje.
  */
 import { ref, computed, watch, onMounted } from 'vue';
 import { getPriceTables, getPriceTable, syncPriceTables } from '@/utils/Building/apiBuilding';
+import AdimplenciaModal from './AdimplenciaModal.vue';
 
 import DataTable from '@/components/UI/DataTable.vue';
 import Panel from '@/components/UI/Panel.vue';
@@ -22,6 +28,7 @@ import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Switch from '@/components/UI/Switch.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 
@@ -30,6 +37,7 @@ const props = defineProps({
   // id da tabela aberta (vem da URL); null = lista
   tabela: { type: Number, default: null },
   canSync: { type: Boolean, default: false },
+  canConfigure: { type: Boolean, default: false },
 });
 const emit = defineEmits(['update:tabela', 'loaded']);
 
@@ -63,6 +71,21 @@ const SITUACAO = {
 };
 const sit = (t) => SITUACAO[t?.situacao] || SITUACAO.sem_vigencia;
 
+// ── Adimplência premiada: descontar (padrão) ou ver o preço cheio ─
+const descontar = ref(true);
+const adimplenciaAberta = ref(false);
+const FONTE_ADIMPL = {
+  congelada: 'valor congelado quando a tabela foi lida',
+  cadastro: 'cadastro vigente',
+  nenhuma: 'nenhuma unidade com adimplência cadastrada',
+};
+const legendaAdimpl = (t) => {
+  const a = t?.adimplencia;
+  if (!a) return '';
+  if (!a.unidades) return FONTE_ADIMPL.nenhuma;
+  return `${a.unidades} unidade(s), ${fmtBRL(a.total)} · ${FONTE_ADIMPL[a.fonte] || a.fonte}${a.referencia ? ` (${fmtDate(a.referencia)})` : ''}`;
+};
+
 // ── Lista ──────────────────────────────────────────────────
 const tables = ref([]);
 const loading = ref(false);
@@ -72,7 +95,7 @@ const filtro = ref('todas'); // todas | vigente | encerrada | futura
 const carregarLista = async () => {
   loading.value = true; error.value = '';
   try {
-    tables.value = await getPriceTables(props.idempreendimento);
+    tables.value = await getPriceTables(props.idempreendimento, { descontar: descontar.value });
     emit('loaded', tables.value.length);
   } catch (e) {
     error.value = e.message || 'Não foi possível carregar as tabelas.';
@@ -117,6 +140,8 @@ const COLUNAS = [
   { key: 'faixa',      label: 'Faixa de valor', priority: 2, numeric: true, sortable: true, ...calc((t) => t.resumo.valor_min),
     format: (_, t) => (t.resumo.valor_min == null ? '-' : `${fmtBRL(t.resumo.valor_min)} – ${fmtBRL(t.resumo.valor_max)}`), width: '210px' },
   { key: 'm2',         label: 'R$/m² médio', priority: 3, numeric: true, sortable: true, ...calc((t) => t.resumo.valor_m2_medio), format: fmtBRL, width: '120px' },
+  { key: 'adimpl',     label: 'Adimpl. premiada', priority: 3, numeric: true, sortable: true, ...calc((t) => t.adimplencia?.total ?? 0),
+    format: (_, t) => (t.adimplencia?.unidades ? `${fmtBRL(t.adimplencia.total)} · ${t.adimplencia.unidades} un.` : '-'), width: '170px' },
   { key: 'forma',      label: 'Forma',       priority: 3 },
   { key: 'sync',       label: 'Sincronizada', priority: 3, sortable: true, ...calc((t) => t.ultima_sincronizacao), format: fmtDateTime, width: '140px' },
 ];
@@ -139,7 +164,7 @@ const carregarDetalhe = async (id) => {
   if (!id) return;
   loadingDetail.value = true;
   try {
-    detail.value = await getPriceTable(id);
+    detail.value = await getPriceTable(id, { descontar: descontar.value });
     busca.value = ''; situacaoUnidade.value = 'todas';
   } catch (e) {
     errorDetail.value = e.message || 'Não foi possível abrir a tabela.';
@@ -148,6 +173,15 @@ const carregarDetalhe = async (id) => {
   }
 };
 watch(() => props.tabela, carregarDetalhe, { immediate: true });
+// Trocar a chave recarrega o que está na tela com o outro preço
+watch(descontar, async () => {
+  await carregarLista();
+  if (props.tabela) await carregarDetalhe(props.tabela);
+});
+const aposGravarAdimplencia = async () => {
+  await carregarLista();
+  if (props.tabela) await carregarDetalhe(props.tabela);
+};
 
 const situacoesUnidade = computed(() => {
   const set = new Set((detail.value?.unidades || []).map((u) => u.situacao).filter(Boolean));
@@ -174,19 +208,23 @@ const kpisDetalhe = computed(() => {
       icon: 'fas fa-arrows-left-right', tone: 'neutral' },
     { key: 'm2', label: 'R$/m² médio', raw: r.valor_m2_medio, format: fmtBRL, icon: 'fas fa-ruler-combined', tone: 'warn',
       hint: 'ponderado pela área privativa' },
+    { key: 'adimpl', label: descontar.value ? 'Adimplência descontada' : 'Adimplência (não descontada)', raw: r.adimplencia_total, format: fmtBRL, icon: 'fas fa-hand-holding-dollar', tone: r.unidades_com_adimplencia ? 'accent' : 'neutral',
+      hint: r.unidades_com_adimplencia ? `${r.unidades_com_adimplencia} unidade(s) · ${FONTE_ADIMPL[detail.value.adimplencia?.fonte] || ''}` : 'nenhuma unidade com adimplência' },
   ];
 });
 
-const COLUNAS_UNIDADE = [
+const COLUNAS_UNIDADE = computed(() => [
   { key: 'unidade',        label: 'Unidade',   priority: 1, sortable: true },
-  { key: 'valor_total',    label: 'Valor',     priority: 1, numeric: true, sortable: true, format: fmtBRL2, width: '150px' },
+  { key: 'valor_total',    label: descontar.value ? 'Valor' : 'Valor cheio', priority: 1, numeric: true, sortable: true, format: fmtBRL2, width: '150px' },
+  { key: 'adimplencia_premiada', label: 'Adimpl. premiada', priority: 2, numeric: true, sortable: true, format: (v) => (v ? fmtBRL2(v) : '-'), width: '140px' },
+  ...(descontar.value ? [{ key: 'valor_tabela', label: 'Valor cheio (CV)', priority: 3, numeric: true, sortable: true, format: fmtBRL2, width: '150px' }] : []),
   { key: 'bloco',          label: 'Bloco',     priority: 2, sortable: true, width: '140px' },
   { key: 'etapa',          label: 'Etapa',     priority: 3, sortable: true, width: '120px' },
   { key: 'area_privativa', label: 'Área',      priority: 2, numeric: true, sortable: true, format: fmtArea, width: '110px' },
   { key: 'valor_m2',       label: 'R$/m²',     priority: 2, numeric: true, sortable: true, format: fmtBRL, width: '120px' },
   { key: 'situacao',       label: 'Situação',  priority: 2, sortable: true, width: '120px' },
   { key: 'series',         label: 'Séries',    priority: 3, numeric: true, ...calc((u) => u.series.length), width: '80px' },
-];
+]);
 
 const UNIDADE_SIT = {
   disponivel: 'success', vendida: 'danger', bloqueada: 'neutral', reservada: 'warning',
@@ -269,7 +307,15 @@ onMounted(carregarLista);
           </dl>
         </Panel>
 
-        <StatRow :items="kpisDetalhe" :cols="{ sm: 2, md: 2, lg: 4 }" />
+        <StatRow :items="kpisDetalhe" :cols="{ sm: 2, md: 3, lg: 5 }" />
+
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-muted">
+          <Switch v-model="descontar" size="sm" label="Descontar adimplência premiada" />
+          <span v-if="detail.adimplencia" class="inline-flex items-center gap-1.5">
+            <i class="fas fa-hand-holding-dollar text-ink-subtle"></i>{{ legendaAdimpl(detail) }}
+          </span>
+          <Button v-if="canConfigure" variant="ghost" size="sm" icon="fas fa-pen" @click="adimplenciaAberta = true">Cadastrar adimplência</Button>
+        </div>
 
         <!-- Unidades da tabela -->
         <FilterBar :active-count="filtrosUnidade" auto-apply :cols="2" @clear="limparUnidade">
@@ -289,7 +335,10 @@ onMounted(carregarLista);
             sort-by="unidade" expandable
             empty-icon="fas fa-house" empty-title="Nenhuma unidade nesta tabela"
             empty-text="O CV não devolveu as unidades desta tabela. Sincronize de novo ou abra no CV.">
-            <template #cell-valor_total="{ value }"><b class="text-ink">{{ value }}</b></template>
+            <template #cell-valor_total="{ value, row }">
+              <b class="text-ink">{{ value }}</b>
+              <i v-if="descontar && row.adimplencia_premiada" class="fas fa-hand-holding-dollar ml-1 text-[10px] text-accent" v-tippy="`Já com ${fmtBRL2(row.adimplencia_premiada)} de adimplência premiada descontados`"></i>
+            </template>
             <template #cell-situacao="{ row }">
               <Badge :variant="unidadeVariant(row.situacao)" size="sm">{{ row.situacao || '-' }}</Badge>
             </template>
@@ -330,7 +379,12 @@ onMounted(carregarLista);
         :subtitle="periodo ? `Vigências de ${fmtDate(periodo.de)} a ${fmtDate(periodo.ate)} · tabela que saiu do CV continua aqui` : 'Toda tabela lida do CV fica guardada, vigente ou não'">
         <template #actions>
           <div class="flex flex-wrap items-center gap-2 justify-end">
+            <Switch v-model="descontar" size="sm" label="Descontar adimplência" />
             <SegmentedControl v-model="filtro" :options="filtroOptions" size="sm" />
+            <Button v-if="canConfigure" variant="secondary" size="sm" icon="fas fa-hand-holding-dollar" @click="adimplenciaAberta = true"
+              v-tippy="'Adimplência premiada (Desconto Construtora) por unidade. O CV não manda esse campo; o cadastro é aqui e vale para as tabelas.'">
+              <span class="hidden sm:inline">Adimplência premiada</span>
+            </Button>
             <Button v-if="canSync" variant="secondary" size="sm" :loading="syncing"
               :icon="syncMsg?.ok ? 'fas fa-check' : 'fas fa-rotate'" @click="sincronizar"
               v-tippy="'Lê agora as tabelas deste empreendimento no CV. O robô faz isso todo dia às 9h.'">
@@ -367,8 +421,11 @@ onMounted(carregarLista);
         </DataTable>
         </div>
 
-        <template #footer>Clique numa tabela para ver as unidades e as séries de pagamento.</template>
+        <template #footer>Clique numa tabela para ver as unidades e as séries de pagamento. {{ descontar ? 'Preços já com a adimplência premiada descontada onde ela existe.' : 'Preços cheios, como estão no CV.' }}</template>
       </Panel>
     </template>
+
+    <AdimplenciaModal :open="adimplenciaAberta" :idempreendimento="idempreendimento" :can-configure="canConfigure"
+      @close="adimplenciaAberta = false" @saved="aposGravarAdimplencia" />
   </div>
 </template>

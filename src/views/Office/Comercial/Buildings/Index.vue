@@ -211,6 +211,7 @@ watch(() => route.query.open, async (id) => {
               { title: 'Clique numa etapa para recortar', text: 'Os cartões contam o portfólio por etapa comercial. Clicar em Em obras deixa na lista só os empreendimentos em obra; clicar de novo desfaz o recorte.' },
               { title: 'Abra o empreendimento', text: 'Clique no cartão: ele abre em tela cheia, com as seções à vista: visão geral, espelho, unidades, tabelas de preço e materiais.' },
               { title: 'Leia o espelho', text: 'A seção Espelho mostra cada torre como uma grade: andares de cima para baixo, finais da esquerda para a direita, cor pela situação. Clique numa unidade para abrir a ficha.' },
+              { title: 'Adimplência premiada', text: 'O Desconto Construtora é cadastrado por unidade em Tabelas de preço (botão Adimplência premiada). Os preços já aparecem com ele descontado; a chave Descontar adimplência mostra o preço cheio do CV. Cada mudança fica no histórico e a tabela lida na época guarda o valor daquela época.' },
             ]"
             :tips="[
               'O que aparece aqui vem do CV: empreendimento cadastrado errado lá aparece errado aqui.',

@@ -386,6 +386,7 @@ onBeforeUnmount(() => setEmeScreenDetalhe(''));
           :idempreendimento="building.idempreendimento"
           v-model:tabela="tabelaAberta"
           :can-sync="can('sync')"
+          :can-configure="can('configure')"
           @loaded="priceTablesCount = $event" />
 
         <!-- ── Espelho de vendas ────────────────────────────────── -->
