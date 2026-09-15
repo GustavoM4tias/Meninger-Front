@@ -52,6 +52,7 @@
               'Antes de ligar essa dedução num empreendimento, abra as condições de uma reserva dele no CV: ela só serve quando a coluna “sem comissão fora do contrato” muda apenas na linha do ato. Onde a comissão está espalhada nas parcelas, use o percentual fixo ou o valor cheio.',
               'Quando a comissão é maior que o ato, não sobra nada a cobrar: a emissão para, e a reserva recebe mensagem de divergência em vez de um boleto de valor inventado.',
               'Boleto fora da janela de horário não falha: fica agendado, e a tabela mostra a hora em que vai sair.',
+              'O banco devolve “baixado por devolução” também para boleto pago no dia anterior. Por isso, antes de cobrar o ato de novo, o Office reconsulta o boleto baixado no Ecobrança (Configurações > Baixa por devolução): se constar pago, o ato vira Pago e nada é emitido. O botão Revalidar agora faz essa conferência em todos os boletos já cancelados por essa situação e baixa a cobrança duplicada que tenha saído depois, avisando a reserva e o cliente.',
               'O selo com um número ao lado da reserva quer dizer que já houve mais de um boleto para ela.',
               'A Conciliação lê a API do Sienge AO VIVO, não o backup diário: um recebimento lançado há cinco minutos já aparece. O rodapé da aba diz a fonte e a hora exata da consulta.',
               'Por ser ao vivo, a consulta leva alguns segundos - mais ainda sem filtrar a empresa, porque aí vem o grupo inteiro.',
@@ -463,6 +464,48 @@
                     seguinte. Uma mensagem avisa o gestor na timeline da reserva, e a etapa no CV não é
                     alterada. Tentar de novo ou gerar pela tela continua funcionando a qualquer hora.
                   </span>
+                </p>
+              </div>
+            </div>
+          </SettingsCard>
+
+          <!-- Baixa por devolução que pode ser pagamento ─────────────────────
+               O Ecobrança devolve "BAIXADO POR DEVOLUÇÃO" também para título
+               pago no dia anterior. Aqui ficam a reconsulta antes de emitir
+               (evita cobrar de novo um ato pago) e o botão que reconsulta todos
+               os já cancelados por essa situação, baixando a duplicata. -->
+          <SettingsCard icon="fas fa-rotate"
+            :icon-color="form.reconsultar_baixado_antes_emitir ? 'accent' : 'neutral'"
+            title="Baixa por devolução"
+            :badge="form.reconsultar_baixado_antes_emitir ? 'Reconsulta ligada' : 'Sem reconsulta'"
+            :badge-variant="form.reconsultar_baixado_antes_emitir ? 'accent' : 'neutral'"
+            description="O banco devolve baixa por devolução também para boleto pago no dia anterior.">
+
+            <div class="space-y-5 text-sm">
+              <Switch v-model="form.reconsultar_baixado_antes_emitir"
+                label="Reconsultar o boleto baixado antes de cobrar o ato de novo"
+                description="Se o Ecobrança disser que ele foi pago, o ato vira Pago e nenhuma cobrança nova sai. Desligado, boleto baixado por devolução é tratado como ato sem pagamento." />
+
+              <div class="rounded-lg border border-line bg-surface-sunken px-3 py-2.5 space-y-3">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-ink">Revalidar baixas por devolução agora</p>
+                    <p class="text-xs text-ink-muted leading-relaxed">
+                      Reconsulta todos os boletos do ato cancelados por essa situação, sem limite de dias. O que constar
+                      pago vira Pago, e a cobrança duplicada emitida depois é baixada no Ecobrança, com aviso na reserva
+                      e e-mail ao cliente.
+                    </p>
+                  </div>
+                  <Button variant="secondary" size="sm" icon="fas fa-magnifying-glass-dollar"
+                    :loading="revalidando" :disabled="revalidando"
+                    @click="handleRevalidarBaixados">
+                    {{ revalidando ? 'Disparando...' : 'Revalidar agora' }}
+                  </Button>
+                </div>
+                <p v-if="revalidacaoMsg" class="text-xs flex items-start gap-1.5"
+                  :class="revalidacaoOk ? 'text-data-pos' : 'text-data-neg'">
+                  <i class="mt-0.5" :class="revalidacaoOk ? 'fas fa-check' : 'fas fa-circle-exclamation'"></i>
+                  <span>{{ revalidacaoMsg }}</span>
                 </p>
               </div>
             </div>
@@ -1043,6 +1086,7 @@ const form = ref({
   cv_idtipo_documento: null,
   tolerancia_dias_uteis: 1,
   revalidacao_baixado_dias: 5,
+  reconsultar_baixado_antes_emitir: true,
   cv_situacoes_reserva_morta: [4],
   max_dias_vencimento: 10,
   valor_maximo: 300000,
@@ -1086,6 +1130,7 @@ const CAMPOS_DO_SALVAR = [
   { key: 'janela_ativa', label: 'janela de emissão' },
   { key: 'janela_inicio_hora', label: 'abertura da janela' },
   { key: 'janela_fim_hora', label: 'fechamento da janela' },
+  { key: 'reconsultar_baixado_antes_emitir', label: 'reconsulta da baixa por devolução' },
 ];
 
 const baseDoSalvar = ref(null);
@@ -1161,6 +1206,35 @@ async function handleSave() {
   await store.saveSettings(payload);
   // Salvou: a foto vira a nova referência e a barra do rodapé se recolhe.
   if (!store.settingsError) fotografarSalvar();
+}
+
+// ── Revalidar baixas por devolução ────────────────────────────────────────────
+const revalidando = ref(false);
+const revalidacaoMsg = ref('');
+const revalidacaoOk = ref(true);
+
+async function handleRevalidarBaixados() {
+  const ok = await pedirConfirmacao({
+    title: 'Revalidar as baixas por devolução no Ecobrança?',
+    consequence: 'Todos os boletos do ato cancelados por "baixado por devolução" serão reconsultados. O que constar pago passa a Pago, com mensagem de correção na reserva. Se um segundo boleto do mesmo ato estiver em aberto, ele é baixado no Ecobrança, a reserva recebe a mensagem e o cliente recebe e-mail avisando que a cobrança foi cancelada. Nada é emitido.',
+    confirmLabel: 'Revalidar',
+    tone: 'primary',
+  });
+  if (!ok) return;
+  revalidando.value = true;
+  revalidacaoMsg.value = '';
+  const r = await store.revalidarBaixados();
+  revalidando.value = false;
+  revalidacaoOk.value = r.ok;
+  if (!r.ok) {
+    revalidacaoMsg.value = r.conflict
+      ? 'O Ecobrança está ocupado com outra operação. Tente de novo em alguns minutos.'
+      : (r.error || 'Não foi possível disparar a revalidação.');
+    return;
+  }
+  revalidacaoMsg.value = r.scheduled
+    ? `Revalidação disparada para ${r.candidatos} boleto(s). O desfecho aparece na linha do tempo de cada um em alguns minutos.`
+    : 'Nenhum boleto cancelado por baixa por devolução para reconsultar.';
 }
 
 // ── Colunas ordenáveis do histórico ───────────────────────────────────────────
@@ -1582,6 +1656,7 @@ onMounted(async () => {
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
       form.value.comissao_modo = store.settings.comissao_modo || 'nenhum';
       form.value.janela_ativa = store.settings.janela_ativa ?? true;
+      form.value.reconsultar_baixado_antes_emitir = store.settings.reconsultar_baixado_antes_emitir ?? true;
       form.value.janela_inicio_hora = store.settings.janela_inicio_hora ?? 6;
       form.value.janela_fim_hora = store.settings.janela_fim_hora ?? 23;
       form.value.active = store.settings.active ?? false;

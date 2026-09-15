@@ -364,6 +364,18 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
+    // Reconsulta no Ecobrança os boletos do ato cancelados por "baixado por
+    // devolução" e baixa a cobrança duplicada de quem constar pago. 202 =
+    // disparado (roda em background); 409 = Ecobrança ocupado.
+    async function revalidarBaixados() {
+        try {
+            const data = await requestWithAuth('/boleto-caixa/revalidar-baixados', { method: 'POST' });
+            return { ok: true, scheduled: !!data?.scheduled, candidatos: Number(data?.candidatos || 0) };
+        } catch (err) {
+            return { ok: false, error: err.message, conflict: err.status === 409, lock: err.payload?.lock || null };
+        }
+    }
+
     async function triggerPaymentCheck(historyId, item = null) {
         try {
             await requestWithAuth(`${baseDe(item)}/history/${historyId}/check-payment`, { method: 'POST' });
@@ -516,7 +528,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         facets, facetsLoading, fetchFacets,
         // timeline
         timelineLoading, timelineError, timelineEvents, timelineHistory, timelineAttempts,
-        fetchTimeline, triggerPaymentCheck,
+        fetchTimeline, triggerPaymentCheck, revalidarBaixados,
         // whatsapp template
         whatsappTemplate, whatsappTemplateLoading, whatsappTemplateError, whatsappTemplateMsg,
         fetchWhatsappTemplate, syncWhatsappTemplate,
