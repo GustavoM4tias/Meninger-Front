@@ -141,7 +141,7 @@ const textoCelula = (c) => {
     case 'preco': return c.valor != null ? fmtK(c.valor) : '-';
     case 'm2':    return c.valor_m2 != null ? fmtNum(c.valor_m2) : '-';
     case 'area':  return c.area != null ? Number(c.area).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '-';
-    case 'dorm':  return c.dorm != null ? `${c.dorm} dorm` : (c.tipologia || '-');
+    case 'dorm':  return c.dorm != null ? `${c.dorm} dorm${c.tipo_auto ? ` · ${c.tipo_auto}` : ''}` : (c.tipologia || '-');
     case 'sol':   return c.sol ? SOL[c.sol].label.replace('Sol ', '').replace('Pouco sol', 'pouco') : '-';
     default: return '';
   }
@@ -164,6 +164,8 @@ const notaPreco = computed(() => {
   return partes.length ? `Preço: ${partes.join(' · ')}.` : '';
 });
 
+const FONTE = { cadastro: 'cadastrado no espelho', cv: 'do CV', area: 'deduzido pela área privativa' };
+
 // ── ficha da unidade ───────────────────────────────────────
 const unidadeAberta = ref(null);
 const fichaLinhas = computed(() => {
@@ -174,10 +176,10 @@ const fichaLinhas = computed(() => {
     { label: 'Final', value: c.final },
     { label: 'Etapa / bloco', value: [c.etapa, c.bloco].filter(Boolean).join(' · ') },
     { label: 'Área privativa', value: fmtArea(c.area) },
-    { label: 'Vagas', value: c.vagas ?? c.vagas_texto ?? '-' },
-    { label: 'Tipologia', value: c.tipologia || '-' },
-    { label: 'Dormitórios', value: c.dorm ?? '-' },
-    { label: 'Face / sol', value: c.face ? `${c.face} · ${c.sol_label}` : '-' },
+    { label: 'Vagas', value: c.vagas ?? c.vagas_texto ?? '-', hint: c.vagas_fonte === 'padrao' ? 'padrão do empreendimento' : '' },
+    { label: 'Tipologia', value: c.tipologia || '-', hint: FONTE[c.tipologia_fonte] || '' },
+    { label: 'Dormitórios', value: c.dorm ?? '-', hint: FONTE[c.dorm_fonte] || '' },
+    { label: 'Face / sol', value: c.face ? `${c.face} · ${c.sol_label}` : '-', hint: c.face ? '' : 'configure a face do final' },
     { label: 'Preço', value: c.valor != null ? fmtBRL2(c.valor) : '-', hint: c.valor_fonte === 'cv' ? 'valor da unidade no CV' : c.valor_fonte === 'tabela' ? 'tabela de preço' : c.valor_fonte === 'estimado' ? 'estimado: R$/m² do andar x área' : '' },
     { label: 'R$/m²', value: c.valor_m2 != null ? fmtBRL(c.valor_m2) : '-' },
     { label: 'ID Sienge', value: c.idunidade_int || '-' },
@@ -203,13 +205,15 @@ const abrirConfig = () => {
     finais[t.key] = {};
     for (const f of t.finais) {
       const c = s.finais?.[t.key]?.[f] || {};
-      finais[t.key][f] = { face: c.face || 'x', dorm: c.dorm ?? '', tipologia: c.tipologia || '' };
+      finais[t.key][f] = { face: c.face || 'x', dorm: c.dorm ?? '', tipologia: c.tipologia || '', valor_m2: c.valor_m2 ?? '' };
     }
   }
   const andares = [...new Set(mirror.value.torres.flatMap((t) => t.andares.map((a) => a.andar)).filter((a) => a != null))].sort((a, b) => a - b);
   form.value = {
     digitos_final: s.digitos_final, digitos_andar: s.digitos_andar,
     andar_zero_nome: s.andar_zero_nome, imagem_url: s.imagem_url || '', observacao: s.observacao || '',
+    vagas_padrao: s.vagas_padrao ?? '',
+    dorm_por_area: (s.dorm_por_area || []).map((f) => ({ ate: f.ate ?? '', dorm: f.dorm })),
     finais,
     andares,
     valor_m2_andar: Object.fromEntries(andares.map((a) => [a, s.valor_m2_andar?.[a] ?? ''])),
@@ -225,6 +229,8 @@ const copiarPrimeiraTorre = () => {
     if (base[f]) form.value.finais[k][f] = { ...base[f] };
   }
 };
+const addFaixa = () => form.value.dorm_por_area.push({ ate: '', dorm: '' });
+const rmFaixa = (i) => form.value.dorm_por_area.splice(i, 1);
 const salvarConfig = async () => {
   salvando.value = true;
   try {
@@ -232,7 +238,9 @@ const salvarConfig = async () => {
     const settings = {
       digitos_final: f.digitos_final, digitos_andar: f.digitos_andar, andar_zero_nome: f.andar_zero_nome,
       imagem_url: f.imagem_url || null, observacao: f.observacao,
-      finais: Object.fromEntries(Object.entries(f.finais).map(([t, fs]) => [t, Object.fromEntries(Object.entries(fs).map(([k, v]) => [k, { face: v.face && v.face !== 'x' ? v.face : null, dorm: v.dorm === '' ? null : Number(v.dorm), tipologia: v.tipologia || null }]))])),
+      vagas_padrao: f.vagas_padrao === '' ? null : Number(f.vagas_padrao),
+      dorm_por_area: f.dorm_por_area.filter((x) => x.dorm !== '' && x.dorm != null),
+      finais: Object.fromEntries(Object.entries(f.finais).map(([t, fs]) => [t, Object.fromEntries(Object.entries(fs).map(([k, v]) => [k, { face: v.face && v.face !== 'x' ? v.face : null, dorm: v.dorm === '' ? null : Number(v.dorm), tipologia: v.tipologia || null, valor_m2: v.valor_m2 === '' ? null : v.valor_m2 }]))])),
       valor_m2_andar: Object.fromEntries(Object.entries(f.valor_m2_andar).filter(([, v]) => v !== '' && v != null)),
     };
     mirror.value = await saveMirrorSettings(props.idempreendimento, settings);
@@ -311,7 +319,7 @@ watch(() => props.idempreendimento, carregar);
                     <th class="sticky left-0 z-10 bg-surface-raised text-left px-2 py-1 metric-label whitespace-nowrap">Andar</th>
                     <th v-for="col in t.colunas" :key="col.final" class="px-1 py-1 text-center min-w-[64px]">
                       <div class="font-semibold text-ink tabular-nums">Final {{ col.final }}</div>
-                      <div class="text-micro text-ink-subtle truncate">{{ col.tipologia || (col.area ? fmtArea(col.area) : '') }}</div>
+                      <div class="text-micro text-ink-subtle truncate" v-tippy="col.tipologia">{{ col.area ? fmtArea(col.area) : (col.tipologia || '') }}<template v-if="col.dorm != null"> · {{ col.dorm }}d</template></div>
                       <div v-if="col.sol" class="text-micro inline-flex items-center gap-1" :class="SOL[col.sol].cls" v-tippy="`${col.face_nome} · ${SOL[col.sol].label}`">
                         <i :class="SOL[col.sol].icon" class="text-[9px]"></i>{{ SOL[col.sol].label.replace('Sol ', '').replace('o dia todo', 'dia todo') }}
                       </div>
@@ -399,11 +407,25 @@ watch(() => props.idempreendimento, carregar);
         <section class="space-y-3">
           <h4 class="text-sm font-semibold text-ink">Como ler o número da unidade</h4>
           <p class="text-xs text-ink-muted">Quando o CV não manda andar e coluna, eles saem do número: os últimos dígitos são o final, os anteriores o andar, e o que sobra é a torre. Ex.: 278 com 1 e 1 = torre 2, 7º andar, final 8.</p>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
             <Input v-model="form.digitos_final" type="number" label="Dígitos do final" hint="1 a 3" />
             <Input v-model="form.digitos_andar" type="number" label="Dígitos do andar" hint="1 ou 2" />
             <Input v-model="form.andar_zero_nome" label="Nome do andar 0" placeholder="Térreo, Giardino..." />
-            <Input v-model="form.imagem_url" label="Imagem da implantação (URL)" placeholder="https://..." />
+            <Input v-model="form.vagas_padrao" type="number" label="Vagas por unidade" hint="quando o CV não informa" />
+            <Input v-model="form.imagem_url" label="Implantação (URL da imagem)" placeholder="https://..." />
+          </div>
+        </section>
+
+        <section class="space-y-2">
+          <h4 class="text-sm font-semibold text-ink">Dormitórios pela área</h4>
+          <p class="text-xs text-ink-muted">Vale quando nem o cadastro do final nem o CV dizem. Faixas em ordem: "até X m² = N dorm"; a última sem limite é o "acima disso".</p>
+          <div class="flex flex-wrap items-end gap-2">
+            <div v-for="(fx, i) in form.dorm_por_area" :key="i" class="flex items-end gap-1.5 rounded-lg border border-line bg-surface-sunken p-2">
+              <Input v-model="fx.ate" type="number" size="sm" label="Até (m²)" placeholder="acima" />
+              <Input v-model="fx.dorm" type="number" size="sm" label="Dorm." />
+              <Button variant="ghost" size="sm" icon="fas fa-xmark" @click="rmFaixa(i)" />
+            </div>
+            <Button variant="ghost" size="sm" icon="fas fa-plus" @click="addFaixa">Faixa</Button>
           </div>
         </section>
 
@@ -418,14 +440,16 @@ watch(() => props.idempreendimento, carregar);
             <table class="w-full text-sm">
               <thead><tr class="bg-surface-sunken/60 metric-label">
                 <th class="text-left px-3 py-2">Final</th><th class="text-left px-3 py-2">Face / sol</th>
-                <th class="text-left px-3 py-2 w-28">Dormitórios</th><th class="text-left px-3 py-2">Tipologia</th>
+                <th class="text-left px-3 py-2 w-24">Dorm.</th><th class="text-left px-3 py-2">Tipologia</th>
+                <th class="text-left px-3 py-2 w-32">R$/m² do final</th>
               </tr></thead>
               <tbody>
                 <tr v-for="f in t.finais" :key="f" class="border-t border-line">
                   <td class="px-3 py-1.5 font-semibold tabular-nums">Final {{ f }}<span class="block text-micro text-ink-subtle font-normal">{{ t.colunas.find((c) => c.final === f)?.area ? fmtArea(t.colunas.find((c) => c.final === f).area) : '' }}</span></td>
                   <td class="px-3 py-1.5"><Select v-model="form.finais[t.key][f].face" :options="FACE_OPTIONS" size="sm" /></td>
-                  <td class="px-3 py-1.5"><Input v-model="form.finais[t.key][f].dorm" type="number" size="sm" placeholder="-" /></td>
-                  <td class="px-3 py-1.5"><Input v-model="form.finais[t.key][f].tipologia" size="sm" placeholder="Tipo 1, Garden..." /></td>
+                  <td class="px-3 py-1.5"><Input v-model="form.finais[t.key][f].dorm" type="number" size="sm" :placeholder="String(t.colunas.find((c) => c.final === f)?.dorm ?? '-')" /></td>
+                  <td class="px-3 py-1.5"><Input v-model="form.finais[t.key][f].tipologia" size="sm" :placeholder="t.colunas.find((c) => c.final === f)?.tipologia || 'Tipo 1, Garden...'" /></td>
+                  <td class="px-3 py-1.5"><Input v-model="form.finais[t.key][f].valor_m2" type="number" size="sm" placeholder="-" /></td>
                 </tr>
               </tbody>
             </table>
@@ -434,7 +458,7 @@ watch(() => props.idempreendimento, carregar);
 
         <section class="space-y-2">
           <h4 class="text-sm font-semibold text-ink">R$/m² por andar (estimativa)</h4>
-          <p class="text-xs text-ink-muted">Só entra quando a unidade não tem valor no CV nem em tabela de preço. O preço estimado sai marcado em itálico na grade e como "estimado" na ficha.</p>
+          <p class="text-xs text-ink-muted">Só entra quando a unidade não tem valor no CV nem em tabela de preço. Andar sem valor cai no "R$/m² do final" da tabela acima (Giardino com preço por tipo, por exemplo). O preço estimado sai em itálico na grade e como "estimado" na ficha.</p>
           <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
             <Input v-for="a in form.andares" :key="a" v-model="form.valor_m2_andar[a]" type="number" size="sm"
               :label="a === 0 ? form.andar_zero_nome : `${a}º`" placeholder="R$/m²" />
