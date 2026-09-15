@@ -156,24 +156,33 @@ const deltaView = computed(() => {
       </span>
     </div>
 
-    <!-- o número: o elemento mais forte do card. Conta até o valor quando
-         recebe `raw`, e assenta na cor final ao terminar. -->
-    <span class="metric mt-1 truncate transition-colors duration-420"
-      :class="[VALUE_SIZE[size] || VALUE_SIZE.md, loading ? 'opacity-30' : '', counting ? 'metric-counting' : '']">
-      <slot name="value">{{ shownValue }}</slot>
-    </span>
+    <!-- Número e rótulo à esquerda, série à direita. Lado a lado o card fica
+         com a altura do próprio número, e no largo sobra espaço de sobra para
+         a série; empilhar embaixo dava um card alto com um vazio ao lado do
+         rótulo. No estreito (faixa rolável de 10.5rem) não cabe: a série
+         volta para a base, na largura toda. -->
+    <div class="flex items-end gap-3 min-w-0">
+      <div class="min-w-0">
+        <!-- o número: o elemento mais forte do card. Conta até o valor quando
+             recebe `raw`, e assenta na cor final ao terminar. -->
+        <span class="metric mt-1 block truncate transition-colors duration-420"
+          :class="[VALUE_SIZE[size] || VALUE_SIZE.md, loading ? 'opacity-30' : '', counting ? 'metric-counting' : '']">
+          <slot name="value">{{ shownValue }}</slot>
+        </span>
 
-    <!-- rótulo -->
-    <div class="min-w-0">
-      <p class="text-xs text-ink-muted leading-tight truncate">{{ label }}</p>
-      <p v-if="hint" class="text-micro text-ink-subtle tabular-nums leading-tight truncate mt-0.5">{{ hint }}</p>
+        <!-- rótulo -->
+        <p class="text-xs text-ink-muted leading-tight truncate">{{ label }}</p>
+        <p v-if="hint" class="text-micro text-ink-subtle tabular-nums leading-tight truncate mt-0.5">{{ hint }}</p>
+      </div>
+
+      <!-- `flex-1` toma o que sobra; o mínimo garante as 14 barras inteiras e
+           obriga o número a truncar antes de a série sumir. -->
+      <Sparkline v-if="series.length" :values="series" :mode="sparkMode" :color="sparkColor"
+        class="hidden sm:block flex-1 min-w-[4.5rem] mb-1" height="h-9" />
     </div>
 
-    <!-- A série ocupa a LARGURA TODA, embaixo. Espremida num canto de 56px ela
-         vira enfeite; ocupando a base do card ela mostra de verdade se o
-         número vinha subindo ou caindo. -->
     <Sparkline v-if="series.length" :values="series" :mode="sparkMode" :color="sparkColor"
-      class="w-full mt-2" height="h-7" />
+      class="sm:hidden w-full mt-2" height="h-7" />
 
     <!-- seta discreta só quando o card leva a algum lugar -->
     <i v-if="to"
