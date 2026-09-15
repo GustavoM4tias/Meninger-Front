@@ -197,10 +197,20 @@ const estiloTabela = computed(() => (temLarguraFixa.value ? { tableLayout: 'fixe
 const classeCards = computed(() => ((props.layout === 'cards' || props.layout === 'list') ? '' : props.layout === 'table' ? 'hidden' : 'md:hidden'));
 const emLista = computed(() => props.layout === 'list');
 
-/* Na lista, o primeiro campo de prioridade 1 é o título e os demais de
-   prioridade 1 ficam à direita, na mesma linha. */
+/* Na lista, o primeiro campo de prioridade 1 é o título e UM só fica à
+   direita na mesma linha (o primeiro numérico, senão o próximo): num painel
+   de 330px, título + selo + preço não cabem, e o que sumia era o nome.
+   Os outros de prioridade 1 abrem a linha corrida, na frente dos demais. */
 const tituloLista = computed(() => primary.value[0] || props.columns[0]);
-const ladoLista = computed(() => primary.value.slice(1));
+const ladoLista = computed(() => {
+  const resto = primary.value.slice(1);
+  const num = resto.find((c) => c.numeric);
+  return num ? [num] : resto.slice(0, 1);
+});
+const corridaLista = computed(() => [
+  ...primary.value.slice(1).filter((c) => !ladoLista.value.includes(c)),
+  ...secondary.value,
+]);
 
 /* Linhas abertas. Uma coleção só serve o desktop e o celular: abrir no
    monitor e girar o aparelho mantém a linha aberta. */
@@ -366,8 +376,8 @@ function onRowClick(row, i) {
             <i v-if="temMais" :class="['fas fa-chevron-down shrink-0 text-ink-subtle transition-transform duration-200',
                                        estaAberta(keyOf(row, i)) ? 'rotate-180' : '']" style="font-size:9px"></i>
           </div>
-          <dl v-if="secondary.length" class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted">
-            <div v-for="col in secondary" :key="col.key" class="inline-flex items-baseline gap-1 min-w-0">
+          <dl v-if="corridaLista.length" class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-muted">
+            <div v-for="col in corridaLista" :key="col.key" class="inline-flex items-center gap-1 min-w-0">
               <dt class="text-ink-subtle">{{ col.label }}</dt>
               <dd :class="col.numeric ? 'tabular-nums' : ''">
                 <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
