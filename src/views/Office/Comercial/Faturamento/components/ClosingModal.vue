@@ -225,7 +225,9 @@ async function handleConsolidate(period, isRedo) {
     // cartões do dashboard mostram. Já aconteceu de o cálculo rodar sem as
     // regras de comissão carregadas e gravar um VGV menor (R$ 71.722,28 a
     // menos em jan/2026, justo o uplift do Verona). Divergiu? Não grava.
-    const ref = contractsStore.metrics;
+    // metricsWithDistratos, não metrics: o fechamento congela a regra de ouro
+    // (distrato conta) mesmo com o interruptor "Sem distratos" ligado na tela.
+    const ref = contractsStore.metricsWithDistratos;
     const drift = Math.abs((Number(ref.totalValueNet) || 0) - totals.vgv_net);
     if (ref.totalSales !== totals.count || drift > 0.01) {
       throw new Error(

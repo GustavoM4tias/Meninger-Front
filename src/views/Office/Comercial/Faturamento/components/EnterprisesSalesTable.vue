@@ -70,6 +70,14 @@ const formatCurrency = (v) =>
  */
 const distratoCount = (row) => contractsStore.distratoCountForRow(row);
 const distratoValue = (row) => contractsStore.distratoValueForRow(row);
+// O marcador âmbar aparece nos dois modos; só o texto muda para dizer se a
+// venda distratada está somada ou fora da conta.
+const distratoCountTip = computed(() => contractsStore.distratosCounted
+  ? 'Distratada(s) depois da venda — contabilizadas no período'
+  : 'Distratada(s) depois da venda — fora da conta (Sem distratos)');
+const distratoValueTip = computed(() => contractsStore.distratosCounted
+  ? 'Valor de vendas distratadas — incluído no total'
+  : 'Valor de vendas distratadas — NÃO somado ao total (Sem distratos)');
 // Vendas com ajuste contábil (máscara sobre o dado do Sienge). Selo informativo,
 // como o de distrato: o valor exibido já vem corrigido do servidor.
 const adjustedCount = (row) => contractsStore.adjustmentCountForRow(row);
@@ -336,7 +344,9 @@ const selectedRows = computed(() => {
 const selectedSales = computed(() => {
   if (selectedRows.value.length === 0) return [];
 
-  const snapshot = Array.isArray(contractsStore.uniqueSales) ? contractsStore.uniqueSales : [];
+  // countedSales, não uniqueSales: a seleção recalcula os cartões e eles
+  // seguem o interruptor de distratos igual aos cartões da tela inteira.
+  const snapshot = Array.isArray(contractsStore.countedSales) ? contractsStore.countedSales : [];
   const dedupe = new Map();
 
   for (const r of selectedRows.value) {
@@ -571,7 +581,7 @@ const groupByProxy = computed({
             <span v-if="!row.onlyProjectionRow && row.proj_count" v-tippy="'Projeção'"
               class="text-micro font-semibold text-data-pos">+{{ row.proj_count }}</span>
             <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0"
-              v-tippy="'Distratada(s) depois da venda — contabilizadas no período'"
+              v-tippy="distratoCountTip"
               class="text-micro font-semibold text-data-warn">
               <i class="fas fa-file-circle-xmark"></i>{{ distratoCount(row) }}</span>
           </span>
@@ -582,7 +592,7 @@ const groupByProxy = computed({
           <span v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
             class="block text-micro text-data-pos">+{{ formatCurrency(appendedValue(row)) }}</span>
           <span v-if="!row.onlyProjectionRow && distratoValue(row) > 0"
-            v-tippy="'Valor de vendas distratadas — incluído no total'"
+            v-tippy="distratoValueTip"
             class="block text-micro text-data-warn">
             <i class="fas fa-file-circle-xmark"></i> {{ formatCurrency(distratoValue(row)) }}</span>
         </template>

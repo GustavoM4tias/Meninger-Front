@@ -35,6 +35,14 @@ const can = useCan('/comercial/relatorios/projecao');
 // Mesmos getters do Faturamento: distrato conta (selo informativo), projeção somada à parte.
 const distratoCount = (row) => contractsStore.distratoCountForRow(row);
 const distratoValue = (row) => contractsStore.distratoValueForRow(row);
+// O marcador âmbar aparece nos dois modos; só o texto muda para dizer se a
+// venda distratada está somada ou fora da conta.
+const distratoCountTip = computed(() => contractsStore.distratosCounted
+  ? 'Distratada(s) depois da venda — contabilizadas no período'
+  : 'Distratada(s) depois da venda — fora da conta (Sem distratos)');
+const distratoValueTip = computed(() => contractsStore.distratosCounted
+  ? 'Valor de vendas distratadas — incluído no total'
+  : 'Valor de vendas distratadas — NÃO somado ao total (Sem distratos)');
 const baseValue = (row) => contractsStore.realizedValueForRow(row);
 const appendedValue = (row) => contractsStore.projectedValueForRow(row);
 const realizedCount = (row) => contractsStore.realizedCountForRow(row);
@@ -302,6 +310,17 @@ const valueModeOptions = [
   { value: 'gross', label: 'VGV+DC' },
 ];
 
+// Mesmo interruptor do Faturamento (estado no store): as duas telas precisam
+// responder o mesmo número, então o controle aparece nas duas.
+const distratosOptions = [
+  { value: 'on',  label: 'Com distratos' },
+  { value: 'off', label: 'Sem distratos' },
+];
+const distratosProxy = computed({
+  get: () => (contractsStore.distratosCounted ? 'on' : 'off'),
+  set: (v) => contractsStore.setCountDistratos(v === 'on'),
+});
+
 const groupByOptions = [
   { value: 'enterprise', label: 'Empreendimento', icon: 'fas fa-building' },
   { value: 'company',    label: 'Empresa',        icon: 'fas fa-city' },
@@ -337,6 +356,8 @@ const clearSelection = () => { selectedKeys.value = new Set(); };
 
     <template #actions>
       <SegmentedControl v-model="groupByProxy" :options="groupByOptions" size="sm" />
+      <SegmentedControl v-model="distratosProxy" :options="distratosOptions" size="sm"
+        v-tippy="'Com: venda distratada depois conta no período (na época foi venda). Sem: sai dos cartões e das linhas, mas segue marcada em âmbar.'" />
       <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="sm" />
       <Button variant="primary" size="sm" icon="fas fa-chart-pie" @click="emit('open-charts')">
         <span class="hidden sm:inline">Análise</span>
@@ -395,7 +416,7 @@ const clearSelection = () => { selectedKeys.value = new Set(); };
             <span v-if="!row.onlyProjectionRow && row.proj_count" v-tippy="'Projeção'"
               class="text-micro font-semibold text-data-pos">+{{ row.proj_count }}</span>
             <span v-if="!row.onlyProjectionRow && distratoCount(row) > 0"
-              v-tippy="'Distratada(s) depois da venda — contabilizadas no período'"
+              v-tippy="distratoCountTip"
               class="text-micro font-semibold text-data-warn">
               <i class="fas fa-file-circle-xmark"></i>{{ distratoCount(row) }}</span>
           </span>
@@ -406,7 +427,7 @@ const clearSelection = () => { selectedKeys.value = new Set(); };
           <span v-if="!row.onlyProjectionRow && appendedValue(row) > 0"
             class="block text-micro text-data-pos">+{{ formatCurrency(appendedValue(row)) }}</span>
           <span v-if="!row.onlyProjectionRow && distratoValue(row) > 0"
-            v-tippy="'Valor de vendas distratadas — incluído no total'"
+            v-tippy="distratoValueTip"
             class="block text-micro text-data-warn">
             <i class="fas fa-file-circle-xmark"></i> {{ formatCurrency(distratoValue(row)) }}</span>
         </template>

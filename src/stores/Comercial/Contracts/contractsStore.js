@@ -268,6 +268,12 @@ export const useContractsStore = defineStore('contracts', {
         total: 0,
         error: null,
         valueMode: 'net',   // 'net' | 'gross'
+        // Distratos entram na conta? `true` é a regra de ouro (venda com data
+        // da instituição financeira conta mesmo distratada depois). `false` é
+        // um modo de leitura: a venda distratada sai dos totais, do ticket
+        // médio e das linhas, mas continua aparecendo no marcador âmbar e no
+        // detalhe — ver countedSales.
+        countDistratos: true,
         // Regras de valor já carregadas? Ver ensureRules().
         rulesReady: false,
 
@@ -319,6 +325,16 @@ export const useContractsStore = defineStore('contracts', {
         // instituição financeira conta mesmo cancelada depois (na época foi
         // venda). O distrato é selo visual — ver saleIsDistrato.
         saleIsDistrato: () => (sale) => saleIsDistrato(sale),
+        distratosCounted: (s) => s.countDistratos !== false,
+
+        // Vendas que ENTRAM na conta (cartões, linhas, período, ranking).
+        // Com distratos contando é o próprio uniqueSales; sem, a venda
+        // distratada fica de fora daqui mas segue em uniqueSales, que é de
+        // onde o marcador âmbar e o detalhe leem.
+        countedSales() {
+            if (this.distratosCounted) return this.uniqueSales
+            return this.uniqueSales.filter((s) => !saleIsDistrato(s))
+        },
 
         // Conta quantas vendas distratadas pertencem à row (empreendimento ou
         // empresa) do dashboard. INFORMATIVO apenas: as tabelas mostram o selo,
@@ -462,12 +478,12 @@ export const useContractsStore = defineStore('contracts', {
         // Resolve-se na engrenagem → Vínculo CV ↔ Sienge.
         isUnlinkedProjectionRow: () => (row) =>
             !!row?.onlyProjectionRow && (row.enterprise_id == null || row.enterprise_id === ''),
-        totalSales() { return this.uniqueSales.length },
+        totalSales() { return this.countedSales.length },
         totalValueNet() {
-            return this.uniqueSales.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
+            return this.countedSales.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
         },
         totalValueGross() {
-            return this.uniqueSales.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
+            return this.countedSales.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
         },
         projectionContractsCount: (s) => s.contracts.filter((c) => c._projection).length,
         projectionItemsCount() {
@@ -729,8 +745,11 @@ export const useContractsStore = defineStore('contracts', {
             const unique = this.uniqueSales
             const real = unique.filter((s) => s.contracts.some((c) => !c._projection))
             const proj = unique.filter((s) => s.contracts.every((c) => c._projection))
+            const conta = this.distratosCounted
 
             // Build real rows map (keyed by enterprise_id or name)
+            // Distrato fora da conta ainda CRIA a linha (para o marcador âmbar
+            // ter onde aparecer), só não soma em count/valor.
             const realMap = new Map()
             for (const s of real) {
                 const first = s.contracts.find((c) => !c._projection) || s.contracts[0] || {}
@@ -744,10 +763,11 @@ export const useContractsStore = defineStore('contracts', {
                     proj_count: 0, proj_value_net: 0, proj_value_gross: 0,
                     onlyProjectionRow: false, key
                 }
+                realMap.set(key, row)
+                if (!conta && saleIsDistrato(s)) continue
                 row.count += 1
                 row.total_value_net += Number(s.total_value_net) || 0
                 row.total_value_gross += Number(s.total_value_gross) || 0
-                realMap.set(key, row)
             }
 
             // Helper: resolve which real-enterprise key a projection belongs to.
@@ -812,6 +832,7 @@ export const useContractsStore = defineStore('contracts', {
             const unique = this.uniqueSales
             const real = unique.filter((s) => s.contracts.some((c) => !c._projection))
             const proj = unique.filter((s) => s.contracts.every((c) => c._projection))
+            const conta = this.distratosCounted
 
             const byCompany = new Map()
 
@@ -835,17 +856,20 @@ export const useContractsStore = defineStore('contracts', {
             }
 
             // 1) Aggregate real sales by company
+            // Distrato fora da conta ainda garante a linha e o vínculo com o
+            // empreendimento (marcador âmbar e detalhe), só não soma.
             for (const s of real) {
                 const first = s.contracts.find((c) => !c._projection) || s.contracts[0] || {}
                 const row = ensure(first.company_id ?? null, first.company_name ?? null)
-                row.count += 1
-                row.total_value_net += Number(s.total_value_net) || 0
-                row.total_value_gross += Number(s.total_value_gross) || 0
                 for (const c of s.contracts) {
                     if (c._projection) continue
                     const eid = Number(c.enterprise_id)
                     if (Number.isFinite(eid) && eid > 0) row.enterpriseIds.add(eid)
                 }
+                if (!conta && saleIsDistrato(s)) continue
+                row.count += 1
+                row.total_value_net += Number(s.total_value_net) || 0
+                row.total_value_gross += Number(s.total_value_gross) || 0
             }
 
             // Helper: resolve company for a projection sale using all available strategies
@@ -929,7 +953,7 @@ export const useContractsStore = defineStore('contracts', {
 
         salesByMonth() {
             const monthMap = new Map()
-            for (const sale of this.uniqueSales) {
+            for (const sale of this.countedSales) {
                 const date = new Date(sale.financial_institution_date)
                 if (isNaN(date)) continue
                 const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -944,7 +968,7 @@ export const useContractsStore = defineStore('contracts', {
 
         topCustomers() {
             const map = new Map()
-            for (const sale of this.uniqueSales) {
+            for (const sale of this.countedSales) {
                 const row = map.get(sale.customer_id) || {
                     customer_id: sale.customer_id,
                     customer_name: sale.customer_name,
@@ -960,23 +984,35 @@ export const useContractsStore = defineStore('contracts', {
                 .slice(0, 10)
         },
 
+        // Cartões. Seguem o interruptor de distratos (countedSales): com ele
+        // ligado é a regra de ouro; desligado, a venda distratada sai do total
+        // e do ticket médio. Quantas ficaram de fora vai em `distratosForaDaConta`.
         metrics() {
-            // Distratos incluídos: venda com data da instituição financeira
-            // conta mesmo cancelada depois (selo visual na listagem).
-            const unique = this.uniqueSales
-            const totalSales = unique.length
-            const totalValueNet = unique.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
-            const totalValueGross = unique.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
-            return {
-                totalSales,
-                totalSalesWithProjections: this.projectionItemsCount,
-                totalValueNet, totalValueGross,
-                avgSaleValueNet: totalSales > 0 ? totalValueNet / totalSales : 0,
-                avgSaleValueGross: totalSales > 0 ? totalValueGross / totalSales : 0,
-                totalValue: totalValueNet,
-                avgSaleValue: totalSales > 0 ? totalValueNet / totalSales : 0,
-                totalEnterprises: new Set(this.contracts.map((c) => c.enterprise_id)).size,
-                totalContracts: this.contracts.length
+            return this.metricsOf(this.countedSales)
+        },
+        // Sempre com distratos, seja qual for o interruptor: é o número que o
+        // fechamento mensal congela e confere (regra de ouro, não modo de leitura).
+        metricsWithDistratos() {
+            return this.metricsOf(this.uniqueSales)
+        },
+        metricsOf() {
+            return (sales) => {
+                const totalSales = sales.length
+                const totalValueNet = sales.reduce((s, x) => s + (Number(x.total_value_net) || 0), 0)
+                const totalValueGross = sales.reduce((s, x) => s + (Number(x.total_value_gross) || 0), 0)
+                const fora = this.uniqueSales.length - sales.length
+                return {
+                    totalSales,
+                    totalSalesWithProjections: this.projectionItemsCount,
+                    totalValueNet, totalValueGross,
+                    avgSaleValueNet: totalSales > 0 ? totalValueNet / totalSales : 0,
+                    avgSaleValueGross: totalSales > 0 ? totalValueGross / totalSales : 0,
+                    totalValue: totalValueNet,
+                    avgSaleValue: totalSales > 0 ? totalValueNet / totalSales : 0,
+                    totalEnterprises: new Set(this.contracts.map((c) => c.enterprise_id)).size,
+                    totalContracts: this.contracts.length,
+                    distratosForaDaConta: fora > 0 ? fora : 0
+                }
             }
         },
 
@@ -1032,6 +1068,10 @@ export const useContractsStore = defineStore('contracts', {
         },
         toggleValueMode() {
             this.valueMode = this.valueMode === 'net' ? 'gross' : 'net'
+        },
+        // Modo de leitura, não filtro de servidor: nada é buscado de novo.
+        setCountDistratos(v) {
+            this.countDistratos = v !== false && v !== 'off'
         },
         setGroupBy(mode) {
             this.groupBy = mode === 'company' ? 'company' : 'enterprise'

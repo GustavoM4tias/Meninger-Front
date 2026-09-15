@@ -56,7 +56,8 @@ const inteiro = new Intl.NumberFormat('pt-BR');
  */
 const vendasComData = computed(() => {
   const out = [];
-  for (const sale of contractsStore.uniqueSales || []) {
+  // countedSales: o interruptor "Sem distratos" tira a venda do eixo também.
+  for (const sale of contractsStore.countedSales || []) {
     const bruto = sale?.financial_institution_date;
     if (!bruto) continue;
     const d = dayjs(String(bruto).slice(0, 10));
@@ -67,7 +68,7 @@ const vendasComData = computed(() => {
 });
 
 const semData = computed(() =>
-  (contractsStore.uniqueSales || []).length - vendasComData.value.length);
+  (contractsStore.countedSales || []).length - vendasComData.value.length);
 
 /* ── granularidade ───────────────────────────────────────────────────────────
  * Um balde por MÊS num filtro de um mês é uma barra só, e uma barra não é um

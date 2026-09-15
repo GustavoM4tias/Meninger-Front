@@ -37,13 +37,20 @@ const avgTicket = computed(() =>
   isNet.value ? props.metrics.avgSaleValueNet : props.metrics.avgSaleValueGross
 );
 
+// Com o interruptor "Sem distratos", o cartão diz quantas ficaram de fora -
+// senão o total cai sem explicação e a pessoa procura venda que sumiu.
+const foraDaConta = computed(() => Number(props.metrics.distratosForaDaConta) || 0);
+const hintVendas = computed(() => foraDaConta.value > 0
+  ? `vendas únicas no período · ${foraDaConta.value} distratada(s) fora da conta`
+  : 'vendas únicas no período');
+
 const cards = computed(() => [
   {
     key: 'totalSales',
     label: 'Total de vendas',
     raw: Number(props.metrics.totalSales) || 0,
     format: formatNumber,
-    hint: 'vendas únicas no período',
+    hint: hintVendas.value,
     icon: 'fas fa-chart-line',
     tone: 'accent',
   },

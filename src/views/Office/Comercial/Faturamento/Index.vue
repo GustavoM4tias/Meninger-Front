@@ -82,7 +82,7 @@ const handleFilterChange = async () => {
             ]"
             :tips="[
               'O número verde com + são projeções de reservas/repasses ainda não contratados, somadas à parte.',
-              'O marcador âmbar são vendas distratadas depois — elas continuam contando no período, porque na época foram venda.',
+              'O marcador âmbar são vendas distratadas depois. Com o interruptor em Com distratos elas contam no período (na época foram venda); em Sem distratos elas saem dos cartões, do ticket médio e das linhas, mas o marcador e o detalhe continuam mostrando quantas são e quanto valem. O fechamento mensal sempre congela com distratos.',
               'O marcador azul \'Ajustada\' são vendas com ajuste contábil: alguém corrigiu a data da instituição financeira ou uma série. O valor mostrado já é o corrigido; passe o mouse no selo para ver o que mudou e por quê.',
               'O selo \'Lead\' no detalhe marca o cliente que entrou por captação nossa, ou seja, o lead NÃO foi cadastrado nos painéis de gestor, corretor ou imobiliária. Passe o mouse para ver origem, mídia e campanha; clique para abrir o lead na tela de Leads.',
               'Concentração top 3 e a contagem até 80% seguem o corte da tabela: com Empresa marcado eles falam de empresas, com Empreendimento falam de empreendimentos.',

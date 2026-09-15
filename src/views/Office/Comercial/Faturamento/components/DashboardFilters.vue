@@ -44,6 +44,19 @@ const valueModeProxy = computed({
   set: (v) => contractsStore.setValueMode(v),
 });
 
+// Distratos na conta ou fora dela. Também modo de exibição: recalcula na hora
+// a partir do que já foi carregado, sem nova consulta. "Com" é a regra de ouro
+// (na época foi venda); "Sem" tira a venda distratada dos cartões, das linhas e
+// do período, mas o marcador âmbar e o detalhe continuam mostrando ela.
+const distratosOptions = [
+  { value: 'on',  label: 'Com distratos' },
+  { value: 'off', label: 'Sem distratos' },
+];
+const distratosProxy = computed({
+  get: () => (contractsStore.distratosCounted ? 'on' : 'off'),
+  set: (v) => contractsStore.setCountDistratos(v === 'on'),
+});
+
 // Empresas
 const companiesOptions = computed(() =>
   (contractsStore.companies || []).map(c => c.name)
@@ -217,6 +230,8 @@ onMounted(async () => {
          e não conta como filtro - escondê-lo atrás do botão Filtros seria
          esconder um controle que muda o número na tela. -->
     <template #actions>
+      <SegmentedControl v-model="distratosProxy" :options="distratosOptions" size="sm"
+        v-tippy="'Com: venda distratada depois conta no período (na época foi venda). Sem: sai dos cartões e das linhas, mas segue marcada em âmbar.'" />
       <SegmentedControl v-model="valueModeProxy" :options="valueModeOptions" size="sm" />
     </template>
 
