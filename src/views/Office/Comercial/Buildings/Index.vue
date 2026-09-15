@@ -112,10 +112,19 @@ const cidadeOptions = optionsDe((b) => b.cidade, 'Todas');
 const tipoOptions = optionsDe(tipoOf, 'Todos');
 const segmentoOptions = optionsDe(segmentoOf, 'Todos');
 
+// Busca por palavras: "alameda votuporanga" acha "PARQUE ALAMEDA - VOTUPORANGA"
+// (cada palavra tem que aparecer no nome ou na cidade, em qualquer ordem).
 const buildingsFiltered = computed(() => {
   const q = norm(search.value.trim());
+  const palavras = q.split(/\s+/).filter(Boolean);
+  const casa = (b) => {
+    if (!q) return true;
+    if (String(b.idempreendimento) === q) return true;
+    const alvo = norm(b.nome) + ' ' + norm(b.cidade);
+    return palavras.every((p) => alvo.includes(p));
+  };
   return buildingStore.buildings
-    .filter((b) => !q || norm(b.nome).includes(q) || norm(b.cidade).includes(q) || String(b.idempreendimento) === q)
+    .filter(casa)
     .filter((b) => !cidade.value || b.cidade === cidade.value)
     .filter((b) => !tipo.value || tipoOf(b) === tipo.value)
     .filter((b) => !segmento.value || segmentoOf(b) === segmento.value)
