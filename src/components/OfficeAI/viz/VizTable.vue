@@ -68,7 +68,9 @@ const inc = useIncrementalList(ordenadas, { step: 25 });
 
 /* Dentro do painel flutuante da Eme (~420px no desktop) a tabela virava uma
    faixa com rolagem lateral e o título sumia. O espaço que manda é o do
-   container: estreito = cards, como no celular. */
+   container: estreito = lista densa (um painel, uma linha por registro). Era
+   card por linha, e uma tabela de 60 unidades virava uma coluna de dois
+   metros com um botão de 40px em cada card. */
 const raiz = ref(null);
 const { estreito } = useLarguraElemento(raiz, 640);
 </script>
@@ -76,7 +78,7 @@ const { estreito } = useLarguraElemento(raiz, 640);
 <template>
   <div ref="raiz" class="p-3">
     <DataTable :columns="colunas" :rows="inc.visiveis.value" row-key="__i"
-      manual-sort density="compact" :layout="estreito ? 'cards' : 'auto'"
+      manual-sort density="compact" :layout="estreito ? 'list' : 'auto'"
       v-model:sort-by="ordem.by" v-model:sort-dir="ordem.dir"
       more-label="Ver mais campos"
       empty-title="Sem resultados" empty-text="A consulta não retornou nenhuma linha.">

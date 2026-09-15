@@ -62,9 +62,13 @@ const props = defineProps({
      registro inteiro sem trocar de tela - e mantém a ordenação e as colunas
      da tabela, coisa que uma lista de cartões não tem. */
   expandable: { type: Boolean, default: false },
-  /* auto = pelo breakpoint da janela (padrão); cards | table = forçado. Quem
-     mora num container estreito no desktop (painel da Eme) mede o próprio
-     espaço e força `cards` - o breakpoint é da janela, não do painel. */
+  /* auto = pelo breakpoint da janela (padrão); cards | list | table = forçado.
+     Quem mora num container estreito no desktop (painel da Eme) mede o próprio
+     espaço e força `cards` ou `list` - o breakpoint é da janela, não do painel.
+     `list` é a versão DENSA dos cards: uma linha por registro (título + número
+     principal na mesma linha, o resto em linha corrida), dentro de um painel
+     só. Serve para lista longa de números, onde um card por linha vira uma
+     coluna de dois metros. */
   layout: { type: String, default: 'auto' },
 });
 
@@ -151,7 +155,7 @@ const cellTitle = (row, col) => {
 
 const rowPad = computed(() => (props.density === 'comfortable' ? 'py-3' : 'py-2'));
 
-const classeTabela = computed(() => (props.layout === 'table' ? 'block' : props.layout === 'cards' ? 'hidden' : 'hidden md:block'));
+const classeTabela = computed(() => (props.layout === 'table' ? 'block' : (props.layout === 'cards' || props.layout === 'list') ? 'hidden' : 'hidden md:block'));
 
 /* ── Largura das colunas pelo cabeçalho ──────────────────────────────────────
    Toda célula trunca com "..." por padrão (linha de altura fixa). Quem quer
@@ -190,7 +194,13 @@ function resetarLargura(col) {
   larguras.value = resto;
 }
 const estiloTabela = computed(() => (temLarguraFixa.value ? { tableLayout: 'fixed', width: 'max-content', minWidth: '100%' } : null));
-const classeCards = computed(() => (props.layout === 'cards' ? '' : props.layout === 'table' ? 'hidden' : 'md:hidden'));
+const classeCards = computed(() => ((props.layout === 'cards' || props.layout === 'list') ? '' : props.layout === 'table' ? 'hidden' : 'md:hidden'));
+const emLista = computed(() => props.layout === 'list');
+
+/* Na lista, o primeiro campo de prioridade 1 é o título e os demais de
+   prioridade 1 ficam à direita, na mesma linha. */
+const tituloLista = computed(() => primary.value[0] || props.columns[0]);
+const ladoLista = computed(() => primary.value.slice(1));
 
 /* Linhas abertas. Uma coleção só serve o desktop e o celular: abrir no
    monitor e girar o aparelho mantém a linha aberta. */
@@ -333,7 +343,58 @@ function onRowClick(row, i) {
         </button>
       </div>
 
-      <ul :class="[classeCards, 'space-y-2']">
+      <!-- ══ LISTA DENSA: um painel, uma linha por registro ═══════════════ -->
+      <ul v-if="emLista" class="panel divide-y divide-line-subtle overflow-hidden">
+        <li v-for="(row, i) in sorted" :key="keyOf(row, i)"
+          :class="['px-3 py-2', (clickable || temMais) ? 'cursor-pointer hover:bg-surface-sunken/60 transition-colors' : '']"
+          @click="temMais && !expandable ? toggleOpen(keyOf(row, i)) : onRowClick(row, i)">
+          <div class="flex items-center gap-2 min-w-0">
+            <p class="flex-1 min-w-0 text-sm font-medium text-ink truncate">
+              <slot :name="`cell-${tituloLista.key}`" :row="row" :value="cellValue(row, tituloLista)" :col="tituloLista">
+                {{ cellValue(row, tituloLista) }}
+              </slot>
+            </p>
+            <span v-for="col in ladoLista" :key="col.key"
+              :class="['shrink-0 text-sm text-ink', col.numeric ? 'tabular-nums' : '']" :title="col.label">
+              <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
+                {{ cellValue(row, col) }}
+              </slot>
+            </span>
+            <div v-if="$slots.actions" class="shrink-0" @click.stop>
+              <slot name="actions" :row="row" />
+            </div>
+            <i v-if="temMais" :class="['fas fa-chevron-down shrink-0 text-ink-subtle transition-transform duration-200',
+                                       estaAberta(keyOf(row, i)) ? 'rotate-180' : '']" style="font-size:9px"></i>
+          </div>
+          <dl v-if="secondary.length" class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted">
+            <div v-for="col in secondary" :key="col.key" class="inline-flex items-baseline gap-1 min-w-0">
+              <dt class="text-ink-subtle">{{ col.label }}</dt>
+              <dd :class="col.numeric ? 'tabular-nums' : ''">
+                <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
+                  {{ cellValue(row, col) }}
+                </slot>
+              </dd>
+            </div>
+          </dl>
+          <div v-if="temMais && estaAberta(keyOf(row, i))" class="animate-slide-down" @click.stop>
+            <dl v-if="extra.length" class="mt-2 pt-2 border-t border-line-subtle grid grid-cols-2 gap-x-3 gap-y-1.5">
+              <div v-for="col in extra" :key="col.key" class="min-w-0">
+                <dt class="metric-label">{{ col.label }}</dt>
+                <dd :class="['text-xs text-ink-muted break-words', col.numeric ? 'tabular-nums' : '']">
+                  <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
+                    {{ cellValue(row, col) }}
+                  </slot>
+                </dd>
+              </div>
+            </dl>
+            <div v-if="expandable" class="mt-2 pt-2 border-t border-line-subtle">
+              <slot name="expanded" :row="row" />
+            </div>
+          </div>
+        </li>
+      </ul>
+
+      <ul v-else :class="[classeCards, 'space-y-2']">
         <li v-for="(row, i) in sorted" :key="keyOf(row, i)"
           :class="['panel p-3', (clickable && !expandable) ? 'panel-focus' : '', i < 16 ? 'stagger-in' : '']"
           :style="i < 16 ? { '--i': i } : null"
