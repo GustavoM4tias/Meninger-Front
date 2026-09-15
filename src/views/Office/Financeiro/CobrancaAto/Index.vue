@@ -201,6 +201,10 @@
                   :value="form.cv_situacoes_reserva_morta?.length ? form.cv_situacoes_reserva_morta.join(', ') : ''"
                   note="Boleto parado nessas situações conta em Canceladas, não em Com erro." />
 
+                <CampoConfig label="Confirmar baixa por devolução"
+                  :value="form.baixa_devolucao_confirmar_dias_uteis != null ? `${form.baixa_devolucao_confirmar_dias_uteis} dias úteis` : ''"
+                  note="Baixa que o Office não pediu pode ser pagamento em compensação: o boleto fica em aberto por este prazo antes de virar cancelado." />
+
                 <CampoConfig label="Revalidar baixa"
                   :value="form.revalidacao_baixado_dias != null ? `${form.revalidacao_baixado_dias} dias` : ''"
                   note="Boleto baixado segue sendo reconsultado por este prazo. 0 desliga." />
@@ -242,6 +246,13 @@
                   empty-text="Nenhuma situação configurada"
                   remove-label="Remover situação"
                   hint="Reserva nessas situações está encerrada: o boleto que ficou pelo caminho sai da fila de trabalho. Hoje 4 = Cancelada, 11 = Vencida." />
+
+                <Input
+                  v-model.number="form.baixa_devolucao_confirmar_dias_uteis"
+                  type="number" min="0" max="15"
+                  label="Confirmar baixa por devolução (dias úteis)"
+                  placeholder="Ex.: 3"
+                  hint="O banco devolve baixa por devolução também para boleto pago no dia anterior. Baixa que o Office não pediu fica em aberto por este prazo, dentro da leitura diária normal; se aparecer pago, vira pago; se continuar, cancela. 0 cancela na primeira leitura." />
 
                 <Input
                   v-model.number="form.revalidacao_baixado_dias"
@@ -1086,6 +1097,7 @@ const form = ref({
   cv_idtipo_documento: null,
   tolerancia_dias_uteis: 1,
   revalidacao_baixado_dias: 5,
+  baixa_devolucao_confirmar_dias_uteis: 3,
   reconsultar_baixado_antes_emitir: true,
   cv_situacoes_reserva_morta: [4],
   max_dias_vencimento: 10,
@@ -1174,6 +1186,7 @@ function snapshotCvFields() {
     cv_idtipo_documento: form.value.cv_idtipo_documento,
     tolerancia_dias_uteis: form.value.tolerancia_dias_uteis,
     revalidacao_baixado_dias: form.value.revalidacao_baixado_dias,
+    baixa_devolucao_confirmar_dias_uteis: form.value.baixa_devolucao_confirmar_dias_uteis,
     cv_situacoes_reserva_morta: [...(form.value.cv_situacoes_reserva_morta || [])],
     max_dias_vencimento: form.value.max_dias_vencimento,
     valor_maximo: form.value.valor_maximo,
@@ -1651,6 +1664,7 @@ onMounted(async () => {
       form.value.cv_idtipo_documento = store.settings.cv_idtipo_documento || null;
       form.value.tolerancia_dias_uteis = store.settings.tolerancia_dias_uteis ?? 1;
       form.value.revalidacao_baixado_dias = store.settings.revalidacao_baixado_dias ?? 5;
+      form.value.baixa_devolucao_confirmar_dias_uteis = store.settings.baixa_devolucao_confirmar_dias_uteis ?? 3;
       form.value.cv_situacoes_reserva_morta = [...(store.settings.cv_situacoes_reserva_morta || [4])];
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
