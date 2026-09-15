@@ -93,6 +93,9 @@ export const navRegistry = [
             { route: '/marketing/stand-vendas', name: 'Stand de Vendas', icon: 'fas fa-store' },
             // Viabilidade (ex "Gastos por Departamento" do Financeiro, 2026-07-28).
             { route: '/marketing/viabilidade', section: 'Viabilidade', name: 'Viabilidade', icon: 'fas fa-chart-pie' },
+            // Planilha PROJEÇÃO X INVESTIMENTO MKT do SharePoint, lida ao abrir
+            // (uma aba por empreendimento). Detalhe em /:aba herda a alçada.
+            { route: '/marketing/projecao-investimentos', section: 'Projeção de Investimentos', name: 'Projeção de Investimentos', icon: 'fas fa-chart-line' },
         ],
     },
 

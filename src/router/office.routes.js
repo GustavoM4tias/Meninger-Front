@@ -296,6 +296,22 @@ export default [
                         component: () => import('@/views/Office/Financeiro/DeptSpending/DeptSpendingReport.vue'),
                         meta: { requiresAuth: true, allowedPosition: '', searchable: false, content: 'Relatório gerencial de investimento por empreendimento' },
                     },
+                    // Projeção de Investimentos: os números vêm da planilha do
+                    // SharePoint (lida pelo backend ao abrir), não do banco.
+                    {
+                        path: 'projecao-investimentos',
+                        name: 'Projeção de Investimentos',
+                        component: () => import('@/views/Office/Marketing/ProjecaoInvestimentos/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Projeção de Investimentos de Marketing: viabilidade, investido desde o lançamento, liberado e realizado por mês, por empreendimento (planilha do SharePoint)' },
+                    },
+                    {
+                        // :aba = nome da aba do empreendimento na planilha. Herda a
+                        // alçada da tela pai pelo permissionRoute.
+                        path: 'projecao-investimentos/:aba',
+                        name: 'Projeção de Investimentos Detalhe',
+                        component: () => import('@/views/Office/Marketing/ProjecaoInvestimentos/Detail.vue'),
+                        meta: { requiresAuth: true, permissionRoute: '/marketing/projecao-investimentos', searchable: false, content: 'Detalhe do investimento de marketing de um empreendimento: mês a mês, liberado x utilizado e itens' },
+                    },
                     {
                         path: 'events',
                         name: 'Eventos',
