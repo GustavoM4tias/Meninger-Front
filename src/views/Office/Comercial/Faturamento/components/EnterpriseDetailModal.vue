@@ -900,6 +900,48 @@ const kpiItems = computed(() => [
   },
 ]);
 
+/* ===================== EXPORTAÇÃO =====================
+ * A planilha sai IGUAL à tela: mesma ordem (`sortedSales`), mesmas colunas e
+ * os mesmos helpers que preenchem cada célula. Antes o Export recebia o dado
+ * cru da API - ordenado por data/contrato e com o nome só do Sienge - e quem
+ * comparava tela e Excel não achava a linha onde a tinha visto. Os selos da
+ * coluna Cliente (Distratada, Ajustada, Projeção, Lead) viram uma coluna, e o
+ * contrato entra por último para quem cruza com o Sienge. */
+const selosOf = (sale) =>
+  [
+    saleIsDistrato(sale) && 'Distratada',
+    saleIsAdjusted(sale) && 'Ajustada',
+    saleIsProjection(sale) && 'Projeção',
+    leadOf(sale) && 'Lead',
+  ].filter(Boolean).join(', ');
+
+const exportRows = computed(() =>
+  sortedSales.value.map((sale) => {
+    const row = {
+      'Cliente': customerNameOf(sale),
+      'Código do cliente': sale.customer_id ?? '',
+      'Unidade': sale.unit_name || reservaUnitOf(sale),
+      // Só "Valor": o modo (VGV/Líquido) já vai no cabeçalho da planilha, e um
+      // nome de coluna que muda com o modo derrubaria a coluna da seleção
+      // salva do Export na próxima exportação em outro modo.
+      'Valor': Number(getSaleValue(sale)) || 0,
+      'Data': toIsoDate(sale.financial_institution_date || reservaDateOf(sale)) ?? '',
+    };
+    if (hasRepasse.value) {
+      row['Imobiliária'] = imobiliariaOf(sale);
+      row['Repasse'] = repasseStatusOf(sale) || '-';
+      row['Empreendimento'] = empreendimentoOf(sale);
+      row['Etapa'] = etapaOf(sale);
+      row['Bloco'] = blocoOf(sale);
+    }
+    row['Selos'] = selosOf(sale);
+    row['Contrato'] = (sale.contracts || []).map((c) => c.contract_id).filter(Boolean).join(' | ');
+    return row;
+  })
+);
+
+const exportPreselect = computed(() => Object.keys(exportRows.value[0] || {}));
+
 /* ===================== COLUNAS DA LISTAGEM =====================
  * Listagem é SEMPRE DataTable, inclusive dentro de modal: lista de cartões não
  * ordena, e ordenar é o que se quer numa lista de vendas.
@@ -1067,7 +1109,7 @@ const closeModal = () => emit('close');
         </FilterBar>
       </div>
 
-      <Export v-model="open" :source="filteredSales" title="Vendas"
+      <Export v-model="open" :source="exportRows" title="Vendas"
         :subtitle="enterprise?.name || ''"
         initial-delimiter=";" initial-array-mode="join"
         :filters="{
@@ -1075,12 +1117,9 @@ const closeModal = () => emit('close');
           'Modo de valor': valueModeLabel,
           'Serie': selectedSerie || 'Todas',
           'Busca': searchTerm || '-',
+          'Ordem': `${columns.find((c) => c.key === sortBy)?.label || sortBy} (${sortDir === 'asc' ? 'crescente' : 'decrescente'})`,
         }"
-        :preselect="[
-          'customer_id', 'customer_name', 'unit_name', 'enterprise_name',
-          'financial_institution_date', 'total_value_gross', 'total_value_net',
-          'contracts.contract_id'
-        ]" />
+        :preselect="exportPreselect" />
 
       <div class="px-4 sm:px-5 py-4">
         <DataTable :columns="columns" :rows="inc.visiveis.value" row-key="_key" expandable manual-sort
