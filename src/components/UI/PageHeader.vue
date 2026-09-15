@@ -14,8 +14,15 @@ defineProps({
 </script>
 
 <template>
-  <header class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 mb-6 min-w-0">
-    <div class="flex items-start gap-3 min-w-0">
+  <!--
+    Uma linha só de flex-wrap, sem `shrink-0` nas ações: título e ações dividem a
+    linha enquanto cabem e, quando não cabem (tablet, celular, tela cheia de
+    botões), as ações descem inteiras para a linha de baixo e quebram entre si.
+    Antes o bloco de ações era `shrink-0` e o título era quem pagava a conta:
+    espremido a zero enquanto as ações vazavam para fora da tela.
+  -->
+  <header class="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 mb-6 min-w-0">
+    <div class="flex items-start gap-3 min-w-0 flex-1 basis-64">
       <div v-if="iconImg"
            class="hidden sm:grid place-items-center h-10 w-10 rounded-xl bg-surface-sunken border border-line shrink-0 overflow-hidden">
         <img :src="iconImg" alt="" class="h-8 w-8 object-contain" />
@@ -36,14 +43,8 @@ defineProps({
     </div>
 
     <div v-if="$slots.actions"
-         class="flex items-center gap-2 flex-wrap shrink-0 -mx-1 px-1 -my-1 py-1
-                overflow-x-auto sm:overflow-visible no-scrollbar">
+         class="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
       <slot name="actions" />
     </div>
   </header>
 </template>
-
-<style scoped>
-.no-scrollbar { scrollbar-width: none; }
-.no-scrollbar::-webkit-scrollbar { display: none; }
-</style>

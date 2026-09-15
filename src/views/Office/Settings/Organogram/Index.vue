@@ -452,10 +452,10 @@ onMounted(async () => {
             @click.stop="toggleEditMode">
             {{ editMode ? 'Concluir edição' : 'Editar layout' }}
           </Button>
-          <div class="w-44 sm:w-56" @click.stop>
+          <div class="flex-1 min-w-[9rem] sm:flex-none sm:w-56" @click.stop>
             <Select v-model="filterDepartment" :options="departmentOptions" size="sm" />
           </div>
-          <div class="w-44 sm:w-72" @click.stop>
+          <div class="flex-1 min-w-[9rem] sm:flex-none sm:w-72" @click.stop>
             <Input v-model="search" size="sm" placeholder="Buscar..."
               iconLeft="fas fa-magnifying-glass" />
           </div>
