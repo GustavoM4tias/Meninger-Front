@@ -8,12 +8,17 @@
  * então a tabela guarda o histórico. O sync das tabelas de preço ainda congela
  * uma cópia por tabela, e a aba Tabelas de preço desconta por padrão.
  *
+ * O jeito de trazer do CV é a exportação de unidades do painel Gestor
+ * (Cadastros > Empreendimentos > Unidades > Exportar Unidades), que vem com a
+ * coluna "Adimplência Premiada": o botão Importar do CV lê esse arquivo e
+ * grava só o que mudou.
+ *
  * Quem tem a ação `configure` edita; o resto só lê o vigente e o histórico.
  */
 import { ref, computed, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import { pedirConfirmacao } from '@/composables/useConfirm';
-import { getAdimplencia, saveAdimplencia } from '@/utils/Building/apiBuilding';
+import { getAdimplencia, saveAdimplencia, importAdimplencia } from '@/utils/Building/apiBuilding';
 
 import Modal from '@/components/UI/Modal.vue';
 import Panel from '@/components/UI/Panel.vue';
@@ -151,6 +156,30 @@ const salvar = async () => {
   }
 };
 
+// ── importação da exportação do CV ─────────────────────────
+const arquivoEl = ref(null);
+const importando = ref(false);
+const escolherArquivo = () => arquivoEl.value?.click();
+const importar = async (ev) => {
+  const file = ev.target.files?.[0];
+  ev.target.value = '';
+  if (!file) return;
+  importando.value = true;
+  try {
+    const csv = await file.text();
+    const r = await importAdimplencia(props.idempreendimento, { csv, vigencia_de: vigenciaDe.value, observacao: observacao.value || undefined });
+    dados.value = r;
+    edicoes.value = {};
+    const i = r.importacao || {};
+    toast.success(`${i.do_empreendimento} unidade(s) lidas do CV, ${i.com_valor} com adimplência: ${r.gravadas} valor(es) gravado(s), ${r.encerradas} encerrado(s)${i.fora ? `; ${i.fora} unidade(s) ignoradas por não existirem no Office (bloco inativo ou fora da API do CV)` : ''}.`);
+    emit('saved');
+  } catch (e) {
+    toast.error(e.message || 'Não foi possível importar.');
+  } finally {
+    importando.value = false;
+  }
+};
+
 // ── números do topo ────────────────────────────────────────
 const metricas = computed(() => {
   const us = dados.value?.unidades || [];
@@ -195,6 +224,16 @@ const COLUNAS_HIST = [
 
     <div v-else-if="dados" class="space-y-4">
       <section class="panel"><MetricInline :items="metricas" /></section>
+
+      <!-- Do CV: a exportação de unidades do Gestor traz a coluna -->
+      <Panel v-if="canConfigure" title="Trazer do CV" icon="fas fa-file-csv"
+        subtitle="No CV: Cadastros > Empreendimentos > Unidades > Exportar Unidades > Exportar. Importe o arquivo aqui: só o que mudou é gravado, e o valor anterior fica no histórico.">
+        <template #actions>
+          <Button size="sm" variant="secondary" icon="fas fa-file-import" :loading="importando" @click="escolherArquivo">Importar do CV</Button>
+          <input ref="arquivoEl" type="file" accept=".csv,text/csv" class="hidden" @change="importar" />
+        </template>
+        <p class="text-xs text-ink-muted">A API do CV não devolve a adimplência premiada da unidade; a exportação é o único caminho. Unidade com valor no arquivo recebe o valor; unidade que tinha adimplência e vem vazia no arquivo é encerrada.</p>
+      </Panel>
 
       <!-- Lote: um valor para todas as unidades filtradas -->
       <Panel v-if="canConfigure" title="Aplicar em lote" icon="fas fa-layer-group"

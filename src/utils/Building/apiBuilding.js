@@ -193,6 +193,19 @@ export const saveAdimplencia = async (idempreendimento, payload) => {
     return response.json();
 };
 
+// Importa a exportação de unidades do painel Gestor do CV (CSV com a coluna
+// "Adimplência Premiada"): é o único caminho que o CV dá para esse campo.
+export const importAdimplencia = async (idempreendimento, { csv, vigencia_de, observacao } = {}) => {
+    const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/adimplencia/importar`, {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify({ csv, vigencia_de, observacao }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao importar a exportação do CV');
+    }
+    return response.json();
+};
+
 // ── Espelho de vendas (torres x andares x finais) ───────────────────────────
 export const getMirror = async (idempreendimento) => {
     const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/espelho`, {
