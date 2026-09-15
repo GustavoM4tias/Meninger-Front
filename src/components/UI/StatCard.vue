@@ -136,33 +136,22 @@ const deltaView = computed(() => {
     ]"
     @click="selectable && !to ? emit('select') : null">
 
-    <!-- ícone + variação -->
-    <div class="flex items-center justify-between gap-2">
-      <span v-if="icon"
-        class="h-8 w-8 rounded-lg grid place-items-center text-xs shrink-0
-               transition-transform duration-200 ease-out-expo group-hover:scale-110"
-        :class="toneClass">
-        <i :class="icon"></i>
-      </span>
-      <span v-else class="h-8"></span>
+    <!-- Duas colunas: à esquerda ícone, número e rótulo; à direita o selo de
+         variação em cima e a série embaixo, encostados na borda. A série ao
+         lado do número deixava um vazio no meio do card; alinhada com o selo
+         ela fecha o canto direito e o card fica com a altura do número.
+         No estreito (faixa rolável de 10.5rem) a coluna da direita não cabe:
+         a série volta para a base, na largura toda. -->
+    <div class="flex items-stretch justify-between gap-3 min-w-0">
+      <div class="min-w-0 flex flex-col gap-1">
+        <span v-if="icon"
+          class="h-8 w-8 rounded-lg grid place-items-center text-xs shrink-0
+                 transition-transform duration-200 ease-out-expo group-hover:scale-110"
+          :class="toneClass">
+          <i :class="icon"></i>
+        </span>
+        <span v-else class="h-8"></span>
 
-      <!-- o selo "pousa" depois, com um overshoot curto: confirma que a
-           comparação com o período anterior também chegou -->
-      <span v-if="deltaView" v-tippy="deltaView.label"
-        class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-micro font-semibold
-               tabular-nums animate-pop-in [animation-delay:420ms]"
-        :class="deltaView.cls">
-        <i :class="['fas', deltaView.icon]" style="font-size:9px"></i>{{ deltaView.text }}
-      </span>
-    </div>
-
-    <!-- Número e rótulo à esquerda, série à direita. Lado a lado o card fica
-         com a altura do próprio número, e no largo sobra espaço de sobra para
-         a série; empilhar embaixo dava um card alto com um vazio ao lado do
-         rótulo. No estreito (faixa rolável de 10.5rem) não cabe: a série
-         volta para a base, na largura toda. -->
-    <div class="flex items-end gap-3 min-w-0">
-      <div class="min-w-0">
         <!-- o número: o elemento mais forte do card. Conta até o valor quando
              recebe `raw`, e assenta na cor final ao terminar. -->
         <span class="metric mt-1 block truncate transition-colors duration-420"
@@ -171,14 +160,28 @@ const deltaView = computed(() => {
         </span>
 
         <!-- rótulo -->
-        <p class="text-xs text-ink-muted leading-tight truncate">{{ label }}</p>
-        <p v-if="hint" class="text-micro text-ink-subtle tabular-nums leading-tight truncate mt-0.5">{{ hint }}</p>
+        <div class="min-w-0">
+          <p class="text-xs text-ink-muted leading-tight truncate">{{ label }}</p>
+          <p v-if="hint" class="text-micro text-ink-subtle tabular-nums leading-tight truncate mt-0.5">{{ hint }}</p>
+        </div>
       </div>
 
-      <!-- `flex-1` toma o que sobra; o mínimo garante as 14 barras inteiras e
-           obriga o número a truncar antes de a série sumir. -->
-      <Sparkline v-if="series.length" :values="series" :mode="sparkMode" :color="sparkColor"
-        class="hidden sm:block flex-1 min-w-[4.5rem] mb-1" height="h-9" />
+      <div class="shrink-0 flex flex-col items-end justify-between gap-2">
+        <!-- o selo "pousa" depois, com um overshoot curto: confirma que a
+             comparação com o período anterior também chegou -->
+        <span v-if="deltaView" v-tippy="deltaView.label"
+          class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-micro font-semibold
+                 tabular-nums animate-pop-in [animation-delay:420ms]"
+          :class="deltaView.cls">
+          <i :class="['fas', deltaView.icon]" style="font-size:9px"></i>{{ deltaView.text }}
+        </span>
+        <span v-else></span>
+
+        <!-- largura exata das 14 barras (3px + 2px de vão), para a série
+             terminar rente ao selo; a linha ganha um pouco mais de corpo -->
+        <Sparkline v-if="series.length" :values="series" :mode="sparkMode" :color="sparkColor"
+          :class="['hidden sm:block', sparkMode === 'bars' ? 'w-[4.25rem]' : 'w-24']" height="h-9" />
+      </div>
     </div>
 
     <Sparkline v-if="series.length" :values="series" :mode="sparkMode" :color="sparkColor"
