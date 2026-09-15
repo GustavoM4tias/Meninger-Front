@@ -31,6 +31,10 @@ const rota   = ref('');
 const tela   = ref('');
 const secao  = ref('');
 const referencias = ref([]);   // [{ id, texto, rotulo }]
+// O que está aberto DENTRO da tela (o empreendimento e a aba do modal, por
+// exemplo). A rota não muda quando um modal abre, então quem abre avisa aqui;
+// some quando a tela muda ou quando o modal fecha.
+const detalhe = ref('');
 // Id da última marcada: a etiqueta correspondente pisca no chat, senão a pessoa
 // não vê que o clique virou alguma coisa.
 const ultimaMarcada = ref(null);
@@ -57,7 +61,7 @@ function acharPagina(path) {
 }
 
 export function setEmeScreen(path, fallbackTitulo = '') {
-    if (rota.value !== path) limparReferencias();   // mudou de tela, o que estava marcado não vale mais
+    if (rota.value !== path) { limparReferencias(); detalhe.value = ''; }   // mudou de tela, o que estava marcado não vale mais
     rota.value = path || '';
 
     const achado = acharPagina(path);
@@ -132,6 +136,14 @@ export function limparReferencias() {
     referencias.value = [];
 }
 
+/**
+ * Diz à Eme o que está aberto dentro da tela ("Empreendimento MOND, aba
+ * Espelho"). Passe '' ao fechar. Texto curto: vai em toda mensagem.
+ */
+export function setEmeScreenDetalhe(texto) {
+    detalhe.value = String(texto || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+}
+
 /** O que vai junto da mensagem. Sem tela conhecida, não manda nada. */
 export function emeScreenSnapshot() {
     if (!rota.value) return null;
@@ -139,6 +151,7 @@ export function emeScreenSnapshot() {
         rota:  rota.value,
         tela:  tela.value || null,
         secao: secao.value || null,
+        detalhe: detalhe.value || null,
         referencias: referencias.value.map(r => ({ texto: r.texto, rotulo: r.rotulo })),
     };
 }

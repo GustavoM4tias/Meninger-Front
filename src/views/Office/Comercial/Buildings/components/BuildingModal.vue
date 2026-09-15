@@ -10,9 +10,10 @@
  * Tudo aqui é feito com os primitivos de UI/ (Panel, StatRow, FunnelStrip,
  * FilterBar, DataTable, Badge): nada de card escrito à mão.
  */
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCan } from '@/composables/useCan';
+import { setEmeScreenDetalhe } from '@/composables/useEmeScreenContext';
 import { useBuildingStore } from '@/stores/Comercial/Building/buildingStore';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -273,6 +274,14 @@ const camposCronograma = computed(() => [
 ]);
 
 onMounted(fetchWeather);
+
+// A Eme fica por cima deste modal: ela precisa saber qual empreendimento e
+// qual seção estão abertos para "esse empreendimento" resolver sozinho.
+watch(activeTab, (tab) => {
+  const secao = tabOptions.value.find((t) => t.value === tab)?.label || tab;
+  setEmeScreenDetalhe(`Empreendimento ${props.building.nome} (CV ${props.building.idempreendimento}), seção ${secao}`);
+}, { immediate: true });
+onBeforeUnmount(() => setEmeScreenDetalhe(''));
 </script>
 
 <template>

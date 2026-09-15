@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent, h }
 import { useRouter, useRoute } from 'vue-router';
 import { useOfficeAIStore } from '@/stores/officeAIStore';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
-import { useModalStack } from '@/composables/useModalStack';
 import { initEmeVoice, useEmeVoice, enqueueSpeech, onAllSpeechDone, cancelSpeech, markConversationActive } from '@/composables/useEmeVoice';
 // ── O botão é leve; a conversa é que pesa ─────────────────────────────────
 //
@@ -301,25 +300,22 @@ function clampPos(p) {
 // nos demais casos vale a posição arrastável persistida.
 const podeDocar = computed(() => viewportW.value >= 1024);
 const emDock = computed(() => dock.docada.value && expanded.value && podeDocar.value);
-/* ── A camada, quando tem modal aberto ──────────────────────────────────────
- * O flutuante mora em z 50; o modal `screen` mora em z 20, porque ele fica
- * ABAIXO da nav de propósito (DESIGN-LANGUAGE, "Camadas"). Ou seja: a bolinha
- * ficava por cima de toda listagem em tela cheia - e ela é ancorada no canto de
- * baixo à direita, que é justamente onde mora o botão de ação do modal. A
- * pessoa mirava em "Fechar" e acertava a Eme.
+/* ── A camada, com modal aberto ─────────────────────────────────────────────
+ * O flutuante mora em z 50; o modal `screen` mora em z 20 (abaixo da nav, de
+ * propósito - DESIGN-LANGUAGE, "Camadas"). Até 15/09 a bolinha descia para 15
+ * quando um modal abria, porque o Fechar do modal de listagem morava no canto
+ * de baixo à direita, onde ela flutua, e a pessoa acertava a Eme em vez do
+ * botão. O Fechar dos modais `screen` foi para o canto de CIMA (padrão do
+ * Modal), e o pedido virou o oposto: perguntar à Eme SOBRE o que está aberto
+ * no modal ("esse empreendimento", "essa tabela"). Então ela fica em 50 sempre:
+ * por cima do modal de tela cheia, e ainda abaixo de diálogo (9999), que
+ * bloqueia tudo de propósito. A bolinha é arrastável; se cobrir algo, a pessoa
+ * move.
  *
- * Regra: quem flutua sobre a página sai da frente quando um modal abre. Vai
- * para 15, que é acima do conteúdo e da `ActionBar` (10) e abaixo do modal
- * (20), então ele continua ali, atrás, sem sumir da tela.
- *
- * ENCAIXADA é o caso oposto e continua em 50: ali a Eme é uma coluna de
- * layout, o Office encolhe e o próprio modal recua por `--eme-ocupa-w`. É esse
- * o caminho para usar a Eme junto com uma listagem aberta.
+ * ENCAIXADA também é 50: ali a Eme é uma coluna de layout, o Office encolhe e
+ * o próprio modal recua por `--eme-ocupa-w`.
  */
-const modais = useModalStack();
-const zDaCamada = computed(() => (
-  !emDock.value && modais.algumAberto.value ? 'z-[15]' : 'z-50'
-));
+const zDaCamada = computed(() => 'z-50');
 
 const fabStyle = computed(() => {
   // Docada: coluna colada na direita, do topo ao rodapé.
