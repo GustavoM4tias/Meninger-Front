@@ -89,7 +89,10 @@ const GRID = {
       <slot />
     </div>
 
-    <div v-if="$slots.chips && activeCount" class="px-3 sm:px-4 pb-3 flex flex-wrap gap-1.5">
+    <!-- Chips colados na barra quando ela está fechada: sem o respiro em cima
+         o selo encostava na linha do gatilho. Aberta, o grade de campos já
+         deixa o espaço. -->
+    <div v-if="$slots.chips && activeCount" class="px-3 sm:px-4 pb-3 flex flex-wrap gap-1.5" :class="open ? '' : 'pt-3'">
       <slot name="chips" />
     </div>
   </section>

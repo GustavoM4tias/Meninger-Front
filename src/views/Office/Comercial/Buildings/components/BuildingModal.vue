@@ -15,6 +15,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCan } from '@/composables/useCan';
 import { setEmeScreenDetalhe } from '@/composables/useEmeScreenContext';
 import { useBuildingStore } from '@/stores/Comercial/Building/buildingStore';
+import { useLarguraElemento } from '@/composables/useLarguraElemento';
 
 import Modal from '@/components/UI/Modal.vue';
 import Panel from '@/components/UI/Panel.vue';
@@ -149,6 +150,15 @@ const tabOptions = computed(() => [
   { value: 'tabelas',   label: 'Tabelas de preço',   icon: 'fas fa-tags',   count: priceTablesCount.value ?? undefined, hint: 'Histórico de tabelas lidas do CV' },
   { value: 'materiais', label: 'Materiais & Plantas', icon: 'fas fa-images', count: materialsCount.value, hint: 'Campanha, plantas e mapa' },
 ]);
+
+/* A barra de abas decide pelo espaço que ELA tem, não pela janela: com a
+   Eme acoplada o monitor continua "lg" mas a página encolhe, e as abas em
+   linha vazavam para fora (a primeira sumia atrás da borda). Estreita = duas
+   colunas; média = uma linha só com rótulo; larga = rótulo + dica. */
+const navAbas = ref(null);
+const { largura: larguraNav } = useLarguraElemento(navAbas, 640);
+const abasEmGrade = computed(() => larguraNav.value > 0 && larguraNav.value < 640);
+const abasComDica = computed(() => larguraNav.value >= 1024);
 
 // ── Filtros da aba Unidades ────────────────────────────────
 const busca = ref('');
@@ -347,21 +357,21 @@ onBeforeUnmount(() => setEmeScreenDetalhe(''));
 
       <!-- Abas: sticky no scroll único, todas à vista (no celular em duas
            colunas, nunca escondidas atrás de rolagem lateral). -->
-      <nav class="sticky top-0 z-30 border-b border-line bg-surface" role="tablist" aria-label="Seções do empreendimento">
-        <div class="grid grid-cols-2 md:flex md:items-stretch px-2 sm:px-4">
+      <nav ref="navAbas" class="sticky top-0 z-30 border-b border-line bg-surface" role="tablist" aria-label="Seções do empreendimento">
+        <div class="px-2 sm:px-4" :class="abasEmGrade ? 'grid grid-cols-2' : 'flex items-stretch'">
           <button v-for="t in tabOptions" :key="t.value" type="button" role="tab"
-            :aria-selected="activeTab === t.value"
+            :aria-selected="activeTab === t.value" :title="`${t.label} - ${t.hint}`"
             @click="activeTab = t.value"
-            class="relative flex items-center gap-2.5 px-3 sm:px-4 py-3 text-left min-h-[52px] transition-colors focus-ring rounded-md"
-            :class="activeTab === t.value ? 'text-accent' : 'text-ink-muted hover:text-ink'">
+            class="relative flex items-center gap-2.5 px-3 sm:px-4 py-3 text-left min-h-[52px] min-w-0 transition-colors focus-ring rounded-md"
+            :class="[activeTab === t.value ? 'text-accent' : 'text-ink-muted hover:text-ink', abasEmGrade ? '' : 'flex-1 basis-0']">
             <i :class="t.icon" class="text-sm w-4 text-center shrink-0"></i>
-            <span class="min-w-0">
-              <span class="block text-sm font-semibold leading-tight truncate">
-                {{ t.label }}
-                <span v-if="t.count !== undefined" class="ml-1 px-1.5 py-0.5 rounded-md text-micro font-mono align-middle"
+            <span class="min-w-0 flex-1">
+              <span class="flex items-center gap-1 text-sm font-semibold leading-tight">
+                <span class="truncate">{{ t.label }}</span>
+                <span v-if="t.count !== undefined" class="shrink-0 px-1.5 py-0.5 rounded-md text-micro font-mono"
                   :class="activeTab === t.value ? 'bg-accent-soft text-accent' : 'bg-line/50 text-ink-subtle'">{{ t.count }}</span>
               </span>
-              <span class="hidden lg:block text-micro text-ink-subtle leading-tight mt-0.5 truncate">{{ t.hint }}</span>
+              <span v-if="abasComDica" class="block text-micro text-ink-subtle leading-tight mt-0.5 truncate">{{ t.hint }}</span>
             </span>
             <span class="absolute left-2 right-2 bottom-0 h-0.5 rounded-t"
               :class="activeTab === t.value ? 'bg-accent' : 'bg-transparent'"></span>
