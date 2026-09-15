@@ -318,7 +318,10 @@ watch(() => props.idempreendimento, carregar);
           <SegmentedControl v-model="mostrar" :options="MOSTRAR" size="sm" />
           <template v-if="mirror.torres.length > 1">
             <span class="text-xs text-ink-muted shrink-0 sm:ml-3">{{ eixo.grupo }}:</span>
-            <SegmentedControl v-model="torreSel" :options="torreOptions" size="sm" />
+            <!-- Loteamento tem 15 quadras: em segmentos vazava a tela; vira lista -->
+            <Select v-if="torreOptions.length > 7" v-model="torreSel" size="sm" class="sm:w-64"
+              :options="torreOptions.map((o) => ({ value: o.value, label: o.value === 'todas' ? 'Todas' : `${o.label} (${o.count} disp.)` }))" />
+            <SegmentedControl v-else v-model="torreSel" :options="torreOptions" size="sm" />
           </template>
         </div>
 
