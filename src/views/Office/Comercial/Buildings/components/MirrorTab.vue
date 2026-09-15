@@ -12,6 +12,10 @@
  * dígitos do número são o andar e o final, R$/m² por andar quando não há
  * tabela) é configurado aqui mesmo, no botão "Configurar" (capacidade
  * `configure` de /crm/buildings) - o back devolve a grade já montada.
+ *
+ * Empreendimento HORIZONTAL (casas, loteamento) não tem torre nem andar: o
+ * back manda `modo: 'horizontal'` e as "torres" são quadras com os lotes em
+ * sequência. A grade vira uma fileira de lotes por quadra, sem eixo de andar.
  */
 import { ref, computed, onMounted, watch } from 'vue';
 import { useToast } from 'vue-toastification';
@@ -33,7 +37,7 @@ const props = defineProps({
   idempreendimento: { type: Number, required: true },
   canConfigure: { type: Boolean, default: false },
 });
-const emit = defineEmits(['loaded']);
+const emit = defineEmits(['loaded', 'modo']);
 const toast = useToast();
 
 // ── formatadores ───────────────────────────────────────────
@@ -78,6 +82,7 @@ const carregar = async () => {
   try {
     mirror.value = await getMirror(props.idempreendimento);
     emit('loaded', mirror.value.resumo?.unidades || 0);
+    emit('modo', mirror.value.modo || 'vertical');
   } catch (e) {
     error.value = e.message || 'Não foi possível montar o espelho.';
   } finally {
@@ -100,6 +105,12 @@ const toggleStatus = (s) => {
   const i = filtroStatus.value.indexOf(s.key);
   if (i >= 0) filtroStatus.value.splice(i, 1); else filtroStatus.value.push(s.key);
 };
+const horizontal = computed(() => mirror.value?.modo === 'horizontal');
+const eixo = computed(() => (horizontal.value
+  ? { grupo: 'Quadra', icon: 'fas fa-map' }
+  : { grupo: 'Torre', icon: 'fas fa-building' }));
+// Lotes de uma quadra, em ordem: no horizontal cada quadra tem uma linha só (sem andar)
+const lotesDe = (t) => t.andares.flatMap((a) => a.unidades);
 const torreSel = ref('todas');
 const torreOptions = computed(() => [
   { value: 'todas', label: 'Todas' },
@@ -171,9 +182,14 @@ const unidadeAberta = ref(null);
 const fichaLinhas = computed(() => {
   const c = unidadeAberta.value; if (!c) return [];
   return [
-    { label: 'Torre', value: c.torre_nome },
-    { label: 'Andar', value: c.andar != null ? (c.andar === 0 ? mirror.value.settings.andar_zero_nome : `${c.andar}º`) : '-' },
-    { label: 'Final', value: c.final },
+    ...(horizontal.value ? [
+      { label: 'Quadra', value: c.torre_nome },
+      { label: 'Lote', value: c.final || '-' },
+    ] : [
+      { label: 'Torre', value: c.torre_nome },
+      { label: 'Andar', value: c.andar != null ? (c.andar === 0 ? mirror.value.settings.andar_zero_nome : `${c.andar}º`) : '-' },
+      { label: 'Final', value: c.final },
+    ]),
     { label: 'Etapa / bloco', value: [c.etapa, c.bloco].filter(Boolean).join(' · ') },
     { label: 'Área privativa', value: fmtArea(c.area) },
     { label: 'Vagas', value: c.vagas ?? c.vagas_texto ?? '-', hint: c.vagas_fonte === 'padrao' ? 'padrão do empreendimento' : '' },
@@ -195,6 +211,11 @@ const fichaLinhas = computed(() => {
 const configAberta = ref(false);
 const salvando = ref(false);
 const form = ref(null);
+const MODO_OPTIONS = [
+  { value: 'auto', label: 'Automático (pelo tipo no CV)' },
+  { value: 'vertical', label: 'Vertical: torres x andares x finais' },
+  { value: 'horizontal', label: 'Horizontal: quadras x lotes' },
+];
 const FACE_OPTIONS = [
   { value: 'x', label: 'Não informada' },
   { value: 'L', label: 'Leste (sol da manhã)' },
@@ -214,6 +235,7 @@ const abrirConfig = () => {
   }
   const andares = [...new Set(mirror.value.torres.flatMap((t) => t.andares.map((a) => a.andar)).filter((a) => a != null))].sort((a, b) => a - b);
   form.value = {
+    modo: s.modo || 'auto', valor_m2_padrao: s.valor_m2_padrao ?? '',
     digitos_final: s.digitos_final, digitos_andar: s.digitos_andar,
     andar_zero_nome: s.andar_zero_nome, imagem_url: s.imagem_url || '', observacao: s.observacao || '',
     vagas_padrao: s.vagas_padrao ?? '',
@@ -240,6 +262,7 @@ const salvarConfig = async () => {
   try {
     const f = form.value;
     const settings = {
+      modo: f.modo, valor_m2_padrao: f.valor_m2_padrao === '' ? null : f.valor_m2_padrao,
       digitos_final: f.digitos_final, digitos_andar: f.digitos_andar, andar_zero_nome: f.andar_zero_nome,
       imagem_url: f.imagem_url || null, observacao: f.observacao,
       vagas_padrao: f.vagas_padrao === '' ? null : Number(f.vagas_padrao),
@@ -294,7 +317,7 @@ watch(() => props.idempreendimento, carregar);
           <span class="text-xs text-ink-muted shrink-0">Na célula:</span>
           <SegmentedControl v-model="mostrar" :options="MOSTRAR" size="sm" />
           <template v-if="mirror.torres.length > 1">
-            <span class="text-xs text-ink-muted shrink-0 sm:ml-3">Torre:</span>
+            <span class="text-xs text-ink-muted shrink-0 sm:ml-3">{{ eixo.grupo }}:</span>
             <SegmentedControl v-model="torreSel" :options="torreOptions" size="sm" />
           </template>
         </div>
@@ -306,7 +329,7 @@ watch(() => props.idempreendimento, carregar);
 
         <!-- Torres -->
         <div class="grid gap-4" :class="torresVisiveis.length > 1 ? 'grid-cols-1 2xl:grid-cols-2' : 'grid-cols-1'">
-          <Panel v-for="t in torresVisiveis" :key="t.key" :title="t.nome" icon="fas fa-building" :padded="false">
+          <Panel v-for="t in torresVisiveis" :key="t.key" :title="t.nome" :icon="eixo.icon" :padded="false">
             <template #actions>
               <div class="flex flex-wrap gap-1.5 justify-end">
                 <Badge variant="success" size="sm">{{ t.resumo.disponiveis }} disp.</Badge>
@@ -315,7 +338,22 @@ watch(() => props.idempreendimento, carregar);
               </div>
             </template>
 
-            <div class="overflow-x-auto">
+            <!-- Horizontal: os lotes da quadra em fileira, sem eixo de andar -->
+            <div v-if="horizontal" class="p-2 sm:p-3 flex flex-wrap gap-1.5">
+              <button v-for="c in lotesDe(t)" :key="c.idunidade" type="button" @click="unidadeAberta = c" v-tippy="dicaCelula(c)"
+                class="w-[84px] min-h-[44px] rounded-md border px-1.5 py-1 text-left transition-all duration-150 focus-ring"
+                :class="[st(c.status).cell, celulaAtiva(c) ? 'opacity-100' : 'opacity-25']">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="font-semibold text-ink tabular-nums truncate" :title="c.nome">{{ c.final ? `Lote ${c.final}` : (c.numero || c.nome) }}</span>
+                  <i v-if="c.sol" :class="[SOL[c.sol].icon, SOL[c.sol].cls]" class="text-[9px] shrink-0"></i>
+                </div>
+                <div class="text-micro tabular-nums truncate" :class="c.valor_fonte === 'estimado' && mostrar === 'preco' ? 'text-ink-subtle italic' : 'text-ink-muted'">
+                  {{ textoCelula(c) }}
+                </div>
+              </button>
+            </div>
+
+            <div v-else class="overflow-x-auto">
               <table class="border-separate border-spacing-1 text-xs min-w-full">
                 <!-- Cabeçalho: finais, com face/sol e área típica -->
                 <thead>
@@ -370,6 +408,7 @@ watch(() => props.idempreendimento, carregar);
             </div>
 
             <template #footer>
+              <span v-if="horizontal"><b class="text-data-pos">{{ t.resumo.disponiveis }}</b>/{{ t.resumo.unidades }} disponíveis · </span>
               <span v-if="t.resumo.valor_m2_disponivel">R$/m² médio do disponível: <b class="text-ink">{{ fmtBRL(t.resumo.valor_m2_disponivel) }}</b> · </span>
               <span v-for="(s, k, i) in SOL" :key="k" class="inline-flex items-center gap-1 mr-2"><i :class="[s.icon, s.cls]" class="text-[9px]"></i>{{ s.label }}</span>
             </template>
@@ -409,14 +448,22 @@ watch(() => props.idempreendimento, carregar);
       subtitle="O que o CV não sabe sobre este empreendimento: vale para todo mundo que abrir a aba" @close="configAberta = false">
       <div v-if="form" class="space-y-5">
         <section class="space-y-3">
+          <h4 class="text-sm font-semibold text-ink">Forma do espelho</h4>
+          <p class="text-xs text-ink-muted">Vertical é torre x andar x final. Horizontal (casas, loteamento) é quadra x lote: a quadra vem do bloco do CV quando há mais de um, senão do "QD 3"/"Quadra A" escrito no nome da unidade; o lote vem do "LT 12"/"Lote 12" ou do número. No automático, o tipo cadastrado no CV decide{{ mirror.tipo_empreendimento ? ` (aqui: ${mirror.tipo_empreendimento})` : '' }}.</p>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Select v-model="form.modo" label="Modo" :options="MODO_OPTIONS" class="col-span-2" />
+            <Input v-model="form.vagas_padrao" type="number" label="Vagas por unidade" hint="quando o CV não informa" />
+            <Input v-model="form.imagem_url" label="Implantação (URL da imagem)" placeholder="https://..." />
+          </div>
+        </section>
+
+        <section v-if="!horizontal" class="space-y-3">
           <h4 class="text-sm font-semibold text-ink">Como ler o número da unidade</h4>
           <p class="text-xs text-ink-muted">Quando o CV não manda andar e coluna, eles saem do número: os últimos dígitos são o final, os anteriores o andar, e o que sobra é a torre. Ex.: 278 com 1 e 1 = torre 2, 7º andar, final 8.</p>
-          <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
             <Input v-model="form.digitos_final" type="number" label="Dígitos do final" hint="1 a 3" />
             <Input v-model="form.digitos_andar" type="number" label="Dígitos do andar" hint="1 ou 2" />
             <Input v-model="form.andar_zero_nome" label="Nome do andar 0" placeholder="Térreo, Giardino..." />
-            <Input v-model="form.vagas_padrao" type="number" label="Vagas por unidade" hint="quando o CV não informa" />
-            <Input v-model="form.imagem_url" label="Implantação (URL da imagem)" placeholder="https://..." />
           </div>
         </section>
 
@@ -433,7 +480,7 @@ watch(() => props.idempreendimento, carregar);
           </div>
         </section>
 
-        <section v-for="t in mirror.torres" :key="t.key" class="space-y-2">
+        <section v-for="t in (horizontal ? [] : mirror.torres)" :key="t.key" class="space-y-2">
           <div class="flex items-center gap-2">
             <h4 class="text-sm font-semibold text-ink">{{ t.nome }}: finais</h4>
             <Button v-if="t.key === mirror.torres[0].key && mirror.torres.length > 1" variant="ghost" size="sm" icon="fas fa-copy" class="ml-auto" @click="copiarPrimeiraTorre">
@@ -461,6 +508,14 @@ watch(() => props.idempreendimento, carregar);
         </section>
 
         <section class="space-y-2">
+          <h4 class="text-sm font-semibold text-ink">R$/m² de estimativa</h4>
+          <p class="text-xs text-ink-muted">Último recurso da cascata de preço (CV, tabela, andar, final, este). No horizontal é o único: preço estimado = R$/m² x área do lote ou casa, em itálico na grade.</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <Input v-model="form.valor_m2_padrao" type="number" size="sm" label="R$/m² padrão" placeholder="R$/m²" />
+          </div>
+        </section>
+
+        <section v-if="!horizontal" class="space-y-2">
           <h4 class="text-sm font-semibold text-ink">R$/m² por andar (estimativa)</h4>
           <p class="text-xs text-ink-muted">Só entra quando a unidade não tem valor no CV nem em tabela de preço. Andar sem valor cai no "R$/m² do final" da tabela acima (Giardino com preço por tipo, por exemplo). O preço estimado sai em itálico na grade e como "estimado" na ficha.</p>
           <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">

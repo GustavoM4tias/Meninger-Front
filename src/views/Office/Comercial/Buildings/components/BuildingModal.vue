@@ -143,9 +143,16 @@ const kpiCards = computed(() => {
   ];
 });
 
+// Espelho horizontal (casas, loteamento): a dica da aba já nasce certa pelo
+// tipo do CV e a aba confirma quando carrega (a configuração pode forçar).
+const espelhoModo = ref(null);
+const espelhoHorizontal = computed(() => (espelhoModo.value
+  ? espelhoModo.value === 'horizontal'
+  : /horizontal|loteamento|\bcasas?\b|\blotes?\b/i.test(String(props.building.tipo_empreendimento?.[0]?.nome || ''))));
+
 const tabOptions = computed(() => [
   { value: 'geral',     label: 'Visão geral',        icon: 'fas fa-grip',   hint: 'Números, empresa, endereço e cronograma' },
-  { value: 'espelho',   label: 'Espelho',            icon: 'fas fa-table-cells', hint: 'Torres x andares: preço, sol e dormitórios' },
+  { value: 'espelho',   label: 'Espelho',            icon: 'fas fa-table-cells', hint: espelhoHorizontal.value ? 'Quadras x lotes: preço, sol e dormitórios' : 'Torres x andares: preço, sol e dormitórios' },
   { value: 'unidades',  label: 'Unidades',           icon: 'fas fa-house',  count: totalUnits.value, hint: 'Disponibilidade por etapa e bloco' },
   { value: 'tabelas',   label: 'Tabelas de preço',   icon: 'fas fa-tags',   count: priceTablesCount.value ?? undefined, hint: 'Histórico de tabelas lidas do CV' },
   { value: 'materiais', label: 'Materiais & Plantas', icon: 'fas fa-images', count: materialsCount.value, hint: 'Campanha, plantas e mapa' },
@@ -392,7 +399,7 @@ onBeforeUnmount(() => setEmeScreenDetalhe(''));
         <!-- ── Espelho de vendas ────────────────────────────────── -->
         <MirrorTab v-else-if="activeTab === 'espelho'"
           :idempreendimento="building.idempreendimento"
-          :can-configure="can('configure')" />
+          :can-configure="can('configure')" @modo="espelhoModo = $event" />
 
         <!-- ── Visão geral ──────────────────────────────────────── -->
         <template v-else-if="activeTab === 'geral'">
