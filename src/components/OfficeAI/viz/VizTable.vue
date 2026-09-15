@@ -86,7 +86,7 @@ const { estreito } = useLarguraElemento(raiz, 640);
         <Badge :variant="statusVariant(value)" size="sm">{{ value || '-' }}</Badge>
       </template>
       <template v-for="col in cols.filter(c => c.type === 'link')" :key="`l-${col.key}`" #[`cell-${col.key}`]="{ value }">
-        <a v-if="value" :href="String(value)" target="_blank" rel="noopener" class="text-accent hover:underline truncate">{{ value }}</a>
+        <a v-if="value" :href="String(value)" target="_blank" rel="noopener" class="text-accent hover:underline truncate" :title="String(value)">{{ value }}</a>
         <span v-else>-</span>
       </template>
     </DataTable>

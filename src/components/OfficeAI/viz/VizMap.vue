@@ -22,7 +22,7 @@ const rota = (p) => `https://www.google.com/maps/dir/?api=1&destination=${p.lat}
     <ul v-if="pontos.length" class="space-y-1">
       <li v-for="(p, i) in pontos" :key="i" class="flex items-center gap-2 text-xs">
         <i class="fas fa-location-dot text-accent text-micro"></i>
-        <span class="text-ink truncate flex-1">{{ p.label }}<span v-if="p.address" class="text-ink-subtle"> · {{ p.address }}</span></span>
+        <span class="text-ink truncate flex-1" :title="p.address ? `${p.label} · ${p.address}` : p.label">{{ p.label }}<span v-if="p.address" class="text-ink-subtle"> · {{ p.address }}</span></span>
         <a :href="rota(p)" target="_blank" rel="noopener" class="text-accent hover:underline shrink-0">Rota</a>
       </li>
     </ul>

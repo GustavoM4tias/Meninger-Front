@@ -155,14 +155,15 @@ const deltaView = computed(() => {
         <!-- o número: o elemento mais forte do card. Conta até o valor quando
              recebe `raw`, e assenta na cor final ao terminar. -->
         <span class="metric mt-1 block truncate transition-colors duration-420"
+          :title="String(shownValue ?? '')"
           :class="[VALUE_SIZE[size] || VALUE_SIZE.md, loading ? 'opacity-30' : '', counting ? 'metric-counting' : '']">
           <slot name="value">{{ shownValue }}</slot>
         </span>
 
         <!-- rótulo -->
         <div class="min-w-0">
-          <p class="text-xs text-ink-muted leading-tight truncate">{{ label }}</p>
-          <p v-if="hint" class="text-micro text-ink-subtle tabular-nums leading-tight truncate mt-0.5">{{ hint }}</p>
+          <p class="text-xs text-ink-muted leading-tight truncate" :title="label">{{ label }}</p>
+          <p v-if="hint" class="text-micro text-ink-subtle tabular-nums leading-tight truncate mt-0.5" :title="hint">{{ hint }}</p>
         </div>
       </div>
 

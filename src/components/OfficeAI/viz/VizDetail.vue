@@ -29,7 +29,7 @@ const TONE = { pos: 'text-data-pos', neg: 'text-data-neg', warn: 'text-data-warn
       </p>
       <dl class="grid gap-x-4 gap-y-2" :class="compact ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'">
         <div v-for="(f, j) in s.fields" :key="j" class="min-w-0" :class="f.wide ? 'col-span-2 sm:col-span-3' : ''">
-          <dt class="text-micro text-ink-subtle truncate">{{ f.label }}</dt>
+          <dt class="text-micro text-ink-subtle truncate" :title="f.label">{{ f.label }}</dt>
           <dd class="text-sm text-ink break-words" :class="[TONE[f.tone] || '', ['number','currency','percent'].includes(f.type) ? 'metric text-metric-sm' : '']">
             <a v-if="f.type === 'link' && f.value" :href="String(f.value)" target="_blank" rel="noopener" class="text-accent hover:underline text-sm">{{ f.text || f.value }}</a>
             <template v-else>{{ formatarValor(f.value, f.type) }}</template>

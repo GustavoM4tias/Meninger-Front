@@ -50,7 +50,7 @@ defineProps({
           <h2 class="text-sm font-semibold text-ink truncate" :title="title || undefined">
             <slot name="title">{{ title }}</slot>
           </h2>
-          <p v-if="subtitle || $slots.subtitle" class="text-micro text-ink-subtle truncate">
+          <p v-if="subtitle || $slots.subtitle" class="text-micro text-ink-subtle truncate" :title="subtitle || undefined">
             <slot name="subtitle">{{ subtitle }}</slot>
           </p>
         </div>

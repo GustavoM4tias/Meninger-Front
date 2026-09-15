@@ -38,7 +38,7 @@ const camposExtra = (c) => (c.fields || []).slice(props.compact ? 3 : 4);
         <span v-else-if="c.icon" class="h-8 w-8 rounded-lg grid place-items-center bg-accent-soft text-accent text-xs shrink-0"><i :class="c.icon"></i></span>
         <div class="min-w-0 flex-1">
           <p class="text-sm font-semibold text-ink truncate" :title="c.title">{{ c.title }}</p>
-          <p v-if="c.subtitle" class="text-micro text-ink-muted truncate">{{ c.subtitle }}</p>
+          <p v-if="c.subtitle" class="text-micro text-ink-muted truncate" :title="c.subtitle">{{ c.subtitle }}</p>
           <div v-if="c.badges?.length" class="flex flex-wrap gap-1 mt-1">
             <Badge v-for="(b, j) in c.badges" :key="j" :variant="b.variant || 'neutral'" size="sm">{{ b.label }}</Badge>
           </div>
@@ -47,22 +47,22 @@ const camposExtra = (c) => (c.fields || []).slice(props.compact ? 3 : 4);
 
       <dl v-if="c.fields?.length" class="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5">
         <div v-for="(f, j) in camposPrincipais(c)" :key="j" class="min-w-0" :class="f.wide ? 'col-span-2' : ''">
-          <dt class="text-micro uppercase tracking-wider text-ink-subtle font-mono truncate">{{ f.label }}</dt>
-          <dd class="text-xs text-ink truncate" :title="String(f.value ?? '')">
+          <dt class="text-micro uppercase tracking-wider text-ink-subtle font-mono truncate" :title="f.label">{{ f.label }}</dt>
+          <dd class="text-xs text-ink truncate" :title="f.type === 'link' ? String(f.value ?? '') : formatarValor(f.value, f.type)">
             <a v-if="f.type === 'link' && f.value" :href="String(f.value)" target="_blank" rel="noopener" class="text-accent hover:underline">{{ f.text || f.value }}</a>
             <template v-else>{{ formatarValor(f.value, f.type) }}</template>
           </dd>
         </div>
         <template v-if="aberto.has(i)">
           <div v-for="(f, j) in camposExtra(c)" :key="`x${j}`" class="min-w-0" :class="f.wide ? 'col-span-2' : ''">
-            <dt class="text-micro uppercase tracking-wider text-ink-subtle font-mono truncate">{{ f.label }}</dt>
-            <dd class="text-xs text-ink truncate">{{ formatarValor(f.value, f.type) }}</dd>
+            <dt class="text-micro uppercase tracking-wider text-ink-subtle font-mono truncate" :title="f.label">{{ f.label }}</dt>
+            <dd class="text-xs text-ink truncate" :title="formatarValor(f.value, f.type)">{{ formatarValor(f.value, f.type) }}</dd>
           </div>
         </template>
       </dl>
 
       <div v-if="camposExtra(c).length || c.actions?.length || c.meta" class="mt-2.5 flex items-center gap-2 flex-wrap">
-        <span v-if="c.meta" class="text-micro text-ink-subtle mr-auto truncate">{{ c.meta }}</span>
+        <span v-if="c.meta" class="text-micro text-ink-subtle mr-auto truncate" :title="c.meta">{{ c.meta }}</span>
         <button v-if="camposExtra(c).length" type="button" @click="alternar(i)"
           class="text-micro text-ink-muted hover:text-ink transition-colors duration-120">
           {{ aberto.has(i) ? 'Menos' : `+${camposExtra(c).length} campos` }}

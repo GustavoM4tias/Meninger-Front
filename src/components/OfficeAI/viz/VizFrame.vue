@@ -94,12 +94,11 @@ const rodape = computed(() => {
 <template>
   <Panel ref="raiz" :padded="padded" :icon="icon" :loading="loading" :loading-variant="loadingVariant"
     :empty="empty && !loading" empty-icon="far fa-folder-open" empty-title="Sem resultados" :empty-text="emptyText"
-    class="mt-2 overflow-hidden">
-    <template #title>{{ title || 'Resultado' }}</template>
+    :title="title || 'Resultado'" class="mt-2 overflow-hidden">
     <template v-if="subtitle || source" #subtitle>
-      <span v-if="subtitle">{{ subtitle }}</span>
+      <span v-if="subtitle" :title="subtitle">{{ subtitle }}</span>
       <span v-if="subtitle && source" class="mx-1 text-ink-subtle">·</span>
-      <span v-if="source" class="text-ink-subtle"><i class="fas fa-database text-micro mr-1"></i>{{ source }}</span>
+      <span v-if="source" class="text-ink-subtle" :title="`Fonte: ${source}`"><i class="fas fa-database text-micro mr-1"></i>{{ source }}</span>
     </template>
 
     <template #actions>

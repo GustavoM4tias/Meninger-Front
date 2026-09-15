@@ -359,13 +359,14 @@ function onRowClick(row, i) {
           :class="['px-3 py-2', (clickable || temMais) ? 'cursor-pointer hover:bg-surface-sunken/60 transition-colors' : '']"
           @click="temMais && !expandable ? toggleOpen(keyOf(row, i)) : onRowClick(row, i)">
           <div class="flex items-center gap-2 min-w-0">
-            <p class="flex-1 min-w-0 text-sm font-medium text-ink truncate">
+            <p class="flex-1 min-w-0 text-sm font-medium text-ink truncate" :title="cellTitle(row, tituloLista)">
               <slot :name="`cell-${tituloLista.key}`" :row="row" :value="cellValue(row, tituloLista)" :col="tituloLista">
                 {{ cellValue(row, tituloLista) }}
               </slot>
             </p>
             <span v-for="col in ladoLista" :key="col.key"
-              :class="['shrink-0 text-sm text-ink', col.numeric ? 'tabular-nums' : '']">
+              :class="['shrink-0 text-sm text-ink', col.numeric ? 'tabular-nums' : '']"
+              :title="`${col.label}: ${cellTitle(row, col) ?? '-'}`">
               <span class="text-micro text-ink-subtle mr-1">{{ col.label }}</span>
               <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
                 {{ cellValue(row, col) }}
@@ -378,7 +379,8 @@ function onRowClick(row, i) {
                                        estaAberta(keyOf(row, i)) ? 'rotate-180' : '']" style="font-size:9px"></i>
           </div>
           <dl v-if="corridaLista.length" class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-muted">
-            <div v-for="col in corridaLista" :key="col.key" class="inline-flex items-center gap-1 min-w-0">
+            <div v-for="col in corridaLista" :key="col.key" class="inline-flex items-center gap-1 min-w-0"
+              :title="`${col.label}: ${cellTitle(row, col) ?? '-'}`">
               <dt class="text-ink-subtle">{{ col.label }}</dt>
               <dd :class="col.numeric ? 'tabular-nums' : ''">
                 <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
@@ -389,7 +391,7 @@ function onRowClick(row, i) {
           </dl>
           <div v-if="temMais && estaAberta(keyOf(row, i))" class="animate-slide-down" @click.stop>
             <dl v-if="extra.length" class="mt-2 pt-2 border-t border-line-subtle grid grid-cols-2 gap-x-3 gap-y-1.5">
-              <div v-for="col in extra" :key="col.key" class="min-w-0">
+              <div v-for="col in extra" :key="col.key" class="min-w-0" :title="cellTitle(row, col)">
                 <dt class="metric-label">{{ col.label }}</dt>
                 <dd :class="['text-xs text-ink-muted break-words', col.numeric ? 'tabular-nums' : '']">
                   <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
@@ -413,7 +415,7 @@ function onRowClick(row, i) {
 
           <div class="flex items-start justify-between gap-3 min-w-0">
             <div class="min-w-0 flex-1 space-y-0.5">
-              <div v-for="col in primary" :key="col.key" class="min-w-0">
+              <div v-for="col in primary" :key="col.key" class="min-w-0" :title="cellTitle(row, col)">
                 <p class="metric-label">{{ col.label }}</p>
                 <p :class="['text-sm font-medium text-ink break-words', col.numeric ? 'tabular-nums' : '']">
                   <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
@@ -428,7 +430,7 @@ function onRowClick(row, i) {
           </div>
 
           <dl v-if="secondary.length" class="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2">
-            <div v-for="col in secondary" :key="col.key" class="min-w-0">
+            <div v-for="col in secondary" :key="col.key" class="min-w-0" :title="cellTitle(row, col)">
               <dt class="metric-label">{{ col.label }}</dt>
               <dd :class="['text-xs text-ink-muted break-words', col.numeric ? 'tabular-nums' : '']">
                 <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
@@ -452,7 +454,7 @@ function onRowClick(row, i) {
             <div v-if="estaAberta(keyOf(row, i))" class="animate-slide-down">
               <dl v-if="extra.length"
                 class="mt-2.5 pt-2.5 border-t border-line-subtle grid grid-cols-2 gap-x-3 gap-y-2">
-                <div v-for="col in extra" :key="col.key" class="min-w-0">
+                <div v-for="col in extra" :key="col.key" class="min-w-0" :title="cellTitle(row, col)">
                   <dt class="metric-label">{{ col.label }}</dt>
                   <dd :class="['text-xs text-ink-muted break-words', col.numeric ? 'tabular-nums' : '']">
                     <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
