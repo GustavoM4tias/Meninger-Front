@@ -741,8 +741,11 @@ html.dark .kb-reading .markdown img { border-color: rgb(30 41 59); }
      isso antes do clique. O movimento fica PRESO ao balão (ele sobe um fio e a
      borda acende) - nada de camada translúcida por trás. */
   cursor: pointer;
-  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 120ms ease,
+  /* Sem `transform` aqui: o arrastar-para-dispensar da lib é um translateX
+     inline a cada movimento, e a transição fazia o balão correr atrás do
+     dedo com 120ms de atraso. O fio de subida no hover fica seco, e ninguém
+     nota 1px sem animação. */
+  transition: border-color 120ms ease,
               box-shadow 120ms ease;
 }
 .Vue-Toastification__toast.menin-toast-notif:hover {

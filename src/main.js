@@ -39,7 +39,10 @@ app.use(Toast, {
   pauseOnFocusLoss: true,
   pauseOnHover: true,
   draggable: true,
-  draggablePercent: 0.6,
+  // Fração da largura que o arraste precisa cobrir para dispensar. O padrão
+  // da lib (0.6) pedia ~230px e a opacidade zerava exatamente ali: o balão
+  // sumia do olho, a pessoa soltava um pouco antes e ele voltava.
+  draggablePercent: 0.3,
   showCloseButtonOnHover: true,
   hideProgressBar: true,
   closeButton: "button",

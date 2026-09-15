@@ -19,10 +19,25 @@ const props = defineProps({
 const meta = computed(() => notificationMeta(props.notification?.type, props.notification?.data));
 const target = computed(() => notificationTarget(props.notification));
 const image = computed(() => props.notification?.data?.image || null);
+
+// Arrastar com o mouse termina em `click` no mesmo elemento, e a lib chama o
+// onClick do toast mesmo assim: arrastar para dispensar ABRIA a notificação.
+// O corpo está dentro do balão, então segurar o click aqui é o bastante para
+// o balão nunca vê-lo. Só o click: mousedown segue subindo, é dele que a lib
+// vive para arrastar.
+const LIMIAR_ARRASTE_PX = 8;
+let xInicio = null;
+function pontoInicio(e) { xInicio = e.clientX; }
+function filtrarClique(e) {
+  const arrastou = xInicio != null && Math.abs(e.clientX - xInicio) > LIMIAR_ARRASTE_PX;
+  xInicio = null;
+  if (arrastou) e.stopPropagation();
+}
 </script>
 
 <template>
-  <div class="flex items-stretch gap-3 w-full text-left">
+  <div class="flex items-stretch gap-3 w-full text-left"
+       @pointerdown="pontoInicio" @click="filtrarClique">
     <div v-if="image" class="w-11 h-11 rounded-md overflow-hidden shrink-0">
       <img :src="image" alt="" class="h-full w-full object-cover" />
     </div>
