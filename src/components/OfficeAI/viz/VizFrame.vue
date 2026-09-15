@@ -9,7 +9,7 @@
  *
  * É o `Panel` do design system com o que uma resposta de chat precisa a mais.
  */
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeUnmount } from 'vue';
 import Panel from '@/components/UI/Panel.vue';
 import { useLarguraElemento } from '@/composables/useLarguraElemento';
 import { VISUAIS_DE_DATASET } from './emeBlock.js';
@@ -41,7 +41,39 @@ const emit = defineEmits(['visual', 'action']);
 
 const trocavel = computed(() => props.visuais.filter((v) => VISUAIS_DE_DATASET.includes(v)).length > 1);
 const opcoes = computed(() => props.visuais.map((v) => ({ value: v, label: ROTULO[v] || v, icon: ICONE[v] || '' })));
+/* O menu vai para o <body> com posição fixa: o Panel tem overflow-hidden e o
+   player da Eme é estreito, então o menu absoluto era cortado na borda
+   esquerda (só aparecia "ela", "ras", "unas"). Ancorado à direita do botão e
+   preso à janela quando não cabe. */
 const aberto = ref(false);
+const gatilho = ref(null);
+const posicao = ref({ top: 0, left: 0 });
+const LARGURA_MENU = 176;
+const fechar = () => {
+  if (!aberto.value) return;
+  aberto.value = false;
+  document.removeEventListener('mousedown', aoClicarFora, true);
+  window.removeEventListener('scroll', fechar, true);
+  window.removeEventListener('resize', fechar);
+};
+const aoClicarFora = (e) => {
+  if (gatilho.value?.contains(e.target) || e.target.closest?.('[data-viz-menu]')) return;
+  fechar();
+};
+const alternar = () => {
+  if (aberto.value) return fechar();
+  const r = gatilho.value.getBoundingClientRect();
+  posicao.value = {
+    top: r.bottom + 4,
+    left: Math.max(8, Math.min(r.right - LARGURA_MENU, window.innerWidth - LARGURA_MENU - 8)),
+  };
+  aberto.value = true;
+  document.addEventListener('mousedown', aoClicarFora, true);
+  window.addEventListener('scroll', fechar, true);
+  window.addEventListener('resize', fechar);
+};
+const escolher = (v) => { emit('visual', v); fechar(); };
+onBeforeUnmount(fechar);
 
 const acoesNav = computed(() => props.actions.filter((a) => a?.kind === 'navigate' && a.payload?.route));
 
@@ -73,26 +105,29 @@ const rodape = computed(() => {
     <template #actions>
       <!-- Trocar visual: só quando há mais de um que faz sentido -->
       <div v-if="trocavel" class="relative">
-        <button type="button" @click="aberto = !aberto" v-tippy="'Trocar visual'"
+        <button ref="gatilho" type="button" @click="alternar" v-tippy="'Trocar visual'"
           class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs text-ink-muted
                  hover:text-ink hover:bg-surface-sunken transition-colors duration-120 focus-ring">
           <i :class="ICONE[visual] || 'fas fa-shapes'"></i>
           <span v-if="!estreito" class="hidden sm:inline">{{ ROTULO[visual] || 'Visual' }}</span>
           <i class="fas fa-chevron-down text-micro opacity-70"></i>
         </button>
-        <Transition enter-active-class="transition duration-120 ease-out-expo" enter-from-class="opacity-0 -translate-y-1"
-          leave-active-class="transition duration-120" leave-to-class="opacity-0">
-          <div v-if="aberto" class="absolute right-0 top-9 z-20 min-w-[160px] rounded-xl border border-line bg-surface-overlay shadow-overlay p-1"
-            @mouseleave="aberto = false">
+        <Teleport to="body">
+          <Transition enter-active-class="transition duration-120 ease-out-expo" enter-from-class="opacity-0 -translate-y-1"
+            leave-active-class="transition duration-120" leave-to-class="opacity-0">
+            <div v-if="aberto" data-viz-menu
+              class="fixed z-[70] w-44 rounded-xl border border-line bg-surface-overlay shadow-overlay p-1"
+              :style="{ top: `${posicao.top}px`, left: `${posicao.left}px` }">
             <button v-for="o in opcoes" :key="o.value" type="button"
-              @click="emit('visual', o.value); aberto = false"
+              @click="escolher(o.value)"
               class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-left transition-colors duration-120"
               :class="o.value === visual ? 'bg-accent-soft text-accent' : 'text-ink hover:bg-surface-sunken'">
               <i :class="o.icon" class="w-4 text-center text-micro"></i>{{ o.label }}
               <i v-if="o.value === visual" class="fas fa-check ml-auto text-micro"></i>
             </button>
-          </div>
-        </Transition>
+            </div>
+          </Transition>
+        </Teleport>
       </div>
       <slot name="actions" />
       <button v-for="(a, i) in acoesNav" :key="i" type="button" @click="emit('action', a)"
