@@ -41,9 +41,10 @@
 
                 <StatRow :items="kpis" :cols="{ sm: 2, md: 3, lg: 6 }" class="mb-5" />
 
-                <div class="grid grid-cols-1 xl:grid-cols-5 gap-5 mb-5">
+                <!-- Um painel abaixo do outro, em qualquer largura (pedido do usuário). -->
+                <div class="flex flex-col gap-5 mb-5">
                     <!-- Consumo do mês -->
-                    <Panel class="xl:col-span-2 self-start" icon="fas fa-gauge-high" title="Consumo do mês"
+                    <Panel icon="fas fa-gauge-high" title="Consumo do mês"
                         :subtitle="`Valor liberado × valor utilizado em ${mesAtual}`">
                         <template #actions>
                             <span class="text-xs text-ink-muted">{{ mesPctLabel }}</span>
@@ -66,7 +67,7 @@
                     </Panel>
 
                     <!-- Realizado × Projetado -->
-                    <Panel class="xl:col-span-3" icon="fas fa-chart-line" title="Realizado × Projetado por mês"
+                    <Panel icon="fas fa-chart-line" title="Realizado × Projetado por mês"
                         :subtitle="`Exercício ${store.exercicio} · cheia = realizado, tracejada = projetado`">
                         <VChart :option="chartOption" autoresize class="w-full" style="height: 280px" />
                     </Panel>
