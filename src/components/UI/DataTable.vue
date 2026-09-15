@@ -365,7 +365,8 @@ function onRowClick(row, i) {
               </slot>
             </p>
             <span v-for="col in ladoLista" :key="col.key"
-              :class="['shrink-0 text-sm text-ink', col.numeric ? 'tabular-nums' : '']" :title="col.label">
+              :class="['shrink-0 text-sm text-ink', col.numeric ? 'tabular-nums' : '']">
+              <span class="text-micro text-ink-subtle mr-1">{{ col.label }}</span>
               <slot :name="`cell-${col.key}`" :row="row" :value="cellValue(row, col)" :col="col">
                 {{ cellValue(row, col) }}
               </slot>
