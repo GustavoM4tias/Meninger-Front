@@ -43,7 +43,7 @@
 
                 <div class="grid grid-cols-1 xl:grid-cols-5 gap-5 mb-5">
                     <!-- Consumo do mês -->
-                    <Panel class="xl:col-span-2" icon="fas fa-gauge-high" title="Consumo do mês"
+                    <Panel class="xl:col-span-2 self-start" icon="fas fa-gauge-high" title="Consumo do mês"
                         :subtitle="`Valor liberado × valor utilizado em ${mesAtual}`">
                         <template #actions>
                             <span class="text-xs text-ink-muted">{{ mesPctLabel }}</span>
