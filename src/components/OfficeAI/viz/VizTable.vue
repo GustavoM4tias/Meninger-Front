@@ -13,6 +13,7 @@ import { ref, computed } from 'vue';
 import DataTable from '@/components/UI/DataTable.vue';
 import Badge from '@/components/UI/Badge.vue';
 import { useIncrementalList } from '@/composables/useIncrementalList';
+import { useLarguraElemento } from '@/composables/useLarguraElemento';
 import { formatarValor, numeroDe } from './formatos.js';
 import { TIPOS_NUMERICOS } from './emeBlock.js';
 
@@ -64,12 +65,18 @@ const ordenadas = computed(() => {
   });
 });
 const inc = useIncrementalList(ordenadas, { step: 25 });
+
+/* Dentro do painel flutuante da Eme (~420px no desktop) a tabela virava uma
+   faixa com rolagem lateral e o título sumia. O espaço que manda é o do
+   container: estreito = cards, como no celular. */
+const raiz = ref(null);
+const { estreito } = useLarguraElemento(raiz, 640);
 </script>
 
 <template>
-  <div class="p-3">
+  <div ref="raiz" class="p-3">
     <DataTable :columns="colunas" :rows="inc.visiveis.value" row-key="__i"
-      manual-sort density="compact"
+      manual-sort density="compact" :layout="estreito ? 'cards' : 'auto'"
       v-model:sort-by="ordem.by" v-model:sort-dir="ordem.dir"
       more-label="Ver mais campos"
       empty-title="Sem resultados" empty-text="A consulta não retornou nenhuma linha.">

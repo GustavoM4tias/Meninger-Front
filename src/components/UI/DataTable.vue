@@ -62,6 +62,10 @@ const props = defineProps({
      registro inteiro sem trocar de tela - e mantém a ordenação e as colunas
      da tabela, coisa que uma lista de cartões não tem. */
   expandable: { type: Boolean, default: false },
+  /* auto = pelo breakpoint da janela (padrão); cards | table = forçado. Quem
+     mora num container estreito no desktop (painel da Eme) mede o próprio
+     espaço e força `cards` - o breakpoint é da janela, não do painel. */
+  layout: { type: String, default: 'auto' },
 });
 
 const emit = defineEmits(['row-click', 'update:sortBy', 'update:sortDir']);
@@ -147,6 +151,9 @@ const cellTitle = (row, col) => {
 
 const rowPad = computed(() => (props.density === 'comfortable' ? 'py-3' : 'py-2'));
 
+const classeTabela = computed(() => (props.layout === 'table' ? 'block' : props.layout === 'cards' ? 'hidden' : 'hidden md:block'));
+const classeCards = computed(() => (props.layout === 'cards' ? '' : props.layout === 'table' ? 'hidden' : 'md:hidden'));
+
 /* Linhas abertas. Uma coleção só serve o desktop e o celular: abrir no
    monitor e girar o aparelho mantém a linha aberta. */
 const open = ref(new Set());
@@ -183,7 +190,7 @@ function onRowClick(row, i) {
       <!-- ══ DESKTOP: tabela ═══════════════════════════════════════════════
            O scroll horizontal fica PRESO a este container. O corpo da página
            nunca rola de lado. -->
-      <div class="hidden md:block overflow-x-auto rounded-xl border border-line">
+      <div :class="[classeTabela, 'overflow-x-auto rounded-xl border border-line']">
         <table class="w-full text-sm border-collapse">
           <thead>
             <tr class="bg-surface-sunken/60">
@@ -258,7 +265,7 @@ function onRowClick(row, i) {
       <!-- Ordenação no celular: o cabeçalho de coluna não existe aqui, então o
            controle vira explícito. Ordenar não pode ser privilégio de quem
            está no monitor. -->
-      <div v-if="sortableCols.length" class="md:hidden flex items-center gap-2 mb-2.5">
+      <div v-if="sortableCols.length" :class="[classeCards, 'flex items-center gap-2 mb-2.5']">
         <label :for="`${rowKey}-sort`" class="metric-label shrink-0">Ordenar por</label>
         <select :id="`${rowKey}-sort`" :value="localSort.by"
           class="flex-1 min-w-0 h-10 px-2.5 rounded-lg bg-surface-raised border border-line
@@ -277,7 +284,7 @@ function onRowClick(row, i) {
         </button>
       </div>
 
-      <ul class="md:hidden space-y-2">
+      <ul :class="[classeCards, 'space-y-2']">
         <li v-for="(row, i) in sorted" :key="keyOf(row, i)"
           :class="['panel p-3', (clickable && !expandable) ? 'panel-focus' : '', i < 16 ? 'stagger-in' : '']"
           :style="i < 16 ? { '--i': i } : null"

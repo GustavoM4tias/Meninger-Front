@@ -11,6 +11,7 @@
  */
 import { ref, computed } from 'vue';
 import Panel from '@/components/UI/Panel.vue';
+import { useLarguraElemento } from '@/composables/useLarguraElemento';
 import { VISUAIS_DE_DATASET } from './emeBlock.js';
 import { ROTULO_VISUAL as ROTULO, ICONE_VISUAL as ICONE } from './visuais.js';
 
@@ -44,6 +45,12 @@ const aberto = ref(false);
 
 const acoesNav = computed(() => props.actions.filter((a) => a?.kind === 'navigate' && a.payload?.route));
 
+/* No painel estreito da Eme os botões com texto empurravam o título para
+   fora ("Unid..."): no estreito eles viram ícone com tooltip, e o título
+   ganha a linha. */
+const raiz = ref(null);
+const { estreito } = useLarguraElemento(raiz, 520);
+
 const rodape = computed(() => {
   if (props.truncated && props.total != null && props.exibidos != null && props.exibidos < props.total) {
     return `${props.exibidos.toLocaleString('pt-BR')} de ${props.total.toLocaleString('pt-BR')} - o resto está na tela completa.`;
@@ -53,7 +60,7 @@ const rodape = computed(() => {
 </script>
 
 <template>
-  <Panel :padded="padded" :icon="icon" :loading="loading" :loading-variant="loadingVariant"
+  <Panel ref="raiz" :padded="padded" :icon="icon" :loading="loading" :loading-variant="loadingVariant"
     :empty="empty && !loading" empty-icon="far fa-folder-open" empty-title="Sem resultados" :empty-text="emptyText"
     class="mt-2 overflow-hidden">
     <template #title>{{ title || 'Resultado' }}</template>
@@ -70,7 +77,7 @@ const rodape = computed(() => {
           class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs text-ink-muted
                  hover:text-ink hover:bg-surface-sunken transition-colors duration-120 focus-ring">
           <i :class="ICONE[visual] || 'fas fa-shapes'"></i>
-          <span class="hidden sm:inline">{{ ROTULO[visual] || 'Visual' }}</span>
+          <span v-if="!estreito" class="hidden sm:inline">{{ ROTULO[visual] || 'Visual' }}</span>
           <i class="fas fa-chevron-down text-micro opacity-70"></i>
         </button>
         <Transition enter-active-class="transition duration-120 ease-out-expo" enter-from-class="opacity-0 -translate-y-1"
@@ -89,10 +96,11 @@ const rodape = computed(() => {
       </div>
       <slot name="actions" />
       <button v-for="(a, i) in acoesNav" :key="i" type="button" @click="emit('action', a)"
+        v-tippy="estreito ? (a.label || 'Abrir tela') : ''"
         class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium
                bg-accent-soft text-accent hover:brightness-105 transition-all duration-120 focus-ring">
         <i class="fas fa-arrow-up-right-from-square text-micro"></i>
-        <span class="hidden sm:inline">{{ a.label || 'Abrir tela' }}</span>
+        <span v-if="!estreito" class="hidden sm:inline">{{ a.label || 'Abrir tela' }}</span>
       </button>
     </template>
 
