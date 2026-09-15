@@ -152,6 +152,44 @@ const cellTitle = (row, col) => {
 const rowPad = computed(() => (props.density === 'comfortable' ? 'py-3' : 'py-2'));
 
 const classeTabela = computed(() => (props.layout === 'table' ? 'block' : props.layout === 'cards' ? 'hidden' : 'hidden md:block'));
+
+/* ── Largura das colunas pelo cabeçalho ──────────────────────────────────────
+   Toda célula trunca com "..." por padrão (linha de altura fixa). Quem quer
+   ler a coluna inteira arrasta a alça na borda direita do cabeçalho. No
+   primeiro arrasto a tabela congela as larguras atuais de TODAS as colunas
+   (senão as outras encolhem para compensar) e passa a `table-layout: fixed`;
+   a soma pode passar do container, que já rola de lado. Duplo clique na alça
+   devolve a coluna ao automático; zera tudo quando não sobra nenhuma fixa. */
+const larguras = ref({});           // key → px
+const tabelaEl = ref(null);
+const MIN_LARGURA = 56;
+const temLarguraFixa = computed(() => Object.keys(larguras.value).length > 0);
+const larguraDe = (col) => (larguras.value[col.key] != null ? `${larguras.value[col.key]}px` : col.width || null);
+
+function congelarLarguras() {
+  const ths = tabelaEl.value?.querySelectorAll('thead th[data-col]') || [];
+  const atual = { ...larguras.value };
+  ths.forEach((th) => { const k = th.dataset.col; if (atual[k] == null) atual[k] = Math.round(th.getBoundingClientRect().width); });
+  larguras.value = atual;
+}
+function iniciarRedimensionar(e, col) {
+  e.preventDefault(); e.stopPropagation();
+  congelarLarguras();
+  const inicioX = e.clientX;
+  const inicioW = larguras.value[col.key];
+  const alvo = e.currentTarget;
+  alvo.setPointerCapture?.(e.pointerId);
+  const mover = (ev) => { larguras.value = { ...larguras.value, [col.key]: Math.max(MIN_LARGURA, Math.round(inicioW + (ev.clientX - inicioX))) }; };
+  const soltar = () => { alvo.removeEventListener('pointermove', mover); alvo.removeEventListener('pointerup', soltar); alvo.removeEventListener('pointercancel', soltar); };
+  alvo.addEventListener('pointermove', mover);
+  alvo.addEventListener('pointerup', soltar);
+  alvo.addEventListener('pointercancel', soltar);
+}
+function resetarLargura(col) {
+  const { [col.key]: _, ...resto } = larguras.value;
+  larguras.value = resto;
+}
+const estiloTabela = computed(() => (temLarguraFixa.value ? { tableLayout: 'fixed', width: 'max-content', minWidth: '100%' } : null));
 const classeCards = computed(() => (props.layout === 'cards' ? '' : props.layout === 'table' ? 'hidden' : 'md:hidden'));
 
 /* Linhas abertas. Uma coleção só serve o desktop e o celular: abrir no
@@ -191,23 +229,34 @@ function onRowClick(row, i) {
            O scroll horizontal fica PRESO a este container. O corpo da página
            nunca rola de lado. -->
       <div :class="[classeTabela, 'overflow-x-auto rounded-xl border border-line']">
-        <table class="w-full text-sm border-collapse">
+        <table ref="tabelaEl" class="w-full text-sm border-collapse" :style="estiloTabela">
           <thead>
             <tr class="bg-surface-sunken/60">
-              <th v-for="col in columns" :key="col.key" scope="col"
-                :style="col.width ? { width: col.width } : null"
-                :class="['metric-label px-3 py-2.5 border-b border-line whitespace-nowrap select-none',
+              <th v-for="col in columns" :key="col.key" scope="col" :data-col="col.key"
+                :style="larguraDe(col) ? { width: larguraDe(col) } : null"
+                :class="['relative metric-label px-3 py-2.5 border-b border-line whitespace-nowrap select-none',
                          alignClass(col),
                          sortable && col.sortable ? 'cursor-pointer hover:text-ink transition-colors' : '']"
                 :aria-sort="localSort.by === col.key ? (localSort.dir === 'asc' ? 'ascending' : 'descending') : 'none'"
                 @click="toggleSort(col)">
-                {{ col.label }}
-                <i v-if="sortable && col.sortable"
-                  :class="['fas ml-1',
-                           localSort.by === col.key
-                             ? (localSort.dir === 'asc' ? 'fa-arrow-up-short-wide text-accent' : 'fa-arrow-down-wide-short text-accent')
-                             : 'fa-sort opacity-30']"
-                  style="font-size:9px"></i>
+                <span class="block truncate" :title="col.label">
+                  {{ col.label }}
+                  <i v-if="sortable && col.sortable"
+                    :class="['fas ml-1',
+                             localSort.by === col.key
+                               ? (localSort.dir === 'asc' ? 'fa-arrow-up-short-wide text-accent' : 'fa-arrow-down-wide-short text-accent')
+                               : 'fa-sort opacity-30']"
+                    style="font-size:9px"></i>
+                </span>
+                <!-- Alça de largura: arrasta para alargar/estreitar, duplo clique volta ao automático -->
+                <span role="separator" aria-orientation="vertical" :aria-label="`Largura da coluna ${col.label}`"
+                  v-tippy="'Arraste para mudar a largura · duplo clique volta ao automático'"
+                  class="absolute top-0 right-0 h-full w-2 cursor-col-resize touch-none
+                         after:content-[''] after:absolute after:top-2 after:bottom-2 after:right-0 after:w-px after:bg-line
+                         hover:after:bg-accent hover:after:w-0.5"
+                  @pointerdown="iniciarRedimensionar($event, col)"
+                  @dblclick.stop="resetarLargura(col)"
+                  @click.stop></span>
               </th>
               <th v-if="expandable" scope="col" class="w-px px-2 py-2.5 border-b border-line"><span class="sr-only">Abrir</span></th>
               <th v-if="$slots.actions" scope="col" class="w-px px-3 py-2.5 border-b border-line"><span class="sr-only">Ações</span></th>
