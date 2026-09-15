@@ -23,10 +23,13 @@ const emit = defineEmits(['navigate', 'toggleFavorite', 'keep', 'release']);
 
 const MARGIN = 12;
 const PANEL_W = 256; // w-64
+const GAP = 8;       // respiro entre o ícone do rail e o painel
 
 const panel = ref(null);
 const top = ref(props.rect.top);
-const left = ref(props.rect.right + 8);
+const left = ref(props.rect.right);
+// Abre à direita do ícone; vira para a esquerda quando não cabe.
+const flipped = ref(false);
 
 // Altura máxima do painel = viewport menos as margens. O corpo rola por dentro,
 // então o painel nunca ultrapassa a tela verticalmente.
@@ -42,10 +45,12 @@ async function reposition() {
   top.value = Math.max(MARGIN, Math.min(props.rect.top - 6, maxTop));
 
   // Horizontal: abre à direita do ícone; se não couber, vira para a esquerda.
-  const wouldOverflowRight = props.rect.right + 8 + PANEL_W > window.innerWidth - MARGIN;
-  left.value = wouldOverflowRight
-    ? Math.max(MARGIN, props.rect.left - 8 - PANEL_W)
-    : props.rect.right + 8;
+  // O `left` é da CAIXA EXTERNA, que encosta no ícone: o respiro (GAP) é
+  // padding dela, não espaço vazio - ver o comentário no template.
+  flipped.value = props.rect.right + GAP + PANEL_W > window.innerWidth - MARGIN;
+  left.value = flipped.value
+    ? Math.max(MARGIN, props.rect.left - GAP - PANEL_W)
+    : props.rect.right;
 }
 
 onMounted(reposition);
@@ -58,7 +63,6 @@ watch(
 const style = computed(() => ({
   top: `${top.value}px`,
   left: `${left.value}px`,
-  maxHeight: maxHeight.value,
 }));
 </script>
 
@@ -73,9 +77,16 @@ const style = computed(() => ({
       leave-from-class="opacity-100"
       leave-to-class="opacity-0 -translate-x-1"
     >
-      <div ref="panel" :style="style"
+      <!-- A caixa externa é quem escuta o mouse e cobre o respiro até o rail
+           (padding do lado do ícone). Antes o respiro era um vão de 8px: o
+           mouseleave do rail disparava o fechamento e, se o cursor demorava a
+           chegar no painel, ele sumia antes do clique. -->
+      <div :style="style"
         @mouseenter="$emit('keep')" @mouseleave="$emit('release')"
-        class="fixed z-[60] w-64 flex flex-col origin-left rounded-xl border border-line
+        :class="flipped ? 'pr-2 origin-right' : 'pl-2 origin-left'"
+        class="fixed z-[60] flex">
+      <div ref="panel" :style="{ maxHeight }"
+        class="w-64 flex flex-col rounded-xl border border-line
                bg-surface-overlay shadow-overlay overflow-hidden">
 
         <!-- Cabeçalho -->
@@ -125,6 +136,7 @@ const style = computed(() => ({
             @toggleFavorite="$emit('toggleFavorite', item.route, item.section)"
           />
         </div>
+      </div>
       </div>
     </transition>
   </teleport>

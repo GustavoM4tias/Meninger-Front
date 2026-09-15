@@ -268,9 +268,20 @@ const FAVORITES_KEY = 'favorites';
 const flyout = ref({ key: null, rect: null });
 let openTimer = null, closeTimer = null;
 
+// Abrir o primeiro painel é rápido. TROCAR de categoria com um painel já aberto
+// exige o mouse PARAR no outro ícone: o caminho natural do ícone até um item
+// mais embaixo do painel é uma diagonal que atravessa o ícone de baixo no rail,
+// e com 70ms essa passagem trocava o conteúdo do painel debaixo do cursor -
+// o clique caía em outro item, ou o alvo mudava entre mousedown e mouseup e o
+// clique não acontecia (era preciso clicar de novo).
+const FLYOUT_OPEN_MS   = 70;
+const FLYOUT_SWITCH_MS = 220;
+
 function scheduleOpenFlyout({ key, rect }) {
   clearTimeout(openTimer); clearTimeout(closeTimer);
-  openTimer = setTimeout(() => { flyout.value = { key, rect }; }, 70);
+  if (flyout.value.key === key) return;   // já é este painel: só cancelar o fechamento
+  const delay = flyout.value.key ? FLYOUT_SWITCH_MS : FLYOUT_OPEN_MS;
+  openTimer = setTimeout(() => { flyout.value = { key, rect }; }, delay);
 }
 function scheduleCloseFlyout() {
   clearTimeout(openTimer); clearTimeout(closeTimer);
