@@ -354,8 +354,21 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             // Timeline unificada: por RESERVA, não por registro - a história da
             // cobrança do ato atravessa tentativas e até a troca de forma.
             const data = await requestWithAuth(`/cobranca-ato/timeline/${idreserva}`);
-            timelineEvents.value = Array.isArray(data?.events) ? data.events : [];
-            timelineAttempts.value = Array.isArray(data?.attempts) ? data.attempts : [];
+            // A rota unificada responde `eventos`/`tentativas` (com `historyId`,
+            // `documento` e `arquivo_url`); o modal foi escrito sobre os nomes
+            // do endpoint antigo. Sem esta ponte a aba Timeline ficava vazia.
+            const eventos = data?.eventos ?? data?.events;
+            const tentativas = data?.tentativas ?? data?.attempts;
+            timelineEvents.value = Array.isArray(eventos)
+                ? eventos.map(e => ({ ...e, boleto_history_id: e.boleto_history_id ?? e.historyId ?? null }))
+                : [];
+            timelineAttempts.value = Array.isArray(tentativas)
+                ? tentativas.map(t => ({
+                    ...t,
+                    nosso_numero: t.nosso_numero ?? t.documento ?? null,
+                    boleto_supabase_url: t.boleto_supabase_url ?? t.arquivo_url ?? null,
+                }))
+                : [];
             timelineHistory.value = data?.history || null;
         } catch (err) {
             if (!silent) timelineError.value = err.message || 'Erro ao carregar timeline.';
