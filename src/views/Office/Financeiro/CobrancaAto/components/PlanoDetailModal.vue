@@ -129,7 +129,10 @@
         <template #cell-status="{ row }">
           <span class="inline-flex flex-col items-start gap-0.5">
             <Badge :variant="parcelaVariant(row.status)" size="sm">{{ parcelaLabel(row.status) }}</Badge>
-            <span v-if="row.status === 'emitida' && row.vencimento_cobrado < det.hoje" class="text-micro text-data-neg">venceu {{ diasLabel(row.vencimento_cobrado) }}</span>
+            <span v-if="emitindo(row)" class="text-micro text-accent inline-flex items-center gap-1">
+              <Spinner size="xs" /> emitindo boleto…
+            </span>
+            <span v-else-if="row.status === 'emitida' && row.vencimento_cobrado < det.hoje" class="text-micro text-data-neg">venceu {{ diasLabel(row.vencimento_cobrado) }}</span>
             <span v-else-if="row.status === 'prevista' && row.vencimento < det.hoje" class="text-micro text-data-neg">venceu {{ diasLabel(row.vencimento) }} · nunca cobrada</span>
             <span v-else-if="row.status === 'paga' && row.pago_em" class="text-micro text-ink-subtle">{{ formatDate(row.pago_em) }}</span>
             <span v-else-if="row.status === 'erro'" class="text-micro text-data-neg truncate max-w-[14rem]" :title="row.erro_mensagem">{{ row.erro_mensagem }}</span>
@@ -146,15 +149,21 @@
           <span v-if="can('operate')" class="inline-flex items-center gap-1">
             <!-- Botão com rótulo, não ícone: é a ação que o corretor pede
                  ("gera a nova via") e precisa ser achada de primeira. -->
-            <Button v-if="reemitivel(row)" variant="primary" size="sm" icon="fas fa-rotate" :loading="store.acting" @click.stop="emitir(row)">
+            <!-- Emissão roda em background: o botão ficava livre de novo assim
+                 que o servidor respondia e dava para clicar várias vezes. Enquanto
+                 a parcela está emitindo, só este botão, travado. -->
+            <Button v-if="emitindo(row)" variant="outline" size="sm" loading disabled>
+              Emitindo…
+            </Button>
+            <Button v-else-if="reemitivel(row)" variant="primary" size="sm" icon="fas fa-rotate" :loading="store.acting" @click.stop="emitir(row)">
               Reemitir
             </Button>
             <Button v-else-if="['prevista', 'erro'].includes(row.status) && det.plano.status === 'ativo'" variant="outline" size="sm"
               icon="fas fa-file-invoice-dollar" :loading="store.acting" @click.stop="emitir(row)">
               Emitir agora
             </Button>
-            <IconButton v-if="row.status === 'emitida'" icon="fas fa-ban" size="sm" label="Baixar boleto no Ecobrança" @click.stop="baixar(row)" />
-            <IconButton v-if="['emitida', 'vencida'].includes(row.status)" icon="fas fa-check-double" size="sm" label="Marcar como paga" @click.stop="marcarPaga(row)" />
+            <IconButton v-if="row.status === 'emitida' && !emitindo(row)" icon="fas fa-ban" size="sm" label="Baixar boleto no Ecobrança" @click.stop="baixar(row)" />
+            <IconButton v-if="['emitida', 'vencida'].includes(row.status) && !emitindo(row)" icon="fas fa-check-double" size="sm" label="Marcar como paga" @click.stop="marcarPaga(row)" />
             <IconButton v-if="can('configure') && ['prevista', 'vencida', 'erro'].includes(row.status)" icon="fas fa-pen-to-square" size="sm"
               label="Editar valor ou vencimento (admin)" @click.stop="abrirEdicao(row)" />
           </span>
@@ -204,6 +213,7 @@ import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import DataTable from '@/components/UI/DataTable.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
+import Spinner from '@/components/UI/Spinner.vue';
 import BoletoDetailModal from './BoletoDetailModal.vue';
 import { planoLabel, planoVariant, motivoLabel, parcelaLabel, parcelaVariant, formatCurrency, formatDate, diasLabel } from './parcelasFormat';
 
@@ -248,23 +258,67 @@ const COLS = [
 
 const boletoDe = (row) => (row.boleto_history_id ? (det.value?.boletos || []).find(b => b.id === row.boleto_history_id) : null);
 
-/* Polling curto depois de ações assíncronas (emissão roda em background). */
+// ── Parcela em emissão ───────────────────────────────────────────────────────
+// A emissão roda em background (Playwright, 10 s a 1 min) e a parcela não muda
+// de status enquanto isso: o que existe é um boleto `processing` ligado a ela
+// em `det.boletos`. Só que esse registro nasce alguns segundos depois do clique
+// (o backend consulta o CV antes), então guardamos localmente o que foi pedido
+// até o detalhe mostrar o resultado (status, nº de emissões ou boleto novo
+// que já não está `processing`).
+const pedidas = ref({});   // parcela.id -> foto da parcela no clique
+const RECENTE_MS = 15 * 60 * 1000;
+const recente = (b) => !b?.created_at || (Date.now() - new Date(b.created_at).getTime()) < RECENTE_MS;
+const boletoProcessando = (row) => (det.value?.boletos || [])
+  .some(b => b.parcela_id === row.id && b.status === 'processing' && recente(b));
+const emitindo = (row) => !!pedidas.value[row.id] || boletoProcessando(row);
+const algumaEmitindo = computed(() => (det.value?.parcelas || []).some(emitindo));
+
+function fotoDe(row) {
+  const ids = (det.value?.boletos || []).filter(b => b.parcela_id === row.id).map(b => b.id);
+  return { status: row.status, emissoes: row.emissoes, tentativas_erro: row.tentativas_erro, ultimoBoleto: ids.length ? Math.max(...ids) : 0, desde: Date.now() };
+}
+/* Uma pedida terminou quando a parcela mudou (status, emissões, erro) ou
+   apareceu boleto novo que já saiu do `processing`. Passou de 3 min sem
+   sinal, solta o botão: melhor liberar do que travar para sempre. */
+function conferirPedidas() {
+  const ps = det.value?.parcelas || [];
+  const bs = det.value?.boletos || [];
+  let mudou = false;
+  for (const [id, foto] of Object.entries(pedidas.value)) {
+    const row = ps.find(p => String(p.id) === String(id));
+    const novo = bs.find(b => String(b.parcela_id) === String(id) && b.id > foto.ultimoBoleto && b.status !== 'processing');
+    const terminou = !row
+      || row.status !== foto.status || row.emissoes !== foto.emissoes || row.tentativas_erro !== foto.tentativas_erro
+      || !!novo || (Date.now() - foto.desde > 180000);
+    if (terminou) { delete pedidas.value[id]; mudou = true; }
+  }
+  return mudou;
+}
+
+/* Polling depois de ações assíncronas: segue enquanto houver parcela emitindo
+   (ou pelo mínimo pedido), e avisa a lista de fora quando algo terminou. */
 let timer = null;
 function pararPolling() { if (timer) { clearInterval(timer); timer = null; } }
-function acompanhar(ms = 90000) {
-  pararPolling();
+function acompanhar(ms = 30000) {
   const fim = Date.now() + ms;
+  if (timer) return;
   timer = setInterval(async () => {
     await store.fetchDetalhe(props.idreserva, { silent: true });
-    if (Date.now() > fim) pararPolling();
+    const terminou = conferirPedidas();
+    if (terminou) emit('changed');
+    if (!algumaEmitindo.value && Date.now() > fim) pararPolling();
   }, 5000);
 }
 function recarregar() { store.fetchDetalhe(props.idreserva, { silent: true }); emit('changed'); }
 
 watch(() => [props.open, props.idreserva], ([open, id]) => {
   pararPolling();
+  pedidas.value = {};
   if (open && id) store.fetchDetalhe(id);
 }, { immediate: true });
+// Abriu no meio de uma emissão (rodada automática, SIM do cliente, outra
+// pessoa): acompanha do mesmo jeito.
+watch(algumaEmitindo, (tem) => { if (tem && props.open) acompanhar(0); });
 onUnmounted(pararPolling);
 
 async function sincronizar() {
@@ -334,7 +388,13 @@ async function emitir(row) {
       : `Emite agora o boleto de ${formatCurrency(row.valor)} com vencimento ${formatDate(row.vencimento)}${row.vencimento < det.value.hoje ? ' (já vencido: sai com vencimento no próximo dia útil)' : ''} e envia ao cliente por e-mail e WhatsApp.`,
     confirmLabel: reemissao ? 'Reemitir' : 'Emitir agora', tone: 'primary',
   })) return;
-  try { await store.emitirParcela(row.id); acompanhar(); } catch { /* */ }
+  if (emitindo(row)) return;   // clique repetido antes da tela travar o botão
+  const foto = fotoDe(row);
+  try {
+    await store.emitirParcela(row.id);
+    pedidas.value = { ...pedidas.value, [row.id]: foto };
+    acompanhar();
+  } catch { /* actionError já mostra */ }
 }
 async function baixar(row) {
   if (!await pedirConfirmacao({ title: `Baixar o boleto da parcela ${row.numero}/${row.total}?`, consequence: 'O boleto deixa de poder ser pago (baixa por devolução no Ecobrança). A parcela volta para "vencida" e a rodada pode reemitir.', confirmLabel: 'Baixar boleto' })) return;

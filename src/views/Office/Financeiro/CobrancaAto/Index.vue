@@ -889,8 +889,15 @@
               </span>
             </template>
 
+            <!-- Linha em emissão: o registro nasce vazio (titular, valor e
+                 vencimento só chegam quando o portal responde) e ficava
+                 "- - -" na tabela até alguém dar F5. Mostra que está
+                 acontecendo e a lista se atualiza sozinha (ver `vigiarEmissao`). -->
             <template #cell-titular_nome="{ row }">
-              <span class="block min-w-0">
+              <span v-if="emEmissao(row) && !row.titular_nome" class="inline-flex items-center gap-1.5 text-ink-muted">
+                <Spinner size="xs" /> emitindo…
+              </span>
+              <span v-else class="block min-w-0">
                 <span class="block text-ink truncate">{{ row.titular_nome || '-' }}</span>
                 <span class="block text-micro text-ink-subtle truncate">{{ row.empreendimento || '-' }}</span>
               </span>
@@ -903,16 +910,20 @@
             </template>
 
             <template #cell-valor="{ row }">
-              <span class="metric text-sm">{{ row.valor ? formatCurrency(row.valor) : '-' }}</span>
+              <span v-if="emEmissao(row) && !row.valor" class="text-ink-subtle">aguardando</span>
+              <span v-else class="metric text-sm">{{ row.valor ? formatCurrency(row.valor) : '-' }}</span>
             </template>
 
             <template #cell-vencimento="{ row }">
-              {{ row.vencimento ? formatDate(row.vencimento) : '-' }}
+              <span v-if="emEmissao(row) && !row.vencimento" class="text-ink-subtle">aguardando</span>
+              <template v-else>{{ row.vencimento ? formatDate(row.vencimento) : '-' }}</template>
             </template>
 
             <template #cell-status="{ row }">
               <span class="inline-flex flex-col items-start gap-0.5">
-                <Badge :variant="statusVariant(row.status)" size="sm">{{ statusLabel(row.status) }}</Badge>
+                <Badge :variant="statusVariant(row.status)" size="sm">
+                  <Spinner v-if="emEmissao(row)" size="xs" class="mr-1" />{{ statusLabel(row.status) }}
+                </Badge>
                 <!-- Agendado pela janela de emissão: mostra QUANDO vai sair. -->
                 <span v-if="row.emissao_agendada_para" class="text-micro text-ink-subtle tabular-nums">
                   {{ formatDateTime(row.emissao_agendada_para) }}
@@ -971,14 +982,14 @@
         :open="detailModal.open"
         :item="detailModal.item"
         @close="closeDetail"
-        @changed="store.fetchHistory()" />
+        @changed="aoMudarNoModal" />
 
     </PageContainer>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
 import { useCan } from '@/composables/useCan';
@@ -1061,6 +1072,46 @@ function openDetail(item) {
 function closeDetail() {
   detailModal.value = { open: false, item: null };
 }
+
+// ── Emissão em andamento: a lista se atualiza sozinha ────────────────────────
+/* Reemitir/reprocessar responde na hora e a emissão de verdade roda em
+   background (Playwright, 8-20 s). A lista mostrava o registro recém-nascido
+   com "- - -" e só mudava com F5; e se a reserva já tinha boleto, a linha
+   atual nem trocava (a via final ganha da tentativa em curso), então nada
+   avisava que estava rodando. Aqui: qualquer ação do modal liga uma vigia
+   que recarrega lista e cartões em silêncio a cada 5 s, e ela segue viva
+   enquanto houver linha `processing` na tela (ou por 2 min, o que durar mais).
+   Silencioso: sem `silent` o esqueleto tomava o lugar da tabela a cada
+   recarga. */
+/* Só `processing` recente: linha que ficou assim por um restart no meio da
+   emissão não é "emitindo", e a vigia não pode ficar ligada por causa dela. */
+const EMISSAO_RECENTE_MS = 15 * 60 * 1000;
+const emEmissao = (row) => row?.status === 'processing'
+  && (!row.created_at || (Date.now() - new Date(row.created_at).getTime()) < EMISSAO_RECENTE_MS);
+const temLinhaEmEmissao = computed(() => (store.history || []).some(emEmissao));
+
+let vigia = null;
+let vigiaAte = 0;
+function pararVigia() {
+  if (vigia) { clearInterval(vigia); vigia = null; }
+}
+function vigiarEmissao(ms = 120000) {
+  vigiaAte = Math.max(vigiaAte, Date.now() + ms);
+  if (vigia) return;
+  vigia = setInterval(async () => {
+    if (activeTab.value !== 'history') { if (Date.now() > vigiaAte) pararVigia(); return; }
+    await Promise.allSettled([store.fetchHistory({ silent: true }), store.fetchStats({ silent: true })]);
+    if (!temLinhaEmEmissao.value && Date.now() > vigiaAte) pararVigia();
+  }, 5000);
+}
+function aoMudarNoModal() {
+  Promise.allSettled([store.fetchHistory({ silent: true }), store.fetchStats({ silent: true })]);
+  vigiarEmissao();
+}
+// Linha em emissão que já veio assim (outra pessoa disparou, ou o webhook do
+// CV): também acompanha, sem depender de clique aqui.
+watch(temLinhaEmEmissao, (tem) => { if (tem) vigiarEmissao(0); }, { immediate: true });
+onUnmounted(pararVigia);
 
 // ── Webhook URL ───────────────────────────────────────────────────────────────
 const webhookUrl = computed(() => `${API_URL}/boleto-caixa/webhook`);

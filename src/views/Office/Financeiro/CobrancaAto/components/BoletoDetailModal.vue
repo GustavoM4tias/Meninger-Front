@@ -6,6 +6,7 @@ import Button from '@/components/UI/Button.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Badge from '@/components/UI/Badge.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Spinner from '@/components/UI/Spinner.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
 const props = defineProps({
@@ -57,32 +58,69 @@ function stopPolling() {
     pollTimer.value = null;
   }
 }
-function startPolling({ intervalMs = 5000, maxMs = 90000 } = {}) {
+
+// ── Emissão em andamento ─────────────────────────────────────────────────────
+// Reemitir/reprocessar responde na hora e a emissão roda em background. Até
+// aqui o botão voltava a ficar livre assim que a resposta chegava, e dava para
+// clicar de novo (e emitir duas vezes) enquanto o portal ainda trabalhava.
+//
+// `tentativaEmCurso`: alguma tentativa da reserva está `processing` (vem da
+// timeline, que o polling recarrega). `emissaoPedida`: acabamos de disparar e
+// o registro `processing` ainda nem nasceu no banco (o backend consulta o CV
+// antes de criar a linha) - cobre esse vão de alguns segundos.
+const emissaoPedida = ref(null);   // { desde, ids: Set dos ids de tentativa conhecidos no clique }
+// Só conta `processing` recente: uma linha que ficou nesse estado por um
+// restart no meio da emissão travaria o modal para sempre.
+const RECENTE_MS = 15 * 60 * 1000;
+const recente = (a) => !a?.created_at || (Date.now() - new Date(a.created_at).getTime()) < RECENTE_MS;
+const tentativaEmCurso = computed(() => (store.timelineAttempts || [])
+  .find(a => a.status === 'processing' && recente(a)) || null);
+const emissaoEmAndamento = computed(() => !!(emissaoPedida.value || tentativaEmCurso.value || (live.value?.status === 'processing' && recente(live.value))));
+
+/* A emissão pedida terminou quando aparece uma tentativa NOVA (id que não
+   existia no clique) que já não está `processing` - deu certo ou deu erro,
+   os dois encerram a espera. */
+function emissaoPedidaTerminou() {
+  const pedida = emissaoPedida.value;
+  if (!pedida) return false;
+  return (store.timelineAttempts || []).some(a => !pedida.ids.has(a.uid || a.id) && a.status !== 'processing');
+}
+
+/**
+ * Recarrega lista + timeline em silêncio a cada `intervalMs` até `terminou()`
+ * dizer que sim (ou estourar `maxMs`). `aoTerminar` recebe o resultado e
+ * escreve a mensagem. Silencioso porque sem o flag o spinner piscava a cada 5 s.
+ */
+function startPolling({ intervalMs = 5000, maxMs = 90000, terminou, aoTerminar, aoEstourar } = {}) {
   stopPolling();
   const startedAt = Date.now();
   const initialStatus = live.value?.payment_status || 'pending';
+  const acabou = terminou || (() => {
+    const now = live.value?.payment_status;
+    return now && now !== initialStatus ? now : false;
+  });
   pollTimer.value = setInterval(async () => {
     if (!props.open) return stopPolling();
     if (Date.now() - startedAt > maxMs) {
       stopPolling();
+      emissaoPedida.value = null;
       actionMsg.value = {
         variant: 'warning',
-        text: 'Aguardando finalizar a verificação no Ecobrança. Recarregue manualmente se precisar.',
+        text: aoEstourar || 'Aguardando finalizar a verificação no Ecobrança. Recarregue manualmente se precisar.',
       };
       return;
     }
-    // Refresh SILENCIOSO em paralelo: store + timeline. Sem o flag silent,
-    // o spinner pisca a cada 5s — péssima UX. Silent substitui os dados
-    // in-place quando chegam, sem flashar "Carregando...".
     try {
       await Promise.all([
         store.fetchHistory({ silent: true }),
         store.fetchTimeline(props.item.id, { silent: true }, props.item.idreserva),
       ]);
-      const now = live.value?.payment_status;
-      if (now && now !== initialStatus) {
+      const resultado = acabou();
+      if (resultado) {
         stopPolling();
-        actionMsg.value = { variant: 'success', text: `Status atualizado: ${now}` };
+        emissaoPedida.value = null;
+        if (aoTerminar) aoTerminar(resultado);
+        else actionMsg.value = { variant: 'success', text: `Status atualizado: ${resultado}` };
         emit('changed');
       }
     } catch (_) { /* segue o polling */ }
@@ -103,6 +141,7 @@ watch(() => [props.open, props.item?.id], async ([open, id]) => {
   if (open && id) {
     activeTab.value = 'summary';
     actionMsg.value = null;
+    emissaoPedida.value = null;
     resendConfirm.value.open = false;
     // Limpa IMEDIATAMENTE o estado do boleto anterior, antes do fetch async.
     store.timelineEvents = [];
@@ -511,20 +550,35 @@ async function handleRetry() {
 
   actionState.value.retrying = true;
   try {
+    // Foto das tentativas conhecidas ANTES de disparar: o que aparecer além
+    // delas é a emissão que estamos esperando.
+    const conhecidas = new Set((store.timelineAttempts || []).map(a => a.uid || a.id));
     const ok = isRegenerate
       ? await store.regenerateHistoryItem(alvo.id, alvo)
       : await store.retryHistoryItem(alvo.id, alvo);
     if (ok) {
+      emissaoPedida.value = { desde: Date.now(), ids: conhecidas };
       actionMsg.value = {
         variant: 'success',
         text: isPending
-          ? 'Solicitado — se a condição mudou, o boleto atual será baixado e um novo emitido e enviado ao cliente. Acompanhe no histórico.'
+          ? 'Solicitado: se a condição mudou, o boleto atual será baixado e um novo emitido e enviado ao cliente. Esta tela acompanha sozinha.'
           : (isCancelled
-              ? 'Novo boleto sendo gerado e enviado ao cliente — acompanhe na lista do histórico.'
-              : 'Reprocessamento disparado — acompanhando atualizações…'),
+              ? 'Novo boleto sendo gerado e enviado ao cliente. Esta tela acompanha sozinha.'
+              : 'Reprocessamento disparado. Esta tela acompanha sozinha.'),
       };
-      // Roda Playwright (lento). Mesma estratégia do check.
-      startPolling({ intervalMs: 5000, maxMs: 120000 });
+      // Roda Playwright (lento). Espera a tentativa nova sair do `processing`
+      // (sucesso ou erro), não só o payment_status mudar.
+      startPolling({
+        intervalMs: 5000, maxMs: 180000,
+        terminou: emissaoPedidaTerminou,
+        aoTerminar: () => {
+          const nova = [...(store.timelineAttempts || [])].reverse().find(a => !conhecidas.has(a.uid || a.id));
+          actionMsg.value = nova?.status === 'success'
+            ? { variant: 'success', text: `Boleto emitido${nova.nosso_numero ? ` (Nosso Número ${nova.nosso_numero})` : ''}. Veja a nova tentativa na Timeline.` }
+            : { variant: 'error', text: `A emissão terminou com erro${nova?.error_message ? `: ${nova.error_message}` : ''}. Veja a Timeline.` };
+        },
+        aoEstourar: 'A emissão ainda não terminou. A lista continua se atualizando; se demorar, confira a Timeline.',
+      });
       emit('changed');
     } else {
       actionMsg.value = { variant: 'error', text: isRegenerate ? 'Falha ao gerar/reemitir boleto.' : 'Falha ao reprocessar.' };
@@ -690,6 +744,15 @@ async function copyLink() {
       <!-- ── Tabs ─────────────────────────────────────────────────────────── -->
       <div class="px-4 sm:px-5 py-3 border-b border-line bg-surface-sunken/40">
         <SegmentedControl v-model="activeTab" :options="tabOptions" size="sm" />
+      </div>
+
+      <!-- ── Emissão em andamento (vale também para quem abriu o modal no
+           meio de uma emissão disparada por outra pessoa ou pelo CV) ──── -->
+      <div v-if="emissaoEmAndamento" class="px-4 sm:px-5 pt-3">
+        <div class="rounded-lg px-3 py-2 text-xs flex items-center gap-2 bg-accent-soft text-accent border border-accent/20">
+          <Spinner size="xs" />
+          <span>Emissão em andamento no Ecobrança. Esta tela e a lista se atualizam sozinhas (leva de 10 s a 1 min).</span>
+        </div>
       </div>
 
       <!-- ── Action feedback inline ───────────────────────────────────────── -->
@@ -990,24 +1053,28 @@ async function copyLink() {
             @click="openResendConfirm">
             Reenviar ao cliente
           </Button>
+          <!-- Enquanto uma emissão roda, as ações que mexem no boleto ficam
+               travadas: clicar de novo emitia duas vezes. -->
           <Button v-if="live?.status === 'error' || (live?.status === 'success' && ['pending', 'cancelled'].includes(live?.payment_status))"
             variant="ghost" size="sm" icon="fas fa-rotate-right"
-            :loading="actionState.retrying" :disabled="actionState.retrying"
+            :loading="actionState.retrying || emissaoEmAndamento" :disabled="actionState.retrying || emissaoEmAndamento"
             @click="handleRetry">
-            {{ live?.status === 'error'
-                ? 'Reprocessar'
-                : (live?.payment_status === 'pending' ? 'Reemitir (condição atual)' : 'Gerar novo boleto') }}
+            {{ emissaoEmAndamento
+                ? 'Emitindo…'
+                : (live?.status === 'error'
+                  ? 'Reprocessar'
+                  : (live?.payment_status === 'pending' ? 'Reemitir (condição atual)' : 'Gerar novo boleto')) }}
           </Button>
           <Button v-if="live?.status === 'success' && live?.payment_status === 'pending'"
             variant="ghost" size="sm" icon="fas fa-ban"
-            :loading="actionState.marking" :disabled="actionState.marking"
+            :loading="actionState.marking" :disabled="actionState.marking || emissaoEmAndamento"
             title="Use quando a baixa automática falhou e você já baixou o título no Ecobrança"
             @click="handleMarkCancelled">
             Marcar como baixado
           </Button>
           <Button v-if="live?.status === 'success' && live?.payment_status === 'pending'"
             variant="primary" size="sm" icon="fas fa-magnifying-glass-dollar"
-            :loading="actionState.checking" :disabled="actionState.checking"
+            :loading="actionState.checking" :disabled="actionState.checking || emissaoEmAndamento"
             @click="handleCheckPayment">
             Verificar pagamento
           </Button>
