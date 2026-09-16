@@ -22,7 +22,7 @@
                         :tips="[
                             'Status = MKT investido desde o lançamento ÷ viabilidade de MKT aprovada. A régua (atenção e estouro) é configurável pelo administrador.',
                             'Meses fechados são os anteriores ao mês atual; o mês corrente aparece à parte como Atual e Liberado.',
-                            'Se um empreendimento sumir da lista, confira se a aba dele na planilha ainda tem as linhas VIABILIDADE MKT, TOTAL REALIZADO e o cabeçalho com as datas dos meses.',
+                            'Se um empreendimento sumir da lista, confira se a aba dele na planilha ainda tem a linha TOTAL REALIZADO e o cabeçalho com as datas dos meses. Aba sem VIABILIDADE MKT (Construtora Menin, Menin Engenharia) entra como institucional, só com realizado e projetado.',
                         ]" />
                     <Button variant="secondary" size="sm" icon="fas fa-rotate" :loading="store.refreshing"
                         title="Confere no SharePoint se a planilha mudou e relê na hora" @click="atualizar">
@@ -103,7 +103,8 @@
                     </div>
                 </template>
                 <template #cell-pctLabel="{ row }">
-                    <div class="flex items-center justify-end gap-2">
+                    <span v-if="row.pct == null" class="text-ink-subtle" title="Aba institucional: não tem viabilidade para medir">-</span>
+                    <div v-else class="flex items-center justify-end gap-2">
                         <span class="hidden md:block w-16 h-1.5 rounded-full bg-surface-sunken overflow-hidden">
                             <span class="block h-full rounded-full" :class="statusMeta(row.st).bar"
                                 :style="{ width: Math.min(row.pct * 100, 100) + '%' }"></span>
@@ -117,7 +118,7 @@
             </DataTable>
 
             <p class="text-xs text-ink-subtle mt-3">
-                Status = MKT investido desde o lançamento ÷ viabilidade de MKT aprovada. Amarelo: acima de
+                Status = MKT investido desde o lançamento ÷ viabilidade de MKT aprovada (abas institucionais, sem viabilidade, ficam fora da régua). Amarelo: acima de
                 {{ store.meta?.attentionPct ?? 80 }}% do teto · vermelho: acima de {{ store.meta?.overrunPct ?? 100 }}%.
                 Liberado {{ mesAtual }} = planejado para o mês atual. Fonte: planilha PROJEÇÃO × INVESTIMENTO MKT {{ store.exercicio }}.
             </p>
@@ -173,9 +174,10 @@ const kpis = computed(() => {
     const c = store.cons;
     if (!c) return [];
     const obras = `${c.n} obra${c.n === 1 ? '' : 's'}`;
+    const semViab = c.nSemViab ? `, ${c.nSemViab} sem viabilidade` : '';
     const saude = c.nEstouro || c.nAtencao
-        ? ` · ${c.nOk} dentro${c.nAtencao ? `, ${c.nAtencao} em atenção` : ''}${c.nEstouro ? `, ${c.nEstouro} em estouro` : ''}`
-        : ` · todas dentro da viabilidade`;
+        ? ` · ${c.nOk} dentro${c.nAtencao ? `, ${c.nAtencao} em atenção` : ''}${c.nEstouro ? `, ${c.nEstouro} em estouro` : ''}${semViab}`
+        : ` · todas dentro da viabilidade${semViab}`;
     if (periodo.value === 'anterior') {
         const pctViab = c.viabMkt ? (c.mktPrior / c.viabMkt) * 100 : 0;
         return [
@@ -197,7 +199,7 @@ const linhas = computed(() => store.enr.map((e) => {
     return {
         ...e,
         liberadoMes: liberado,
-        pctLiberadoViab: e.viabMkt ? (liberado / e.viabMkt) * 100 : 0,
+        pctLiberadoViab: e.viabMkt ? (liberado / e.viabMkt) * 100 : null,
         pctLabel: e.pct,
         status: statusMeta(e.st).label,
     };
@@ -205,11 +207,11 @@ const linhas = computed(() => store.enr.map((e) => {
 
 const colunas = computed(() => [
     { key: 'nome', label: 'Empreendimento', priority: 1, sortable: true },
-    { key: 'viabMkt', label: 'Viabilidade MKT', priority: 2, numeric: true, sortable: true, format: brl },
+    { key: 'viabMkt', label: 'Viabilidade MKT', priority: 2, numeric: true, sortable: true, format: (v) => (v == null ? '-' : brl(v)) },
     { key: 'desde', label: 'Investido desde lanç.', priority: 1, numeric: true, sortable: true, format: brl, class: 'text-accent font-medium' },
     { key: 'liberadoMes', label: `Liberado ${mesAtual.value}`, priority: 2, numeric: true, sortable: true, format: brl, class: 'text-data-pos' },
-    { key: 'pctLabel', label: '% viab. consumida', priority: 1, numeric: true, sortable: true, sortValue: (r) => r.pct, truncate: false },
-    { key: 'pctLiberadoViab', label: '% liberado/viab.', priority: 3, numeric: true, sortable: true, format: (v) => pct(v) },
+    { key: 'pctLabel', label: '% viab. consumida', priority: 1, numeric: true, sortable: true, sortValue: (r) => (r.pct == null ? -1 : r.pct), truncate: false },
+    { key: 'pctLiberadoViab', label: '% liberado/viab.', priority: 3, numeric: true, sortable: true, format: (v) => (v == null ? '-' : pct(v)), sortValue: (r) => (r.pctLiberadoViab == null ? -1 : r.pctLiberadoViab) },
     { key: 'status', label: 'Status', priority: 2, sortable: true, truncate: false, align: 'center' },
 ]);
 

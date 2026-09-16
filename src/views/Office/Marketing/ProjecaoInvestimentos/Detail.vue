@@ -59,7 +59,7 @@
                                 <span class="metric tabular-nums text-sm w-24 text-right shrink-0" :title="brlCheio(b.val)">{{ brl(b.val) }}</span>
                             </div>
                         </div>
-                        <MetricInline class="mt-4" :items="[
+                        <MetricInline v-if="!semViab" class="mt-4" :items="[
                             { key: 'viab', label: 'Viabilidade MKT', value: brl(e.viabMkt), tooltip: brlCheio(e.viabMkt) },
                             { key: 'saldo', label: saldoViab >= 0 ? 'Saldo da viabilidade' : 'Excedido', value: brl(Math.abs(saldoViab)), tone: saldoViab >= 0 ? 'pos' : 'neg', tooltip: brlCheio(Math.abs(saldoViab)) },
                             { key: 'ano', label: `Investido em ${store.exercicio}`, value: brl(e.mktRealizado), hint: 'meses fechados', tooltip: brlCheio(e.mktRealizado) },
@@ -73,11 +73,16 @@
                     </Panel>
                 </div>
 
-                <!-- Itens do investimento -->
-                <Panel icon="fas fa-receipt" title="Itens do investimento" subtitle="O que compõe o valor, mês a mês" :padded="false">
-                    <DataTable :columns="colunasItens" :rows="itens" row-key="label" density="compact"
-                        empty-icon="fas fa-receipt" empty-title="Nenhum item detalhado"
-                        empty-text="A planilha não detalha itens para este empreendimento no período." />
+                <!-- Itens do investimento: o que já foi pago e o que está planejado -->
+                <Panel icon="fas fa-receipt" title="Itens realizados" subtitle="O que compõe o valor pago, mês a mês" :padded="false" class="mb-5">
+                    <DataTable :columns="itensReal.columns" :rows="itensReal.rows" row-key="label" density="compact"
+                        empty-icon="fas fa-receipt" empty-title="Nenhum item realizado"
+                        empty-text="A planilha não detalha itens pagos para este empreendimento no período." />
+                </Panel>
+                <Panel icon="fas fa-list-check" title="Itens projetados" subtitle="O que está planejado, mês a mês" :padded="false">
+                    <DataTable :columns="itensProj.columns" :rows="itensProj.rows" row-key="label" density="compact"
+                        empty-icon="fas fa-list-check" empty-title="Nenhum item projetado"
+                        empty-text="A planilha não detalha itens planejados para este empreendimento no período." />
                 </Panel>
             </template>
 
@@ -127,9 +132,12 @@ const e = computed(() => store.byTab(tab.value));
 const st = computed(() => statusMeta(e.value?.st));
 const mesAtual = computed(() => store.meses[store.curIdx]);
 
-const subtitulo = computed(() => e.value
-    ? `${fmtInt(e.value.unidades, '0')} unidades · VGV ${brl(e.value.vgv)} · Exercício ${store.exercicio}`
-    : '');
+const semViab = computed(() => !!e.value?.semViabilidade);
+const subtitulo = computed(() => {
+    if (!e.value) return '';
+    if (semViab.value) return `Institucional · sem viabilidade de MKT · Exercício ${store.exercicio}`;
+    return `${fmtInt(e.value.unidades, '0')} unidades · VGV ${brl(e.value.vgv)} · Exercício ${store.exercicio}`;
+});
 
 const mesRealizado = computed(() => e.value?.realMonths?.[store.curIdx] || 0);
 const mesLiberado = computed(() => e.value?.projMonths?.[store.curIdx] || 0);
@@ -138,12 +146,23 @@ const saldoViab = computed(() => (e.value?.viabMkt || 0) - (e.value?.desde || 0)
 const kpis = computed(() => {
     const x = e.value;
     if (!x) return [];
+    const atual = { key: 'atual', label: `Atual (${mesAtual.value})`, raw: mesRealizado.value, format: brl, icon: 'fas fa-calendar-day', tone: 'accent', hint: 'investimento do mês', tooltip: brlCheio(mesRealizado.value) };
+    const liberado = { key: 'liberado', label: 'Liberado', raw: mesLiberado.value, format: brl, icon: 'fas fa-bullseye', tone: 'pos', hint: 'planejado para o mês', tooltip: brlCheio(mesLiberado.value) };
+    // Institucional: só o que existe (realizado e projetado), sem régua.
+    if (semViab.value) {
+        return [
+            { key: 'ano', label: `Investido em ${store.exercicio}`, raw: x.mktRealizado, format: brl, icon: 'fas fa-bullhorn', tone: 'neutral', hint: 'meses fechados', tooltip: brlCheio(x.mktRealizado) },
+            atual,
+            liberado,
+            { key: 'proj', label: `Projetado em ${store.exercicio}`, raw: (x.projMonths || []).reduce((a, b) => a + b, 0), format: brl, icon: 'fas fa-bullseye', tone: 'neutral', hint: 'soma dos meses', tooltip: brlCheio((x.projMonths || []).reduce((a, b) => a + b, 0)) },
+        ];
+    }
     const pctLib = x.viabMkt ? (mesLiberado.value / x.viabMkt) * 100 : 0;
     return [
         { key: 'viab', label: 'Viabilidade MKT', raw: x.viabMkt, format: brl, icon: 'fas fa-scale-balanced', tone: 'accent', hint: 'valor aprovado (1% da viabilidade)', tooltip: brlCheio(x.viabMkt) },
         { key: 'desde', label: 'Desde o lançamento', raw: x.desde, format: brl, icon: 'fas fa-bullhorn', tone: st.value.tone, hint: `${st.value.label} · ${pct(x.pct * 100)} da viabilidade`, tooltip: brlCheio(x.desde) },
-        { key: 'atual', label: `Atual (${mesAtual.value})`, raw: mesRealizado.value, format: brl, icon: 'fas fa-calendar-day', tone: 'accent', hint: 'investimento do mês', tooltip: brlCheio(mesRealizado.value) },
-        { key: 'liberado', label: 'Liberado', raw: mesLiberado.value, format: brl, icon: 'fas fa-bullseye', tone: 'pos', hint: 'planejado para o mês', tooltip: brlCheio(mesLiberado.value) },
+        atual,
+        liberado,
         { key: 'pct', label: '% consumida', raw: x.pct * 100, format: (v) => pct(v), decimals: 1, icon: 'fas fa-chart-pie', tone: st.value.tone, hint: 'da viabilidade total' },
         { key: 'pctLib', label: '% liberado', raw: pctLib, format: (v) => pct(v), decimals: 1, icon: 'fas fa-percent', tone: 'pos', hint: 'da viabilidade total, no mês' },
     ];
@@ -193,23 +212,28 @@ const chartOption = computed(() => {
     };
 });
 
-// Só os meses em que algum item tem valor viram coluna.
-const mesesAtivos = computed(() => {
-    const its = e.value?.items || [];
+// Só os meses em que algum item tem valor viram coluna. A planilha separa os
+// itens REALIZADOS (abaixo de TOTAL REALIZADO) dos PROJETADOS (abaixo de TOTAL
+// PROJETADO); cada lista tem as próprias colunas.
+function tabelaItens(lista) {
+    const its = lista || [];
     const idx = [];
     for (let i = 0; i < 12; i++) if (its.some((it) => (it.months?.[i] || 0) > 0)) idx.push(i);
-    return idx.length ? idx : [store.curIdx];
-});
-const itens = computed(() => (e.value?.items || []).map((it) => {
-    const row = { label: it.label, total: it.total };
-    for (const i of mesesAtivos.value) row[`m${i}`] = it.months?.[i] || 0;
-    return row;
-}));
-const colunasItens = computed(() => [
-    { key: 'label', label: 'Item', priority: 1, sortable: true },
-    ...mesesAtivos.value.map((i) => ({ key: `m${i}`, label: store.meses[i], priority: 2, numeric: true, sortable: true, format: (v) => (v ? brl(v) : '-') })),
-    { key: 'total', label: 'Total', priority: 1, numeric: true, sortable: true, format: brl, class: 'text-accent font-semibold' },
-]);
+    const meses = idx.length ? idx : [store.curIdx];
+    const rows = its.map((it) => {
+        const row = { label: it.label, total: it.total };
+        for (const i of meses) row[`m${i}`] = it.months?.[i] || 0;
+        return row;
+    });
+    const columns = [
+        { key: 'label', label: 'Item', priority: 1, sortable: true },
+        ...meses.map((i) => ({ key: `m${i}`, label: store.meses[i], priority: 2, numeric: true, sortable: true, format: (v) => (v ? brl(v) : '-') })),
+        { key: 'total', label: 'Total', priority: 1, numeric: true, sortable: true, format: brl, class: 'text-accent font-semibold' },
+    ];
+    return { rows, columns };
+}
+const itensReal = computed(() => tabelaItens(e.value?.items));
+const itensProj = computed(() => tabelaItens(e.value?.itemsProj));
 
 const voltar = () => router.push('/marketing/projecao-investimentos');
 

@@ -12,6 +12,9 @@ export const STATUS_META = {
     ok: { label: 'Dentro', variant: 'success', tone: 'pos', dot: 'bg-data-pos', text: 'text-data-pos', bar: 'bg-data-pos-area' },
     atencao: { label: 'Atenção', variant: 'warning', tone: 'warn', dot: 'bg-data-warn', text: 'text-data-warn', bar: 'bg-data-warn-area' },
     estouro: { label: 'Estouro', variant: 'danger', tone: 'neg', dot: 'bg-data-neg', text: 'text-data-neg', bar: 'bg-data-neg-area' },
+    // Aba institucional (Construtora Menin, Menin Engenharia): tem realizado e
+    // projetado, mas não tem viabilidade para medir. Fica fora da régua.
+    sem_viab: { label: 'Sem viabilidade', variant: 'neutral', tone: 'neutral', dot: 'bg-data-neutral-area', text: 'text-ink-muted', bar: 'bg-surface-sunken' },
 };
 export const statusMeta = (st) => STATUS_META[st] || STATUS_META.ok;
 
