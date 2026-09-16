@@ -380,6 +380,10 @@ const normalizedSearch = computed(() => (searchTerm.value || '').toLowerCase());
 const filteredSales = computed(() => {
   let list = props.sales;
 
+  if (!contractsStore.distratosCounted) {
+    list = list.filter((sale) => !contractsStore.saleIsDistrato(sale));
+  }
+
   if (selectedSerie.value) {
     if (selectedSerie.value === 'COMISSAO_FORA') {
       list = list.filter((sale) =>
@@ -870,6 +874,19 @@ const valueModeProxy = computed({
   set: (v) => contractsStore.setValueMode(v),
 });
 
+// Mesmo interruptor da tela principal, ligado ao MESMO estado da store: quem
+// abre o detalhe em "Sem distratos" encontra a lista sem elas, e trocar aqui
+// troca lá também. As vendas chegam por props (sempre com distratos, para o
+// selo ter onde aparecer); o recorte é feito em filteredSales.
+const distratosOptions = [
+  { value: 'on',  label: 'Com distratos' },
+  { value: 'off', label: 'Sem distratos' },
+];
+const distratosProxy = computed({
+  get: () => (contractsStore.distratosCounted ? 'on' : 'off'),
+  set: (v) => contractsStore.setCountDistratos(v === 'on'),
+});
+
 
 /* KPIs no primitivo do sistema. `raw` + `format` (em vez de valor pronto)
  * ligam o count-up: o número conta até o valor, que é o movimento de maior
@@ -1102,6 +1119,12 @@ const closeModal = () => emit('close');
            padrao e com o selo de quantos estao ativos. -->
       <div class="px-4 sm:px-5 pt-4">
         <FilterBar :active-count="filtrosAtivos" :cols="2" auto-apply @clear="limparFiltros">
+          <!-- Fora do painel, como na tela principal: é modo de exibição, muda
+               a lista na hora e não conta como filtro. -->
+          <template #actions>
+            <SegmentedControl v-model="distratosProxy" :options="distratosOptions" size="sm"
+              v-tippy="'Com: venda distratada depois aparece com o selo Distratada. Sem: sai da lista, dos totais e da planilha.'" />
+          </template>
           <Input v-model="searchTerm" label="Busca livre"
             placeholder="Cliente &middot; imobiliaria &middot; repasse &middot; empreendimento &middot; etapa &middot; bloco &middot; unidade &middot; data &middot; valor"
             iconLeft="fas fa-magnifying-glass" />
@@ -1115,6 +1138,7 @@ const closeModal = () => emit('close');
         :filters="{
           'Empreendimento': enterprise?.name || '',
           'Modo de valor': valueModeLabel,
+          'Distratos': distratosProxy === 'on' ? 'Com distratos' : 'Sem distratos',
           'Serie': selectedSerie || 'Todas',
           'Busca': searchTerm || '-',
           'Ordem': `${columns.find((c) => c.key === sortBy)?.label || sortBy} (${sortDir === 'asc' ? 'crescente' : 'decrescente'})`,
