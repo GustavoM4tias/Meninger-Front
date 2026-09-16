@@ -213,7 +213,7 @@ const sections = [
 
 // ── Vínculo CV (mapping da campanha) ───────────────────────────────────────
 const vinculo = ref({
-    bound_empreendimentos: [], midia_slug: '', cv_origem: 'FB',
+    bound_empreendimentos: [], midia_slug: '', cv_origem: '',
     tags_str: '', mapping_active: true,
     default_utm_source: '', default_utm_medium: '', default_utm_campaign: '',
     default_utm_content: '', default_utm_term: '',
@@ -277,7 +277,7 @@ watch(campaign, (c) => {
     vinculo.value = {
         bound_empreendimentos: Array.isArray(c.bound_empreendimentos) ? [...c.bound_empreendimentos] : [],
         midia_slug: c.midia_slug || '',
-        cv_origem: c.cv_origem || 'FB',
+        cv_origem: c.cv_origem || '',
         tags_str: Array.isArray(c.tags) ? c.tags.join(', ') : '',
         mapping_active: c.mapping_active !== false,
         default_utm_source:   c.default_utm_source   || '',
@@ -290,14 +290,19 @@ watch(campaign, (c) => {
     vinculoError.value = null;
 });
 
-const willRoute = computed(() => vinculo.value.mapping_active && !!vinculo.value.midia_slug?.trim());
+// Vínculo efetivo (2026-09-16): o próprio da campanha ou, sem ele, o PADRÃO
+// DA CONTA de anúncio. `effective_binding` vem do backend com a mesma regra
+// da captura, então o que se mostra aqui é o que o lead vai receber.
+const efetivo = computed(() => campaign.value?.effective_binding || null);
+const herdaDaConta = computed(() => efetivo.value?.source === 'conta');
+const contaCobre = computed(() => herdaDaConta.value);
+const temVinculoProprio = computed(() =>
+    vinculo.value.bound_empreendimentos.length > 0 || !!vinculo.value.midia_slug?.trim());
+// Vai rotear se: ativo E (vínculo próprio OU a conta cobre).
+const willRoute = computed(() => vinculo.value.mapping_active && (temVinculoProprio.value || contaCobre.value));
 
 async function saveVinculo() {
     vinculoError.value = null;
-    if (vinculo.value.mapping_active && !vinculo.value.midia_slug.trim()) {
-        vinculoError.value = 'Mídia é obrigatória pra ativar o roteamento. Desative ou preencha.';
-        return;
-    }
     let cvExtra = null;
     if (vinculo.value.cv_extra_json.trim()) {
         try {
@@ -319,7 +324,7 @@ async function saveVinculo() {
         const updated = await store.updateInternal(campaign.value.id, {
             bound_empreendimentos: vinculo.value.bound_empreendimentos,
             midia_slug: vinculo.value.midia_slug.trim() || null,
-            cv_origem: vinculo.value.cv_origem || 'FB',
+            cv_origem: vinculo.value.cv_origem || null,
             tags: tagsArr.length ? tagsArr : null,
             mapping_active: vinculo.value.mapping_active,
             default_utm_source:   vinculo.value.default_utm_source.trim()   || null,
@@ -828,7 +833,7 @@ function onFormEditorSaved() {
             </div>
             <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
               <div class="text-micro uppercase tracking-wider text-ink-subtle">Mídia (CV)</div>
-              <div class="text-xs font-mono text-ink">{{ campaign.midia_slug || '— sem vínculo' }}</div>
+              <div class="text-xs font-mono text-ink">{{ efetivo?.midia_slug || 'sem vínculo' }}<span v-if="herdaDaConta" class="text-ink-subtle font-sans"> (da conta)</span></div>
             </div>
           </div>
 
@@ -845,9 +850,18 @@ function onFormEditorSaved() {
               <i class="fas fa-link text-accent mr-1.5"></i>Vínculo CV desta campanha
             </div>
             <p class="text-xs text-ink-subtle">
-              Quando um lead Meta chega vinculado a esta campanha, o sistema usa esses valores pra rotear pro CV.
-              Substitui o mapping por form (que continua funcionando como fallback).
+              O destino do lead vem da CONTA de anúncio (vínculo padrão, aba Vínculos CV). Preencha aqui só quando
+              esta campanha for exceção: outro empreendimento, outra mídia ou outra origem que a conta.
             </p>
+          </div>
+
+          <!-- Herdado da conta: é o caso normal, e a tela diz o que vale hoje -->
+          <div v-if="herdaDaConta" class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-xs text-ink">
+            <i class="fas fa-building-user text-accent mr-1.5"></i>
+            <b>Herdando o vínculo da conta</b> {{ campaign.account_name }}:
+            empreendimento(s) <span class="font-mono">{{ (efetivo.bound_empreendimentos || []).join(', ') || 'nenhum' }}</span>,
+            mídia "{{ efetivo.midia_slug }}", origem {{ efetivo.cv_origem }}.
+            Nada a fazer, a menos que esta campanha seja de outro produto.
           </div>
 
           <!-- Toggle ativo -->
@@ -857,8 +871,8 @@ function onFormEditorSaved() {
               <span class="text-sm font-medium text-ink">Roteamento automático ativo</span>
             </label>
             <p class="text-micro text-ink-subtle mt-1 ml-6">
-              Ativo + mídia preenchida → lead Meta entra direto como <span class="font-mono">routed</span>.
-              Sem isso, vira <span class="font-mono">held</span> pra roteamento manual.
+              Ativo → lead Meta entra direto como <span class="font-mono">routed</span> com o vínculo próprio ou o da conta.
+              Desativado → vira <span class="font-mono">held</span> pra roteamento manual, mesmo com a conta vinculada.
             </p>
           </div>
 
@@ -866,7 +880,7 @@ function onFormEditorSaved() {
           <div>
             <label class="text-sm font-medium text-ink block mb-1">Empreendimentos vinculados</label>
             <p class="text-xs text-ink-subtle mb-2">
-              Geralmente uma campanha tem 1 empreendimento. Vazio = lead vai genérico.
+              Vazio = herda o empreendimento da conta. Preencha só quando esta campanha for de outro produto.
             </p>
             <EnterpriseMultiSelect v-model="vinculo.bound_empreendimentos" />
           </div>
@@ -874,13 +888,14 @@ function onFormEditorSaved() {
           <!-- Mídia + origem + tags -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="sm:col-span-2">
-              <label class="text-sm font-medium text-ink block mb-1">Mídia <span class="text-data-neg">*</span></label>
-              <input v-model="vinculo.midia_slug" type="text" placeholder="meta-lancamento-wish"
+              <label class="text-sm font-medium text-ink block mb-1">Mídia (CV)</label>
+              <input v-model="vinculo.midia_slug" type="text" :placeholder="efetivo?.midia_slug || 'padrão de Configurações'"
                 class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 font-mono" />
             </div>
             <div>
               <label class="text-sm font-medium text-ink block mb-1">Origem CV</label>
               <select v-model="vinculo.cv_origem" class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                <option value="">Padrão ({{ efetivo?.cv_origem || 'FB' }})</option>
                 <option value="FB">FB (Facebook)</option>
                 <option value="IG">IG (Instagram)</option>
               </select>
@@ -917,7 +932,7 @@ function onFormEditorSaved() {
             :class="willRoute ? 'border-data-pos/30 bg-data-pos/5' : 'border-data-warn/30 bg-data-warn/5'">
             <div class="text-xs font-medium" :class="willRoute ? 'text-data-pos' : 'text-data-warn'">
               <i :class="willRoute ? 'fas fa-bolt' : 'fas fa-hand'" class="mr-1.5"></i>
-              <template v-if="willRoute">Próximo lead desta campanha vira <span class="font-mono">routed</span>.</template>
+              <template v-if="willRoute">Próximo lead desta campanha vira <span class="font-mono">routed</span>{{ !temVinculoProprio && contaCobre ? ' com o vínculo da conta' : '' }}.</template>
               <template v-else>Próximo lead fica em <span class="font-mono">held</span>.</template>
             </div>
           </div>

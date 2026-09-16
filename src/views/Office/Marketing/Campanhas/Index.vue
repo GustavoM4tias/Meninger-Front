@@ -215,7 +215,8 @@ const contasOptions = computed(() => {
 });
 const midiasOptions = computed(() => {
     const set = new Set();
-    for (const c of store.campaigns) if (c.midia_slug) set.add(c.midia_slug);
+    // Mídia EFETIVA (própria ou herdada da conta): é a que vai para o CV.
+    for (const c of store.campaigns) { const m = c.effective_binding?.midia_slug || c.midia_slug; if (m) set.add(m); }
     return [...set].sort();
 });
 const objetivosOptions = computed(() => {
@@ -243,7 +244,7 @@ function statusMatches(row, selectedLabels) {
 function rowMatches(row) {
     const f = filtros.value;
     const camp = row.campaign || row;
-    if (f.midia?.length && !f.midia.includes(camp.midia_slug)) return false;
+    if (f.midia?.length && !f.midia.includes(camp.effective_binding?.midia_slug || camp.midia_slug)) return false;
     if (f.objetivo?.length && !f.objetivo.includes(camp.objective)) return false;
     if (!statusMatches(row, f.status)) return false;
 

@@ -5,11 +5,12 @@
 // Responde: tudo que deveria chegar ao CV está chegando? E onde vaza?
 //   • Funil de entrega (recebidos → entregues / represados / falhas / aguardando)
 //     com taxa de cobertura.
+//   • Vínculo PADRÃO por conta de anúncio (2026-09-16): a conta é de um
+//     empreendimento e toda campanha dela herda o destino. É aqui que se
+//     vincula; a campanha só recebe vínculo próprio quando é exceção.
 //   • Campanhas SEM vínculo represando leads → clique vincula (CampaignDetailModal).
-//   • Campanhas ativas sem vínculo (preventivo).
+//   • Campanhas ativas sem vínculo (preventivo) = nem próprio nem herdado.
 //   • Backlog pronto pra disparar ao CV.
-//
-// Read-only + atalho pra ação. A vinculação em si acontece no modal de campanha.
 
 import { onMounted, ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
@@ -19,6 +20,7 @@ import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import CampaignDetailModal from '../Campanhas/components/CampaignDetailModal.vue';
+import AccountBindingModal from './components/AccountBindingModal.vue';
 
 const store = useCampaignsStore();
 const toast = useToast();
@@ -34,6 +36,33 @@ async function reload() {
     await store.fetchBindingOverview();
 }
 onMounted(reload);
+
+// ── Vínculo padrão por conta de anúncio ─────────────────────────────────────
+const accountOpen = ref(false);
+const accountSel = ref(null);
+function openAccount(a) {
+    accountSel.value = a;
+    accountOpen.value = true;
+}
+const accounts = computed(() => ov.value?.accounts || []);
+const bindingDefaults = computed(() => ov.value?.binding_defaults || null);
+// Primeiro quem tem campanha de lead ativa sem nada que a resolva; depois quem
+// tem campanha ativa; contas paradas por último.
+const accountsOrdenadas = computed(() => [...accounts.value].sort((a, b) =>
+    (b.lead_campaigns_unbound - a.lead_campaigns_unbound)
+    || (b.lead_campaigns_active - a.lead_campaigns_active)
+    || (b.leads_30d - a.leads_30d)));
+const contasSemVinculo = computed(() => accounts.value.filter(a => a.lead_campaigns_unbound > 0).length);
+function empresasDaConta(a) {
+    return (a.empreendimentos || []).map(e => e.nome).join(', ');
+}
+function filasDaConta(a) {
+    const emps = a.empreendimentos || [];
+    if (!emps.length) return '';
+    const semFila = emps.filter(e => !e.idfila).length;
+    if (!semFila) return emps.map(e => e.fila_nome).filter(Boolean).join(', ');
+    return semFila === emps.length ? 'sem fila' : `${semFila} sem fila`;
+}
 
 // ── Enviar represados recuperáveis ao CV ────────────────────────────────────
 // Dois recortes: TUDO (botão do topo da seção) ou UMA campanha/formulário
@@ -186,7 +215,7 @@ const fmtInt = (v) => fmt.fmtInt(v, '0');
 function motivoBloqueio(c) {
     if (c.not_synced) return 'campanha não sincronizada';
     if (c.mapping_active === false) return 'vínculo desativado';
-    return 'sem mídia definida';
+    return 'sem vínculo (nem próprio, nem da conta)';
 }
 
 // Bloqueadas = ainda seguram lead que NENHUM vínculo resolve hoje (nem o da
@@ -208,7 +237,7 @@ const healthTone = computed(() => {
     if (fallbackInUse.value.length > 0) return 'warn';
     // Vínculo resolvido mas lead ainda parado: não é "tudo certo" — falta enviar.
     if (s.leads_recoverable > 0) return 'warn';
-    if (s.active_unbound_campaigns > 0) return 'warn';
+    if (s.active_unbound_campaigns > 0 || s.unbound_accounts > 0) return 'warn';
     if (funnel.value.coverage_pct != null && funnel.value.coverage_pct < 90) return 'warn';
     return 'ok';
 });
@@ -242,10 +271,19 @@ const healthCopy = computed(() => {
                 desc: 'O vínculo já resolve esses leads, mas eles ficaram presos de antes. Envie-os ao CV abaixo.',
             };
         }
+        if (s.unbound_accounts > 0) {
+            return {
+                title: `${s.unbound_accounts} conta(s) de anúncio com campanha de lead sem vínculo`,
+                desc: 'Vincule a conta ao empreendimento dela (uma vez) e toda campanha da conta, inclusive as futuras, passa a rotear. '
+                    + (formCobre.value
+                        ? 'Até lá os próximos leads sairão pelo vínculo do FORMULÁRIO e o destino pode ir errado.'
+                        : 'Até lá os próximos leads ficarão represados.'),
+            };
+        }
         return {
             title: 'Atenção preventiva',
             desc: s.active_unbound_campaigns > 0
-                ? `${s.active_unbound_campaigns} campanha(s) ativa(s) sem vínculo — ` + (formCobre.value
+                ? `${s.active_unbound_campaigns} campanha(s) ativa(s) sem vínculo - ` + (formCobre.value
                     ? 'os próximos leads sairão pelo vínculo do FORMULÁRIO e o destino pode ir errado.'
                     : 'os próximos leads ficarão represados até vincular.')
                 : 'Cobertura de entrega abaixo de 90% no período.',
@@ -253,7 +291,7 @@ const healthCopy = computed(() => {
     }
     return {
         title: 'Tudo vinculado',
-        desc: 'Nenhuma campanha sem vínculo represando leads. Os leads captados estão chegando ao CV.',
+        desc: 'Nenhuma campanha sem vínculo represando leads. Os leads captados estão chegando ao CV. Campanha nova herda o vínculo da conta.',
     };
 });
 
@@ -343,6 +381,123 @@ function statusBadge(s) {
             </template>
           </span>
         </div>
+
+        <!-- ══ Vínculo padrão por conta de anúncio ══════════════════════════ -->
+        <section class="mb-5">
+          <div class="flex items-center gap-2 mb-2 flex-wrap">
+            <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
+              <i class="fas fa-building-user text-accent"></i>
+              Vínculo padrão por conta de anúncio
+            </h2>
+            <span v-if="contasSemVinculo"
+              class="inline-flex rounded-full bg-data-warn/10 text-data-warn text-micro font-semibold px-2 py-0.5">
+              {{ contasSemVinculo }} sem vínculo
+            </span>
+            <span class="text-micro text-ink-subtle">a conta decide o destino; campanha nova herda, e só precisa de vínculo próprio quando é exceção</span>
+          </div>
+
+          <Surface variant="raised" padding="none" class="overflow-hidden">
+            <div v-if="!accountsOrdenadas.length" class="px-4 py-8 text-center text-ink-subtle text-sm">
+              Nenhuma conta de anúncio sincronizada ainda. Sincronize as campanhas na aba Campanhas.
+            </div>
+
+            <!-- Celular: cartão por conta -->
+            <ul v-else class="md:hidden divide-y divide-line/60">
+              <li v-for="a in accountsOrdenadas" :key="`ma-${a.account_id}`" class="p-3 flex flex-col gap-2">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="text-ink font-medium leading-tight break-words">{{ a.account_name || a.account_id }}</div>
+                    <div class="text-micro font-mono text-ink-subtle mt-0.5">{{ a.account_id }}</div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="text-lg font-semibold tabular-nums leading-none"
+                      :class="a.lead_campaigns_unbound ? 'text-data-warn' : 'text-ink'">{{ fmtInt(a.lead_campaigns_active) }}</div>
+                    <div class="metric-label">de lead ativas</div>
+                  </div>
+                </div>
+                <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                  <div class="col-span-2 min-w-0">
+                    <dt class="metric-label">Destino padrão</dt>
+                    <dd class="text-xs" :class="a.is_bound ? 'text-ink' : 'text-data-warn'">
+                      {{ a.is_bound ? empresasDaConta(a) : (a.mapping_active ? 'sem vínculo' : 'desativado') }}
+                      <span v-if="a.is_bound && filasDaConta(a)" class="text-ink-subtle"> · fila: {{ filasDaConta(a) }}</span>
+                    </dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="metric-label">Mídia</dt>
+                    <dd class="text-xs text-ink-muted">{{ a.midia_slug || `padrão (${bindingDefaults?.midia_slug || 'Facebook Ads'})` }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="metric-label">Leads 30d</dt>
+                    <dd class="text-xs text-ink-muted tabular-nums">{{ fmtInt(a.leads_30d) }}</dd>
+                  </div>
+                  <div v-if="a.lead_campaigns_unbound || a.campaigns_own_binding" class="col-span-2 text-micro text-ink-subtle">
+                    <span v-if="a.lead_campaigns_unbound" class="text-data-warn">{{ a.lead_campaigns_unbound }} campanha(s) de lead sem vínculo</span>
+                    <span v-if="a.lead_campaigns_unbound && a.campaigns_own_binding"> · </span>
+                    <span v-if="a.campaigns_own_binding">{{ a.campaigns_own_binding }} com vínculo próprio</span>
+                  </div>
+                </dl>
+                <button @click="openAccount(a)"
+                  class="h-10 w-full rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
+                  :class="a.is_bound ? 'border border-line text-ink-muted' : 'bg-accent text-white'">
+                  <i class="fas fa-link text-[10px]"></i>{{ a.is_bound ? 'Editar vínculo da conta' : 'Vincular conta' }}
+                </button>
+              </li>
+            </ul>
+
+            <!-- Desktop: tabela -->
+            <div class="hidden md:block overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="bg-surface-sunken/40 text-micro uppercase tracking-wider text-ink-subtle">
+                  <tr>
+                    <th class="px-3 py-2 text-left font-medium">Conta</th>
+                    <th class="px-3 py-2 text-left font-medium">Destino padrão</th>
+                    <th class="px-3 py-2 text-left font-medium">Mídia</th>
+                    <th class="px-3 py-2 text-right font-medium">Campanhas de lead ativas</th>
+                    <th class="px-3 py-2 text-right font-medium">Leads 30d</th>
+                    <th class="px-3 py-2 w-28"></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-line/60">
+                  <tr v-for="a in accountsOrdenadas" :key="a.account_id" class="hover:bg-surface-hover/40 transition-colors">
+                    <td class="px-3 py-2.5">
+                      <div class="text-ink font-medium leading-tight truncate max-w-[260px]" :title="a.account_name">{{ a.account_name || a.account_id }}</div>
+                      <div class="text-micro font-mono text-ink-subtle">{{ a.account_id }}</div>
+                    </td>
+                    <td class="px-3 py-2.5 text-xs">
+                      <template v-if="a.is_bound">
+                        <div class="text-ink">{{ empresasDaConta(a) }}</div>
+                        <div class="text-micro text-ink-subtle">fila: {{ filasDaConta(a) || 'sem fila' }}</div>
+                      </template>
+                      <span v-else class="text-data-warn">{{ a.mapping_active ? 'sem vínculo' : 'desativado' }}</span>
+                    </td>
+                    <td class="px-3 py-2.5 text-xs text-ink-muted">
+                      {{ a.midia_slug || `padrão (${bindingDefaults?.midia_slug || 'Facebook Ads'})` }}
+                    </td>
+                    <td class="px-3 py-2.5 text-right tabular-nums">
+                      <span :class="a.lead_campaigns_unbound ? 'text-data-warn font-semibold' : 'text-ink'">{{ fmtInt(a.lead_campaigns_active) }}</span>
+                      <div class="text-micro text-ink-subtle">
+                        <span v-if="a.lead_campaigns_unbound" class="text-data-warn">{{ a.lead_campaigns_unbound }} sem vínculo</span>
+                        <span v-if="a.lead_campaigns_unbound && a.campaigns_own_binding"> · </span>
+                        <span v-if="a.campaigns_own_binding">{{ a.campaigns_own_binding }} próprio(s)</span>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5 text-right tabular-nums text-ink-muted">{{ fmtInt(a.leads_30d) }}</td>
+                    <td class="px-3 py-2.5 text-right">
+                      <button @click="openAccount(a)"
+                        class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-micro font-medium transition-colors"
+                        :class="a.is_bound
+                          ? 'border-line text-ink-muted hover:text-accent hover:border-accent/40'
+                          : 'border-accent/40 bg-accent/10 text-accent hover:bg-accent/20'">
+                        <i class="fas fa-link text-[9px]"></i>{{ a.is_bound ? 'Editar' : 'Vincular' }}
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Surface>
+        </section>
 
         <!-- ══ Campanhas sem vínculo represando leads (ação) ════════════════ -->
         <section class="mb-5">
@@ -680,7 +835,7 @@ function statusBadge(s) {
                     <div class="text-micro font-mono text-ink-subtle">{{ c.account_name || '—' }}</div>
                   </td>
                   <td class="px-3 py-2.5 text-xs text-ink-muted">
-                    {{ c.reason === 'sem_midia' ? 'sem mídia definida' : 'vínculo desativado' }}
+                    {{ c.reason === 'mapping_desativado' ? 'vínculo desativado' : 'sem vínculo próprio e a conta não tem padrão' }}
                   </td>
                   <td class="px-3 py-2.5 text-right w-28">
                     <button @click="openCampaign(c.campaign_id)"
@@ -748,6 +903,8 @@ function statusBadge(s) {
 
       <!-- Modal de campanha (vincular) -->
       <CampaignDetailModal v-model:open="detailOpen" :campaign-id="detailId" @saved="reload" />
+      <!-- Modal da conta de anúncio (vínculo padrão) -->
+      <AccountBindingModal v-model:open="accountOpen" :account="accountSel" :defaults="bindingDefaults" @saved="reload" />
   </div>
 
   <ConfirmDialog :open="pedindoReenvio" tone="accent"

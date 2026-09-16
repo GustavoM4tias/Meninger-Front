@@ -43,7 +43,8 @@ const VALID_TABS = TABS.map(t => t.value);
 // Pendências de vínculo viram badge na própria aba: sem isso o problema só
 // aparecia pra quem ENTRAVA na aba Vínculos (incidente Esmeralda×Três Marias
 // rodou semanas invisível). Conta leads parados; sem lead parado, conta
-// campanhas ativas sem vínculo + campanhas entregando pelo form.
+// contas de anúncio sem vínculo padrão + campanhas ativas sem vínculo +
+// campanhas entregando pelo form.
 const campaignsStore = useCampaignsStore();
 onMounted(() => { campaignsStore.fetchBindingOverview().catch(() => {}); });
 const vinculosPending = computed(() => {
@@ -51,8 +52,8 @@ const vinculosPending = computed(() => {
     if (!s) return undefined;
     const leads = (s.leads_at_risk || 0) + (s.leads_recoverable || 0);
     if (leads > 0) return leads;
-    const campanhas = (s.active_unbound_campaigns || 0) + (s.fallback_campaigns || 0);
-    return campanhas > 0 ? campanhas : undefined;
+    const pendencias = (s.unbound_accounts || 0) + (s.active_unbound_campaigns || 0) + (s.fallback_campaigns || 0);
+    return pendencias > 0 ? pendencias : undefined;
 });
 const tabOptions = computed(() => TABS.map(t =>
     t.value === 'vinculos' && vinculosPending.value !== undefined
@@ -83,7 +84,7 @@ const currentPanel = computed(() => PANELS[tab.value] || CaptacaoPanel);
 const SUBTITLES = {
     captacao:    'Inbox dos leads inbound (Meta Lead Ads e formulários do site) até o despacho ao CV CRM.',
     campanhas:   'Desempenho por período: investimento, leads, CAC e artes. Drill campanha → conjunto → anúncio.',
-    vinculos:    'Garanta que todo lead captado chega ao CRM. Campanhas sem vínculo represam leads.',
+    vinculos:    'Garanta que todo lead captado chega ao CRM. Vincule a conta de anúncio ao empreendimento: toda campanha dela herda.',
     formularios: 'Formulários internos hospedados (LPs em lp.menin.com.br + embeds em site externo).',
     credenciais: 'Tudo pra conectar a Meta: App, token de campanhas e tokens do Lead Ads. WhatsApp usa o mesmo App.',
     config:      'Regras do pipeline de captação: modo sombra, tentativas de envio, alertas e endpoint do CV.',
@@ -105,8 +106,8 @@ const subtitle = computed(() => SUBTITLES[tab.value] || '');
             :steps="[
               { title: 'Captação', text: 'A inbox dos leads recebidos (anúncios Meta e formulários do site). Acompanhe o status de cada lead até chegar ao CV.' },
               { title: 'Campanhas', text: 'Desempenho das campanhas Meta por período: investimento, leads e custo por lead. Clique numa campanha para detalhar.' },
-              { title: 'Vínculos CV', text: 'Mostra se todo lead está chegando ao CRM. Campanha sem vínculo represa leads - clique em Vincular para resolver.' },
-              { title: 'Campanha nova? Vincule antes de ativar', text: 'O destino do lead (empreendimento no CV) vem do vínculo da CAMPANHA. Toda campanha nova nasce sem vínculo: vincule-a na aba Campanhas assim que ela aparecer, antes dos primeiros leads. Sem isso o lead fica represado na aba Vínculos CV até alguém vincular.' },
+              { title: 'Vínculos CV', text: 'Mostra se todo lead está chegando ao CRM. O vínculo é feito por CONTA de anúncio: escolha o empreendimento da conta (e a fila do CV dele) uma vez, e toda campanha da conta, inclusive as futuras, herda esse destino. Campanha sem vínculo represa leads - a tela aponta a conta a vincular.' },
+              { title: 'Campanha nova? Só confira a conta', text: 'A regra decide assim: vínculo próprio da campanha, se ela tiver; senão o padrão da conta de anúncio; senão o lead fica represado. Mídia e origem saem do padrão de Configurações quando a conta/campanha não dizem. Campanha de OUTRO produto rodando numa conta é a exceção: dê vínculo próprio a ela no modal da campanha.' },
               { title: 'Vinculou errado e os leads já foram?', text: 'Corrija o vínculo da campanha e volte na aba Vínculos CV: a seção Entregues com destino diferente mostra quantos leads foram com o destino antigo e o botão Reenviar aplica o destino certo no CV (upsert - nada duplica; o interesse antigo continua lá e só o painel do CV remove). Leads represados (held) se enviam na seção Represados recuperáveis, no total ou por campanha.' },
               { title: 'Por que o formulário não decide mais o destino', text: 'Em ago/2026, uma campanha nova do Esmeralda (Avaré) sem vínculo caiu na reserva do formulário, que apontava para Três Marias (Ibitinga) - leads de Avaré entraram no CV como Ibitinga. Desde então o formulário só decide quando o lead não tem campanha identificada (ajustável em Configurações, no cartão Formulário cobre campanha sem vínculo).' },
               { title: 'Formulários', text: 'Crie formulários de captação com página própria (LP) para eventos, outdoors e campanhas.' },

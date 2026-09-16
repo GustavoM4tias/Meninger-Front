@@ -494,6 +494,48 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         });
     }
 
+    // ── Vínculo padrão por conta de anúncio (2026-09-16) ────────────────────
+    // A conta carrega o destino; toda campanha dela herda. O overview já traz
+    // a lista (`accounts`); estes dois só existem para editar e recarregar.
+    const savingAccount = ref(false);
+
+    async function fetchAccounts() {
+        const d = await apiFetch('/cv-binding/accounts');
+        if (bindingOverview.value) {
+            bindingOverview.value = { ...bindingOverview.value, accounts: d.accounts, binding_defaults: d.defaults };
+        }
+        return d;
+    }
+
+    async function setAccountBinding(accountId, patch) {
+        savingAccount.value = true;
+        error.value = null;
+        try {
+            const d = await apiFetch(`/cv-binding/accounts/${encodeURIComponent(accountId)}`, {
+                method: 'PUT',
+                body: JSON.stringify(patch),
+            });
+            return d.binding;
+        } catch (e) {
+            error.value = e.message;
+            return null;
+        } finally {
+            savingAccount.value = false;
+        }
+    }
+
+    // Filas do CV (espelho) para o modal da conta escolher a fila de cada
+    // empreendimento no mesmo lugar em que decide o destino.
+    async function fetchQueues() {
+        return apiFetch('/lead-queues');
+    }
+    async function bindQueue(idempreendimento, idfila) {
+        return apiFetch(`/lead-queues/binding/${encodeURIComponent(idempreendimento)}`, {
+            method: 'PUT',
+            body: JSON.stringify({ idfila: idfila ?? null }),
+        });
+    }
+
     return {
         campaigns, loading, syncing, saving, error, lastSync,
         importing, lastImport, dispatching, lastDispatch,
@@ -506,5 +548,6 @@ export const useCampaignsStore = defineStore('marketingCampaigns', () => {
         report, loadingReport, coverage,
         fetchReport, fetchCoverage, backfillDaily,
         bindingOverview, loadingBinding, fetchBindingOverview, dispatchRecoverable, redispatchDelivered, previewRecoverableForCampaign,
+        fetchAccounts, setAccountBinding, savingAccount, fetchQueues, bindQueue,
     };
 });

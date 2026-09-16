@@ -29,6 +29,8 @@ const draft = ref({
     lead_return_ordem_blindada: 4,
     alert_recipient_user_ids: [],
     meta_form_fallback_scope: 'no_campaign',
+    meta_default_midia_slug: 'Facebook Ads',
+    meta_default_cv_origem: 'FB',
 });
 
 // Situações de lead do CV, para a régua ser escolhida por etapa e não por um
@@ -45,6 +47,8 @@ function resetDraft() {
         lead_return_ordem_blindada: c.lead_return_ordem_blindada ?? 4,
         alert_recipient_user_ids: Array.isArray(c.alert_recipient_user_ids) ? [...c.alert_recipient_user_ids] : [],
         meta_form_fallback_scope: c.meta_form_fallback_scope === 'always' ? 'always' : 'no_campaign',
+        meta_default_midia_slug: c.meta_default_midia_slug || 'Facebook Ads',
+        meta_default_cv_origem: c.meta_default_cv_origem === 'IG' ? 'IG' : 'FB',
     };
 }
 
@@ -97,6 +101,8 @@ async function save() {
         lead_return_ordem_blindada: Number(draft.value.lead_return_ordem_blindada) ?? 4,
         alert_recipient_user_ids: draft.value.alert_recipient_user_ids,
         meta_form_fallback_scope: draft.value.meta_form_fallback_scope,
+        meta_default_midia_slug: String(draft.value.meta_default_midia_slug || '').trim() || 'Facebook Ads',
+        meta_default_cv_origem: draft.value.meta_default_cv_origem === 'IG' ? 'IG' : 'FB',
     };
     const ok = await store.updateConfig(patch);
     if (ok) {
@@ -190,6 +196,30 @@ async function save() {
                 Ordem {{ draft.lead_return_ordem_blindada }} (não consegui ler as etapas do CV)
               </option>
             </select>
+          </div>
+        </Surface>
+
+        <Surface variant="raised" padding="md">
+          <h3 class="text-sm font-semibold text-ink mb-1">Mídia e origem padrão do vínculo</h3>
+          <p class="text-xs text-ink-muted mb-3">
+            O vínculo (da conta de anúncio ou da campanha) só precisa dizer o <strong>empreendimento</strong>.
+            Quando não diz mídia e origem, o lead sai para o CV com estes valores. Mudar aqui vale para o
+            próximo lead de toda conta e campanha que não tenha mídia/origem própria.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="sm:col-span-2">
+              <label class="text-xs font-medium text-ink block mb-1">Mídia (campo <span class="font-mono">midia</span> do CV)</label>
+              <input v-model="draft.meta_default_midia_slug" type="text" maxlength="60" placeholder="Facebook Ads"
+                class="w-full min-h-[40px] rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-ink block mb-1">Origem (CV)</label>
+              <select v-model="draft.meta_default_cv_origem"
+                class="w-full min-h-[40px] rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
+                <option value="FB">FB (Facebook)</option>
+                <option value="IG">IG (Instagram)</option>
+              </select>
+            </div>
           </div>
         </Surface>
 
