@@ -91,7 +91,9 @@ async function retomarUltimaConversa() {
   } catch { /* sem histórico: abre em branco, como antes */ }
   finally {
     retomando.value = false;
-    if (emVoo) aiStore.retomarPerguntaInterrompida();
+    // Sempre, com ou sem marca: conversa retomada que termina numa pergunta
+    // sem resposta ganha o aviso e o botão de perguntar de novo.
+    aiStore.retomarPerguntaInterrompida();
   }
 }
 

@@ -156,16 +156,24 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
    */
   function retomarPerguntaInterrompida() {
     const p = perguntaEmVoo()
-    if (!p) return false
     limparEmVoo()
     if (isStreaming.value) return false
 
     let idx = -1
-    for (let i = messages.value.length - 1; i >= 0; i--) {
-      if (messages.value[i].role === 'user' && messages.value[i].content === p.text) { idx = i; break }
+    if (p) {
+      for (let i = messages.value.length - 1; i >= 0; i--) {
+        if (messages.value[i].role === 'user' && messages.value[i].content === p.text) { idx = i; break }
+      }
+      const respondida = idx >= 0 && messages.value.slice(idx + 1).some(m => m.role === 'assistant')
+      if (respondida) return false
+    } else {
+      // Sem marca (a pergunta saiu de uma versão anterior do Office, ou a
+      // aba foi restaurada): a conversa gravada terminando numa pergunta sem
+      // resposta é o mesmo caso, e merece a mesma saída.
+      const ultima = messages.value[messages.value.length - 1]
+      if (!ultima || ultima.role !== 'user') return false
+      idx = messages.value.length - 1
     }
-    const respondida = idx >= 0 && messages.value.slice(idx + 1).some(m => m.role === 'assistant')
-    if (respondida) return false
 
     if (idx < 0) {
       messages.value.push({
