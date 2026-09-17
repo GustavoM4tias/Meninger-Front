@@ -1,25 +1,24 @@
 <script setup>
-// Tabela dos formulários internos (LPs): KPIs, filtros, paginação e toggle
-// ativo inline, tudo num card único seguindo o padrão do SalesTable.
+// Formulários internos (LPs) no padrão de tela do Office: resumo em StatRow,
+// filtros no FilterBar (fechado por padrão, filtra ao digitar), lista em
+// DataTable dentro de um Panel (ordena pelo cabeçalho, vira cartão no celular).
 
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';
-import Surface from '@/components/UI/Surface.vue';
-import Button from '@/components/UI/Button.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import Panel from '@/components/UI/Panel.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
 import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+import Switch from '@/components/UI/Switch.vue';
+import Badge from '@/components/UI/Badge.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 
 const LP_HOST = 'https://lp.menin.com.br';
-
-// Mesma cara dos fields do design system (fieldBase), na altura sm.
-const ctlClass = [
-  'h-8 rounded-md border border-line bg-surface-raised text-xs text-ink',
-  'shadow-inner-soft outline-none transition-all duration-150',
-  'focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20',
-].join(' ');
 
 const emit = defineEmits(['edit']);
 
@@ -30,43 +29,41 @@ const toast = useToast();
 // store (store.periodo, default mês atual - sem picker na tela). O filtro de
 // datas abaixo é OUTRA coisa: filtra quais FORMULÁRIOS aparecem (pela data de
 // início/criação) - por isso começa vazio (mostra todos).
+const ALL = '__all__';   // o Select esconde "" como placeholder, então "todos" é um sentinela
 const search = ref('');
 const filterActive   = ref('ALL');  // ALL | ACTIVE | INACTIVE
-const filterPriority = ref('ALL');  // ALL | high | normal | low
-const filterOrigem   = ref('ALL');  // ALL | SI | FB | IG | GO | MP | OU
+const filterPriority = ref(ALL);    // ALL | high | normal | low
+const filterOrigem   = ref(ALL);    // ALL | SI | FB | IG | GO | MP | OU
 const filterDateFrom = ref('');     // start_date (ou created_at se sem start_date)
 const filterDateTo   = ref('');
 const hideEnded      = ref(false);  // esconde forms com end_date no passado
-const sortBy         = ref('created'); // created | last_lead | total | name
 
 const ORIGEM_LABELS = { SI: 'WebSite', FB: 'Facebook', IG: 'Instagram', GO: 'Google', MP: 'Mídia Paga', OU: 'Outros' };
+const priorityOptions = [
+    { value: ALL, label: 'Todas prioridades' },
+    { value: 'high', label: 'Alta' }, { value: 'normal', label: 'Normal' }, { value: 'low', label: 'Baixa' },
+];
+const origemOptions = [
+    { value: ALL, label: 'Todas origens CV' },
+    ...Object.entries(ORIGEM_LABELS).map(([value, label]) => ({ value, label })),
+];
 
 function openEdit(f) { emit('edit', f); }
 
-async function quickToggle(e, f) {
-    e.stopPropagation();   // não abre o modal
-    await store.toggleActive(f.id);
-}
+async function quickToggle(f) { await store.toggleActive(f.id); }
 
 function lpUrl(f) { return `${LP_HOST}/${f.slug}`; }
 
-async function copyLpUrl(e, f) {
-    e.stopPropagation();
+async function copyLpUrl(f) {
     try { await navigator.clipboard.writeText(lpUrl(f)); toast.success('URL da LP copiada.'); }
     catch { toast.error('Não consegui copiar.'); }
 }
 
-function fmtDate(iso) {
-    if (!iso) return null;
-    try { return new Date(iso); } catch { return null; }
-}
 function inRange(iso) {
-    const dt = fmtDate(iso);
-    if (!dt) return false;
-    if (filterDateFrom.value) {
-        const from = new Date(filterDateFrom.value);
-        if (dt < from) return false;
-    }
+    if (!iso) return false;
+    const dt = new Date(iso);
+    if (Number.isNaN(dt.getTime())) return false;
+    if (filterDateFrom.value && dt < new Date(filterDateFrom.value)) return false;
     if (filterDateTo.value) {
         const to = new Date(filterDateTo.value);
         to.setHours(23, 59, 59, 999);
@@ -94,19 +91,13 @@ const statusOptions = computed(() => {
 
 const filtered = computed(() => {
     const q = search.value.trim().toLowerCase();
-    let arr = store.forms.filter(f => {
+    return store.forms.filter(f => {
         if (filterActive.value === 'ACTIVE'   && !f.active) return false;
         if (filterActive.value === 'INACTIVE' &&  f.active) return false;
-
-        if (filterPriority.value !== 'ALL' && f.priority !== filterPriority.value) return false;
-        if (filterOrigem.value !== 'ALL' && f.cv_origem !== filterOrigem.value) return false;
+        if (filterPriority.value !== ALL && f.priority !== filterPriority.value) return false;
+        if (filterOrigem.value !== ALL && f.cv_origem !== filterOrigem.value) return false;
         if (hideEnded.value && endedAlready(f)) return false;
-
-        if (filterDateFrom.value || filterDateTo.value) {
-            const ref = f.start_date || f.created_at;
-            if (!inRange(ref)) return false;
-        }
-
+        if ((filterDateFrom.value || filterDateTo.value) && !inRange(f.start_date || f.created_at)) return false;
         if (q) {
             const txt = [f.name, f.slug, f.midia_slug, f.campaign_ref, f.description,
                 Array.isArray(f.tags) ? f.tags.join(' ') : '']
@@ -115,63 +106,17 @@ const filtered = computed(() => {
         }
         return true;
     });
-
-    arr = [...arr];
-    if (sortBy.value === 'last_lead') {
-        arr.sort((a, b) => {
-            const ta = a.stats?.last_lead_at ? new Date(a.stats.last_lead_at).getTime() : 0;
-            const tb = b.stats?.last_lead_at ? new Date(b.stats.last_lead_at).getTime() : 0;
-            return tb - ta;
-        });
-    } else if (sortBy.value === 'total') {
-        arr.sort((a, b) => (b.stats?.total || 0) - (a.stats?.total || 0));
-    } else if (sortBy.value === 'name') {
-        arr.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
-    } else {
-        // created - mais recentes primeiro (default)
-        arr.sort((a, b) => {
-            const da = a.created_at ? new Date(a.created_at).getTime() : 0;
-            const db = b.created_at ? new Date(b.created_at).getTime() : 0;
-            return db - da;
-        });
-    }
-    return arr;
 });
 
-// ── Paginação ───────────────────────────────────────────────────────────────
-const currentPage = ref(1);
-const itemsPerPage = 25;
-
-const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / itemsPerPage)));
-const startItem  = computed(() => (currentPage.value - 1) * itemsPerPage + 1);
-const endItem    = computed(() => Math.min(currentPage.value * itemsPerPage, filtered.value.length));
-const paginated  = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage;
-    return filtered.value.slice(start, start + itemsPerPage);
-});
-const visiblePages = computed(() => {
-    const pages = [];
-    const maxVisible = 5;
-    let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
-    const end = Math.min(totalPages.value, start + maxVisible - 1);
-    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
-    for (let i = start; i <= end; i++) pages.push(i);
-    return pages;
-});
-
-watch([search, filterActive, filterPriority, filterOrigem, filterDateFrom, filterDateTo, hideEnded, sortBy],
-    () => { currentPage.value = 1; });
-
-const hasFilters = computed(() =>
-    !!search.value.trim() || filterActive.value !== 'ALL' || filterPriority.value !== 'ALL'
-    || filterOrigem.value !== 'ALL' || hideEnded.value
-    || !!filterDateFrom.value || !!filterDateTo.value);
+// Selo "N ativos" da barra (o status no SegmentedControl fica fora da conta).
+const activeFiltersCount = computed(() =>
+    [search.value.trim(), filterPriority.value !== ALL, filterOrigem.value !== ALL,
+        filterDateFrom.value, filterDateTo.value, hideEnded.value].filter(Boolean).length);
 
 function clearFilters() {
     search.value = '';
-    filterActive.value = 'ALL';
-    filterPriority.value = 'ALL';
-    filterOrigem.value = 'ALL';
+    filterPriority.value = ALL;
+    filterOrigem.value = ALL;
     filterDateFrom.value = '';
     filterDateTo.value = '';
     hideEnded.value = false;
@@ -189,9 +134,21 @@ const summary = computed(() => {
     return acc;
 });
 
+const intFmt = new Intl.NumberFormat('pt-BR');
+const kpiCards = computed(() => {
+    const s = summary.value;
+    return [
+        { key: 'forms',     label: 'Forms exibidos',   raw: filtered.value.length, format: v => intFmt.format(v), icon: 'fas fa-square-poll-vertical', tone: 'accent', hint: `${s.actives} ativo(s)` },
+        { key: 'total',     label: 'Leads no período', raw: s.total,     format: v => intFmt.format(v), icon: 'fas fa-users',              tone: 'neutral' },
+        { key: 'delivered', label: 'Entregues ao CV',  raw: s.delivered, format: v => intFmt.format(v), icon: 'fas fa-circle-check',       tone: 'pos' },
+        { key: 'held',      label: 'Represados',       raw: s.held,      format: v => intFmt.format(v), icon: 'fas fa-hourglass-half',     tone: s.held ? 'warn' : 'neutral' },
+        { key: 'failed',    label: 'Com erro',         raw: s.failed,    format: v => intFmt.format(v), icon: 'fas fa-circle-exclamation', tone: s.failed ? 'neg' : 'neutral', hint: s.failed ? 'falha/recusa no CV' : '' },
+    ];
+});
+
 function priorityDot(p) {
-    if (p === 'high')   return { cls: 'bg-data-neg',     title: 'Prioridade alta' };
-    if (p === 'low')    return { cls: 'bg-ink-subtle',   title: 'Prioridade baixa' };
+    if (p === 'high')   return { cls: 'bg-data-neg',   title: 'Prioridade alta' };
+    if (p === 'low')    return { cls: 'bg-ink-subtle', title: 'Prioridade baixa' };
     return { cls: 'bg-data-pos', title: 'Prioridade normal' };
 }
 
@@ -210,391 +167,134 @@ function fmtRelative(iso) {
     return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
-function deliveryRate(stats) {
-    if (!stats?.total) return null;
-    return Math.round(((stats.delivered || 0) / stats.total) * 100);
-}
-
 function fmtShortDate(iso) {
     if (!iso) return '-';
     try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }); }
     catch { return '-'; }
 }
+
+// Colunas (DataTable): prioridade decide a ordem no celular. As linhas chegam
+// achatadas para a ordenação do cabeçalho funcionar (stats.total vira `total`).
+const COLUMNS = [
+    { key: 'name',         label: 'Formulário', priority: 1, sortable: true, width: '30%' },
+    { key: 'total',        label: 'Leads',      priority: 1, sortable: true, numeric: true, width: '6rem' },
+    { key: 'active',       label: 'Status',     priority: 1, sortable: true, width: '7rem' },
+    { key: 'midia_slug',   label: 'Mídia',      priority: 2, sortable: true },
+    { key: 'delivery',     label: 'Entrega',    priority: 2, sortable: true, numeric: true, width: '9rem' },
+    { key: 'last_lead_at', label: 'Último lead',priority: 2, sortable: true, width: '7rem' },
+    { key: 'periodo',      label: 'Período',    priority: 3 },
+    { key: 'emps',         label: 'Empreend.',  priority: 3, numeric: true, width: '6rem' },
+    { key: 'created_at',   label: 'Criado',     priority: 3, sortable: true, width: '6rem', format: fmtShortDate },
+];
+const rows = computed(() => filtered.value.map(f => ({
+    ...f,
+    total: f.stats?.total || 0,
+    delivery: f.stats?.total ? Math.round(((f.stats.delivered || 0) / f.stats.total) * 100) : null,
+    last_lead_at: f.stats?.last_lead_at || null,
+    emps: Array.isArray(f.bound_empreendimentos) ? f.bound_empreendimentos.length : 0,
+    periodo: f.start_date || f.end_date ? `${f.start_date ? fmtShortDate(f.start_date) : 'criação'} a ${f.end_date ? fmtShortDate(f.end_date) : 'sem fim'}` : 'sem fim',
+    ended: endedAlready(f),
+})));
 </script>
 
 <template>
   <div class="space-y-4">
 
-    <!-- Resumo -->
-    <Surface variant="raised" padding="none" class="overflow-hidden">
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-line/60">
-        <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
-            <i class="fas fa-square-poll-vertical"></i>Forms exibidos
-          </div>
-          <div class="mt-1 text-xl font-semibold text-ink leading-none">{{ filtered.length }}</div>
-          <div class="mt-1 text-micro text-ink-subtle">{{ summary.actives }} ativos</div>
-        </div>
-        <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
-            <i class="fas fa-users"></i>Leads no período
-          </div>
-          <div class="mt-1 text-xl font-semibold text-ink leading-none">{{ summary.total }}</div>
-        </div>
-        <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
-            <i class="fas fa-circle-exclamation"></i>Com erro
-          </div>
-          <div class="mt-1 text-xl font-semibold leading-none"
-            :class="summary.failed > 0 ? 'text-data-neg' : 'text-ink'">{{ summary.failed }}</div>
-          <div v-if="summary.failed > 0" class="mt-1 text-micro text-data-neg">falha/recusa no CV</div>
-        </div>
-        <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
-            <i class="fas fa-circle-check"></i>Entregues ao CV
-          </div>
-          <div class="mt-1 text-xl font-semibold text-data-pos leading-none">{{ summary.delivered }}</div>
-        </div>
-        <div class="px-4 py-3">
-          <div class="flex items-center gap-1.5 text-micro uppercase tracking-wider text-ink-subtle">
-            <i class="fas fa-hourglass-half"></i>Em held
-          </div>
-          <div class="mt-1 text-xl font-semibold text-data-warn leading-none">{{ summary.held }}</div>
-        </div>
+    <StatRow :items="kpiCards" :loading="store.loading && !store.forms.length" :cols="{ sm: 3, md: 5, lg: 5 }" size="sm" />
+
+    <EmptyState v-if="store.error" icon="fas fa-circle-exclamation" size="sm"
+      title="Não deu para carregar os formulários" :description="store.error" />
+
+    <FilterBar :active-count="activeFiltersCount" auto-apply>
+      <template #actions>
+        <SegmentedControl v-model="filterActive" :options="statusOptions" size="sm" />
+        <IconButton icon="fas fa-eraser" size="sm" label="Limpar filtros" :disabled="!activeFiltersCount" @click="clearFilters" />
+        <IconButton icon="fas fa-arrows-rotate" size="sm" label="Atualizar" :disabled="store.loading" @click="store.fetchAll" />
+      </template>
+
+      <Input v-model="search" label="Buscar" size="sm" icon-left="fas fa-magnifying-glass"
+        placeholder="Nome, slug, mídia, referência, tag..." class="sm:col-span-2" />
+      <Select v-model="filterPriority" label="Prioridade" :options="priorityOptions" size="sm" placeholder="" />
+      <Select v-model="filterOrigem" label="Origem CV" :options="origemOptions" size="sm" placeholder="" />
+      <Input v-model="filterDateFrom" type="date" label="Formulário iniciado de" size="sm"
+        hint="Filtra pela data de início/criação do formulário. O recorte dos leads é o período da Central." />
+      <Input v-model="filterDateTo" type="date" label="até" size="sm" />
+      <div class="sm:col-span-2 flex items-end pb-1">
+        <Switch v-model="hideEnded" size="sm" label="Ocultar encerrados" description="Esconde formulários com data de encerramento no passado." />
       </div>
-    </Surface>
+    </FilterBar>
 
-    <!-- Erro -->
-    <div v-if="store.error"
-      class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg flex items-start gap-2">
-      <i class="fas fa-circle-exclamation mt-0.5"></i>
-      <div>{{ store.error }}</div>
-    </div>
+    <Panel title="Formulários internos" icon="fas fa-square-poll-vertical" :padded="false"
+      :subtitle="`${filtered.length} de ${store.forms.length} · leads contados no período da Central`">
+      <DataTable :columns="COLUMNS" :rows="rows" row-key="id" :loading="store.loading && !store.forms.length"
+        sort-by="created_at" sort-dir="desc" clickable @row-click="openEdit"
+        :empty-icon="store.forms.length ? 'fas fa-filter' : 'fas fa-square-poll-vertical'"
+        :empty-title="store.forms.length ? 'Nada corresponde aos filtros' : 'Nenhum formulário ainda'"
+        :empty-text="store.forms.length ? 'Ajuste a busca ou limpe os filtros para ver todos.' : 'Crie o primeiro em Novo formulário.'">
 
-    <!-- Card principal: toolbar + filtros + tabela + paginação -->
-    <Surface variant="raised" padding="none" class="overflow-hidden">
-
-      <!-- Toolbar -->
-      <div class="p-3 sm:p-4 border-b border-line flex flex-col lg:flex-row lg:items-center gap-3">
-        <div class="flex-1 min-w-0">
-          <Input v-model="search" size="sm" icon-left="fas fa-magnifying-glass"
-            placeholder="Buscar por nome, slug, mídia, ref, tag..." />
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <SegmentedControl v-model="filterActive" :options="statusOptions" size="sm" />
-          <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" :loading="store.loading" @click="store.fetchAll">
-            Atualizar
-          </Button>
-        </div>
-      </div>
-
-      <!-- Filtros secundários -->
-      <div class="px-3 sm:px-4 py-2.5 border-b border-line bg-surface-sunken/30 flex flex-wrap items-center gap-2">
-        <select v-model="filterPriority" :class="[ctlClass, 'px-2.5 cursor-pointer']">
-          <option value="ALL">Todas prioridades</option>
-          <option value="high">Alta</option>
-          <option value="normal">Normal</option>
-          <option value="low">Baixa</option>
-        </select>
-
-        <select v-model="filterOrigem" :class="[ctlClass, 'px-2.5 cursor-pointer']">
-          <option value="ALL">Todas origens CV</option>
-          <option v-for="(label, v) in ORIGEM_LABELS" :key="v" :value="v">{{ label }}</option>
-        </select>
-
-        <div :class="[ctlClass, 'inline-flex items-center gap-1.5 px-2.5 text-ink-subtle']"
-          title="Filtra quais FORMULÁRIOS aparecem (pela data de início/criação). O recorte dos leads é o período no topo da tela.">
-          <i class="fas fa-square-poll-vertical text-micro" title="Data do formulário"></i>
-          <input v-model="filterDateFrom" type="date"
-            class="bg-transparent text-xs text-ink outline-none w-[6.8rem] border-0 p-0 focus:ring-0 shadow-none" />
-          <i class="fas fa-arrow-right-long text-micro"></i>
-          <input v-model="filterDateTo" type="date"
-            class="bg-transparent text-xs text-ink outline-none w-[6.8rem] border-0 p-0 focus:ring-0 shadow-none" />
-        </div>
-
-        <label :class="[ctlClass, 'inline-flex items-center gap-1.5 px-2.5 cursor-pointer select-none text-ink-muted hover:text-ink']">
-          <input type="checkbox" v-model="hideEnded" class="h-3.5 w-3.5 rounded border-line accent-emerald-500" />
-          Ocultar encerrados
-        </label>
-
-        <button v-if="hasFilters" @click="clearFilters"
-          class="h-8 inline-flex items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-accent hover:bg-accent-soft transition-colors">
-          <i class="fas fa-filter-circle-xmark text-micro"></i>Limpar
-        </button>
-
-        <div class="flex-1"></div>
-
-        <select v-model="sortBy" :class="[ctlClass, 'px-2.5 cursor-pointer']" title="Ordenação">
-          <option value="created">Mais recentes</option>
-          <option value="last_lead">Último lead</option>
-          <option value="total">Mais leads</option>
-          <option value="name">Nome A-Z</option>
-        </select>
-      </div>
-
-      <!-- Celular: cartao. Dez colunas nao cabem em 375px, e o hover das acoes
-           nao existe em tela de toque. -->
-      <div class="md:hidden">
-        <div v-if="store.loading" class="px-4 py-10 text-center text-ink-subtle text-sm">
-          <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
-        </div>
-        <EmptyState v-else-if="!store.forms.length" icon="fas fa-rectangle-list" size="sm"
-          title="Nenhum formulário ainda"
-          description='Crie o primeiro tocando em "Novo formulário".' />
-        <EmptyState v-else-if="!filtered.length" icon="fas fa-filter" size="sm"
-          title="Nada corresponde aos filtros"
-          description="Ajuste a busca ou limpe os filtros pra ver todos os formulários." />
-        <ul v-else class="divide-y divide-line/60">
-          <li v-for="f in paginated" :key="`m-${f.id}`" class="p-3 flex flex-col gap-2">
-
-            <div class="flex items-start justify-between gap-3" @click="openEdit(f)">
-              <div class="min-w-0 flex items-start gap-2">
-                <span :class="['inline-block w-2 h-2 rounded-full shrink-0 mt-1.5', priorityDot(f.priority).cls]"
-                  :title="priorityDot(f.priority).title"></span>
-                <div class="min-w-0">
-                  <div class="text-ink font-medium leading-tight break-words">{{ f.name }}</div>
-                  <div class="text-micro font-mono text-ink-subtle break-all mt-0.5">
-                    /{{ f.slug }}<span v-if="f.campaign_ref"> · {{ f.campaign_ref }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="text-right shrink-0">
-                <div class="text-lg font-semibold text-ink tabular-nums leading-none">{{ f.stats?.total || 0 }}</div>
-                <div class="metric-label">leads</div>
+        <template #cell-name="{ row }">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span :class="['inline-block w-2 h-2 rounded-full shrink-0', priorityDot(row.priority).cls]" :title="priorityDot(row.priority).title"></span>
+            <div class="min-w-0">
+              <div class="text-ink font-medium leading-tight truncate">{{ row.name }}</div>
+              <div class="text-micro font-mono text-ink-subtle truncate mt-0.5">
+                /{{ row.slug }}<span v-if="row.campaign_ref"> · {{ row.campaign_ref }}</span>
               </div>
             </div>
+          </div>
+        </template>
 
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <button @click="quickToggle($event, f)"
-                :class="['inline-flex items-center gap-1 rounded-md border px-2 py-1 text-micro font-medium transition-colors',
-                  f.active
-                    ? 'bg-data-pos/10 text-data-pos border-data-pos/20'
-                    : 'bg-surface-sunken text-ink-muted border-line']">
-                <i :class="f.active ? 'fas fa-circle-check' : 'fas fa-circle-pause'" class="text-micro"></i>
-                {{ f.active ? 'Ativo' : 'Inativo' }}
-              </button>
-              <span v-if="endedAlready(f)" class="text-micro text-data-neg font-medium">encerrado</span>
-              <span v-if="f.stats?.failed" class="text-micro text-data-neg font-medium">{{ f.stats.failed }} com erro</span>
-              <span v-if="f.stats?.held" class="text-micro text-data-warn">{{ f.stats.held }} represado(s)</span>
+        <template #cell-total="{ row }">
+          <div class="font-semibold text-ink tabular-nums" title="Leads captados no período da Central">{{ row.total }}</div>
+          <div v-if="row.stats?.failed" class="text-micro text-data-neg font-medium">{{ row.stats.failed }} com erro</div>
+        </template>
+
+        <!-- Liga/desliga ali mesmo, sem abrir o formulário -->
+        <template #cell-active="{ row }">
+          <div class="inline-flex items-center gap-2" @click.stop>
+            <Switch :model-value="!!row.active" size="sm" @update:model-value="quickToggle(row)" />
+            <span class="text-micro" :class="row.active ? 'text-data-pos' : 'text-ink-subtle'">{{ row.active ? 'Ativo' : 'Inativo' }}</span>
+          </div>
+        </template>
+
+        <template #cell-midia_slug="{ row }">
+          <div class="font-mono text-micro" :class="row.midia_slug ? 'text-ink' : 'text-ink-subtle'">{{ row.midia_slug || '-' }}</div>
+          <div class="text-micro text-ink-subtle">{{ ORIGEM_LABELS[row.cv_origem] || row.cv_origem || '-' }}</div>
+        </template>
+
+        <template #cell-delivery="{ row }">
+          <template v-if="row.delivery !== null">
+            <div class="inline-flex items-center gap-1.5 justify-end">
+              <div class="w-12 h-1.5 rounded-full bg-surface-sunken overflow-hidden">
+                <div class="h-full bg-data-pos" :style="{ width: row.delivery + '%' }"></div>
+              </div>
+              <span class="text-micro font-medium text-ink tabular-nums">{{ row.delivery }}%</span>
             </div>
+            <div v-if="row.stats?.held" class="text-micro text-data-warn">{{ row.stats.held }} represado(s)</div>
+          </template>
+          <span v-else class="text-ink-subtle">-</span>
+        </template>
 
-            <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5" @click="openEdit(f)">
-              <div class="min-w-0">
-                <dt class="metric-label">Mídia</dt>
-                <dd class="text-xs text-ink font-mono break-all">
-                  {{ f.midia_slug || '-' }}
-                  <span class="text-ink-subtle">· {{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '-' }}</span>
-                </dd>
-              </div>
-              <div class="min-w-0">
-                <dt class="metric-label">Entrega ao CV</dt>
-                <dd class="text-xs text-ink-muted tabular-nums">
-                  <template v-if="deliveryRate(f.stats) !== null">{{ deliveryRate(f.stats) }}%</template>
-                  <template v-else>-</template>
-                </dd>
-              </div>
-              <div class="min-w-0">
-                <dt class="metric-label">Período</dt>
-                <dd class="text-xs text-ink-muted">
-                  <span v-if="f.start_date">{{ fmtShortDate(f.start_date) }}</span>
-                  <span v-else>desde a criação</span>
-                  <template v-if="f.end_date"> → {{ fmtShortDate(f.end_date) }}</template>
-                  <template v-else> · sem fim</template>
-                </dd>
-              </div>
-              <div class="min-w-0">
-                <dt class="metric-label">Último lead</dt>
-                <dd class="text-xs text-ink-muted">{{ fmtRelative(f.stats?.last_lead_at) }}</dd>
-              </div>
-            </dl>
+        <template #cell-last_lead_at="{ value }"><span class="text-ink-muted">{{ fmtRelative(value) }}</span></template>
 
-            <!-- Sem hover no celular: as acoes precisam de botao visivel, 40px -->
-            <div class="grid grid-cols-3 gap-1.5">
-              <a :href="lpUrl(f)" target="_blank" rel="noopener" @click.stop
-                class="h-10 rounded-lg border border-line text-micro font-medium text-ink-muted
-                       inline-flex items-center justify-center gap-1.5">
-                <i class="fas fa-arrow-up-right-from-square text-micro"></i>Abrir LP
-              </a>
-              <button @click="copyLpUrl($event, f)"
-                class="h-10 rounded-lg border border-line text-micro font-medium text-ink-muted
-                       inline-flex items-center justify-center gap-1.5">
-                <i class="fas fa-copy text-micro"></i>Copiar
-              </button>
-              <button @click="openEdit(f)"
-                class="h-10 rounded-lg bg-accent text-white text-micro font-medium
-                       inline-flex items-center justify-center gap-1.5">
-                <i class="fas fa-pen text-micro"></i>Editar
-              </button>
-            </div>
-          </li>
-        </ul>
-      </div>
+        <template #cell-periodo="{ row }">
+          <span class="text-ink-muted">{{ row.periodo }}</span>
+          <Badge v-if="row.ended" variant="danger" size="sm" class="ml-1.5">encerrado</Badge>
+        </template>
 
-      <!-- Tabela (desktop) -->
-      <div class="hidden md:block overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-surface-sunken/30 border-b border-line">
-            <tr>
-              <th class="px-4 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Formulário</th>
-              <th class="px-4 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
-              <th class="px-4 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Período</th>
-              <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Empreend.</th>
-              <th class="px-4 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
-              <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Entrega</th>
-              <th class="px-4 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Último</th>
-              <th class="px-4 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-              <th class="px-4 py-2.5 w-20"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-line/60">
-            <tr v-if="store.loading">
-              <td colspan="9" class="px-4 py-12 text-center text-ink-subtle">
-                <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
-              </td>
-            </tr>
-            <tr v-else-if="!store.forms.length">
-              <td colspan="9">
-                <EmptyState icon="fas fa-square-poll-vertical" title="Nenhum formulário ainda"
-                  description='Crie o primeiro clicando em "Novo formulário".' />
-              </td>
-            </tr>
-            <tr v-else-if="!filtered.length">
-              <td colspan="9">
-                <EmptyState icon="fas fa-filter" size="sm" title="Nada corresponde aos filtros"
-                  description="Ajuste a busca ou limpe os filtros pra ver todos os formulários." />
-              </td>
-            </tr>
-            <tr v-else v-for="f in paginated" :key="f.id"
-              @click="openEdit(f)"
-              class="group hover:bg-surface-sunken/40 cursor-pointer transition-colors">
+        <template #cell-emps="{ value }"><span :class="value ? 'text-ink' : 'text-ink-subtle'">{{ value || '-' }}</span></template>
 
-              <!-- Form -->
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2.5">
-                  <span :class="['inline-block w-2 h-2 rounded-full shrink-0', priorityDot(f.priority).cls]" :title="priorityDot(f.priority).title"></span>
-                  <div class="min-w-0">
-                    <div class="text-ink font-medium leading-tight truncate">{{ f.name }}</div>
-                    <div class="text-micro font-mono text-ink-subtle truncate mt-0.5">
-                      /{{ f.slug }}<span v-if="f.campaign_ref"> · {{ f.campaign_ref }}</span>
-                    </div>
-                  </div>
-                </div>
-              </td>
-
-              <!-- Mídia -->
-              <td class="px-4 py-3">
-                <div v-if="f.midia_slug" class="font-mono text-micro text-ink">{{ f.midia_slug }}</div>
-                <div v-else class="text-micro text-ink-subtle italic">-</div>
-                <div class="text-micro text-ink-subtle mt-0.5">{{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '-' }}</div>
-              </td>
-
-              <!-- Período -->
-              <td class="px-4 py-3 whitespace-nowrap">
-                <div class="text-micro text-ink-muted">
-                  <span v-if="f.start_date">{{ fmtShortDate(f.start_date) }}</span>
-                  <span v-else class="text-ink-subtle italic">desde criação</span>
-                </div>
-                <div class="text-micro mt-0.5" :class="endedAlready(f) ? 'text-data-neg font-medium' : 'text-ink-subtle'">
-                  <template v-if="f.end_date">→ {{ fmtShortDate(f.end_date) }}<span v-if="endedAlready(f)"> (encerrado)</span></template>
-                  <template v-else>sem fim</template>
-                </div>
-              </td>
-
-              <!-- Empreendimentos -->
-              <td class="px-4 py-3 text-center text-ink-muted">
-                <span v-if="Array.isArray(f.bound_empreendimentos) && f.bound_empreendimentos.length"
-                  class="text-xs">{{ f.bound_empreendimentos.length }}</span>
-                <span v-else class="text-micro text-ink-subtle italic">-</span>
-              </td>
-
-              <!-- Leads count (recorte do período mestre) -->
-              <td class="px-4 py-3 text-right whitespace-nowrap">
-                <div class="text-sm font-semibold text-ink leading-tight" title="Leads captados no período selecionado">
-                  {{ f.stats?.total || 0 }}
-                </div>
-                <div class="text-micro leading-tight mt-0.5"
-                  :class="f.stats?.failed ? 'text-data-neg font-medium' : 'text-ink-subtle'">
-                  <span v-if="f.stats?.failed">{{ f.stats.failed }} com erro</span>
-                  <span v-else>-</span>
-                </div>
-              </td>
-
-              <!-- Entrega -->
-              <td class="px-4 py-3 text-center">
-                <template v-if="deliveryRate(f.stats) !== null">
-                  <div class="inline-flex items-center gap-1.5">
-                    <div class="w-12 h-1.5 rounded-full bg-surface-sunken border border-line/40 overflow-hidden">
-                      <div class="h-full bg-data-pos" :style="{ width: deliveryRate(f.stats) + '%' }"></div>
-                    </div>
-                    <span class="text-micro font-medium text-ink">{{ deliveryRate(f.stats) }}%</span>
-                  </div>
-                  <div v-if="f.stats.held" class="text-micro text-data-warn mt-0.5">{{ f.stats.held }} held</div>
-                </template>
-                <span v-else class="text-micro text-ink-subtle italic">-</span>
-              </td>
-
-              <!-- Último lead -->
-              <td class="px-4 py-3 text-micro text-ink-muted whitespace-nowrap">
-                {{ fmtRelative(f.stats?.last_lead_at) }}
-              </td>
-
-              <!-- Status toggle (inline) -->
-              <td class="px-4 py-3 text-center">
-                <button @click="quickToggle($event, f)"
-                  :title="f.active ? 'Clique para desativar' : 'Clique para ativar'"
-                  :class="['inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-micro font-medium transition-colors',
-                    f.active
-                      ? 'bg-data-pos/10 text-data-pos border-data-pos/20 hover:bg-data-pos/20'
-                      : 'bg-surface-sunken text-ink-muted border-line hover:bg-surface-sunken']">
-                  <i :class="f.active ? 'fas fa-circle-check' : 'fas fa-circle-pause'" class="text-micro"></i>
-                  {{ f.active ? 'Ativo' : 'Inativo' }}
-                </button>
-              </td>
-
-              <!-- Ações rápidas (aparecem no hover) -->
-              <td class="px-4 py-3">
-                <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <a :href="lpUrl(f)" target="_blank" rel="noopener" @click.stop
-                    title="Abrir LP em nova aba"
-                    class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-accent hover:bg-accent-soft transition-colors">
-                    <i class="fas fa-arrow-up-right-from-square text-[11px]"></i>
-                  </a>
-                  <button @click="copyLpUrl($event, f)"
-                    title="Copiar URL da LP"
-                    class="h-7 w-7 grid place-items-center rounded-md text-ink-subtle hover:text-accent hover:bg-accent-soft transition-colors">
-                    <i class="fas fa-copy text-[11px]"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Paginação -->
-      <div v-if="totalPages > 1"
-        class="px-4 py-3 border-t border-line bg-surface-sunken/30 flex flex-wrap items-center justify-between gap-2">
-        <div class="text-xs text-ink-muted font-mono">
-          {{ startItem }}–{{ endItem }} de {{ filtered.length }}
-        </div>
-        <div class="flex items-center gap-1">
-          <IconButton icon="fas fa-angles-left" size="sm" label="Primeira"
-            :disabled="currentPage === 1" @click="currentPage = 1" />
-          <IconButton icon="fas fa-chevron-left" size="sm" label="Anterior"
-            :disabled="currentPage === 1" @click="currentPage--" />
-          <button v-for="page in visiblePages" :key="page" @click="currentPage = page"
-            class="min-w-[32px] h-8 px-2 rounded-md text-xs font-mono transition-colors"
-            :class="page === currentPage
-              ? 'bg-accent text-white'
-              : 'text-ink-muted hover:bg-surface-sunken'">
-            {{ page }}
-          </button>
-          <IconButton icon="fas fa-chevron-right" size="sm" label="Próxima"
-            :disabled="currentPage === totalPages" @click="currentPage++" />
-          <IconButton icon="fas fa-angles-right" size="sm" label="Última"
-            :disabled="currentPage === totalPages" @click="currentPage = totalPages" />
-        </div>
-      </div>
-    </Surface>
+        <template #actions="{ row }">
+          <div class="inline-flex items-center gap-0.5">
+            <a :href="lpUrl(row)" target="_blank" rel="noopener" @click.stop title="Abrir LP em nova aba"
+              class="h-8 w-8 grid place-items-center rounded-md text-ink-muted hover:bg-surface-sunken hover:text-ink transition-colors focus-ring">
+              <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+            </a>
+            <IconButton icon="fas fa-copy" size="sm" label="Copiar URL da LP" @click="copyLpUrl(row)" />
+            <IconButton icon="fas fa-pen" size="sm" label="Editar" @click="openEdit(row)" />
+          </div>
+        </template>
+      </DataTable>
+    </Panel>
   </div>
 </template>

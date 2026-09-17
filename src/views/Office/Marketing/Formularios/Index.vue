@@ -23,20 +23,17 @@ onMounted(() => store.fetchAll());
 </script>
 
 <template>
-  <div>
-      <!-- Toolbar da aba (o header vive no hub Central Meta) -->
-      <div class="flex items-center justify-end gap-2 mb-3">
+  <div class="space-y-4">
+      <!-- Toolbar da aba (o header vive no hub Central Meta). Forms da Meta não
+           moram aqui: abrem pela campanha que os usa. -->
+      <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs text-ink-muted flex items-center gap-1.5 min-w-0">
+            <i class="fab fa-meta text-accent"></i>
+            <span>Forms da Meta ficam em
+              <RouterLink to="/meta?tab=campanhas" class="text-accent hover:underline">Campanhas</RouterLink>:
+              abra a campanha, aba Estrutura, selo do form.</span>
+          </p>
           <Button variant="primary" size="sm" icon="fas fa-plus" @click="openCreate">Novo formulário</Button>
-      </div>
-
-      <!-- Aviso sobre forms Meta -->
-      <div class="mb-4 flex items-start gap-2.5 rounded-lg border border-line bg-surface-sunken/30 px-3 py-2.5 text-xs text-ink-muted">
-        <i class="fab fa-meta text-accent mt-0.5"></i>
-        <div>
-          <b class="text-ink">Forms da Meta?</b> São gerenciados em
-          <RouterLink to="/meta?tab=campanhas" class="text-accent hover:underline">Campanhas → abrir campanha → aba Anúncios → badge do form</RouterLink>.
-          O mapeamento (empreendimento, mídia) vive na campanha; o de campos (pergunta → CV) vive no form.
-        </div>
       </div>
 
       <InternalLeadFormsTable @edit="openEdit" />
