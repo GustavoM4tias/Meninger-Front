@@ -116,6 +116,70 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     }
   }
 
+  // ── Pergunta em voo sobrevive à recarga ───────────────────────────────────
+  // A página pode recarregar no meio de uma resposta (auto-recuperação de
+  // build obsoleto depois de um deploy, F5, aba restaurada). O fetch morre com
+  // a página, o `finally` nunca roda, e a pessoa volta para uma Eme fechada
+  // que não lembra da pergunta: sem resposta e sem botão. Então a pergunta
+  // fica marcada no sessionStorage enquanto a resposta não chega, e quem
+  // monta o player depois da recarga reabre a conversa e oferece perguntar
+  // de novo. sessionStorage, não local: é a aba que recarregou que retoma.
+  const EM_VOO_KEY = 'eme:pergunta-em-voo'
+  const EM_VOO_JANELA_MS = 30 * 60 * 1000
+
+  function marcarEmVoo(text) {
+    try {
+      sessionStorage.setItem(EM_VOO_KEY, JSON.stringify({
+        sessionId: currentSessionId.value, text, at: Date.now(),
+      }))
+    } catch { /* sem storage: só perde a retomada */ }
+  }
+  function limparEmVoo() {
+    try { sessionStorage.removeItem(EM_VOO_KEY) } catch { /* idem */ }
+  }
+  /** A pergunta que estava no ar quando a página recarregou, se for recente. */
+  function perguntaEmVoo() {
+    try {
+      const raw = sessionStorage.getItem(EM_VOO_KEY)
+      if (!raw) return null
+      const p = JSON.parse(raw)
+      if (!p?.text || !p.at || Date.now() - p.at > EM_VOO_JANELA_MS) { limparEmVoo(); return null }
+      return p
+    } catch { return null }
+  }
+
+  /**
+   * Chamado depois de reabrir a conversa: se a pergunta marcada já tem
+   * resposta (o servidor terminou sozinho), só limpa a marca. Se não tem,
+   * garante a pergunta na tela e põe embaixo dela uma mensagem de erro com
+   * o botão de perguntar de novo. Devolve true quando deixou algo pendente.
+   */
+  function retomarPerguntaInterrompida() {
+    const p = perguntaEmVoo()
+    if (!p) return false
+    limparEmVoo()
+    if (isStreaming.value) return false
+
+    let idx = -1
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+      if (messages.value[i].role === 'user' && messages.value[i].content === p.text) { idx = i; break }
+    }
+    const respondida = idx >= 0 && messages.value.slice(idx + 1).some(m => m.role === 'assistant')
+    if (respondida) return false
+
+    if (idx < 0) {
+      messages.value.push({
+        id: Date.now(), role: 'user', content: p.text, response_type: 'text', created_at: new Date(p.at),
+      })
+    }
+    pushAssistantMessage(
+      'A tela recarregou antes de a resposta chegar.',
+      'error',
+      { reloaded: true }
+    )
+    return true
+  }
+
   /** Tentar de novo a conversa que falhou. */
   async function recarregarMensagens() {
     if (!currentSessionId.value) return
@@ -177,6 +241,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     streamStale.value = false
     cancelReason = null
     abortCtrl = new AbortController()
+    marcarEmVoo(text)
 
     // Watchdog: o servidor manda `: ping` a cada 15s mesmo sem conteúdo, então
     // silêncio prolongado = conexão/backend realmente mudos (não é "demora").
@@ -287,6 +352,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     } finally {
       console.log('[officeAIStore] ✓ streaming finalizado em', Math.round(performance.now() - t0), 'ms')
       clearInterval(watchdog)
+      limparEmVoo()
       isStreaming.value = false
       streamStartedAt.value = null
       streamStale.value = false
@@ -501,7 +567,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     agentSteps, streamStartedAt, streamStale,
     isAtStorageLimit, hasSession,
     carregandoMensagens, erroMensagens,
-    loadSessions, loadMessages, recarregarMensagens, newSession, favoriteSession, deleteSession,
+    loadSessions, loadMessages, recarregarMensagens, perguntaEmVoo, retomarPerguntaInterrompida, newSession, favoriteSession, deleteSession,
     loadStorageUsage, sendMessage, cancelStream, retryMessage, renameSession, sendFeedback,
     setMode, minimize, expand, setDraft,
     currentSessionTitle,

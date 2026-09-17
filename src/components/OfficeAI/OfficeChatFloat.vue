@@ -69,19 +69,30 @@ const retomada = ref(null);   // título da conversa retomada, para avisar
 async function retomarUltimaConversa() {
   if (aiStore.currentSessionId || aiStore.messages.length || retomando.value) return;
   retomando.value = true;
+  // Pergunta que estava no ar quando a página recarregou (ver officeAIStore):
+  // ela manda em qual conversa abrir e dispensa a janela de 30 min - a marca
+  // já é recente por definição. Sem sessão gravada (era a primeira pergunta),
+  // a mais recente do banco é a dela, se existir; senão a conversa nasce só
+  // com a pergunta e o botão de perguntar de novo.
+  const emVoo = aiStore.perguntaEmVoo();
   try {
     if (!aiStore.sessions.length) await aiStore.loadSessions();
-    const ultima = aiStore.sessions[0];
+    const ultima = emVoo?.sessionId
+      ? (aiStore.sessions.find(s => s.id === emVoo.sessionId) || { id: emVoo.sessionId })
+      : aiStore.sessions[0];
     if (!ultima) return;
     // Sem data legível o seguro é NÃO retomar: um título antigo aparecendo como
     // "Retomando" é exatamente o que se quer evitar aqui.
     const quando = new Date(ultima.updated_at || ultima.updatedAt || 0).getTime();
-    if (!quando || Date.now() - quando > JANELA_RETOMADA_MS) return;
+    if (!emVoo?.sessionId && (!quando || Date.now() - quando > JANELA_RETOMADA_MS)) return;
     await aiStore.loadMessages(ultima.id);
     retomada.value = ultima.title || 'conversa anterior';
     setTimeout(() => { retomada.value = null; }, 6000);
   } catch { /* sem histórico: abre em branco, como antes */ }
-  finally { retomando.value = false; }
+  finally {
+    retomando.value = false;
+    if (emVoo) aiStore.retomarPerguntaInterrompida();
+  }
 }
 
 watch(expanded, (aberto) => { if (aberto) retomarUltimaConversa(); });
@@ -544,6 +555,10 @@ onMounted(() => {
   // capture:true pra pegar antes de qualquer input absorver
   window.addEventListener('keydown',      onVoiceShortcut, true);
   aiStore.loadStorageUsage();
+  // A página recarregou com uma pergunta no ar: reabre a Eme por conta
+  // própria, porque a pessoa estava esperando a resposta. A abertura dispara
+  // retomarUltimaConversa, que recupera a conversa e oferece perguntar de novo.
+  if (aiStore.perguntaEmVoo()) expanded.value = true;
 });
 onUnmounted(() => {
   desinstalarCaptura?.();

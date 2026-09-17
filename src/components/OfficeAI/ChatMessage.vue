@@ -114,8 +114,19 @@ const stepsOpen = ref(false);
         </span>
       </div>
 
-      <!-- Erro genérico -->
-      <span v-else-if="isError" class="text-sm text-ink-muted italic break-words">{{ message.content }}</span>
+      <!-- Erro genérico: sempre com saída. "Tente novamente" escrito num texto
+           sem botão deixava a pessoa sem caminho; o botão refaz a pergunta
+           que veio antes (retryMessage). -->
+      <div v-else-if="isError" class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <span class="text-sm text-ink-muted italic break-words">{{ message.content }}</span>
+        <button type="button" @click="$emit('retry')"
+          class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium
+                 border border-accent/30 bg-accent-soft text-accent transition
+                 hover:border-accent/60 hover:bg-accent-soft/80 focus-ring">
+          <i class="fas fa-rotate-right"></i>
+          {{ message.metadata?.reloaded ? 'Perguntar de novo' : 'Tentar novamente' }}
+        </button>
+      </div>
 
       <!-- Renderers -->
       <template v-else>
