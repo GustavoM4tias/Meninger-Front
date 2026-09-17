@@ -334,35 +334,35 @@ function statusBadge(s) {
 // ── Colunas das listas (DataTable) ──────────────────────────────────────────
 // Prioridade decide a ordem no celular: 1 = título do card, 2 = corpo, 3 = "Ver detalhes".
 const ACCOUNT_COLUMNS = [
-    { key: 'account_name',          label: 'Conta',                    priority: 1 },
-    { key: 'destino',               label: 'Destino padrão',           priority: 1, truncate: false },
-    { key: 'midia_slug',            label: 'Mídia',                    priority: 3 },
+    { key: 'account_name',          label: 'Conta',                    priority: 1, width: '26%' },
+    { key: 'destino',               label: 'Destino padrão',           priority: 1, truncate: false, width: '34%' },
+    { key: 'midia_slug',            label: 'Mídia',                    priority: 3, width: '9rem' },
     { key: 'lead_campaigns_active', label: 'Campanhas de lead ativas', priority: 2, numeric: true },
     { key: 'leads_30d',             label: 'Leads 30d',                priority: 2, numeric: true, format: fmtInt },
 ];
 const BLOCKED_COLUMNS = [
-    { key: 'name',             label: 'Campanha',        priority: 1, sortable: true },
+    { key: 'name',             label: 'Campanha',        priority: 1, sortable: true, width: '34%' },
     { key: 'account_name',     label: 'Conta',           priority: 2, sortable: true },
     { key: 'effective_status', label: 'Status',          priority: 2 },
     { key: 'motivo',           label: 'Motivo',          priority: 3, truncate: false },
     { key: 'blocked_count',    label: 'Leads represados',priority: 1, numeric: true, sortable: true },
 ];
 const MISMATCH_COLUMNS = [
-    { key: 'name',       label: 'Campanha / formulário', priority: 1, sortable: true },
+    { key: 'name',       label: 'Campanha / formulário', priority: 1, sortable: true, width: '40%' },
     { key: 'destino',    label: 'Vínculo atual',         priority: 1, truncate: false },
     { key: 'lead_count', label: 'Leads com destino antigo', priority: 1, numeric: true, sortable: true, format: fmtInt },
 ];
 const FALLBACK_COLUMNS = [
-    { key: 'name',       label: 'Campanha',           priority: 1, sortable: true },
+    { key: 'name',       label: 'Campanha',           priority: 1, sortable: true, width: '40%' },
     { key: 'destino',    label: 'Indo para',          priority: 1, truncate: false },
     { key: 'lead_count', label: 'Leads no período',   priority: 1, numeric: true, sortable: true, format: fmtInt },
 ];
 const RECOVER_COLUMNS = [
-    { key: 'name',  label: 'Campanha / formulário', priority: 1, sortable: true },
+    { key: 'name',  label: 'Campanha / formulário', priority: 1, sortable: true, width: '50%' },
     { key: 'count', label: 'Leads',                 priority: 1, numeric: true, sortable: true, format: fmtInt },
 ];
 const UNBOUND_COLUMNS = [
-    { key: 'name',   label: 'Campanha', priority: 1, sortable: true },
+    { key: 'name',   label: 'Campanha', priority: 1, sortable: true, width: '40%' },
     { key: 'reason', label: 'Motivo',   priority: 2, truncate: false },
 ];
 const FORMS_COLUMNS = [
@@ -458,7 +458,7 @@ const formsSemVinculo = computed(() => (held.value.forms || []).filter(f => !f.i
               <span v-else class="text-data-warn">{{ row.mapping_active ? 'sem vínculo' : 'desativado' }}</span>
             </template>
             <template #cell-midia_slug="{ row }">
-              <span class="text-ink-muted">{{ row.midia_slug || `padrão (${bindingDefaults?.midia_slug || 'Facebook Ads'})` }}</span>
+              <span class="text-ink-muted" v-tippy="row.midia_slug ? '' : `Padrão de Configurações: ${bindingDefaults?.midia_slug || 'Facebook Ads'}`">{{ row.midia_slug || 'padrão' }}</span>
             </template>
             <template #cell-lead_campaigns_active="{ row }">
               <span class="tabular-nums" :class="row.lead_campaigns_unbound ? 'text-data-warn font-semibold' : 'text-ink'">{{ fmtInt(row.lead_campaigns_active) }}</span>

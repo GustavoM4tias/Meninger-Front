@@ -434,7 +434,7 @@ function statusBadge(c) {
 // ── Colunas das listas (DataTable) ──────────────────────────────────────────
 // Prioridade decide a ordem no celular: 1 = título do card, 2 = corpo, 3 = "Ver detalhes".
 const CAMPAIGN_COLUMNS = [
-    { key: 'name',         label: 'Campanha',  priority: 1, sortable: true },
+    { key: 'name',         label: 'Campanha',  priority: 1, sortable: true, width: '30%' },
     { key: 'account_name', label: 'Conta',     priority: 2, sortable: true },
     { key: 'status_label', label: 'Status',    priority: 2, sortable: true, width: '7rem' },
     { key: 'spend',        label: 'Investido', priority: 1, sortable: true, numeric: true },
@@ -445,7 +445,7 @@ const CAMPAIGN_COLUMNS = [
     { key: 'last_lead_at', label: 'Último lead', priority: 3, sortable: true, format: fmtRelative },
 ];
 const ACCOUNT_COLUMNS = [
-    { key: 'name',      label: 'Conta',      priority: 1, sortable: true },
+    { key: 'name',      label: 'Conta',      priority: 1, sortable: true, width: '32%' },
     { key: 'active',    label: 'Ativas',     priority: 2, sortable: true, numeric: true, format: fmtInt },
     { key: 'campaigns', label: 'Campanhas',  priority: 3, sortable: true, numeric: true, format: fmtInt },
     { key: 'spend',     label: 'Investido',  priority: 1, sortable: true, numeric: true },
@@ -453,7 +453,7 @@ const ACCOUNT_COLUMNS = [
     { key: 'cac',       label: 'CAC médio',  priority: 2, sortable: true, numeric: true },
 ];
 const ADSET_COLUMNS = [
-    { key: 'name',          label: 'Conjunto',   priority: 1, sortable: true },
+    { key: 'name',          label: 'Conjunto',   priority: 1, sortable: true, width: '26%' },
     { key: 'campaign_name', label: 'Campanha',   priority: 2, sortable: true },
     { key: 'status_label',  label: 'Status',     priority: 2, sortable: true, width: '7rem' },
     { key: 'goal',          label: 'Otimização', priority: 3, sortable: true },
@@ -465,7 +465,7 @@ const ADSET_COLUMNS = [
     { key: 'impressions',   label: 'Impressões', priority: 3, sortable: true, numeric: true, format: fmtInt },
 ];
 const FORM_COLUMNS = [
-    { key: 'name',       label: 'Formulário', priority: 1, sortable: true },
+    { key: 'name',       label: 'Formulário', priority: 1, sortable: true, width: '40%' },
     { key: 'page_name',  label: 'Página',     priority: 2, sortable: true },
     { key: 'status',     label: 'Status',     priority: 2, sortable: true, width: '7rem' },
     { key: 'perguntas',  label: 'Perguntas',  priority: 2, sortable: true, numeric: true },

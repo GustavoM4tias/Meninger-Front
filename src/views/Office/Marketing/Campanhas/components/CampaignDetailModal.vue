@@ -272,14 +272,14 @@ const adsetSortOptions = [
 
 // Colunas das listas (DataTable: prioridade decide a ordem no celular).
 const LEADS_COLUMNS = [
-    { key: 'nome',         label: 'Contato', priority: 1, sortable: true },
+    { key: 'nome',         label: 'Contato', priority: 1, sortable: true, width: '32%' },
     { key: 'status',       label: 'Status',  priority: 1, sortable: true, width: '11rem' },
     { key: 'created_at',   label: 'Quando',  priority: 2, sortable: true, width: '8rem' },
     { key: 'midia_slug',   label: 'Mídia',   priority: 2, sortable: true },
     { key: 'meta_form_id', label: 'Form',    priority: 3 },
 ];
 const DAILY_COLUMNS = [
-    { key: 'day',         label: 'Dia',      priority: 1, sortable: true },
+    { key: 'day',         label: 'Dia',      priority: 1, sortable: true, format: (v) => String(v || '').slice(0, 10).split('-').reverse().join('/') },
     { key: 'spend',       label: 'Gasto',    priority: 1, sortable: true, numeric: true, format: (v) => money(v) },
     { key: 'office_leads',label: 'Leads',    priority: 1, sortable: true, numeric: true, format: fmtInt },
     { key: 'impressions', label: 'Impr.',    priority: 2, sortable: true, numeric: true, format: fmtInt },
