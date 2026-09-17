@@ -1,8 +1,12 @@
 <script setup>
 // Editor de alerta inline no chat.
 // Renderizado quando uma mensagem da Eme tem action.type === 'open_alert_editor'.
-// Inspiração visual: ticket de impressão — hairline accent no edge esquerdo,
-// seções numeradas, preview como "carbon stub" perfurado.
+//
+// Mora na moldura da galeria (VizFrame, o mesmo Panel de toda resposta da
+// Eme): título, subtítulo e ações no cabeçalho, botões do design system no
+// rodapé. Antes tinha cromo próprio (ticket com faixa lateral, seções
+// numeradas em mono de 9,5px, vermelho e verde fixos) e destoava de todo o
+// resto do chat depois da galeria de 11/09.
 
 import { ref, computed, watch, onMounted } from 'vue';
 import { useToast } from 'vue-toastification';
@@ -11,11 +15,12 @@ import { useAlertStore } from '@/stores/Alerts/alertStore';
 import * as api from '@/utils/Alerts/apiAlerts';
 import API_URL from '@/config/apiUrl';
 
-import Spinner from '@/components/UI/Spinner.vue';
+import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Switch from '@/components/UI/Switch.vue';
 import { DELIVERY_OPTIONS, deliveryDoForm, deliveryParaApi } from '@/config/alertDelivery';
 import ChatText from './ChatText.vue';
+import VizFrame from '../viz/VizFrame.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 
 import Skeleton from '@/components/UI/Skeleton.vue';
@@ -288,20 +293,26 @@ const MINUTES = [0, 15, 30, 45];
 </script>
 
 <template>
-  <div v-if="!dismissed" class="alert-editor-card group">
-    <!-- ═══ Loading skeleton (modo edit, carregando regra) ═══════════════ -->
-    <Skeleton v-if="ruleLoading" variant="row" :lines="3" />
+  <VizFrame v-if="!dismissed"
+    :title="lifecycle === 'saved' ? (isEdit ? 'Alterações salvas' : 'Alerta criado') : (form.name || (isEdit ? 'Editar alerta' : 'Novo alerta'))"
+    :subtitle="lifecycle === 'saved' ? '' : (isEdit ? 'Editando alerta' : 'A Eme preparou um rascunho: revise e crie')"
+    icon="fas fa-bell" :padded="false" :loading="ruleLoading" loading-variant="row">
+    <template v-if="lifecycle !== 'saved'" #actions>
+      <span class="text-micro uppercase tracking-wider px-2 py-0.5 rounded-md border"
+        :class="lifecycle === 'error' ? 'border-data-neg/40 text-data-neg bg-data-neg/10' : 'border-accent/30 text-accent bg-accent-soft'">
+        {{ lifecycle === 'error' ? 'erro' : (isEdit ? 'edição' : 'rascunho') }}
+      </span>
+    </template>
 
     <!-- ═══ Estado: SAVED (colapsado / confirmação) ════════════════════════ -->
-    <div v-else-if="lifecycle === 'saved'" class="saved-state">
+    <div v-if="lifecycle === 'saved'" class="saved-state">
       <div class="saved-icon">
         <i class="fas fa-check"></i>
       </div>
       <div class="saved-body">
-        <p class="saved-label">{{ isEdit ? 'alterações salvas' : 'alerta criado' }}</p>
         <h4 class="saved-name">{{ savedRule?.name || form.name }}</h4>
         <p class="saved-meta">
-          <i class="far fa-clock text-[10px]"></i>
+          <i class="far fa-clock text-micro"></i>
           {{ cronSummary }}
           <span class="dot">·</span>
           <span v-for="(c, i) in channelChips" :key="c">
@@ -310,30 +321,12 @@ const MINUTES = [0, 15, 30, 45];
         </p>
       </div>
       <div class="saved-actions">
-        <button class="link-btn" @click="goToList">
-          ver todos <i class="fas fa-arrow-right ml-1"></i>
-        </button>
+        <Button variant="ghost" size="sm" icon-right="fas fa-arrow-right" @click="goToList">ver todos</Button>
       </div>
     </div>
 
     <!-- ═══ Estado: EDITING / ERROR ════════════════════════════════════════ -->
     <template v-else>
-      <!-- Header com status -->
-      <header class="card-header">
-        <div class="flex items-center gap-2">
-          <span class="header-glyph">
-            <i class="fas fa-bell-concierge"></i>
-          </span>
-          <div>
-            <p class="header-eyebrow">{{ isEdit ? 'editando alerta' : 'Eme preparou um rascunho' }}</p>
-            <h3 class="header-title">{{ form.name || 'novo alerta' }}</h3>
-          </div>
-        </div>
-        <span class="status-pill" :class="lifecycle === 'error' ? 'status-error' : 'status-draft'">
-          {{ lifecycle === 'error' ? 'erro' : (isEdit ? 'edição' : 'rascunho') }}
-        </span>
-      </header>
-
       <!-- Erro banner -->
       <div v-if="lifecycle === 'error' && errorMsg" class="error-banner">
         <i class="fas fa-triangle-exclamation"></i>
@@ -341,9 +334,9 @@ const MINUTES = [0, 15, 30, 45];
         <button @click="lifecycle = 'editing'; errorMsg = ''" class="text-xs underline">tentar de novo</button>
       </div>
 
-      <!-- ─── 01 · IDENTIDADE ─────────────────────────────────────────── -->
+      <!-- ─── IDENTIDADE ──────────────────────────────────────────────── -->
       <section class="section">
-        <div class="section-divider"><span class="section-label">01 · identidade</span></div>
+        <div class="section-divider"><span class="section-label">identidade</span></div>
         <input
           v-model="form.name"
           type="text"
@@ -356,9 +349,9 @@ const MINUTES = [0, 15, 30, 45];
           class="desc-input"></textarea>
       </section>
 
-      <!-- ─── 02 · QUANDO DISPARAR ────────────────────────────────────── -->
+      <!-- ─── QUANDO DISPARAR ─────────────────────────────────────────── -->
       <section class="section">
-        <div class="section-divider"><span class="section-label">02 · quando disparar</span></div>
+        <div class="section-divider"><span class="section-label">quando disparar</span></div>
 
         <!-- Recurrence tabs (custom inline) -->
         <div class="recurrence-tabs">
@@ -421,9 +414,9 @@ const MINUTES = [0, 15, 30, 45];
         </div>
       </section>
 
-      <!-- ─── 03 · POR ONDE ────────────────────────────────────────────── -->
+      <!-- ─── POR ONDE ────────────────────────────────────────────────── -->
       <section class="section">
-        <div class="section-divider"><span class="section-label">03 · por onde enviar</span></div>
+        <div class="section-divider"><span class="section-label">por onde enviar</span></div>
         <div class="channels-grid">
           <label class="channel-card" :class="form.channels.inapp && 'channel-active'">
             <input v-model="form.channels.inapp" type="checkbox" class="sr-only" />
@@ -470,13 +463,10 @@ const MINUTES = [0, 15, 30, 45];
         </div>
       </section>
 
-      <!-- ─── 04 · PREVIEW ─────────────────────────────────────────────── -->
+      <!-- ─── PREVIEW ─────────────────────────────────────────────────── -->
       <section v-if="form.tool_call" class="section">
-        <div class="section-divider"><span class="section-label">04 · você vai receber assim</span></div>
+        <div class="section-divider"><span class="section-label">você vai receber assim</span></div>
         <div class="preview-stub">
-          <div class="preview-perfs">
-            <span v-for="i in 24" :key="i" class="perf-dot"></span>
-          </div>
           <div class="preview-body">
             <Skeleton v-if="previewLoading" variant="row" :lines="3" />
             <ChatText v-else-if="previewText" :content="previewText" />
@@ -492,11 +482,11 @@ const MINUTES = [0, 15, 30, 45];
         </p>
       </section>
 
-      <!-- ─── 05 · AVANÇADO (collapsible) ──────────────────────────────── -->
+      <!-- ─── AVANÇADO (collapsible) ──────────────────────────────────── -->
       <section class="section">
         <button @click="advancedOpen = !advancedOpen" class="advanced-toggle">
           <div class="section-divider flex-1">
-            <span class="section-label">05 · avançado</span>
+            <span class="section-label">avançado</span>
           </div>
           <i :class="['fas fa-chevron-down chev', advancedOpen && 'chev-open']"></i>
         </button>
@@ -540,107 +530,22 @@ const MINUTES = [0, 15, 30, 45];
           <span v-if="channelChips.length"><i class="fas fa-route"></i> {{ channelChips.join(', ') }}</span>
         </div>
         <div class="footer-actions">
-          <button v-if="isEdit" @click="deleteAlert" class="btn-danger">
-            <i class="fas fa-trash"></i> excluir
-          </button>
-          <button v-if="isEdit" @click="fireNow" class="btn-ghost">
-            <i class="fas fa-bolt"></i> disparar
-          </button>
-          <button @click="dismissed = true" class="btn-ghost">
-            cancelar
-          </button>
-          <button @click="save" :disabled="lifecycle === 'saving'" class="btn-primary">
-            <Spinner v-if="lifecycle === 'saving'" size="xs" />
-            <template v-else>
-              {{ isEdit ? 'salvar alterações' : 'criar alerta' }}
-              <i class="fas fa-arrow-right ml-1"></i>
-            </template>
-          </button>
+          <Button v-if="isEdit" variant="danger" size="sm" icon="fas fa-trash" @click="deleteAlert">excluir</Button>
+          <Button v-if="isEdit" variant="ghost" size="sm" icon="fas fa-bolt" @click="fireNow">disparar</Button>
+          <Button variant="ghost" size="sm" @click="dismissed = true">cancelar</Button>
+          <Button variant="primary" size="sm" :loading="lifecycle === 'saving'" icon-right="fas fa-arrow-right" @click="save">
+            {{ isEdit ? 'salvar alterações' : 'criar alerta' }}
+          </Button>
         </div>
       </footer>
     </template>
-  </div>
+  </VizFrame>
 </template>
 
 <style scoped>
-/* ═════════════════════════════════════════════════════════════════════════
-   CARD: hairline accent no edge esquerdo (signature)
-   ═════════════════════════════════════════════════════════════════════════ */
-.alert-editor-card {
-  position: relative;
-  margin-top: 0.5rem;
-  background: rgb(var(--surface-raised));
-  border: 1px solid rgb(var(--line));
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow:
-    0 1px 2px 0 rgb(15 23 42 / 0.04),
-    0 4px 16px -8px rgb(15 23 42 / 0.10),
-    inset 0 1px 0 0 rgb(255 255 255 / 0.04);
-  animation: slide-up 280ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.alert-editor-card::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg,
-    rgb(var(--accent)) 0%,
-    rgb(var(--accent) / 0.4) 60%,
-    rgb(var(--accent) / 0) 100%);
-}
-
-/* ═════════════════════════════════════════════════════════════════════════
-   HEADER
-   ═════════════════════════════════════════════════════════════════════════ */
-.card-header {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-  padding: 0.875rem 1.25rem 0.875rem 1.5rem;
-  border-bottom: 1px solid rgb(var(--line-subtle));
-}
-.header-glyph {
-  width: 32px; height: 32px;
-  display: grid; place-items: center;
-  border-radius: 9px;
-  background: rgb(var(--accent-soft));
-  color: rgb(var(--accent));
-  font-size: 13px;
-}
-.header-eyebrow {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgb(var(--ink-subtle));
-  margin: 0;
-}
-.header-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: rgb(var(--ink));
-  margin: 1px 0 0 0;
-  letter-spacing: -0.005em;
-}
-.status-pill {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid;
-}
-.status-draft {
-  border-color: rgb(var(--accent) / 0.3);
-  color: rgb(var(--accent));
-  background: rgb(var(--accent-soft));
-}
-.status-error {
-  border-color: rgb(239 68 68 / 0.4);
-  color: rgb(239 68 68);
-  background: rgb(239 68 68 / 0.06);
-}
+/* A moldura (borda, fundo, cabeçalho, sombra) é do VizFrame/Panel: aqui só
+   o miolo do formulário. Nada abaixo de 11px (piso do design system) e
+   nenhuma cor fora dos tokens. */
 
 /* ═════════════════════════════════════════════════════════════════════════
    ERROR BANNER
@@ -648,20 +553,19 @@ const MINUTES = [0, 15, 30, 45];
 .error-banner {
   margin: 12px 16px 0;
   padding: 10px 12px;
-  background: rgb(239 68 68 / 0.08);
-  border: 1px solid rgb(239 68 68 / 0.2);
+  background: rgb(var(--data-neg) / 0.08);
+  border: 1px solid rgb(var(--data-neg) / 0.2);
   border-radius: 8px;
-  color: rgb(220 38 38);
+  color: rgb(var(--data-neg));
   font-size: 12.5px;
   display: flex; align-items: center; gap: 8px;
 }
-:global(.dark) .error-banner { color: rgb(252 165 165); }
 
 /* ═════════════════════════════════════════════════════════════════════════
    SECTIONS
    ═════════════════════════════════════════════════════════════════════════ */
 .section {
-  padding: 14px 20px 0 24px;
+  padding: 14px 16px 0;
 }
 .section-divider {
   position: relative;
@@ -672,15 +576,13 @@ const MINUTES = [0, 15, 30, 45];
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg,
-    rgb(var(--line)) 0%,
-    rgb(var(--line) / 0.3) 100%);
+  background: rgb(var(--line-subtle));
   margin-left: 12px;
 }
 .section-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgb(var(--ink-subtle));
   white-space: nowrap;
@@ -748,7 +650,7 @@ const MINUTES = [0, 15, 30, 45];
   color: rgb(var(--ink));
   font-weight: 500;
   box-shadow:
-    0 1px 2px 0 rgb(15 23 42 / 0.06),
+    0 1px 2px 0 rgb(var(--ink) / 0.06),
     inset 0 0 0 1px rgb(var(--line));
 }
 .rec-tab-active i { opacity: 1; color: rgb(var(--accent)); }
@@ -825,7 +727,7 @@ const MINUTES = [0, 15, 30, 45];
 .cron-hint {
   display: block;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
   color: rgb(var(--ink-subtle));
   margin-top: 4px;
   letter-spacing: 0.04em;
@@ -844,7 +746,7 @@ const MINUTES = [0, 15, 30, 45];
   font-size: 12.5px;
   color: rgb(var(--ink));
 }
-.cron-summary-text i { color: rgb(var(--accent)); font-size: 10px; }
+.cron-summary-text i { color: rgb(var(--accent)); font-size: 11px; }
 .cron-summary-code {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
@@ -891,35 +793,20 @@ const MINUTES = [0, 15, 30, 45];
   line-height: 1.2;
 }
 .channel-desc {
-  font-size: 10.5px;
+  font-size: 11px;
   color: rgb(var(--ink-subtle));
   margin: 1px 0 0 0;
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
-   PREVIEW STUB ("carbon copy" perfurado)
+   PREVIEW (como a mensagem vai chegar)
    ═════════════════════════════════════════════════════════════════════════ */
 .preview-stub {
   position: relative;
-  background:
-    linear-gradient(180deg,
-      rgb(var(--accent-soft) / 0.4) 0%,
-      rgb(var(--surface-sunken) / 0.3) 100%);
+  background: rgb(var(--surface-sunken) / 0.5);
   border: 1px solid rgb(var(--line));
   border-radius: 10px;
   overflow: hidden;
-}
-.preview-perfs {
-  display: flex; justify-content: space-around;
-  padding: 6px 12px;
-  background: rgb(var(--surface));
-  border-bottom: 1px dashed rgb(var(--line));
-}
-.perf-dot {
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: rgb(var(--line-strong));
-  opacity: 0.4;
 }
 .preview-body {
   padding: 14px 16px;
@@ -946,23 +833,24 @@ const MINUTES = [0, 15, 30, 45];
   border: 1px solid rgb(var(--line));
   border-radius: 5px;
   color: rgb(var(--ink-muted));
-  font-size: 10px;
+  font-size: 11px;
   cursor: pointer;
   opacity: 0;
   transition: all 160ms;
 }
-.preview-stub:hover .preview-refresh { opacity: 1; }
+.preview-stub:hover .preview-refresh,
+.preview-refresh:focus-visible { opacity: 1; }
 .preview-refresh:hover {
   color: rgb(var(--accent));
   border-color: rgb(var(--accent) / 0.4);
 }
 .preview-hint {
-  font-size: 10.5px;
+  font-size: 11px;
   color: rgb(var(--ink-subtle));
   margin: 6px 0 0;
   display: flex; align-items: center; gap: 5px;
 }
-.preview-hint i { font-size: 9px; }
+.preview-hint i { font-size: 11px; }
 
 .delivery-box {
   margin-top: 10px;
@@ -994,7 +882,7 @@ const MINUTES = [0, 15, 30, 45];
   color: inherit;
 }
 .chev {
-  font-size: 10px;
+  font-size: 11px;
   color: rgb(var(--ink-subtle));
   transition: transform 200ms;
 }
@@ -1030,7 +918,7 @@ const MINUTES = [0, 15, 30, 45];
   text-transform: none;
 }
 .advanced-toggle-row small {
-  font-size: 10.5px;
+  font-size: 11px;
   color: rgb(var(--ink-subtle));
 }
 .check-input {
@@ -1043,7 +931,7 @@ const MINUTES = [0, 15, 30, 45];
    RECIPE
    ═════════════════════════════════════════════════════════════════════════ */
 .recipe {
-  padding: 12px 20px 0 24px;
+  padding: 12px 16px 0;
 }
 .recipe-toggle {
   width: 100%;
@@ -1057,7 +945,7 @@ const MINUTES = [0, 15, 30, 45];
 }
 .recipe-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgb(var(--ink-subtle));
@@ -1077,7 +965,7 @@ const MINUTES = [0, 15, 30, 45];
 }
 .recipe-args {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
+  font-size: 11px;
   color: rgb(var(--ink-muted));
   background: rgb(var(--surface-sunken));
   padding: 10px 12px;
@@ -1095,7 +983,7 @@ const MINUTES = [0, 15, 30, 45];
    ═════════════════════════════════════════════════════════════════════════ */
 .card-footer {
   margin-top: 16px;
-  padding: 12px 20px 14px 24px;
+  padding: 10px 16px 12px;
   background: rgb(var(--surface-sunken) / 0.4);
   border-top: 1px solid rgb(var(--line-subtle));
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -1107,70 +995,9 @@ const MINUTES = [0, 15, 30, 45];
   color: rgb(var(--ink-subtle));
 }
 .footer-stats span { display: flex; align-items: center; gap: 5px; }
-.footer-stats i { font-size: 9px; }
+.footer-stats i { font-size: 11px; }
 .footer-actions {
-  display: flex; gap: 6px; align-items: center;
-}
-
-.btn-ghost {
-  padding: 7px 12px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  font-size: 12px;
-  color: rgb(var(--ink-muted));
-  cursor: pointer;
-  transition: all 160ms;
-}
-.btn-ghost:hover {
-  color: rgb(var(--ink));
-  background: rgb(var(--surface));
-  border-color: rgb(var(--line));
-}
-.btn-ghost i { margin-right: 4px; font-size: 10px; }
-
-.btn-danger {
-  padding: 7px 12px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  font-size: 12px;
-  color: rgb(220 38 38 / 0.8);
-  cursor: pointer;
-  transition: all 160ms;
-}
-.btn-danger:hover {
-  color: rgb(220 38 38);
-  background: rgb(239 68 68 / 0.08);
-}
-.btn-danger i { margin-right: 4px; font-size: 10px; }
-
-.btn-primary {
-  padding: 8px 16px;
-  background: rgb(var(--accent));
-  border: none;
-  border-radius: 7px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: white;
-  cursor: pointer;
-  transition: all 180ms;
-  box-shadow:
-    0 1px 2px 0 rgb(var(--accent) / 0.3),
-    inset 0 1px 0 0 rgb(255 255 255 / 0.15);
-  display: flex; align-items: center; gap: 4px;
-  letter-spacing: -0.005em;
-}
-.btn-primary:hover:not(:disabled) {
-  background: rgb(var(--accent-hover));
-  transform: translateY(-1px);
-  box-shadow:
-    0 4px 12px -2px rgb(var(--accent) / 0.4),
-    inset 0 1px 0 0 rgb(255 255 255 / 0.2);
-}
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
@@ -1178,32 +1005,19 @@ const MINUTES = [0, 15, 30, 45];
    ═════════════════════════════════════════════════════════════════════════ */
 .saved-state {
   display: flex; align-items: center; gap: 14px;
-  padding: 16px 20px 16px 24px;
+  padding: 14px 16px;
   animation: scale-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .saved-icon {
   width: 36px; height: 36px;
   display: grid; place-items: center;
-  background: linear-gradient(135deg,
-    rgb(34 197 94) 0%,
-    rgb(22 163 74) 100%);
+  background: rgb(var(--data-pos-soft));
   border-radius: 50%;
-  color: white;
+  color: rgb(var(--data-pos));
   font-size: 13px;
-  box-shadow:
-    0 2px 8px -2px rgb(34 197 94 / 0.4),
-    inset 0 1px 0 0 rgb(255 255 255 / 0.3);
   flex-shrink: 0;
 }
 .saved-body { flex: 1; min-width: 0; }
-.saved-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgb(34 197 94);
-  margin: 0;
-}
 .saved-name {
   font-size: 14px;
   font-weight: 600;
@@ -1220,27 +1034,12 @@ const MINUTES = [0, 15, 30, 45];
 }
 .saved-meta .dot { color: rgb(var(--ink-subtle)); margin: 0 2px; }
 .saved-actions { flex-shrink: 0; }
-.link-btn {
-  font-size: 11.5px;
-  color: rgb(var(--accent));
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 5px;
-  transition: background 160ms;
-}
-.link-btn:hover { background: rgb(var(--accent-soft)); }
 
 /* ═════════════════════════════════════════════════════════════════════════
    Last section (cardápio extra de padding bottom para a borda do card)
    ═════════════════════════════════════════════════════════════════════════ */
 .section:last-of-type { padding-bottom: 4px; }
 
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.96); }
   to   { opacity: 1; transform: scale(1); }
