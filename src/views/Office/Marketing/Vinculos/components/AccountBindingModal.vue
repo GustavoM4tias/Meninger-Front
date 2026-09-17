@@ -33,6 +33,7 @@ const queues = ref([]);
 const queueByEmp = ref(new Map());
 const queueNameByEmp = ref(new Map());
 const empName = ref(new Map());
+const empCity = ref(new Map());
 const filaDraft = ref({});          // idempreendimento -> idfila escolhido no modal
 const loadingQueues = ref(false);
 
@@ -44,13 +45,16 @@ async function loadQueues() {
         const byEmp = new Map();
         const nameByEmp = new Map();
         const names = new Map();
+        const cities = new Map();
         for (const e of d.empreendimentos || []) {
             names.set(Number(e.idempreendimento), e.nome);
+            cities.set(Number(e.idempreendimento), e.cidade || null);
             if (e.idfila) { byEmp.set(Number(e.idempreendimento), e.idfila); nameByEmp.set(Number(e.idempreendimento), e.fila_nome); }
         }
         queueByEmp.value = byEmp;
         queueNameByEmp.value = nameByEmp;
         empName.value = names;
+        empCity.value = cities;
     } catch (e) {
         queues.value = [];
     } finally {
@@ -89,6 +93,22 @@ function setFila(id, idfila) {
 }
 function nomeEmp(id) {
     return empName.value.get(Number(id)) || `#${id}`;
+}
+// Quem a fila já atende, para o rótulo da opção. Sem isso "Fila Residencial
+// Esmeralda - Avaré" parecia servir para Três Marias (Ibitinga).
+function atendeDaFila(f) {
+    const emps = f.empreendimentos || [];
+    return emps.length ? emps.map(e => e.cidade ? `${e.nome} (${e.cidade})` : e.nome).join(', ') : null;
+}
+// Fila escolhida atende outra praça e não a deste empreendimento.
+function filaForaDaPraca(id) {
+    const idfila = filaDe(id);
+    if (!idfila) return null;
+    const f = queues.value.find(q => q.idfila === Number(idfila));
+    const cidade = empCity.value.get(Number(id));
+    const cidades = f?.cidades || [];
+    if (!f || !cidade || !cidades.length || cidades.includes(cidade)) return null;
+    return { cidades, cidade };
 }
 
 const saving = ref(false);
@@ -167,15 +187,24 @@ async function save() {
         </p>
         <div v-if="loadingQueues" class="text-micro text-ink-subtle"><i class="fas fa-circle-notch fa-spin mr-1"></i>Lendo filas...</div>
         <div v-else class="space-y-2">
-          <div v-for="id in form.bound_empreendimentos" :key="id" class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-            <span class="text-xs text-ink sm:w-56 truncate" :title="nomeEmp(id)">{{ nomeEmp(id) }}</span>
-            <select :value="filaDe(id) ?? ''" @change="e => setFila(id, e.target.value)"
-              class="flex-1 min-h-[40px] rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-accent/40">
-              <option value="">Sem fila (retorno não se aplica)</option>
-              <option v-for="f in queues" :key="f.idfila" :value="f.idfila">
-                {{ f.nome }}{{ f.qtd_corretores ? ` · ${f.qtd_corretores} atendente(s)` : '' }}
-              </option>
-            </select>
+          <div v-for="id in form.bound_empreendimentos" :key="id" class="flex flex-col gap-1">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
+              <span class="text-xs text-ink sm:w-56 truncate" :title="nomeEmp(id)">
+                {{ nomeEmp(id) }}<span v-if="empCity.get(Number(id))" class="text-ink-subtle"> ({{ empCity.get(Number(id)) }})</span>
+              </span>
+              <select :value="filaDe(id) ?? ''" @change="e => setFila(id, e.target.value)"
+                class="flex-1 min-h-[40px] rounded border bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-accent/40"
+                :class="filaForaDaPraca(id) ? 'border-data-neg/60' : 'border-line'">
+                <option value="">Sem fila (retorno não se aplica)</option>
+                <option v-for="f in queues" :key="f.idfila" :value="f.idfila">
+                  {{ f.nome }} · {{ atendeDaFila(f) ? `atende: ${atendeDaFila(f)}` : 'ainda não atende ninguém' }}{{ f.qtd_corretores ? ` · ${f.qtd_corretores} atendente(s)` : '' }}
+                </option>
+              </select>
+            </div>
+            <p v-if="filaForaDaPraca(id)" class="text-micro text-data-neg sm:pl-[15rem]">
+              <i class="fas fa-triangle-exclamation mr-1"></i>
+              Esta fila atende {{ filaForaDaPraca(id).cidades.join(', ') }}, não {{ filaForaDaPraca(id).cidade }}: o lead que volta cairia com corretor de outra praça.
+            </p>
           </div>
         </div>
       </div>

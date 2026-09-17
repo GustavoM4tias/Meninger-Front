@@ -26,6 +26,9 @@ const open = ref(false);
 
       <h3 class="flex-1 text-sm font-medium text-ink truncate text-left" :title="fila.nome">
         {{ fila.nome }}
+        <!-- Praça pelo vínculo: é o que diz para onde o lead vai de fato. -->
+        <span v-if="fila.cidades?.length" class="text-micro font-normal text-ink-subtle">· {{ fila.cidades.join(', ') }}</span>
+        <span v-if="fila.praca_mista" class="text-micro font-normal text-data-warn" title="Atende empreendimentos de mais de uma cidade">· praça mista</span>
       </h3>
 
       <span class="text-micro font-mono text-ink-subtle">
@@ -54,7 +57,7 @@ const open = ref(false);
             <span v-for="e in fila.empreendimentos" :key="e.idempreendimento"
               :title="e.motivo"
               class="inline-flex items-center gap-1 text-micro px-1.5 py-0.5 rounded-md bg-surface-raised border border-line text-ink-muted">
-              {{ e.nome }}
+              {{ e.nome }}<span v-if="e.cidade" class="text-ink-subtle">({{ e.cidade }})</span>
               <button v-if="podeEditar" type="button" title="Remover vínculo"
                 class="text-ink-subtle hover:text-data-neg transition-colors"
                 @click.stop="$emit('desvincular', e.idempreendimento)">

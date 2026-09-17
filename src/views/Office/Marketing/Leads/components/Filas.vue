@@ -100,12 +100,15 @@ function isAtiva(f) {
 // fila vazia — filtrar por isso esconderia fila boa. O que dá para mostrar é o
 // aviso, e a conferência de verdade é depois: se a fila não entregar, o lead
 // volta como "sem dono" e o Office avisa.
+// O rótulo diz quem a fila JÁ atende (praça): escolher "Fila Residencial
+// Esmeralda - Avaré" para um empreendimento de Ibitinga tem que doer no olho.
 const destinos = computed(() =>
   todas.value.filter(f => f.presente_no_cv !== false)
     .map(f => ({
       id: f.idfila_distribuicao_leads,
       nome: f.nome,
       semLista: !!f.sem_atendente_listado,
+      atende: (f.empreendimentos || []).map(e => e.cidade ? `${e.nome} (${e.cidade})` : e.nome).join(', '),
     }))
 );
 
@@ -202,11 +205,17 @@ const filtradas = computed(() => {
             @change="vincular(e.idempreendimento, $event.target.value)">
             <option value="">Sem fila</option>
             <option v-for="d in destinos" :key="d.id" :value="d.id">
-              {{ d.nome }}{{ d.semLista ? ' (sem corretor listado)' : '' }}
+              {{ d.nome }}{{ d.atende ? ` · atende: ${d.atende}` : ' · ainda não atende ninguém' }}{{ d.semLista ? ' (sem corretor listado)' : '' }}
             </option>
           </select>
           <p v-else class="text-micro text-ink-muted mt-0.5">
-            {{ e.fila_nome || 'Sem fila' }}
+            {{ e.fila_nome || 'Sem fila' }}<span v-if="e.fila_cidades?.length"> · {{ e.fila_cidades.join(', ') }}</span>
+          </p>
+          <!-- Fila de outra praça: o lead deste empreendimento cai com corretor
+               de outra cidade (Três Marias/Ibitinga na fila de Avaré, ago-set/2026). -->
+          <p v-if="e.fila_praca_divergente" class="text-micro text-data-neg mt-1">
+            <i class="fas fa-triangle-exclamation mr-1"></i>
+            Esta fila atende {{ e.fila_cidades.join(', ') }}, não {{ e.cidade }}: o lead cairia na praça errada.
           </p>
         </div>
         <p v-if="!empreendimentosFiltrados.length" class="text-center py-8 text-xs text-ink-subtle">

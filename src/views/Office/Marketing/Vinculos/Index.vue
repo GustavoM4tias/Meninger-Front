@@ -60,8 +60,13 @@ function filasDaConta(a) {
     const emps = a.empreendimentos || [];
     if (!emps.length) return '';
     const semFila = emps.filter(e => !e.idfila).length;
-    if (!semFila) return emps.map(e => e.fila_nome).filter(Boolean).join(', ');
+    if (!semFila) return emps.map(e => e.fila_cidades?.length ? `${e.fila_nome} (${e.fila_cidades.join(', ')})` : e.fila_nome).filter(Boolean).join(', ');
     return semFila === emps.length ? 'sem fila' : `${semFila} sem fila`;
+}
+// Fila de outra praça: o lead que volta com interesse novo iria para corretor
+// de outra cidade. É o erro que a tela precisa gritar, não esconder num tooltip.
+function filaForaDaPraca(a) {
+    return (a.empreendimentos || []).filter(e => e.fila_praca_divergente);
 }
 
 // ── Enviar represados recuperáveis ao CV ────────────────────────────────────
@@ -421,6 +426,9 @@ function statusBadge(s) {
                     <dd class="text-xs" :class="a.is_bound ? 'text-ink' : 'text-data-warn'">
                       {{ a.is_bound ? empresasDaConta(a) : (a.mapping_active ? 'sem vínculo' : 'desativado') }}
                       <span v-if="a.is_bound && filasDaConta(a)" class="text-ink-subtle"> · fila: {{ filasDaConta(a) }}</span>
+                      <span v-for="e in filaForaDaPraca(a)" :key="e.idempreendimento" class="block text-data-neg">
+                        <i class="fas fa-triangle-exclamation mr-1"></i>{{ e.nome }} ({{ e.cidade }}) está na fila de {{ e.fila_cidades.join(', ') }}
+                      </span>
                     </dd>
                   </div>
                   <div class="min-w-0">
@@ -468,6 +476,9 @@ function statusBadge(s) {
                       <template v-if="a.is_bound">
                         <div class="text-ink">{{ empresasDaConta(a) }}</div>
                         <div class="text-micro text-ink-subtle">fila: {{ filasDaConta(a) || 'sem fila' }}</div>
+                        <div v-for="e in filaForaDaPraca(a)" :key="e.idempreendimento" class="text-micro text-data-neg">
+                          <i class="fas fa-triangle-exclamation mr-1"></i>{{ e.nome }} ({{ e.cidade }}) está na fila de {{ e.fila_cidades.join(', ') }}
+                        </div>
                       </template>
                       <span v-else class="text-data-warn">{{ a.mapping_active ? 'sem vínculo' : 'desativado' }}</span>
                     </td>
