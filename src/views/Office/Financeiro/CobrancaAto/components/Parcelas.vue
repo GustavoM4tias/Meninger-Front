@@ -91,7 +91,12 @@
          E ela diz o que filtra: "emissões do período". Antes era um segundo
          campo com o MESMO placeholder do filtro de planos lá em cima, e as
          duas caixas pareciam a mesma busca repetida - eram escopos
-         diferentes (planos x emissões da rodada). -->
+         diferentes (planos x emissões da rodada).
+
+         O período era Hoje / 7 dias / 30 dias e nada mais: não dava para
+         escolher data. Agora é o MESMO bloco da aba Histórico (PeriodoFilter):
+         emitido de/até e pago de/até, independentes, com os mesmos atalhos.
+         Só "pago" preenchido responde "o que entrou no período". -->
     <Panel title="Acompanhamento" icon="fas fa-list-check"
       :subtitle="ultimaRodadaResumo" :padded="false">
       <template #actions>
@@ -99,30 +104,28 @@
           :disabled="store.boletosLoading" @click="recarregarAcompanhamento" />
       </template>
 
-      <div class="px-3 sm:px-4 py-2.5 border-b border-line
-                  flex flex-wrap items-center gap-2">
-        <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle
-                     w-full sm:w-auto sm:mr-1">
-          Emissões do período
-        </span>
+      <div class="px-3 sm:px-4 py-2.5 border-b border-line space-y-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle sm:mr-1">
+            Boletos do período
+          </span>
 
-        <SegmentedControl v-model="store.boletosFiltro.periodo" size="sm"
-          :options="[{ value: 'hoje', label: 'Hoje' }, { value: '7d', label: '7 dias' }, { value: '30d', label: '30 dias' }]"
-          @change="store.fetchBoletos()" />
+          <Select v-model="store.boletosFiltro.status" size="sm" class="w-full sm:w-40"
+            :options="[{ value: '', label: 'Todas as emissões' }, { value: 'success', label: 'Emitidos' }, { value: 'error', label: 'Com erro' }, { value: 'processing', label: 'Em processamento' }]"
+            @change="store.fetchBoletos()" />
 
-        <Select v-model="store.boletosFiltro.status" size="sm" class="w-full sm:w-40"
-          :options="[{ value: '', label: 'Todas as emissões' }, { value: 'success', label: 'Emitidos' }, { value: 'error', label: 'Com erro' }, { value: 'processing', label: 'Em processamento' }]"
-          @change="store.fetchBoletos()" />
+          <!-- A busca some daqui: é a MESMA do filtro de cima. Eram duas caixas
+               com o mesmo texto, e o "Reserva ou titular" agora recorta as duas
+               listas de uma vez. Sobram aqui só período e situação, que não têm
+               equivalente lá em cima porque só existem para as emissões. -->
+          <span v-if="store.filtro.q" class="ml-auto inline-flex items-center gap-1.5
+                      text-micro text-ink-subtle">
+            <i class="fas fa-magnifying-glass" style="font-size:9px"></i>
+            filtrando por <b class="text-ink">{{ store.filtro.q }}</b>
+          </span>
+        </div>
 
-        <!-- A busca some daqui: é a MESMA do filtro de cima. Eram duas caixas
-             com o mesmo texto, e o "Reserva ou titular" agora recorta as duas
-             listas de uma vez. Sobram aqui só período e situação, que não têm
-             equivalente lá em cima porque só existem para as emissões. -->
-        <span v-if="store.filtro.q" class="ml-auto inline-flex items-center gap-1.5
-                    text-micro text-ink-subtle">
-          <i class="fas fa-magnifying-glass" style="font-size:9px"></i>
-          filtrando por <b class="text-ink">{{ store.filtro.q }}</b>
-        </span>
+        <PeriodoFilter v-model="store.boletosFiltro.periodo" span="" @change="aoMudarPeriodo" />
       </div>
 
       <div v-if="store.boletosError" class="m-3 rounded-lg border border-data-neg/25 bg-data-neg/10 p-3 text-sm text-data-neg flex items-start gap-2">
@@ -138,12 +141,13 @@
           @click="recorteBoletos = recorteBoletos === c.key ? '' : c.key">
           <i :class="c.icon" style="font-size:10px"></i>
           <b>{{ c.value }}</b> {{ c.label }}
+          <span v-if="c.valor" class="opacity-80">· {{ formatCurrency(c.valor) }}</span>
         </button>
       </div>
 
       <DataTable :columns="COLUNAS_BOLETOS" :rows="boletosRecortados" row-key="id" density="compact" clickable
         :loading="store.boletosLoading" empty-title="Nenhum boleto de parcela no período"
-        :empty-text="store.boletosFiltro.periodo === 'hoje' ? 'A rodada diária ainda não emitiu nada hoje. Troque para 7 ou 30 dias para ver os anteriores.' : 'Nenhuma emissão de parcela nesse período com os filtros atuais.'"
+        :empty-text="periodoEhHoje ? 'A rodada diária ainda não emitiu nada hoje. Use os atalhos 7 dias ou 30 dias para ver os anteriores.' : `Nenhum boleto de parcela ${periodoResumo(store.boletosFiltro.periodo) || 'nesse período'} com os filtros atuais.`"
         @row-click="abrirBoletoParcela">
         <template #cell-hora="{ row }">
           <span class="tabular-nums text-ink">{{ formatDateTime(row.created_at) }}</span>
@@ -363,8 +367,9 @@ import Spinner from '@/components/UI/Spinner.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Panel from '@/components/UI/Panel.vue';
 import Select from '@/components/UI/Select.vue';
-import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Collapsible from '@/components/UI/Collapsible.vue';
+import PeriodoFilter from './PeriodoFilter.vue';
+import { periodoResumo, periodosAtivos } from './periodo';
 import PlanoDetailModal from './PlanoDetailModal.vue';
 import BoletoDetailModal from './BoletoDetailModal.vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
@@ -483,14 +488,16 @@ const resumoChips = computed(() => {
   const neg = 'bg-data-neg/10 text-data-neg hover:bg-data-neg/15';
   const pos = 'bg-data-pos/10 text-data-pos hover:bg-data-pos/15';
   const neu = 'bg-surface-sunken text-ink-muted hover:bg-line';
+  /* Os dois chips com dinheiro: "emitidos" e "pagos" trazem o valor ao lado
+     da contagem - é o que o período de pagamento existe para responder. */
   return [
-    { key: 'sucesso', label: 'emitidos', value: s.sucesso, icon: 'fas fa-barcode', classe: pos },
+    { key: 'sucesso', label: 'emitidos', value: s.sucesso, valor: s.sucesso_valor, icon: 'fas fa-barcode', classe: pos },
     { key: 'erro', label: 'com erro', value: s.erro, icon: 'fas fa-bug', classe: s.erro ? neg : neu },
     { key: 'processando', label: 'em processamento', value: s.processando, icon: 'fas fa-spinner', classe: neu },
     { key: 'whatsapp', label: 'sem WhatsApp', value: s.whatsapp_nao_enviado, icon: 'fab fa-whatsapp', classe: s.whatsapp_nao_enviado ? neg : neu },
     { key: 'email', label: 'sem e-mail', value: s.email_nao_enviado, icon: 'fas fa-envelope', classe: s.email_nao_enviado ? neg : neu },
     { key: 'cv', label: 'sem anexo no CV', value: s.cv_nao_anexado, icon: 'fas fa-paperclip', classe: s.cv_nao_anexado ? neg : neu },
-    { key: 'pagos', label: 'pagos', value: s.pagos, icon: 'fas fa-circle-check', classe: s.pagos ? pos : neu },
+    { key: 'pagos', label: 'pagos', value: s.pagos, valor: s.pagos_valor, icon: 'fas fa-circle-check', classe: s.pagos ? pos : neu },
     { key: 'cep', label: 'CEP a corrigir no CV', value: s.cep_contingencia || 0, icon: 'fas fa-location-dot', classe: s.cep_contingencia ? 'bg-data-warn/10 text-data-warn hover:bg-data-warn/15' : neu },
   ];
 });
@@ -565,6 +572,22 @@ watch(() => store.filtro.q, () => {
 onBeforeUnmount(() => clearTimeout(timerBusca));
 
 function recarregarAcompanhamento() { return Promise.allSettled([store.fetchBoletos(), store.fetchRodadas()]); }
+
+/* Período dos boletos: busca sozinho ao mudar, com a mesma folga da busca por
+   texto (o atalho troca de/até de uma vez; digitar a data dispara ao fechar o
+   campo). Apagar os dois períodos volta ao padrão (emitido hoje) - lista sem
+   período nenhum seria "tudo desde sempre", cortado no limite do servidor. */
+let timerPeriodo = null;
+function aoMudarPeriodo(p) {
+  if (!periodosAtivos(p)) store.boletosFiltro.periodo = store.boletosPeriodoPadrao();
+  clearTimeout(timerPeriodo);
+  timerPeriodo = setTimeout(() => store.fetchBoletos(), 350);
+}
+onBeforeUnmount(() => clearTimeout(timerPeriodo));
+const periodoEhHoje = computed(() => {
+  const p = store.boletosFiltro.periodo, d = store.boletosPeriodoPadrao();
+  return p.emitidoDe === d.emitidoDe && p.emitidoAte === d.emitidoAte && !p.pagoDe && !p.pagoAte;
+});
 
 const boletoModal = ref({ open: false, item: null });
 async function abrirBoletoParcela(row) {

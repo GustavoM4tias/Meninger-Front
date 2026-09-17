@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import { periodoParaQuery } from '@/views/Office/Financeiro/CobrancaAto/components/periodo';
 
 export const useBoletoStore = defineStore('boletoCaixa', () => {
     // ── Settings ──────────────────────────────────────────────────────────────
@@ -77,9 +78,8 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         paymentStatus: [],     // multi: pending/paid/cancelled/error
         empreendimento: [],    // multi (nomes exatos)
         idreserva: '',
-        dateFrom: '',
-        dateTo: '',
-        dateField: 'created_at', // 'created_at' (emissão) | 'paid_at' (pagamento)
+        // Emitido de/até e pago de/até, independentes (ver components/periodo.js)
+        periodo: { emitidoDe: '', emitidoAte: '', pagoDe: '', pagoAte: '' },
         q: '',                 // titular / nosso número / nº documento
         cvSituacao: [],        // multi: ids de situação da RESERVA no CV
         cvRepasse: [],         // multi: ids de situação do REPASSE no CV
@@ -116,9 +116,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         if (Array.isArray(f.forma) && f.forma.length) params.set('forma', f.forma.join(','));
         if (Array.isArray(f.empreendimento) && f.empreendimento.length) params.set('empreendimento', f.empreendimento.join(','));
         if (f.idreserva) params.set('idreserva', f.idreserva);
-        if (f.dateFrom)  params.set('dateFrom', f.dateFrom);
-        if (f.dateTo)    params.set('dateTo', f.dateTo);
-        if (f.dateField && f.dateField !== 'created_at') params.set('dateField', f.dateField);
+        periodoParaQuery(f.periodo || {}, params);
         if (f.q)         params.set('q', f.q);
         if (Array.isArray(f.cvSituacao) && f.cvSituacao.length) params.set('cvSituacao', f.cvSituacao.join(','));
         if (Array.isArray(f.cvRepasse) && f.cvRepasse.length) params.set('cvRepasse', f.cvRepasse.join(','));
@@ -205,11 +203,11 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             const f = historyFilter.value;
             if (Array.isArray(f.status) && f.status.length) params.set('status', f.status.join(','));
             if (Array.isArray(f.paymentStatus) && f.paymentStatus.length) params.set('paymentStatus', f.paymentStatus.join(','));
+            // `forma` faltava aqui: a lista recortava por boleto/cartão e os cartões não.
+            if (Array.isArray(f.forma) && f.forma.length) params.set('forma', f.forma.join(','));
             if (Array.isArray(f.empreendimento) && f.empreendimento.length) params.set('empreendimento', f.empreendimento.join(','));
             if (f.idreserva) params.set('idreserva', f.idreserva);
-            if (f.dateFrom)  params.set('dateFrom', f.dateFrom);
-            if (f.dateTo)    params.set('dateTo', f.dateTo);
-            if (f.dateField && f.dateField !== 'created_at') params.set('dateField', f.dateField);
+            periodoParaQuery(f.periodo || {}, params);
             if (f.q)         params.set('q', f.q);
             if (Array.isArray(f.cvSituacao) && f.cvSituacao.length) params.set('cvSituacao', f.cvSituacao.join(','));
             if (Array.isArray(f.cvRepasse) && f.cvRepasse.length) params.set('cvRepasse', f.cvRepasse.join(','));
@@ -242,9 +240,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             paymentStatus: [],
             empreendimento: [],
             idreserva: '',
-            dateFrom: '',
-            dateTo: '',
-            dateField: 'created_at',
+            periodo: { emitidoDe: '', emitidoAte: '', pagoDe: '', pagoAte: '' },
             q: '',
             cvSituacao: [],
             cvRepasse: [],

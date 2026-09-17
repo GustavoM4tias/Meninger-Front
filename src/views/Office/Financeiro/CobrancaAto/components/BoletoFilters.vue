@@ -6,6 +6,8 @@ import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
 import FilterBar from '@/components/UI/FilterBar.vue';
+import PeriodoFilter from './PeriodoFilter.vue';
+import { PERIODO_VAZIO, ultimosDias, periodosAtivos } from './periodo';
 
 // Emits Filtros aplicados → pai dispara fetchHistory.
 const emit = defineEmits(['filter-changed']);
@@ -14,20 +16,12 @@ const store = useBoletoStore();
 const route = useRoute();
 const router = useRouter();
 
-// Helper: formata Date pra ISO YYYY-MM-DD respeitando timezone local.
-function toIsoDateLocal(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+// Período padrão = emitido nos últimos 30 dias (hoje incluso); pago em
+// aberto. Os dois períodos são independentes (ver PeriodoFilter).
+function periodoPadrao() {
+  const { de, ate } = ultimosDias(30);
+  return { ...PERIODO_VAZIO, emitidoDe: de, emitidoAte: ate };
 }
-
-// Default = janela dos últimos 30 dias (hoje incluso).
-const today = new Date();
-const thirtyDaysAgo = new Date();
-thirtyDaysAgo.setDate(today.getDate() - 30);
-const DEFAULT_DATE_FROM = toIsoDateLocal(thirtyDaysAgo);
-const DEFAULT_DATE_TO   = toIsoDateLocal(today);
 
 // Estado local (espelho do store.historyFilter pra controlar v-model). Ao
 // aplicar (botão Filtrar ou input com debounce), copia pro store + emite.
@@ -37,19 +31,11 @@ const local = ref({
   forma: [],            // boleto | cartao — vazio = as duas
   empreendimento: [],
   idreserva: '',
-  dateFrom: DEFAULT_DATE_FROM,
-  dateTo: DEFAULT_DATE_TO,
-  dateField: 'created_at', // 'created_at' = emissão | 'paid_at' = pagamento
+  periodo: periodoPadrao(), // { emitidoDe, emitidoAte, pagoDe, pagoAte }
   q: '',
   cvSituacao: [], // ids de situação da RESERVA no CV
   cvRepasse: [],  // ids de situação do REPASSE no CV
 });
-
-// Data de referência da busca por período: emissão (created_at) ou pagamento (paid_at).
-const DATE_FIELD_OPTIONS = [
-  { value: 'created_at', label: 'Emissão' },
-  { value: 'paid_at',    label: 'Pagamento' },
-];
 
 // ── Opções dos selects ──────────────────────────────────────────────────────
 const STATUS_OPTIONS = [
@@ -125,9 +111,20 @@ function syncFiltersFromUrl() {
   if (q.forma) local.value.forma = String(q.forma).split(',').filter(Boolean);
   if (q.empreendimento) local.value.empreendimento = String(q.empreendimento).split(',').filter(Boolean);
   if (q.idreserva) local.value.idreserva = String(q.idreserva);
-  if (q.dateFrom) local.value.dateFrom = String(q.dateFrom);
-  if (q.dateTo)   local.value.dateTo = String(q.dateTo);
-  if (q.dateField === 'paid_at') local.value.dateField = 'paid_at';
+  // Período: `dateField=paid_at` é o formato antigo da URL (um período só,
+  // sobre a data de pagamento) - vira o período "pago".
+  const p = { ...local.value.periodo };
+  if (q.dateField === 'paid_at') {
+    p.emitidoDe = ''; p.emitidoAte = '';
+    if (q.dateFrom) p.pagoDe = String(q.dateFrom);
+    if (q.dateTo) p.pagoAte = String(q.dateTo);
+  } else {
+    if (q.dateFrom) p.emitidoDe = String(q.dateFrom);
+    if (q.dateTo) p.emitidoAte = String(q.dateTo);
+  }
+  if (q.paidFrom) p.pagoDe = String(q.paidFrom);
+  if (q.paidTo) p.pagoAte = String(q.paidTo);
+  local.value.periodo = p;
   if (q.q)        local.value.q = String(q.q);
   if (q.cvSituacao) local.value.cvSituacao = String(q.cvSituacao).split(',').filter(Boolean);
   if (q.cvRepasse)  local.value.cvRepasse = String(q.cvRepasse).split(',').filter(Boolean);
@@ -141,9 +138,10 @@ function syncUrlFromFilters() {
   if (f.forma?.length)          q.forma = f.forma.join(',');
   if (f.empreendimento.length)  q.empreendimento = f.empreendimento.join(',');
   if (f.idreserva)              q.idreserva = f.idreserva;
-  if (f.dateFrom)               q.dateFrom = f.dateFrom;
-  if (f.dateTo)                 q.dateTo = f.dateTo;
-  if (f.dateField === 'paid_at') q.dateField = f.dateField;
+  if (f.periodo.emitidoDe)      q.dateFrom = f.periodo.emitidoDe;
+  if (f.periodo.emitidoAte)     q.dateTo = f.periodo.emitidoAte;
+  if (f.periodo.pagoDe)         q.paidFrom = f.periodo.pagoDe;
+  if (f.periodo.pagoAte)        q.paidTo = f.periodo.pagoAte;
   if (f.q)                      q.q = f.q;
   if (f.cvSituacao.length)      q.cvSituacao = f.cvSituacao.join(',');
   if (f.cvRepasse.length)       q.cvRepasse = f.cvRepasse.join(',');
@@ -152,7 +150,7 @@ function syncUrlFromFilters() {
 
 // ── Apply / Clear ───────────────────────────────────────────────────────────
 function applyFilters() {
-  store.historyFilter = { ...local.value };
+  store.historyFilter = { ...local.value, periodo: { ...local.value.periodo } };
   store.historyPage = 1;
   syncUrlFromFilters();
   emit('filter-changed');
@@ -163,10 +161,9 @@ function clearFilters() {
   // quando o usuário clica Limpar e nada aparece porque base é gigante.
   local.value = {
     status: ['success', 'error', 'processing', 'queued'], paymentStatus: [], forma: [], empreendimento: [],
-    idreserva: '', dateFrom: DEFAULT_DATE_FROM, dateTo: DEFAULT_DATE_TO,
-    dateField: 'created_at', q: '', cvSituacao: [], cvRepasse: [],
+    idreserva: '', periodo: periodoPadrao(), q: '', cvSituacao: [], cvRepasse: [],
   };
-  store.historyFilter = { ...local.value };
+  store.historyFilter = { ...local.value, periodo: { ...local.value.periodo } };
   store.historyPage = 1;
   syncUrlFromFilters();
   emit('filter-changed');
@@ -182,8 +179,7 @@ const activeFiltersCount = computed(() => {
   if (f.forma?.length) n++;
   if (f.empreendimento.length) n++;
   if (f.idreserva) n++;
-  if (f.dateFrom)  n++;
-  if (f.dateTo)    n++;
+  n += periodosAtivos(f.periodo);
   if (f.q)         n++;
   if (f.cvSituacao.length) n++;
   if (f.cvRepasse.length)  n++;
@@ -216,27 +212,10 @@ onMounted(async () => {
     @apply="applyFilters" @clear="clearFilters">
 
 
-      <!-- Data de referência: emissão ou pagamento -->
-      <div>
-        <label class="block text-xs font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-calendar-day text-micro mr-1 text-ink-subtle"></i>Buscar por data de
-        </label>
-        <div class="inline-flex rounded-lg border border-line bg-surface-sunken p-0.5 w-full">
-          <button v-for="opt in DATE_FIELD_OPTIONS" :key="opt.value" type="button"
-            @click="local.dateField = opt.value"
-            class="flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
-            :class="local.dateField === opt.value
-              ? 'bg-accent text-white shadow-sm'
-              : 'text-ink-muted hover:text-ink'">
-            {{ opt.label }}
-          </button>
-        </div>
-      </div>
-
-      <Input v-model="local.dateFrom" type="date"
-        :label="local.dateField === 'paid_at' ? 'Pago a partir de' : 'Emitido a partir de'" />
-      <Input v-model="local.dateTo" type="date"
-        :label="local.dateField === 'paid_at' ? 'Pago até' : 'Emitido até'" />
+      <!-- Período: emitido de/até E pago de/até, independentes. Era um
+           período só com o botão "Emissão | Pagamento": dava para ver um OU
+           outro, nunca "o que foi pago no período" junto do que foi emitido. -->
+      <PeriodoFilter v-model="local.periodo" />
 
       <div>
         <label class="block text-xs font-medium text-ink-muted mb-1.5">

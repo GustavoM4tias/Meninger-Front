@@ -7,6 +7,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import { PERIODO_VAZIO, ultimosDias, periodoParaQuery } from '@/views/Office/Financeiro/CobrancaAto/components/periodo';
 
 const BASE = '/cobranca-ato/parcelas';
 
@@ -176,7 +177,10 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
     const boletos = ref({ rows: [], resumo: null, hoje: null });
     const boletosLoading = ref(false);
     const boletosError = ref(null);
-    const boletosFiltro = ref({ periodo: 'hoje', status: '', q: '' }); // periodo: hoje | 7d | 30d
+    // Período no MESMO formato da aba Histórico (emitido de/até e pago de/até,
+    // independentes). Nasce em "emitido hoje", que era o Hoje do controle antigo.
+    const boletosPeriodoPadrao = () => ({ ...PERIODO_VAZIO, emitidoDe: ultimosDias(1).de, emitidoAte: ultimosDias(1).ate });
+    const boletosFiltro = ref({ periodo: boletosPeriodoPadrao(), status: '', q: '' });
 
     async function fetchRodadas({ silent = false } = {}) {
         if (!silent) { rodadasLoading.value = true; rodadasError.value = null; }
@@ -189,7 +193,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         if (!silent) { boletosLoading.value = true; boletosError.value = null; }
         try {
             const f = boletosFiltro.value;
-            const q = new URLSearchParams({ periodo: f.periodo || 'hoje' });
+            const q = periodoParaQuery(f.periodo || {}, new URLSearchParams());
             if (f.status) q.set('status', f.status);
             if (f.q) q.set('q', f.q);
             boletos.value = await requestWithAuth(`${BASE}/boletos?${q}`);
@@ -248,7 +252,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         detalhe, detalheLoading, detalheError, fetchDetalhe,
         acting, actionError,
         criarPlano, sincronizar, pausar, reativar, definirNumeracao, encerrar, emitirParcela, baixarParcela, marcarPaga, editarParcela, rodarCiclo,
-        rodadas, rodadasLoading, rodadasError, boletos, boletosLoading, boletosError, boletosFiltro, fetchRodadas, fetchBoletos,
+        rodadas, rodadasLoading, rodadasError, boletos, boletosLoading, boletosError, boletosFiltro, boletosPeriodoPadrao, fetchRodadas, fetchBoletos,
         repasseEtapas, fetchRepasseEtapas,
         empreendimentos, fetchEmpreendimentos,
         templates, templatesLoading, templatesMsg, fetchTemplates, syncTemplates,
