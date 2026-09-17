@@ -7,7 +7,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
-import { PERIODO_VAZIO, ultimosDias, periodoParaQuery } from '@/views/Office/Financeiro/CobrancaAto/components/periodo';
+import { PERIODO_VAZIO, periodoParaQuery } from '@/views/Office/Financeiro/CobrancaAto/components/periodo';
 
 const BASE = '/cobranca-ato/parcelas';
 
@@ -18,6 +18,10 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         empreendimento: [],
         q: '',
         comAtraso: false,
+        // emitido de/até e pago de/até, independentes, o mesmo bloco da aba
+        // Histórico. Vazio = a lista não recorta por data; os cartões e a coluna
+        // "no período" caem em 30 dias.
+        periodo: { ...PERIODO_VAZIO },
     });
     const sortBy = ref('proxima');
     const sortDir = ref('asc');
@@ -43,6 +47,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         if (f.empreendimento?.length) q.set('empreendimento', f.empreendimento.join(','));
         if (f.q) q.set('q', f.q);
         if (f.comAtraso) q.set('comAtraso', '1');
+        periodoParaQuery(f.periodo || {}, q);
         return q;
     }
 
@@ -82,6 +87,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
             const f = filtro.value;
             if (f.empreendimento?.length) q.set('empreendimento', f.empreendimento.join(','));
             if (f.q) q.set('q', f.q);
+            periodoParaQuery(f.periodo || {}, q);
             stats.value = await requestWithAuth(`${BASE}/stats?${q}`);
         } catch (e) {
             console.error('[parcelas] stats', e);
@@ -167,41 +173,20 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
     }
     const rodarCiclo = () => post('/rodar');
 
-    // ── Acompanhamento: rodadas e boletos de parcela ───────────────────────────
+    // ── Últimas rodadas ────────────────────────────────────────────────────────
     // O que a rodada fez, de verdade: cada ciclo (automatico ou manual) grava
-    // inicio, fim, contagens e erros; e cada boleto de parcela aparece com o
-    // canal por onde saiu (CV, e-mail, WhatsApp) e o motivo quando nao saiu.
+    // inicio, fim, contagens e erros. O boleto a boleto saiu da aba (era uma
+    // segunda lista com um segundo filtro): o que saiu e o que entrou no
+    // periodo agora esta na propria lista de planos e nos cartoes.
     const rodadas = ref([]);
     const rodadasLoading = ref(false);
     const rodadasError = ref(null);
-    const boletos = ref({ rows: [], resumo: null, hoje: null });
-    const boletosLoading = ref(false);
-    const boletosError = ref(null);
-    // Período no MESMO formato da aba Histórico (emitido de/até e pago de/até,
-    // independentes). Nasce em "emitido hoje", que era o Hoje do controle antigo.
-    const boletosPeriodoPadrao = () => ({ ...PERIODO_VAZIO, emitidoDe: ultimosDias(1).de, emitidoAte: ultimosDias(1).ate });
-    const boletosFiltro = ref({ periodo: boletosPeriodoPadrao(), status: '', q: '' });
 
     async function fetchRodadas({ silent = false } = {}) {
         if (!silent) { rodadasLoading.value = true; rodadasError.value = null; }
         try { rodadas.value = (await requestWithAuth(`${BASE}/rodadas?limit=30`))?.rows || []; }
         catch (e) { rodadasError.value = e.message || 'Falha ao listar as rodadas.'; }
         finally { if (!silent) rodadasLoading.value = false; }
-    }
-
-    async function fetchBoletos({ silent = false } = {}) {
-        if (!silent) { boletosLoading.value = true; boletosError.value = null; }
-        try {
-            const f = boletosFiltro.value;
-            const q = periodoParaQuery(f.periodo || {}, new URLSearchParams());
-            if (f.status) q.set('status', f.status);
-            if (f.q) q.set('q', f.q);
-            boletos.value = await requestWithAuth(`${BASE}/boletos?${q}`);
-        } catch (e) {
-            boletosError.value = e.message || 'Falha ao listar os boletos de parcela.';
-        } finally {
-            if (!silent) boletosLoading.value = false;
-        }
     }
 
     // ── Etapas do repasse (CV) para a regra de encerramento ────────────────────
@@ -252,7 +237,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         detalhe, detalheLoading, detalheError, fetchDetalhe,
         acting, actionError,
         criarPlano, sincronizar, pausar, reativar, definirNumeracao, encerrar, emitirParcela, baixarParcela, marcarPaga, editarParcela, rodarCiclo,
-        rodadas, rodadasLoading, rodadasError, boletos, boletosLoading, boletosError, boletosFiltro, boletosPeriodoPadrao, fetchRodadas, fetchBoletos,
+        rodadas, rodadasLoading, rodadasError, fetchRodadas,
         repasseEtapas, fetchRepasseEtapas,
         empreendimentos, fetchEmpreendimentos,
         templates, templatesLoading, templatesMsg, fetchTemplates, syncTemplates,

@@ -48,6 +48,11 @@
         icon-left="fas fa-magnifying-glass"
         placeholder="Ex.: 8050 ou Maria" @keydown.enter="aplicar" />
 
+      <!-- Emitido de/até e pago de/até: o mesmo bloco da aba Histórico. Vazio, a
+           lista não recorta por data (é fila de trabalho); os cartões e a coluna
+           "No período" ficam em 30 dias. -->
+      <PeriodoFilter v-model="store.filtro.periodo" span="sm:col-span-2 lg:col-span-3" @change="aplicarComFolga" />
+
       <!-- Ocupa a linha inteira: é um interruptor, não um campo, e dividindo
            coluna com um seletor ficava com metade da largura do seu texto. -->
       <div class="sm:col-span-2 lg:col-span-3 pt-1 border-t border-line-subtle">
@@ -57,7 +62,7 @@
     </FilterBar>
 
     <!-- KPIs: fila de trabalho. Clicar recorta a tabela. -->
-    <StatRow v-if="!carregando && store.stats" :items="kpiCards" :cols="{ sm: 2, md: 3, lg: 6 }" size="sm"
+    <StatRow v-if="!carregando && store.stats" :items="kpiCards" :cols="{ sm: 2, md: 4, lg: 7 }" size="sm"
       selectable :active-key="recorte" @select="aoClicarKpi" />
 
     <!-- Linha de estado: última rodada e interruptor. -->
@@ -79,145 +84,6 @@
       </span>
     </div>
 
-    <!-- Acompanhamento: o que a rodada fez, boleto a boleto, e o histórico das
-         rodadas. É a resposta concreta para "saiu? para quem? e o que falhou?".
-
-         Os controles daqui ficavam no `#actions` do cabeçalho do Panel, que é
-         uma linha de altura fixa (3rem) e `shrink-0`: um SegmentedControl, um
-         Select de 144px, um campo de 160px e um botão espremidos ao lado do
-         título. Abaixo de ~900px aquilo embolava e estourava a altura da
-         barra. Agora é uma barra própria, abaixo do cabeçalho.
-
-         E ela diz o que filtra: "emissões do período". Antes era um segundo
-         campo com o MESMO placeholder do filtro de planos lá em cima, e as
-         duas caixas pareciam a mesma busca repetida - eram escopos
-         diferentes (planos x emissões da rodada).
-
-         O período era Hoje / 7 dias / 30 dias e nada mais: não dava para
-         escolher data. Agora é o MESMO bloco da aba Histórico (PeriodoFilter):
-         emitido de/até e pago de/até, independentes, com os mesmos atalhos.
-         Só "pago" preenchido responde "o que entrou no período". -->
-    <Panel title="Acompanhamento" icon="fas fa-list-check"
-      :subtitle="ultimaRodadaResumo" :padded="false">
-      <template #actions>
-        <IconButton icon="fas fa-rotate-right" size="sm" label="Atualizar"
-          :disabled="store.boletosLoading" @click="recarregarAcompanhamento" />
-      </template>
-
-      <div class="px-3 sm:px-4 py-2.5 border-b border-line space-y-2">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle sm:mr-1">
-            Boletos do período
-          </span>
-
-          <Select v-model="store.boletosFiltro.status" size="sm" class="w-full sm:w-40"
-            :options="[{ value: '', label: 'Todas as emissões' }, { value: 'success', label: 'Emitidos' }, { value: 'error', label: 'Com erro' }, { value: 'processing', label: 'Em processamento' }]"
-            @change="store.fetchBoletos()" />
-
-          <!-- A busca some daqui: é a MESMA do filtro de cima. Eram duas caixas
-               com o mesmo texto, e o "Reserva ou titular" agora recorta as duas
-               listas de uma vez. Sobram aqui só período e situação, que não têm
-               equivalente lá em cima porque só existem para as emissões. -->
-          <span v-if="store.filtro.q" class="ml-auto inline-flex items-center gap-1.5
-                      text-micro text-ink-subtle">
-            <i class="fas fa-magnifying-glass" style="font-size:9px"></i>
-            filtrando por <b class="text-ink">{{ store.filtro.q }}</b>
-          </span>
-        </div>
-
-        <PeriodoFilter v-model="store.boletosFiltro.periodo" span="" @change="aoMudarPeriodo" />
-      </div>
-
-      <div v-if="store.boletosError" class="m-3 rounded-lg border border-data-neg/25 bg-data-neg/10 p-3 text-sm text-data-neg flex items-start gap-2">
-        <i class="fas fa-circle-exclamation mt-0.5 shrink-0"></i>
-        <span class="min-w-0">{{ store.boletosError }}</span>
-      </div>
-
-      <!-- Resumo do período: clique recorta a tabela de boletos. -->
-      <div v-if="store.boletos.resumo" class="px-3 sm:px-4 py-2.5 border-b border-line flex flex-wrap gap-1.5">
-        <button v-for="c in resumoChips" :key="c.key" type="button"
-          class="inline-flex items-center gap-1.5 h-7 px-2 rounded-md text-micro font-medium transition-colors duration-120 focus-ring tabular-nums"
-          :class="[c.classe, recorteBoletos === c.key ? 'ring-2 ring-accent/40' : '']"
-          @click="recorteBoletos = recorteBoletos === c.key ? '' : c.key">
-          <i :class="c.icon" style="font-size:10px"></i>
-          <b>{{ c.value }}</b> {{ c.label }}
-          <span v-if="c.valor" class="opacity-80">· {{ formatCurrency(c.valor) }}</span>
-        </button>
-      </div>
-
-      <DataTable :columns="COLUNAS_BOLETOS" :rows="boletosRecortados" row-key="id" density="compact" clickable
-        :loading="store.boletosLoading" empty-title="Nenhum boleto de parcela no período"
-        :empty-text="periodoEhHoje ? 'A rodada diária ainda não emitiu nada hoje. Use os atalhos 7 dias ou 30 dias para ver os anteriores.' : `Nenhum boleto de parcela ${periodoResumo(store.boletosFiltro.periodo) || 'nesse período'} com os filtros atuais.`"
-        @row-click="abrirBoletoParcela">
-        <template #cell-hora="{ row }">
-          <span class="tabular-nums text-ink">{{ formatDateTime(row.created_at) }}</span>
-        </template>
-        <template #cell-idreserva="{ row }">
-          <button type="button" class="font-mono font-semibold text-accent tabular-nums hover:underline" @click.stop="abrirPlano({ idreserva: row.idreserva })">#{{ row.idreserva }}</button>
-        </template>
-        <template #cell-titular_nome="{ row }">
-          <span class="block min-w-0">
-            <span class="block text-ink truncate">{{ row.titular_nome || '-' }}</span>
-            <span class="block text-micro text-ink-subtle truncate">{{ row.empreendimento || '-' }}{{ row.unidade ? ` · ${row.unidade}` : '' }}</span>
-          </span>
-        </template>
-        <template #cell-parcela="{ row }">
-          <span class="text-ink tabular-nums">{{ row.numero ? `${row.numero}/${row.total}` : '-' }}</span>
-          <span v-if="Number(row.emissoes) > 1" class="block text-micro text-ink-subtle">{{ row.emissoes }}ª via</span>
-        </template>
-        <template #cell-valor="{ row }">
-          <span class="block tabular-nums text-ink">{{ formatCurrency(row.valor) }}</span>
-          <span class="block text-micro text-ink-subtle">vence {{ formatDate(row.vencimento) }}</span>
-        </template>
-        <template #cell-emissao="{ row }">
-          <span class="inline-flex flex-col items-start gap-0.5 min-w-0">
-            <Badge :variant="emissaoVariant(row)" size="sm" dot>{{ emissaoLabel(row) }}</Badge>
-            <span v-if="row.status === 'error'" class="text-micro text-data-neg leading-snug">{{ limparErro(row.error_message) }}</span>
-            <span v-else-if="row.nosso_numero" class="text-micro font-mono text-ink-subtle">{{ row.nosso_numero }}</span>
-            <span v-if="row.cep_contingencia" class="text-micro text-data-warn leading-snug" :title="row.cep_contingencia">
-              <i class="fas fa-location-dot" style="font-size:9px"></i> CEP recusado: saiu com o endereço da Menin. Corrigir o CV.
-            </span>
-          </span>
-        </template>
-        <template #cell-canais="{ row }">
-          <span v-if="row.status === 'success'" class="inline-flex items-center gap-2">
-            <span v-for="c in canais(row)" :key="c.key" class="inline-flex items-center gap-1 text-micro" :class="c.ok ? 'text-data-pos' : 'text-data-neg'" :title="c.title">
-              <i :class="[c.icon]" style="font-size:11px"></i>
-              <i :class="c.ok ? 'fas fa-check' : 'fas fa-xmark'" style="font-size:9px"></i>
-            </span>
-            <span v-if="canais(row).some(c => !c.ok)" class="text-micro text-data-neg truncate max-w-[14rem]">{{ canais(row).filter(c => !c.ok).map(c => c.motivo).join(' · ') }}</span>
-          </span>
-          <span v-else class="text-ink-subtle">-</span>
-        </template>
-      </DataTable>
-
-      <template #footer>
-        <Collapsible title="Últimas rodadas" icon="fas fa-clock-rotate-left"
-          :hint="store.rodadas.length ? `${store.rodadas.length} registradas` : 'nenhuma registrada ainda'">
-          <p v-if="store.rodadasError" class="text-sm text-data-neg">{{ store.rodadasError }}</p>
-          <DataTable v-else :columns="COLUNAS_RODADAS" :rows="store.rodadas" row-key="id" density="compact"
-            empty-title="Nenhuma rodada registrada" empty-text="A rodada diária grava aqui quando roda. Antes de 08/09/2026 o resultado ia só para o log do servidor.">
-            <template #cell-inicio="{ row }">
-              <span class="tabular-nums text-ink">{{ formatDateTime(row.inicio) }}</span>
-              <span class="block text-micro text-ink-subtle">{{ row.manual ? `manual${row.user_nome ? ` · ${row.user_nome}` : ''}` : 'automática' }}{{ row.duracao_s != null ? ` · ${duracaoLabel(row.duracao_s)}` : '' }}</span>
-            </template>
-            <template #cell-status="{ row }">
-              <Badge :variant="rodadaVariant(row.status)" size="sm" dot>{{ rodadaLabel(row.status) }}</Badge>
-              <span v-if="row.resultado?.emissao?.skipped" class="block text-micro text-ink-subtle">{{ skippedLabel(row.resultado.emissao.skipped) }}</span>
-            </template>
-            <template #cell-feito="{ row }">
-              <span class="block text-ink tabular-nums">{{ row.emitidas + row.reemitidas }} emitido{{ row.emitidas + row.reemitidas === 1 ? '' : 's' }}<span v-if="row.falhas" class="text-data-neg"> · {{ row.falhas }} falha{{ row.falhas === 1 ? '' : 's' }}</span></span>
-              <span class="block text-micro text-ink-subtle tabular-nums">{{ row.adesoes }} adesões · {{ row.encerramentos }} encerramentos · {{ row.lembretes }} lembretes · {{ row.avisos }} avisos</span>
-            </template>
-            <template #cell-erros="{ row }">
-              <span v-if="row.erros?.length" class="block text-micro text-data-neg leading-snug">{{ row.erros.join(' | ') }}</span>
-              <span v-else class="text-ink-subtle">-</span>
-            </template>
-          </DataTable>
-        </Collapsible>
-      </template>
-    </Panel>
-
     <div v-if="store.error"
       class="rounded-xl border border-data-neg/25 bg-data-neg/10 p-4 text-sm text-data-neg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div class="flex items-start gap-2 min-w-0">
@@ -228,8 +94,8 @@
     </div>
 
     <div v-else-if="carregando" class="space-y-4">
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
-        <Skeleton v-for="i in 6" :key="i" variant="stat" />
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
+        <Skeleton v-for="i in 7" :key="i" variant="stat" />
       </div>
       <Skeleton variant="table" :lines="8" />
     </div>
@@ -250,6 +116,20 @@
           <span class="block min-w-0">
             <span class="block text-ink truncate">{{ row.titular_nome || '-' }}</span>
             <span class="block text-micro text-ink-subtle truncate">{{ row.empreendimento || '-' }}{{ row.unidade ? ` · ${row.unidade}` : '' }}</span>
+          </span>
+        </template>
+
+        <!-- O que saiu e o que entrou deste plano no período (o da tela ou 30
+             dias). Substitui a lista boleto a boleto que ficava embaixo. -->
+        <template #cell-periodo="{ row }">
+          <span class="block min-w-0 tabular-nums">
+            <span class="block text-ink">
+              {{ row.per_pagas }} paga{{ Number(row.per_pagas) === 1 ? '' : 's' }}
+              <span v-if="Number(row.per_pagas)" class="text-ink-subtle">· {{ formatCurrency(row.per_pagas_valor) }}</span>
+            </span>
+            <span class="block text-micro text-ink-subtle">
+              {{ row.per_emitidas }} emitida{{ Number(row.per_emitidas) === 1 ? '' : 's' }}{{ Number(row.per_emitidas) ? ` · ${formatCurrency(row.per_emitidas_valor)}` : '' }}
+            </span>
           </span>
         </template>
 
@@ -326,6 +206,33 @@
           carregar mais {{ store.total - store.planos.length }} planos
         </button>
       </div>
+
+      <!-- Últimas rodadas: o que cada ciclo fez e onde caiu. Era o rodapé do
+           painel Acompanhamento; o painel saiu (era uma segunda lista com um
+           segundo filtro) e o log das rodadas ficou aqui, fechado. -->
+      <Collapsible title="Últimas rodadas" icon="fas fa-clock-rotate-left" :hint="ultimaRodadaResumo">
+        <p v-if="store.rodadasError" class="text-sm text-data-neg">{{ store.rodadasError }}</p>
+        <DataTable v-else :columns="COLUNAS_RODADAS" :rows="store.rodadas" row-key="id" density="compact"
+          :loading="store.rodadasLoading"
+          empty-title="Nenhuma rodada registrada" empty-text="A rodada diária grava aqui quando roda. Antes de 08/09/2026 o resultado ia só para o log do servidor.">
+          <template #cell-inicio="{ row }">
+            <span class="tabular-nums text-ink">{{ formatDateTime(row.inicio) }}</span>
+            <span class="block text-micro text-ink-subtle">{{ row.manual ? `manual${row.user_nome ? ` · ${row.user_nome}` : ''}` : 'automática' }}{{ row.duracao_s != null ? ` · ${duracaoLabel(row.duracao_s)}` : '' }}</span>
+          </template>
+          <template #cell-status="{ row }">
+            <Badge :variant="rodadaVariant(row.status)" size="sm" dot>{{ rodadaLabel(row.status) }}</Badge>
+            <span v-if="row.resultado?.emissao?.skipped" class="block text-micro text-ink-subtle">{{ skippedLabel(row.resultado.emissao.skipped) }}</span>
+          </template>
+          <template #cell-feito="{ row }">
+            <span class="block text-ink tabular-nums">{{ row.emitidas + row.reemitidas }} emitido{{ row.emitidas + row.reemitidas === 1 ? '' : 's' }}<span v-if="row.falhas" class="text-data-neg"> · {{ row.falhas }} falha{{ row.falhas === 1 ? '' : 's' }}</span></span>
+            <span class="block text-micro text-ink-subtle tabular-nums">{{ row.adesoes }} adesões · {{ row.encerramentos }} encerramentos · {{ row.lembretes }} lembretes · {{ row.avisos }} avisos</span>
+          </template>
+          <template #cell-erros="{ row }">
+            <span v-if="row.erros?.length" class="block text-micro text-data-neg leading-snug">{{ row.erros.join(' | ') }}</span>
+            <span v-else class="text-ink-subtle">-</span>
+          </template>
+        </DataTable>
+      </Collapsible>
     </template>
 
     <!-- Novo plano manual -->
@@ -345,7 +252,6 @@
     </Modal>
 
     <PlanoDetailModal :open="detail.open" :idreserva="detail.idreserva" @close="fecharPlano" @changed="store.refresh({ silent: true })" />
-    <BoletoDetailModal :open="boletoModal.open" :item="boletoModal.item" :z-index="10050" @close="boletoModal = { open: false, item: null }" />
   </div>
 </template>
 
@@ -365,14 +271,10 @@ import IconButton from '@/components/UI/IconButton.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import Spinner from '@/components/UI/Spinner.vue';
 import Modal from '@/components/UI/Modal.vue';
-import Panel from '@/components/UI/Panel.vue';
-import Select from '@/components/UI/Select.vue';
 import Collapsible from '@/components/UI/Collapsible.vue';
 import PeriodoFilter from './PeriodoFilter.vue';
-import { periodoResumo, periodosAtivos } from './periodo';
+import { PERIODO_VAZIO, periodoResumo, periodosAtivos } from './periodo';
 import PlanoDetailModal from './PlanoDetailModal.vue';
-import BoletoDetailModal from './BoletoDetailModal.vue';
-import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 import { planoLabel, planoVariant, motivoLabel, formatCurrency, formatDate, formatDateTime, diasLabel } from './parcelasFormat';
 
@@ -391,24 +293,22 @@ const empreendimentoOptions = computed(() => (store.facets?.empreendimentos || [
 const activeFiltersCount = computed(() => {
   const f = store.filtro;
   return (f.status.length && !(f.status.length === 1 && f.status[0] === 'ativo') ? 1 : 0)
-    + (f.empreendimento.length ? 1 : 0) + (f.q ? 1 : 0) + (f.comAtraso ? 1 : 0);
+    + (f.empreendimento.length ? 1 : 0) + (f.q ? 1 : 0) + (f.comAtraso ? 1 : 0)
+    + periodosAtivos(f.periodo || {});
 });
 
 const primeiraCarga = ref(true);
 const carregando = computed(() => primeiraCarga.value || store.loading);
 
-/* Uma busca só. O `q` do filtro de cima alimenta as DUAS listas: os planos e
-   as emissões do Acompanhamento. Antes eram dois campos com o mesmo texto e
-   escopos diferentes, e ninguém adivinhava qual recortava o quê. */
+/* Um filtro, uma lista. Já houve uma segunda lista aqui (boleto a boleto do
+   Acompanhamento) com filtro próprio de período; saiu. O período agora mora
+   neste filtro e recorta a lista, os cartões e a coluna "No período". */
 function aplicar() {
-  store.boletosFiltro.q = store.filtro.q;
-  return Promise.allSettled([
-    store.refresh(),
-    store.fetchBoletos(),
-  ]).finally(() => { primeiraCarga.value = false; });
+  return store.refresh().finally(() => { primeiraCarga.value = false; });
 }
 function limpar() {
   store.filtro.status = ['ativo']; store.filtro.empreendimento = []; store.filtro.q = ''; store.filtro.comAtraso = false;
+  store.filtro.periodo = { ...PERIODO_VAZIO };
   recorte.value = '';
   aplicar();
 }
@@ -429,12 +329,16 @@ const listaRecortada = computed(() => (recorteAtivo.value ? store.planos.filter(
 const kpiCards = computed(() => {
   const s = store.stats;
   if (!s) return [];
+  const per = s.periodo;
   return [
     { key: 'ativos', label: 'Planos ativos', value: s.planos.ativos, hint: `${s.planos.pausados} pausados · ${s.planos.encerrados} encerrados`, icon: 'fas fa-layer-group', tone: 'accent', tooltip: 'Reservas com cobrança de parcelas a cargo do Office' },
     { key: 'a_vencer', label: 'Vencem em 30 dias', value: s.aVencer30.qty, hint: formatCurrency(s.aVencer30.valor), icon: 'fas fa-calendar-day', tone: 2, tooltip: 'Parcelas previstas que a rodada vai emitir nos próximos 30 dias' },
     { key: 'emitidas', label: 'Boletos em aberto', value: s.emitidas.qty, hint: formatCurrency(s.emitidas.valor), icon: 'fas fa-barcode', tone: 'neutral', tooltip: 'Parcelas com boleto emitido aguardando pagamento. Clique para recortar' },
     { key: 'atraso', label: 'Em atraso', value: s.atraso.qty, hint: `${formatCurrency(s.atraso.valor)}${s.atraso.nuncaCobradas ? ` · ${s.atraso.nuncaCobradas} nunca cobradas` : ''}`, icon: 'fas fa-triangle-exclamation', tone: 'neg', tooltip: 'Parcelas vencidas sem pagamento, inclusive as que passaram do vencimento sem nunca terem sido cobradas. Clique para recortar' },
-    { key: 'pagas30', label: 'Pagas (30 dias)', value: s.pagas30.qty, hint: `${formatCurrency(s.pagas30.valor)} · ${s.pagas.qty} no total`, icon: 'fas fa-circle-check', tone: 'pos', tooltip: 'Parcelas pagas nos últimos 30 dias' },
+    /* Os dois "no período" seguem o filtro de cima; sem período preenchido
+       ficam em 30 dias e o rótulo diz isso. */
+    { key: 'emitidas_periodo', label: per.padrao ? 'Emitidas (30 dias)' : 'Emitidas no período', value: per.emitidas.qty, hint: formatCurrency(per.emitidas.valor), icon: 'fas fa-file-invoice', tone: 'neutral', tooltip: per.padrao ? 'Boletos de parcela emitidos nos últimos 30 dias' : `Boletos de parcela emitidos ${periodoResumo({ emitidoDe: per.emitido.de, emitidoAte: per.emitido.ate })}` },
+    { key: 'pagas_periodo', label: per.padrao ? 'Pagas (30 dias)' : 'Pagas no período', value: per.pagas.qty, hint: `${formatCurrency(per.pagas.valor)} · ${s.pagas.qty} no total`, icon: 'fas fa-circle-check', tone: 'pos', tooltip: per.padrao ? 'Parcelas pagas nos últimos 30 dias' : `Parcelas pagas ${periodoResumo({ pagoDe: per.pago.de, pagoAte: per.pago.ate })}` },
     { key: 'erro', label: 'Com erro', value: s.erro.qty, hint: `${s.transferidas.qty} transferidas ao Sienge`, icon: 'fas fa-bug', tone: s.erro.qty ? 'neg' : 'neutral', tooltip: 'Parcelas cuja emissão falhou. Clique para recortar' },
   ];
 });
@@ -448,6 +352,7 @@ const COLUNAS = [
   { key: 'idreserva', label: '#Reserva', priority: 1, sortable: true, width: '7rem' },
   { key: 'titular_nome', label: 'Titular / Empreendimento', priority: 1, sortable: true },
   { key: 'progresso', label: 'Pagas', priority: 2, sortable: true, width: '10rem' },
+  { key: 'periodo', label: 'No período', priority: 2, sortable: true, width: '9rem' },
   { key: 'proxima', label: 'Próxima cobrança', priority: 1, sortable: true, width: '11rem' },
   { key: 'atraso', label: 'Atraso', priority: 1, sortable: true, width: '8rem' },
   { key: 'status', label: 'Plano', priority: 2, sortable: true, width: '9rem' },
@@ -457,7 +362,7 @@ const COLUNAS = [
 // ── Acompanhamento: rodadas e boletos ─────────────────────────────────────────
 const ultimaRodadaResumo = computed(() => {
   const r = store.rodadas[0];
-  if (!r) return 'Boleto a boleto do período e o histórico das rodadas';
+  if (!r) return 'nenhuma registrada ainda';
   if (r.status === 'rodando') return `Rodada em andamento desde ${formatDateTime(r.inicio)}${r.manual ? ' (manual)' : ''}`;
   const partes = [`Última rodada ${formatDateTime(r.inicio)}`, `${r.emitidas + r.reemitidas} emitidos`];
   if (r.falhas) partes.push(`${r.falhas} falhas`);
@@ -466,59 +371,6 @@ const ultimaRodadaResumo = computed(() => {
   return partes.join(' · ');
 });
 
-const recorteBoletos = ref('');
-const RECORTES_BOLETOS = {
-  sucesso: (r) => r.status === 'success',
-  erro: (r) => r.status === 'error',
-  processando: (r) => r.status === 'processing',
-  whatsapp: (r) => r.status === 'success' && !r.cliente_whatsapp_enviado,
-  email: (r) => r.status === 'success' && !r.cliente_email_enviado,
-  cv: (r) => r.status === 'success' && !r.cv_documento_anexado,
-  pagos: (r) => r.payment_status === 'paid',
-  cep: (r) => !!r.cep_contingencia,
-};
-const boletosRecortados = computed(() => {
-  const rows = store.boletos?.rows || [];
-  const f = RECORTES_BOLETOS[recorteBoletos.value];
-  return f ? rows.filter(f) : rows;
-});
-const resumoChips = computed(() => {
-  const s = store.boletos?.resumo;
-  if (!s) return [];
-  const neg = 'bg-data-neg/10 text-data-neg hover:bg-data-neg/15';
-  const pos = 'bg-data-pos/10 text-data-pos hover:bg-data-pos/15';
-  const neu = 'bg-surface-sunken text-ink-muted hover:bg-line';
-  /* Os dois chips com dinheiro: "emitidos" e "pagos" trazem o valor ao lado
-     da contagem - é o que o período de pagamento existe para responder. */
-  return [
-    { key: 'sucesso', label: 'emitidos', value: s.sucesso, valor: s.sucesso_valor, icon: 'fas fa-barcode', classe: pos },
-    { key: 'erro', label: 'com erro', value: s.erro, icon: 'fas fa-bug', classe: s.erro ? neg : neu },
-    { key: 'processando', label: 'em processamento', value: s.processando, icon: 'fas fa-spinner', classe: neu },
-    { key: 'whatsapp', label: 'sem WhatsApp', value: s.whatsapp_nao_enviado, icon: 'fab fa-whatsapp', classe: s.whatsapp_nao_enviado ? neg : neu },
-    { key: 'email', label: 'sem e-mail', value: s.email_nao_enviado, icon: 'fas fa-envelope', classe: s.email_nao_enviado ? neg : neu },
-    { key: 'cv', label: 'sem anexo no CV', value: s.cv_nao_anexado, icon: 'fas fa-paperclip', classe: s.cv_nao_anexado ? neg : neu },
-    { key: 'pagos', label: 'pagos', value: s.pagos, valor: s.pagos_valor, icon: 'fas fa-circle-check', classe: s.pagos ? pos : neu },
-    { key: 'cep', label: 'CEP a corrigir no CV', value: s.cep_contingencia || 0, icon: 'fas fa-location-dot', classe: s.cep_contingencia ? 'bg-data-warn/10 text-data-warn hover:bg-data-warn/15' : neu },
-  ];
-});
-
-/* Estas duas chegam INTEIRAS numa consulta so (sem paginacao), entao quem
-   ordena e a propria tabela - nada de `manual-sort` aqui. `sortValue` onde a
-   celula e montada no slot e o valor cru da chave nao serve para comparar
-   (`hora` nao existe na linha, `parcela` e "3/12", `emissao` e um selo). */
-const COLUNAS_BOLETOS = [
-  { key: 'hora', label: 'Emitido em', priority: 2, sortable: true, width: '9rem',
-    sortValue: (r) => r.created_at || '' },
-  { key: 'idreserva', label: '#Reserva', priority: 1, sortable: true, numeric: true, width: '6rem' },
-  { key: 'titular_nome', label: 'Titular / Empreendimento', priority: 1, sortable: true },
-  { key: 'parcela', label: 'Parcela', priority: 2, sortable: true, width: '5rem',
-    sortValue: (r) => Number(r.numero) || 0 },
-  { key: 'valor', label: 'Valor', priority: 1, numeric: true, sortable: true, width: '8rem',
-    sortValue: (r) => Number(r.valor) || 0 },
-  { key: 'emissao', label: 'Emissão', priority: 1, sortable: true, width: '13rem',
-    sortValue: (r) => emissaoLabel(r) },
-  { key: 'canais', label: 'CV · e-mail · WhatsApp', priority: 2, width: '15rem' },
-];
 const COLUNAS_RODADAS = [
   { key: 'inicio', label: 'Rodada', priority: 1, sortable: true, width: '11rem' },
   { key: 'status', label: 'Resultado', priority: 1, sortable: true, width: '9rem' },
@@ -526,29 +378,6 @@ const COLUNAS_RODADAS = [
     sortValue: (r) => (r.emitidas || 0) + (r.reemitidas || 0) },
   { key: 'erros', label: 'Erros', priority: 2, sortable: true,
     sortValue: (r) => (r.erros?.length || 0) },
-];
-
-const emissaoLabel = (r) => {
-  if (r.status === 'error') return 'Falhou';
-  if (r.status === 'processing') return 'Emitindo';
-  if (r.payment_status === 'paid') return 'Pago';
-  if (r.payment_status === 'cancelled') return 'Baixado';
-  return 'Emitido';
-};
-const emissaoVariant = (r) => {
-  if (r.status === 'error') return 'danger';
-  if (r.status === 'processing') return 'warning';
-  if (r.payment_status === 'paid') return 'success';
-  if (r.payment_status === 'cancelled') return 'neutral';
-  return 'info';
-};
-/* "Falha na emissao (emissao): Portal Ecobrança: CEP SACADO INVALIDO" -> só o que importa. */
-const limparErro = (m) => String(m || 'erro sem mensagem').replace(/^Falha na emissao \([^)]*\):\s*/i, '').replace(/^Portal Ecobran[cç]a:\s*/i, 'Caixa: ');
-const motivoCurto = (m, padrao) => String(m || padrao).replace(/^(WhatsApp|E-mail) nao enviado:\s*/i, '').replace(/^Anexo no CV falhou:\s*/i, '');
-const canais = (r) => [
-  { key: 'cv', icon: 'fas fa-paperclip', ok: !!r.cv_documento_anexado, motivo: motivoCurto(r.cv_anexo_motivo, 'anexo no CV falhou'), title: r.cv_documento_anexado ? 'Anexado na reserva do CV' : (r.cv_anexo_motivo || 'Anexo no CV falhou') },
-  { key: 'email', icon: 'fas fa-envelope', ok: !!r.cliente_email_enviado, motivo: motivoCurto(r.email_motivo, 'e-mail não enviado'), title: r.cliente_email_enviado ? 'E-mail enviado' : (r.email_motivo || 'E-mail não enviado') },
-  { key: 'wpp', icon: 'fab fa-whatsapp', ok: !!r.cliente_whatsapp_enviado, motivo: motivoCurto(r.whatsapp_motivo, 'WhatsApp não enviado'), title: r.cliente_whatsapp_enviado ? 'WhatsApp enviado' : (r.whatsapp_motivo || 'WhatsApp não enviado') },
 ];
 
 const RODADA_LABEL = { rodando: 'Em andamento', concluida: 'Concluída', com_erros: 'Com erros', falhou: 'Caiu' };
@@ -565,39 +394,14 @@ const duracaoLabel = (s) => (s >= 3600 ? `${Math.floor(s / 3600)}h${String(Math.
    segura a rajada de teclas sem parecer travado; Enter e o botão Filtrar
    continuam valendo para quem tem pressa. */
 let timerBusca = null;
-watch(() => store.filtro.q, () => {
+function aplicarComFolga() {
   clearTimeout(timerBusca);
   timerBusca = setTimeout(aplicar, 350);
-});
+}
+watch(() => store.filtro.q, aplicarComFolga);
 onBeforeUnmount(() => clearTimeout(timerBusca));
 
-function recarregarAcompanhamento() { return Promise.allSettled([store.fetchBoletos(), store.fetchRodadas()]); }
-
-/* Período dos boletos: busca sozinho ao mudar, com a mesma folga da busca por
-   texto (o atalho troca de/até de uma vez; digitar a data dispara ao fechar o
-   campo). Apagar os dois períodos volta ao padrão (emitido hoje) - lista sem
-   período nenhum seria "tudo desde sempre", cortado no limite do servidor. */
-let timerPeriodo = null;
-function aoMudarPeriodo(p) {
-  if (!periodosAtivos(p)) store.boletosFiltro.periodo = store.boletosPeriodoPadrao();
-  clearTimeout(timerPeriodo);
-  timerPeriodo = setTimeout(() => store.fetchBoletos(), 350);
-}
-onBeforeUnmount(() => clearTimeout(timerPeriodo));
-const periodoEhHoje = computed(() => {
-  const p = store.boletosFiltro.periodo, d = store.boletosPeriodoPadrao();
-  return p.emitidoDe === d.emitidoDe && p.emitidoAte === d.emitidoAte && !p.pagoDe && !p.pagoAte;
-});
-
-const boletoModal = ref({ open: false, item: null });
-async function abrirBoletoParcela(row) {
-  try {
-    const item = await requestWithAuth(`/boleto-caixa/history/${row.id}`);
-    boletoModal.value = { open: true, item: { ...item, forma: 'boleto' } };
-  } catch (e) {
-    store.boletosError = e.message || 'Falha ao abrir o boleto.';
-  }
-}
+function recarregarAcompanhamento() { return store.fetchRodadas(); }
 
 // ── Modal do plano ────────────────────────────────────────────────────────────
 const detail = ref({ open: false, idreserva: null });
@@ -638,13 +442,13 @@ async function rodarAgora() {
   } catch { rodando.value = false; }
 }
 
-/* Enquanto a rodada está em andamento, o acompanhamento se atualiza sozinho. */
+/* Enquanto a rodada está em andamento, o log das rodadas e a lista se
+   atualizam sozinhos. */
 let acompanhamentoTimer = null;
 function agendarAcompanhamento() {
   if (acompanhamentoTimer) clearInterval(acompanhamentoTimer);
   acompanhamentoTimer = setInterval(() => {
-    const emAndamento = store.rodadas[0]?.status === 'rodando' || (store.boletos?.resumo?.processando || 0) > 0;
-    if (emAndamento) { store.fetchBoletos({ silent: true }); store.fetchRodadas({ silent: true }); }
+    if (store.rodadas[0]?.status === 'rodando') { store.fetchRodadas({ silent: true }); store.refresh({ silent: true }); }
   }, 60000);
 }
 onBeforeUnmount(() => { if (acompanhamentoTimer) clearInterval(acompanhamentoTimer); });
