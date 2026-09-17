@@ -40,12 +40,13 @@ defineProps({
          aparece ou some -->
     <!-- `min-w-0` em toda a cadeia: sem isso o título longo estica o flex e
          empurra as ações para fora, ou quebra em duas linhas.
-         `flex-wrap` + base de 12rem no título: quando as ações não cabem ao
-         lado (três SegmentedControl + botões, como em Vendas x Projeção),
-         elas descem para a linha de baixo em vez de vazar do painel e
-         cortar o ícone e o título. Com espaço, nada muda. -->
-    <header v-if="title || $slots.actions || $slots.title" class="panel-head flex-wrap py-2 gap-x-3 gap-y-2">
-      <div class="flex items-center gap-2.5 min-w-0 flex-[1_1_12rem]">
+         Quando as ações não cabem ao lado do título (três SegmentedControl +
+         botões, como em Vendas x Projeção), elas NÃO descem de linha nem
+         vazam por cima do ícone: a fila é cortada dentro do painel e rola na
+         horizontal (arrasta no celular, shift+roda no mouse), igual ao
+         SegmentedControl. O título guarda no mínimo 7rem e trunca. -->
+    <header v-if="title || $slots.actions || $slots.title" class="panel-head py-2 gap-3">
+      <div class="flex items-center gap-2.5 min-w-[7rem] flex-1">
         <span v-if="icon" class="h-7 w-7 rounded-lg grid place-items-center text-xs shrink-0
                                  bg-accent-soft text-accent">
           <i :class="icon"></i>
@@ -59,9 +60,12 @@ defineProps({
           </p>
         </div>
       </div>
-      <!-- As ações também quebram entre si: no celular sete controles não
-           cabem numa linha nem sozinhos. `ml-auto` mantém à direita. -->
-      <div v-if="$slots.actions" class="flex flex-wrap items-center justify-end gap-1.5 ml-auto min-w-0">
+      <!-- Sem quebra e sem encolher os controles: quem encolhe é a fila,
+           que rola. Atenção: `overflow-x-auto` também corta o que sair para
+           baixo, então menu suspenso aqui dentro precisa teleportar (tippy e
+           Modal já teleportam; Dropdown não). -->
+      <div v-if="$slots.actions"
+        class="flex items-center gap-1.5 shrink min-w-0 max-w-full overflow-x-auto no-scrollbar [&>*]:shrink-0">
         <slot name="actions" />
       </div>
     </header>
@@ -79,3 +83,8 @@ defineProps({
     </footer>
   </section>
 </template>
+
+<style scoped>
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+</style>
