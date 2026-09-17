@@ -1012,11 +1012,14 @@ const closeModal = () => emit('close');
        onde a bolinha da Eme flutua, então clicar em Fechar acertava a Eme. -->
   <Modal :open="true" size="screen" :padded="false" @close="closeModal">
     <template #header>
-      <div class="flex items-center gap-3 min-w-0">
+      <!-- Quebra de linha no cabeçalho: no celular o nome do empreendimento e o
+           VGV/VGV+DC + exportar não cabem lado a lado; o nome ficava com zero
+           de largura. -->
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0">
         <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
           <i class="fas fa-chart-line text-sm"></i>
         </div>
-        <div class="min-w-0">
+        <div class="min-w-0 flex-[1_1_10rem]">
           <h2 class="text-base font-semibold text-ink truncate" :title="enterprise.name">{{ enterprise.name }}</h2>
           <p class="text-xs text-ink-muted mt-0.5">
             <span class="tabular-nums text-ink">{{ totalSales }}</span> venda(s) &middot;

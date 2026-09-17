@@ -60,7 +60,11 @@ const GRID = {
 
 <template>
   <section class="panel surface-gradient">
-    <div class="filters-toolbar">
+    <!-- Altura mínima em vez de fixa, e quebra de linha: com dois
+         SegmentedControl no slot `actions` (Faturamento: distratos + modo de
+         valor) a barra não cabe no celular e vazava. Mesmo truque do
+         ReportFilterBar. -->
+    <div class="filters-toolbar flex-wrap py-2 gap-y-1.5" style="height: auto; min-height: 3.25rem;">
       <button type="button" class="filters-toolbar-trigger focus-ring rounded-md px-1 -mx-1"
         :aria-expanded="open" @click="open = !open">
         <i :class="[icon, 'text-xs text-ink-muted']"></i>
@@ -72,7 +76,7 @@ const GRID = {
           :class="{ 'rotate-180': open }"></i>
       </button>
 
-      <div class="ml-auto flex items-center gap-1.5">
+      <div class="ml-auto flex flex-wrap items-center justify-end gap-1.5 min-w-0">
         <slot name="actions" />
         <template v-if="!autoApply">
           <Button variant="ghost" size="sm" icon="fas fa-eraser" :disabled="!activeCount" @click="emit('clear')">
