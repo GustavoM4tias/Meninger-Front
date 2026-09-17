@@ -214,7 +214,7 @@ const sections = [
 // ── Vínculo CV (mapping da campanha) ───────────────────────────────────────
 const vinculo = ref({
     bound_empreendimentos: [], midia_slug: '', cv_origem: '',
-    tags_str: '', mapping_active: true,
+    tags_str: '', mapping_active: true, cv_skip: false,
     default_utm_source: '', default_utm_medium: '', default_utm_campaign: '',
     default_utm_content: '', default_utm_term: '',
     cv_extra_json: '',
@@ -280,6 +280,7 @@ watch(campaign, (c) => {
         cv_origem: c.cv_origem || '',
         tags_str: Array.isArray(c.tags) ? c.tags.join(', ') : '',
         mapping_active: c.mapping_active !== false,
+        cv_skip: c.cv_skip === true,
         default_utm_source:   c.default_utm_source   || '',
         default_utm_medium:   c.default_utm_medium   || '',
         default_utm_campaign: c.default_utm_campaign || '',
@@ -299,7 +300,9 @@ const contaCobre = computed(() => herdaDaConta.value);
 const temVinculoProprio = computed(() =>
     vinculo.value.bound_empreendimentos.length > 0 || !!vinculo.value.midia_slug?.trim());
 // Vai rotear se: ativo E (vínculo próprio OU a conta cobre).
-const willRoute = computed(() => vinculo.value.mapping_active && (temVinculoProprio.value || contaCobre.value));
+const willRoute = computed(() => vinculo.value.mapping_active && !vinculo.value.cv_skip && (temVinculoProprio.value || contaCobre.value));
+// Campanha externa: lead fica no Office como "Fora do CV", sem represar.
+const foraDoCv = computed(() => vinculo.value.mapping_active && vinculo.value.cv_skip);
 
 async function saveVinculo() {
     vinculoError.value = null;
@@ -327,6 +330,7 @@ async function saveVinculo() {
             cv_origem: vinculo.value.cv_origem || null,
             tags: tagsArr.length ? tagsArr : null,
             mapping_active: vinculo.value.mapping_active,
+            cv_skip: vinculo.value.cv_skip,
             default_utm_source:   vinculo.value.default_utm_source.trim()   || null,
             default_utm_medium:   vinculo.value.default_utm_medium.trim()   || null,
             default_utm_campaign: vinculo.value.default_utm_campaign.trim() || null,
@@ -876,6 +880,18 @@ function onFormEditorSaved() {
             </p>
           </div>
 
+          <!-- Campanha externa -->
+          <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
+            <label class="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" v-model="vinculo.cv_skip" class="h-4 w-4 rounded border-line accent-emerald-500" />
+              <span class="text-sm font-medium text-ink">Campanha fora do CV (não envia)</span>
+            </label>
+            <p class="text-micro text-ink-subtle mt-1 ml-6">
+              Lead desta campanha fica no Office como "Fora do CV": não represa, não cobra vínculo e não dispara alerta.
+              Os que já estão represados saem da cobrança ao salvar.
+            </p>
+          </div>
+
           <!-- Empreendimentos -->
           <div>
             <label class="text-sm font-medium text-ink block mb-1">Empreendimentos vinculados</label>
@@ -929,10 +945,11 @@ function onFormEditorSaved() {
 
           <!-- Preview -->
           <div class="rounded-lg border px-3 py-2.5"
-            :class="willRoute ? 'border-data-pos/30 bg-data-pos/5' : 'border-data-warn/30 bg-data-warn/5'">
-            <div class="text-xs font-medium" :class="willRoute ? 'text-data-pos' : 'text-data-warn'">
-              <i :class="willRoute ? 'fas fa-bolt' : 'fas fa-hand'" class="mr-1.5"></i>
+            :class="willRoute ? 'border-data-pos/30 bg-data-pos/5' : (foraDoCv ? 'border-line bg-surface-sunken/30' : 'border-data-warn/30 bg-data-warn/5')">
+            <div class="text-xs font-medium" :class="willRoute ? 'text-data-pos' : (foraDoCv ? 'text-ink-muted' : 'text-data-warn')">
+              <i :class="willRoute ? 'fas fa-bolt' : (foraDoCv ? 'fas fa-arrow-right-from-bracket' : 'fas fa-hand')" class="mr-1.5"></i>
               <template v-if="willRoute">Próximo lead desta campanha vira <span class="font-mono">routed</span>{{ !temVinculoProprio && contaCobre ? ' com o vínculo da conta' : '' }}.</template>
+              <template v-else-if="foraDoCv">Próximo lead fica no Office como <span class="font-mono">Fora do CV</span>, sem ir ao CRM.</template>
               <template v-else>Próximo lead fica em <span class="font-mono">held</span>.</template>
             </div>
           </div>

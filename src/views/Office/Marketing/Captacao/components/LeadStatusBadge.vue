@@ -21,6 +21,7 @@ const META = {
     rejected:    { label: 'Recusado pelo CV',   variant: 'danger',  icon: 'fas fa-ban' },
     failed:      { label: 'Falhou',             variant: 'danger',  icon: 'fas fa-circle-exclamation' },
     spam:        { label: 'Spam',               variant: 'neutral', icon: 'fas fa-trash' },
+    ignored:     { label: 'Fora do CV',         variant: 'neutral', icon: 'fas fa-arrow-right-from-bracket' },
     historical:  { label: 'Histórico Meta',     variant: 'info',    icon: 'fas fa-clock-rotate-left' },
 };
 

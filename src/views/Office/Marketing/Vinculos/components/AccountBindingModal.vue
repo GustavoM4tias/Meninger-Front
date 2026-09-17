@@ -25,7 +25,7 @@ const emit = defineEmits(['update:open', 'saved']);
 const store = useCampaignsStore();
 const toast = useToast();
 
-const form = ref({ mapping_active: true, bound_empreendimentos: [], midia_slug: '', cv_origem: '', tags_str: '', notes: '' });
+const form = ref({ mapping_active: true, cv_skip: false, bound_empreendimentos: [], midia_slug: '', cv_origem: '', tags_str: '', notes: '' });
 const errorMsg = ref(null);
 
 // Filas do CV + fila atual por empreendimento (uma leitura por abertura).
@@ -67,6 +67,7 @@ watch(() => props.open, (v) => {
     const a = props.account || {};
     form.value = {
         mapping_active: a.mapping_active !== false,
+        cv_skip: a.cv_skip === true,
         bound_empreendimentos: Array.isArray(a.bound_empreendimentos) ? [...a.bound_empreendimentos] : [],
         midia_slug: a.midia_slug || '',
         cv_origem: a.cv_origem || '',
@@ -81,6 +82,9 @@ watch(() => props.open, (v) => {
 const midiaEfetiva = computed(() => form.value.midia_slug.trim() || props.defaults?.midia_slug || 'Facebook Ads');
 const origemEfetiva = computed(() => form.value.cv_origem || props.defaults?.cv_origem || 'FB');
 const vaiRotear = computed(() => form.value.mapping_active && form.value.bound_empreendimentos.length > 0);
+// Conta externa: o empreendimento nem tem fila no CV (caso London). Lead
+// entra como "Fora do CV" e a Central para de cobrar vínculo e de alertar.
+const foraDoCv = computed(() => form.value.mapping_active && form.value.cv_skip && !form.value.bound_empreendimentos.length);
 
 // Fila escolhida para um empreendimento: o rascunho do modal, senão a atual.
 function filaDe(id) {
@@ -114,8 +118,8 @@ function filaForaDaPraca(id) {
 const saving = ref(false);
 async function save() {
     errorMsg.value = null;
-    if (form.value.mapping_active && !form.value.bound_empreendimentos.length) {
-        errorMsg.value = 'Escolha o empreendimento da conta, ou desative o vínculo padrão.';
+    if (form.value.mapping_active && !form.value.cv_skip && !form.value.bound_empreendimentos.length) {
+        errorMsg.value = 'Escolha o empreendimento da conta, marque "fora do CV" ou desative o vínculo padrão.';
         return;
     }
     saving.value = true;
@@ -123,6 +127,7 @@ async function save() {
         const tags = form.value.tags_str.split(',').map(t => t.trim()).filter(Boolean);
         const binding = await store.setAccountBinding(props.account.account_id, {
             mapping_active: form.value.mapping_active,
+            cv_skip: form.value.cv_skip,
             bound_empreendimentos: form.value.bound_empreendimentos,
             midia_slug: form.value.midia_slug.trim() || null,
             cv_origem: form.value.cv_origem || null,
@@ -144,7 +149,9 @@ async function save() {
         toast.success(vaiRotear.value
             ? `Vínculo da conta salvo: ${form.value.bound_empreendimentos.length} empreendimento(s), mídia "${midiaEfetiva.value}".`
                 + (filasOk ? ` ${filasOk} fila(s) atualizada(s).` : '')
-            : 'Conta sem vínculo padrão: as campanhas dela dependem do vínculo próprio.');
+            : foraDoCv.value
+                ? 'Conta marcada como fora do CV: os leads dela ficam no Office e os represados saíram da cobrança.'
+                : 'Conta sem vínculo padrão: as campanhas dela dependem do vínculo próprio.');
         emit('saved', binding);
         if (!filasErro) emit('update:open', false);
     } finally {
@@ -170,9 +177,22 @@ async function save() {
         <Switch v-model="form.mapping_active" size="sm" class="shrink-0" />
       </div>
 
+      <!-- Conta externa: nada vai ao CV -->
+      <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5 flex items-start justify-between gap-3">
+        <div>
+          <div class="text-sm font-medium text-ink">Conta fora do CV (externa)</div>
+          <p class="text-micro text-ink-subtle mt-0.5">
+            Para conta cujo empreendimento não tem fila no CV: os leads ficam no Office como "Fora do CV",
+            não represam e não disparam alerta. Os que já estavam represados saem da cobrança ao salvar.
+            Se você escolher um empreendimento abaixo, ele vale e esta opção fica sem efeito.
+          </p>
+        </div>
+        <Switch v-model="form.cv_skip" size="sm" class="shrink-0" :disabled="!form.mapping_active" />
+      </div>
+
       <!-- Empreendimento -->
       <div>
-        <label class="text-sm font-medium text-ink block mb-1">Empreendimento da conta <span class="text-data-neg">*</span></label>
+        <label class="text-sm font-medium text-ink block mb-1">Empreendimento da conta <span v-if="!form.cv_skip" class="text-data-neg">*</span></label>
         <p class="text-xs text-ink-subtle mb-2">
           É o destino do lead no CV. Campanha desta conta que for de OUTRO produto recebe vínculo próprio no modal dela.
         </p>
@@ -245,11 +265,14 @@ async function save() {
 
       <!-- Preview -->
       <div class="rounded-lg border px-3 py-2.5"
-        :class="vaiRotear ? 'border-data-pos/30 bg-data-pos/5' : 'border-data-warn/30 bg-data-warn/5'">
-        <div class="text-xs font-medium" :class="vaiRotear ? 'text-data-pos' : 'text-data-warn'">
-          <i :class="vaiRotear ? 'fas fa-bolt' : 'fas fa-hand'" class="mr-1.5"></i>
+        :class="vaiRotear ? 'border-data-pos/30 bg-data-pos/5' : (foraDoCv ? 'border-line bg-surface-sunken/30' : 'border-data-warn/30 bg-data-warn/5')">
+        <div class="text-xs font-medium" :class="vaiRotear ? 'text-data-pos' : (foraDoCv ? 'text-ink-muted' : 'text-data-warn')">
+          <i :class="vaiRotear ? 'fas fa-bolt' : (foraDoCv ? 'fas fa-arrow-right-from-bracket' : 'fas fa-hand')" class="mr-1.5"></i>
           <template v-if="vaiRotear">
             Campanha nova desta conta já nasce vinculada: lead sai com mídia "{{ midiaEfetiva }}", origem {{ origemEfetiva }}.
+          </template>
+          <template v-else-if="foraDoCv">
+            Fora do CV: lead desta conta fica no Office (Captação, status "Fora do CV") e não vai ao CRM.
           </template>
           <template v-else>
             Sem vínculo padrão: campanha desta conta sem vínculo próprio represa o lead.

@@ -423,8 +423,8 @@ function statusBadge(s) {
                 <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5">
                   <div class="col-span-2 min-w-0">
                     <dt class="metric-label">Destino padrão</dt>
-                    <dd class="text-xs" :class="a.is_bound ? 'text-ink' : 'text-data-warn'">
-                      {{ a.is_bound ? empresasDaConta(a) : (a.mapping_active ? 'sem vínculo' : 'desativado') }}
+                    <dd class="text-xs" :class="a.is_bound ? 'text-ink' : (a.fora_do_cv ? 'text-ink-muted' : 'text-data-warn')">
+                      {{ a.is_bound ? empresasDaConta(a) : (a.fora_do_cv ? 'fora do CV (conta externa)' : (a.mapping_active ? 'sem vínculo' : 'desativado')) }}
                       <span v-if="a.is_bound && filasDaConta(a)" class="text-ink-subtle"> · fila: {{ filasDaConta(a) }}</span>
                       <span v-for="e in filaForaDaPraca(a)" :key="e.idempreendimento" class="block text-data-neg">
                         <i class="fas fa-triangle-exclamation mr-1"></i>{{ e.nome }} ({{ e.cidade }}) está na fila de {{ e.fila_cidades.join(', ') }}
@@ -447,8 +447,8 @@ function statusBadge(s) {
                 </dl>
                 <button @click="openAccount(a)"
                   class="h-10 w-full rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
-                  :class="a.is_bound ? 'border border-line text-ink-muted' : 'bg-accent text-white'">
-                  <i class="fas fa-link text-[10px]"></i>{{ a.is_bound ? 'Editar vínculo da conta' : 'Vincular conta' }}
+                  :class="a.is_bound || a.fora_do_cv ? 'border border-line text-ink-muted' : 'bg-accent text-white'">
+                  <i class="fas fa-link text-[10px]"></i>{{ a.is_bound || a.fora_do_cv ? 'Editar vínculo da conta' : 'Vincular conta' }}
                 </button>
               </li>
             </ul>
@@ -480,6 +480,7 @@ function statusBadge(s) {
                           <i class="fas fa-triangle-exclamation mr-1"></i>{{ e.nome }} ({{ e.cidade }}) está na fila de {{ e.fila_cidades.join(', ') }}
                         </div>
                       </template>
+                      <span v-else-if="a.fora_do_cv" class="text-ink-muted">fora do CV (conta externa)</span>
                       <span v-else class="text-data-warn">{{ a.mapping_active ? 'sem vínculo' : 'desativado' }}</span>
                     </td>
                     <td class="px-3 py-2.5 text-xs text-ink-muted">
@@ -497,10 +498,10 @@ function statusBadge(s) {
                     <td class="px-3 py-2.5 text-right">
                       <button @click="openAccount(a)"
                         class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-micro font-medium transition-colors"
-                        :class="a.is_bound
+                        :class="a.is_bound || a.fora_do_cv
                           ? 'border-line text-ink-muted hover:text-accent hover:border-accent/40'
                           : 'border-accent/40 bg-accent/10 text-accent hover:bg-accent/20'">
-                        <i class="fas fa-link text-[9px]"></i>{{ a.is_bound ? 'Editar' : 'Vincular' }}
+                        <i class="fas fa-link text-[9px]"></i>{{ a.is_bound || a.fora_do_cv ? 'Editar' : 'Vincular' }}
                       </button>
                     </td>
                   </tr>

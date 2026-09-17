@@ -29,7 +29,7 @@ function updateField(key, val) {
 const STATUS_LABELS = {
     received: 'Recebido', validated: 'Validado', held: 'Aguardando vínculo',
     routed: 'Roteado', dispatching: 'Despachando', delivered: 'Entregue',
-    rejected: 'Recusado', failed: 'Falhou', spam: 'Spam', historical: 'Histórico Meta',
+    rejected: 'Recusado', failed: 'Falhou', spam: 'Spam', ignored: 'Fora do CV', historical: 'Histórico Meta',
 };
 const STATUS_TOKENS = Object.fromEntries(Object.entries(STATUS_LABELS).map(([k, v]) => [v, k]));
 const statusOptions = Object.values(STATUS_LABELS);
