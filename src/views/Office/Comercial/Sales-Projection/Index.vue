@@ -166,13 +166,19 @@ const combinedData = computed(() => {
     const companyNameMap = new Map();
     const projectedEnterpriseIds = new Set();
     for (const ent of filteredProjEnterprises.value) {
-      const cid = ent.company_id != null ? Number(ent.company_id) : null;
-      if (!cid) continue;
+      // Meta de empreendimento SEM empresa (sem centro de custo pareado no
+      // ERP, ou ERP fora do cadastro) não some da visão por empresa: vai para
+      // um grupo próprio. Era isso que fazia "Meta projetada" cair ao trocar
+      // Empreendimento → Empresa (set/2026: 84 unidades e R$ 16,8 mi sumiam).
+      const cid = ent.company_id != null ? Number(ent.company_id) : 0;
       const prev = projByCompanyId.get(cid) ?? { projected_vgv: 0, projected_units: 0 };
       prev.projected_vgv += ent.summary?.projected_vgv ?? 0;
       prev.projected_units += ent.summary?.projected_units ?? 0;
       projByCompanyId.set(cid, prev);
-      if (!companyNameMap.has(cid) && ent.company_name) companyNameMap.set(cid, ent.company_name);
+      if (!companyNameMap.has(cid)) {
+        if (cid === 0) companyNameMap.set(0, 'Sem empresa vinculada');
+        else if (ent.company_name) companyNameMap.set(cid, ent.company_name);
+      }
       const eid = ent.erp_id != null ? Number(ent.erp_id) : null;
       if (eid != null && Number.isFinite(eid)) projectedEnterpriseIds.add(eid);
     }
