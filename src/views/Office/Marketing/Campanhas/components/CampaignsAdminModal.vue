@@ -1,5 +1,5 @@
 <script setup>
-// Modal de ferramentas admin — só visível pra admin via gear icon.
+// Modal de ferramentas admin - só visível pra admin via gear icon.
 // Botão grande no topo dispara TUDO em sequência. Operações individuais ficam
 // abaixo pra uso pontual.
 
@@ -69,11 +69,11 @@ async function doReparse() {
 }
 
 async function doDispatchHistorical() {
-    // 1) Preview leve (go/no-go) — não envia nada.
+    // 1) Preview leve (go/no-go) - não envia nada.
     const pre = await store.dispatchHistorical({ cutoff: CUTOFF, preview: true });
     if (!pre) { toast.error('Falha no preview: ' + (store.error || 'erro desconhecido')); return; }
     if (pre.shadow_mode) {
-        toast.warning('⚠️ Modo sombra (dry-run) ainda está LIGADO.\n\nDesligue em Configurações › Geral e salve antes de disparar — senão nada é enviado ao CV.');
+        toast.warning('⚠️ Modo sombra (dry-run) ainda está LIGADO.\n\nDesligue em Configurações › Geral e salve antes de disparar - senão nada é enviado ao CV.');
         return;
     }
     const ok = await pedirConfirmacao({
@@ -91,7 +91,7 @@ async function doDispatchHistorical() {
         `Histórico sem vínculo (ficaram de fora): ${result.historical_no_binding}\n` +
         `Sem contato: ${result.no_contact}\n` +
         `Erros: ${result.errors?.length || 0}`;
-    if (result.reached_limit) msg += '\n\n⚠️ Atingiu o lote de 500 — RODE DE NOVO pra continuar até zerar.';
+    if (result.reached_limit) msg += '\n\n⚠️ Atingiu o lote de 500 - RODE DE NOVO pra continuar até zerar.';
     toast.error(msg);
 }
 
@@ -220,7 +220,7 @@ async function doMigrateMappings() {
               <span class="font-medium text-sm text-ink">Importar histórico</span>
               <span v-if="store.importing" class="ml-auto"><i class="fas fa-circle-notch fa-spin text-xs text-accent"></i></span>
             </div>
-            <p class="text-micro text-ink-muted">Leads dos forms — até 90d (limite Meta).</p>
+            <p class="text-micro text-ink-muted">Leads dos forms - até 90d (limite Meta).</p>
           </button>
 
           <button @click="doReparse" class="rounded-lg border border-line p-3 hover:border-accent/30 transition-colors text-left">
@@ -259,7 +259,7 @@ async function doMigrateMappings() {
             <li v-for="op in store.ops.slice(0, 10)" :key="op.id" class="flex items-start gap-2 py-0.5">
               <i :class="op.status === 'running' ? 'fas fa-circle-notch fa-spin text-accent' :
                           op.status === 'success' ? 'fas fa-circle-check text-data-pos' :
-                          'fas fa-circle-xmark text-data-neg'" class="mt-0.5 text-[10px]"></i>
+                          'fas fa-circle-xmark text-data-neg'" class="mt-0.5 text-micro"></i>
               <span class="flex-1 truncate">{{ op.label }}</span>
               <span class="text-ink-subtle text-micro whitespace-nowrap">
                 {{ new Date(op.started_at).toLocaleTimeString('pt-BR') }}

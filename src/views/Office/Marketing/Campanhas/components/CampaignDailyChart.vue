@@ -1,11 +1,11 @@
 <script setup>
-// "Desempenho diário" — investimento e leads, dia a dia.
+// "Desempenho diário" - investimento e leads, dia a dia.
 //
 // ERA UM GRÁFICO DE EIXO DUPLO: barra de dinheiro numa escala e linha de leads
 // noutra, no mesmo desenho. Isso é o erro nº 1 de gráfico, e aqui ele custava
 // caro: as duas escalas se ajustam sozinhas e INDEPENDENTES, então o ponto em
 // que a linha "passa por cima" das barras é artefato do auto-escalonamento, não
-// fato nenhum do mundo. Só que ele parece um fato — as pessoas leem ali um
+// fato nenhum do mundo. Só que ele parece um fato - as pessoas leem ali um
 // "hoje o lead ficou mais barato" que o gráfico nunca disse. Trocar o período
 // de 30 para 7 dias mudava o cruzamento sem um único dado mudar.
 //
@@ -14,8 +14,8 @@
 // duas) continua sendo uma linha vertical. O ponteiro é ligado entre as duas,
 // então passar o mouse em cima marca o dia nas duas de uma vez.
 //
-// E a pergunta que o eixo duplo tentava responder no olho — "o lead está
-// ficando mais caro?" — virou número no cabeçalho, que é onde ela se responde
+// E a pergunta que o eixo duplo tentava responder no olho - "o lead está
+// ficando mais caro?" - virou número no cabeçalho, que é onde ela se responde
 // sem gráfico nenhum.
 
 import { computed } from 'vue';
@@ -90,8 +90,8 @@ const option = computed(() => {
            precisa de amplitude para a diferença entre dias aparecer), leads
            embaixo levando os rótulos de data das duas. */
         grid: [
-            { left: 8, right: 12, top: 14, height: '46%', containLabel: true },
-            { left: 8, right: 12, bottom: 4, height: '30%', containLabel: true },
+            { left: 8, right: 12, top: 14, height: '44%', containLabel: true },
+            { left: 8, right: 12, bottom: 4, height: '32%', containLabel: true },
         ],
         tooltip: {
             ...t.tooltip.value,
@@ -141,6 +141,7 @@ const option = computed(() => {
                 ...t.axisValue.value,
                 gridIndex: 1,
                 minInterval: 1,          // lead é contagem: meio lead não existe
+                splitNumber: 3,          // faixa baixa: mais que 3 marcas empilha os rótulos
             },
         ],
         series: [
@@ -194,9 +195,9 @@ const option = computed(() => {
       </span>
     </div>
 
-    <div class="flex-1 min-h-[260px]">
-      <VChart v-if="dias" :option="option" autoresize class="h-[260px] w-full" />
-      <div v-else class="h-[260px] grid place-items-center text-sm text-ink-subtle">
+    <div class="flex-1 min-h-[300px]">
+      <VChart v-if="dias" :option="option" autoresize class="h-[300px] w-full" />
+      <div v-else class="h-[300px] grid place-items-center text-sm text-ink-subtle">
         Sem dados no período
       </div>
     </div>

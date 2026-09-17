@@ -1,5 +1,5 @@
 <script setup>
-// /meta — Central Meta: hub único de tudo que é Meta + captação de leads.
+// /meta - Central Meta: hub único de tudo que é Meta + captação de leads.
 //
 // Consolida (2026-07-23) as 6 telas que viviam soltas em 2 categorias de menu:
 //   Captação (inbox) · Campanhas · Vínculos CV · Formulários · Credenciais · Configurações

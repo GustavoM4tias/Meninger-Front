@@ -1,5 +1,5 @@
 <script setup>
-// Galeria de ANÚNCIOS (artes) — o relatório de criativos. Grid de cards com a
+// Galeria de ANÚNCIOS (artes) - o relatório de criativos. Grid de cards com a
 // arte em destaque + métricas do período no rodapé. Clique na arte = lightbox.
 //
 // É o nível mais granular do drill: Conta → Campanha → Conjunto → Anúncio.
@@ -33,12 +33,12 @@ const sorted = computed(() => {
 });
 
 function fmtMoney(v) {
-    if (v == null) return '—';
+    if (v == null) return '-';
     try { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: props.currency, maximumFractionDigits: 2 }).format(Number(v)); }
     catch { return `R$ ${v}`; }
 }
-function fmtInt(v) { return v == null ? '—' : new Intl.NumberFormat('pt-BR').format(Number(v)); }
-function fmtPct(v) { return v == null ? '—' : `${Number(v).toFixed(2)}%`; }
+function fmtInt(v) { return v == null ? '-' : new Intl.NumberFormat('pt-BR').format(Number(v)); }
+function fmtPct(v) { return v == null ? '-' : `${Number(v).toFixed(2)}%`; }
 
 function isActive(ad) {
     return String(ad.effective_status || ad.status || '').toUpperCase().includes('ACTIVE');
@@ -105,7 +105,7 @@ function openLightbox(ad) {
             </span>
           </div>
           <span :class="['absolute top-1.5 right-1.5 w-2 h-2 rounded-full ring-2 ring-black/20',
-            isActive(ad) ? 'bg-data-pos' : 'bg-slate-400']"
+            isActive(ad) ? 'bg-data-pos' : 'bg-ink-subtle']"
             :title="isActive(ad) ? 'Ativo' : 'Inativo'"></span>
 
           <!-- Zoom hint -->
@@ -120,10 +120,10 @@ function openLightbox(ad) {
             {{ ad.name || '(não sincronizado)' }}
           </div>
           <div v-if="showCampaign && ad.campaign?.name" class="text-micro text-ink-subtle truncate mt-0.5" :title="ad.campaign.name">
-            <i class="fas fa-bullhorn text-[8px] mr-1"></i>{{ ad.campaign.name }}
+            <i class="fas fa-bullhorn text-micro mr-1"></i>{{ ad.campaign.name }}
           </div>
           <div v-else-if="ad.adset_name" class="text-micro text-ink-subtle truncate mt-0.5" :title="ad.adset_name">
-            <i class="fas fa-layer-group text-[8px] mr-1"></i>{{ ad.adset_name }}
+            <i class="fas fa-layer-group text-micro mr-1"></i>{{ ad.adset_name }}
           </div>
         </div>
 
@@ -139,7 +139,7 @@ function openLightbox(ad) {
           </div>
           <div>
             <div class="text-micro uppercase tracking-wider font-mono text-ink-subtle">CAC</div>
-            <div class="text-xs font-medium text-ink tabular-nums">{{ ad.cac != null ? fmtMoney(ad.cac) : '—' }}</div>
+            <div class="text-xs font-medium text-ink tabular-nums">{{ ad.cac != null ? fmtMoney(ad.cac) : '-' }}</div>
           </div>
           <div class="text-right">
             <div class="text-micro uppercase tracking-wider font-mono text-ink-subtle">CTR</div>

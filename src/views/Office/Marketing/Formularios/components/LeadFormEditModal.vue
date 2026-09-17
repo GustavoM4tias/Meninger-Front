@@ -1,14 +1,14 @@
 <script setup>
 // Modal de edição de formulário interno (LP).
 // Estrutura em tabs (parelha à do MetaFormMappingModal):
-//   1. Geral — slug, name, active, description, priority, campaign_ref, datas
-//   2. Vínculo CV — midia, cv_origem, empreendimentos, tags
+//   1. Geral - slug, name, active, description, priority, campaign_ref, datas
+//   2. Vínculo CV - midia, cv_origem, empreendimentos, tags
 //   3. UTMs default
-//   4. Campos extras (CV) — JSON
-//   5. Landing Page — visual + fields_config
-//   6. LGPD & Outros — consent, allowed_origins, redirect_url
-//   7. Como usar — só em edição: LP URL, QR, embed HTML
-//   8. Leads recentes — só em edição
+//   4. Campos extras (CV) - JSON
+//   5. Landing Page - visual + fields_config
+//   6. LGPD & Outros - consent, allowed_origins, redirect_url
+//   7. Como usar - só em edição: LP URL, QR, embed HTML
+//   8. Leads recentes - só em edição
 
 import { computed, ref, watch } from 'vue';
 import { useToast } from 'vue-toastification';
@@ -79,7 +79,7 @@ function buildPage(stored) {
     cta_button_text: s.cta_button_text || '',
     success_title: s.success_title || '',
     success_message: s.success_message || '',
-    // Layout — '' = padrão (a chave nem é salva no page_config)
+    // Layout - '' = padrão (a chave nem é salva no page_config)
     logo_size: s.logo_size || '',
     logo_align: s.logo_align || '',
     logo_trim: s.logo_trim || '',
@@ -229,7 +229,7 @@ async function save() {
   localError.value = null;
   if (!isEdit.value && !/^[a-z0-9-]{2,60}$/.test(d.slug)) {
     activeSection.value = 'geral';
-    localError.value = 'Slug inválido — use minúsculas, números e hífen (2–60 caracteres).';
+    localError.value = 'Slug inválido - use minúsculas, números e hífen (2–60 caracteres).';
     return;
   }
   if (!d.name.trim()) {
@@ -381,7 +381,7 @@ ${closeScript}`;
 });
 
 // Iframe com o MESMO visual da LP hospedada (?embed=1 renderiza só o card e
-// reporta a altura via postMessage — o script abaixo ajusta o iframe).
+// reporta a altura via postMessage - o script abaixo ajusta o iframe).
 const iframeSnippet = computed(() => {
   if (!isEdit.value) return '';
   const s = props.form.slug;
@@ -410,7 +410,7 @@ async function copy(text, label) {
 const stats = computed(() => props.form?.stats || { total: 0, last_30d: 0, delivered: 0, held: 0, spam: 0, failed: 0, last_lead_at: null });
 
 function fmtRelative(iso) {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const ms = Date.now() - new Date(iso).getTime();
   if (ms < 0) return 'agora';
   const min = Math.floor(ms / 60000);
@@ -470,7 +470,7 @@ const sections = computed(() => {
         <span v-if="isEdit" :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-micro font-medium',
           form?.active
             ? 'bg-data-pos/10 text-data-pos border-data-pos/20'
-            : 'bg-slate-500/10 text-ink-muted border-line/20']">
+            : 'bg-surface-sunken text-ink-muted border-line']">
           {{ form?.active ? 'Ativo' : 'Inativo' }}
         </span>
         <button @click="close" class="shrink-0 text-ink-subtle hover:text-ink p-1">
@@ -511,7 +511,7 @@ const sections = computed(() => {
               activeSection === s.key
                 ? 'border-accent text-accent'
                 : 'border-transparent text-ink-muted hover:text-ink']">
-            <i :class="s.icon" class="text-[10px]"></i>
+            <i :class="s.icon" class="text-micro"></i>
             {{ s.label }}
           </button>
         </div>
@@ -542,7 +542,7 @@ const sections = computed(() => {
             <label class="text-sm font-medium text-ink block mb-1">Descrição interna</label>
             <p class="text-micro text-ink-subtle mb-1.5">Notas pra equipe. Não vai pro lead nem pro CV.</p>
             <textarea v-model="data.description" rows="2"
-              placeholder="Ex: LP do lançamento Mond — campanha out/2026"
+              placeholder="Ex: LP do lançamento Mond - campanha out/2026"
               class="w-full rounded border border-line bg-surface px-3 py-2 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 resize-y" />
           </div>
 
@@ -565,7 +565,7 @@ const sections = computed(() => {
               <label class="text-sm font-medium text-ink block mb-1">Data de início</label>
               <input v-model="data.start_date" type="date"
                 class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40" />
-              <p class="text-micro text-ink-subtle mt-1">Informativo — usado em filtros/relatórios.</p>
+              <p class="text-micro text-ink-subtle mt-1">Informativo - usado em filtros/relatórios.</p>
             </div>
             <div>
               <label class="text-sm font-medium text-ink block mb-1">Data de encerramento</label>
@@ -656,7 +656,7 @@ const sections = computed(() => {
               <i class="fas fa-window-maximize text-accent mr-1.5"></i>Landing page
             </div>
             <p class="text-xs text-ink-subtle">
-              Visual em <code class="font-mono">lp.menin.com.br/{{ data.slug || 'slug' }}</code>. Tudo opcional — sem nada vale o visual padrão.
+              Visual em <code class="font-mono">lp.menin.com.br/{{ data.slug || 'slug' }}</code>. Tudo opcional - sem nada vale o visual padrão.
             </p>
           </div>
 
@@ -700,7 +700,7 @@ const sections = computed(() => {
           <div class="pt-3 border-t border-line/60">
             <div class="text-sm font-medium text-ink mb-1">Layout</div>
             <p class="text-micro text-ink-subtle mb-2">
-              "Padrão" mantém o visual default — a chave nem é salva na config.
+              "Padrão" mantém o visual default - a chave nem é salva na config.
             </p>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div>
@@ -882,7 +882,7 @@ const sections = computed(() => {
           </div>
 
           <div>
-            <div class="text-xs text-ink-muted mb-1.5">QR code da LP (imprima/cole onde quiser — não expira):</div>
+            <div class="text-xs text-ink-muted mb-1.5">QR code da LP (imprima/cole onde quiser - não expira):</div>
             <div class="flex items-start gap-3">
               <img v-if="qrDataUrl" :src="qrDataUrl" alt="QR code" class="h-32 w-32 rounded border border-line bg-surface-raised shrink-0" />
               <div v-else class="h-32 w-32 rounded border border-line bg-surface-sunken grid place-items-center text-ink-subtle text-xs shrink-0">
@@ -936,7 +936,7 @@ const sections = computed(() => {
             <ul class="md:hidden divide-y divide-line/60">
               <li v-for="l in recentLeads" :key="`m-${l.id}`" class="px-3 py-2.5 flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <div class="text-ink text-sm leading-tight break-words">{{ l.nome || '—' }}</div>
+                  <div class="text-ink text-sm leading-tight break-words">{{ l.nome || '-' }}</div>
                   <div class="text-micro text-ink-subtle break-all">{{ l.email || l.telefone || '' }}</div>
                   <div class="text-micro font-mono text-ink-subtle mt-0.5">{{ l.midia_slug || 'sem mídia' }}</div>
                 </div>
@@ -960,10 +960,10 @@ const sections = computed(() => {
                 <tr v-for="l in recentLeads" :key="l.id" class="hover:bg-surface-hover/40">
                   <td class="px-3 py-2 text-micro text-ink-subtle whitespace-nowrap">{{ fmtRelative(l.created_at) }}</td>
                   <td class="px-3 py-2">
-                    <div class="text-ink text-xs">{{ l.nome || '—' }}</div>
+                    <div class="text-ink text-xs">{{ l.nome || '-' }}</div>
                     <div class="text-micro text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
                   </td>
-                  <td class="px-3 py-2 text-micro font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
+                  <td class="px-3 py-2 text-micro font-mono text-ink-muted">{{ l.midia_slug || '-' }}</td>
                   <td class="px-3 py-2 text-center">
                     <span :class="['text-micro font-medium', statusColor(l.status)]">{{ l.status }}</span>
                   </td>

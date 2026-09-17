@@ -1,11 +1,11 @@
 <script setup>
 // Cell densa com as 3 datas do ciclo de vida do lead:
-//   1. Meta   — quando o lead foi criado na plataforma (raw_payload.graph.created_time)
-//   2. Office — quando entrou no nosso DB (created_at)
-//   3. CV     — quando foi entregue ao CV (last_dispatch_at se status=delivered)
+//   1. Meta   - quando o lead foi criado na plataforma (raw_payload.graph.created_time)
+//   2. Office - quando entrou no nosso DB (created_at)
+//   3. CV     - quando foi entregue ao CV (last_dispatch_at se status=delivered)
 //
 // Mostra também a latência Meta → Office (delay do webhook + processamento) e
-// Office → CV (tempo até despachar com sucesso). Em "—" quando o passo não
+// Office → CV (tempo até despachar com sucesso). Em "-" quando o passo não
 // ocorreu (lead site_form não tem Meta; held não tem CV; etc.).
 
 import { computed } from 'vue';
@@ -22,7 +22,7 @@ const toMs = (d) => {
     const t = new Date(d).getTime();
     return Number.isFinite(t) ? t : null;
 };
-const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-';
 
 function humanDelta(ms) {
     if (ms == null || ms < 0) return null;

@@ -1,13 +1,13 @@
 <script setup>
-// Central Meta › aba Captação — Inbox da captação de leads inbound.
-// (Panel do hub /meta — sem PageContainer/PageHeader próprios.)
+// Central Meta › aba Captação - Inbox da captação de leads inbound.
+// (Panel do hub /meta - sem PageContainer/PageHeader próprios.)
 //
 // Estrutura:
 //   1. Toolbar com badge "Modo sombra" e ações (atualizar, sincronizar, abrir Campanhas)
-//   2. CaptureHealthBanner — alertas críticos quando há (dry-run, dead-letter, oldest_held>2d)
-//   3. CaptureSummaryCards — 8 KPIs do período + seletor de período
-//   4. CaptureFiltersBar — toolbar expansível com todos os filtros
-//   5. SegmentedControl — alternar entre 3 views (lista / cards / timeline)
+//   2. CaptureHealthBanner - alertas críticos quando há (dry-run, dead-letter, oldest_held>2d)
+//   3. CaptureSummaryCards - 8 KPIs do período + seletor de período
+//   4. CaptureFiltersBar - toolbar expansível com todos os filtros
+//   5. SegmentedControl - alternar entre 3 views (lista / cards / timeline)
 //   6. View (table | cards | timeline) com lista de leads
 //   7. Paginação (só na lista)
 //   8. LeadDetailModal
@@ -72,7 +72,7 @@ const orderedLeads = computed(() => {
 });
 
 function applyFilters() {
-    // As datas do filtro SÃO o período mestre — KPIs/health acompanham o recorte
+    // As datas do filtro SÃO o período mestre - KPIs/health acompanham o recorte
     // (não há mais picker separado no topo).
     store.periodo = {
         since: store.filters.period_start || '',
@@ -85,7 +85,7 @@ function applyFilters() {
 }
 
 function focusStatus(filterKey, { global = false } = {}) {
-    // Aceita "delivered" ou "failed,rejected" — converte em array.
+    // Aceita "delivered" ou "failed,rejected" - converte em array.
     // global = pontos de atenção: filtra a base inteira (sem recorte de período),
     // senão dead-letter/held antigos ficariam invisíveis no mês atual.
     if (global) {
@@ -193,7 +193,7 @@ async function confirmarFullSync() {
             `Backfill: ${s.backfill?.updated ?? 0} campanhas resolvidas`,
             `Histórico: ${s.historical?.inserted ?? 0} novos, ${s.historical?.duplicates ?? 0} dup`,
         ];
-        toast.success(`Sync completo em ${s.duration_sec ?? '?'}s — ${linhas.join(' · ')}`);
+        toast.success(`Sync completo em ${s.duration_sec ?? '?'}s - ${linhas.join(' · ')}`);
         if (s.errors?.length) {
             toast.warning(`${s.errors.length} erro(s): ${s.errors.map(e => e.step).join(', ')}`);
         }
@@ -222,7 +222,7 @@ onMounted(async () => {
       <div class="flex items-center justify-end gap-2 flex-wrap mb-3">
           <span v-if="store.health?.dry_run"
             class="inline-flex items-center gap-1.5 rounded-lg border border-data-warn/30 bg-data-warn/10 px-2.5 py-1 text-xs font-medium text-data-warn"
-            title="Os leads não estão sendo enviados ao CV — modo sombra ligado">
+            title="Os leads não estão sendo enviados ao CV - modo sombra ligado">
             <i class="fas fa-eye-slash"></i> Modo sombra
           </span>
           <Button v-if="isAdmin" variant="primary" size="sm" icon="fas fa-arrows-rotate"
@@ -248,7 +248,7 @@ onMounted(async () => {
           </Button>
       </div>
 
-      <!-- Alertas críticos (globais — clicáveis pra filtrar o inbox) -->
+      <!-- Alertas críticos (globais - clicáveis pra filtrar o inbox) -->
       <CaptureHealthBanner :health="store.health" @focus-status="focusStatus" />
 
       <!-- Período mestre: as datas moram nos Filtros (Entrada Office de/até). -->

@@ -1,5 +1,5 @@
 <script setup>
-// Detalhe completo de um lead inbound — substitui o modal anterior.
+// Detalhe completo de um lead inbound - substitui o modal anterior.
 //
 // Estrutura:
 //   1. Header com nome + status + canal + IDs
@@ -36,7 +36,7 @@ const metaCampaign = computed(() => store.detail?.meta_campaign || null);
 
 const displayName = computed(() => {
     const l = lead.value;
-    if (!l) return '—';
+    if (!l) return '-';
     return l.nome || l.email || l.telefone || '(sem nome ou contato)';
 });
 
@@ -44,7 +44,7 @@ const CHANNEL_META = {
     meta_lead_ads: { label: 'Meta Lead Ads', icon: 'fab fa-meta', cls: 'text-accent' },
     site_form:     { label: 'Formulário do site', icon: 'fas fa-globe', cls: 'text-accent' },
 };
-const channelMeta = computed(() => CHANNEL_META[lead.value?.channel] || { label: lead.value?.channel || '—', icon: 'fas fa-question', cls: 'text-ink-subtle' });
+const channelMeta = computed(() => CHANNEL_META[lead.value?.channel] || { label: lead.value?.channel || '-', icon: 'fas fa-question', cls: 'text-ink-subtle' });
 
 const CV_ORIGEM_OPTIONS = [
     { v: 'SI', label: 'WebSite' },
@@ -56,10 +56,10 @@ const CV_ORIGEM_OPTIONS = [
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-';
 
 function humanDelta(ms) {
-    if (ms == null || ms < 0) return '—';
+    if (ms == null || ms < 0) return '-';
     const s = Math.round(ms / 1000);
     if (s < 60)  return `${s}s`;
     const m = Math.round(s / 60);
@@ -69,7 +69,7 @@ function humanDelta(ms) {
     return `${Math.round(h / 24)}d`;
 }
 
-// Datas ricas — pra cronologia visual
+// Datas ricas - pra cronologia visual
 const timeline3 = computed(() => {
     const l = lead.value;
     if (!l) return null;
@@ -158,15 +158,15 @@ async function doReconcileCv() {
               </span>
               <span v-if="lead.meta_is_organic === true || lead.meta_is_organic === 'true'"
                 class="text-teal-600 dark:text-teal-400"
-                title="Lead orgânico — veio do CTA da Página, não de uma campanha de Ads (por isso não tem campaign_id na Meta)">
+                title="Lead orgânico - veio do CTA da Página, não de uma campanha de Ads (por isso não tem campaign_id na Meta)">
                 <i class="fas fa-seedling"></i> orgânico
               </span>
             </div>
             <h2 class="text-lg font-semibold text-ink truncate">{{ displayName }}</h2>
             <div class="text-xs text-ink-muted font-mono mt-0.5 truncate">
-              <span v-if="lead.email"><i class="fas fa-envelope text-[10px] mr-1"></i>{{ lead.email }}</span>
+              <span v-if="lead.email"><i class="fas fa-envelope text-micro mr-1"></i>{{ lead.email }}</span>
               <span v-if="lead.email && lead.telefone" class="mx-1.5 text-ink-subtle">·</span>
-              <span v-if="lead.telefone"><i class="fas fa-phone text-[10px] mr-1"></i>{{ lead.telefone }}</span>
+              <span v-if="lead.telefone"><i class="fas fa-phone text-micro mr-1"></i>{{ lead.telefone }}</span>
             </div>
           </div>
           <div class="flex flex-col items-end gap-1.5 shrink-0">
@@ -191,7 +191,7 @@ async function doReconcileCv() {
               <span class="text-xs font-medium text-accent">
                 <i class="fab fa-meta mr-1"></i>Entrada na Meta
               </span>
-              <i class="fas fa-1 text-[10px] text-accent"></i>
+              <i class="fas fa-1 text-micro text-accent"></i>
             </div>
             <div class="text-sm font-mono tabular-nums" :class="timeline3.meta ? 'text-ink' : 'text-ink-subtle'">
               {{ fmt(timeline3.meta) }}
@@ -207,14 +207,14 @@ async function doReconcileCv() {
               <span class="text-xs font-medium text-accent">
                 <i class="fas fa-database mr-1"></i>Entrada no Office
               </span>
-              <i class="fas fa-2 text-[10px] text-accent"></i>
+              <i class="fas fa-2 text-micro text-accent"></i>
             </div>
             <div class="text-sm font-mono tabular-nums" :class="timeline3.office ? 'text-ink' : 'text-ink-subtle'">
               {{ fmt(timeline3.office) }}
             </div>
             <div class="text-micro text-ink-subtle mt-1">
               <span v-if="timeline3.metaToOffice != null">
-                <i class="fas fa-arrow-right text-[8px] mx-0.5"></i>
+                <i class="fas fa-arrow-right text-micro mx-0.5"></i>
                 {{ humanDelta(timeline3.metaToOffice) }} após Meta
               </span>
               <span v-else>captura webhook/form</span>
@@ -229,7 +229,7 @@ async function doReconcileCv() {
                 :class="timeline3.cv ? 'text-data-pos' : 'text-ink-muted'">
                 <i class="fas fa-check-double mr-1"></i>Entrega ao CV
               </span>
-              <i class="fas fa-3 text-[10px]"
+              <i class="fas fa-3 text-micro"
                 :class="timeline3.cv ? 'text-data-pos' : 'text-ink-subtle'"></i>
             </div>
             <div class="text-sm font-mono tabular-nums" :class="timeline3.cv ? 'text-ink' : 'text-ink-subtle'">
@@ -237,18 +237,18 @@ async function doReconcileCv() {
             </div>
             <div class="text-micro text-ink-subtle mt-1">
               <span v-if="timeline3.officeToCv != null">
-                <i class="fas fa-arrow-right text-[8px] mx-0.5"></i>
+                <i class="fas fa-arrow-right text-micro mx-0.5"></i>
                 {{ humanDelta(timeline3.officeToCv) }} após Office
               </span>
               <span v-else-if="lead.status === 'held'">aguardando vínculo</span>
               <span v-else-if="lead.status === 'historical'">só visibilidade (não enviado)</span>
-              <span v-else>—</span>
+              <span v-else>-</span>
             </div>
           </div>
         </div>
 
         <div v-if="lead.dispatch_attempts > 0" class="mt-3 text-micro text-ink-subtle font-mono">
-          <i class="fas fa-arrows-rotate text-[10px] mr-1"></i>
+          <i class="fas fa-arrows-rotate text-micro mr-1"></i>
           {{ lead.dispatch_attempts }} tentativa{{ lead.dispatch_attempts > 1 ? 's' : '' }} de despacho
           <span v-if="lead.next_retry_at"> · próximo retry: {{ fmt(lead.next_retry_at) }}</span>
         </div>
@@ -272,10 +272,10 @@ async function doReconcileCv() {
             </Badge>
             <Badge v-if="metaCampaign.objective" variant="info" size="sm">{{ metaCampaign.objective }}</Badge>
             <Badge v-if="metaCampaign.mapping_active && metaCampaign.midia_slug" variant="success" size="sm" :dot="false">
-              <i class="fas fa-link text-[9px]"></i> mapping ativo
+              <i class="fas fa-link text-micro"></i> mapping ativo
             </Badge>
             <Badge v-else-if="metaCampaign.midia_slug" variant="warning" size="sm" :dot="false">
-              <i class="fas fa-link-slash text-[9px]"></i> mapping desativado
+              <i class="fas fa-link-slash text-micro"></i> mapping desativado
             </Badge>
           </div>
         </div>
@@ -324,12 +324,12 @@ async function doReconcileCv() {
             <div class="flex justify-between gap-2">
               <dt class="text-ink-muted">Mídia</dt>
               <dd class="text-ink font-mono truncate" :title="lead.midia_slug">
-                {{ lead.midia_slug || '—' }}
+                {{ lead.midia_slug || '-' }}
               </dd>
             </div>
             <div class="flex justify-between gap-2">
               <dt class="text-ink-muted">Origem</dt>
-              <dd class="text-ink font-mono">{{ lead.cv_origem || '—' }}</dd>
+              <dd class="text-ink font-mono">{{ lead.cv_origem || '-' }}</dd>
             </div>
             <div class="flex justify-between gap-2">
               <dt class="text-ink-muted">Empreendimentos</dt>
@@ -352,19 +352,19 @@ async function doReconcileCv() {
         </div>
         <div>
           <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Nome</div>
-          <div class="text-sm text-ink truncate">{{ lead.nome || '—' }}</div>
+          <div class="text-sm text-ink truncate">{{ lead.nome || '-' }}</div>
         </div>
         <div>
           <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">E-mail</div>
-          <div class="text-sm text-ink break-all">{{ lead.email || '—' }}</div>
+          <div class="text-sm text-ink break-all">{{ lead.email || '-' }}</div>
         </div>
         <div>
           <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Telefone</div>
-          <div class="text-sm text-ink">{{ lead.telefone || '—' }}</div>
+          <div class="text-sm text-ink">{{ lead.telefone || '-' }}</div>
         </div>
         <div v-if="lead.cidade || lead.estado">
           <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Cidade / UF</div>
-          <div class="text-sm text-ink">{{ [lead.cidade, lead.estado].filter(Boolean).join(' · ') || '—' }}</div>
+          <div class="text-sm text-ink">{{ [lead.cidade, lead.estado].filter(Boolean).join(' · ') || '-' }}</div>
         </div>
         <div v-if="lead.utm_source || lead.utm_campaign">
           <div class="text-micro uppercase tracking-wider text-ink-subtle font-mono">UTM</div>
@@ -465,7 +465,7 @@ async function doReconcileCv() {
             <div class="text-sm text-ink font-medium">
               {{ ev.event_type }}
               <span v-if="ev.status_from || ev.status_to" class="text-ink-subtle font-normal text-xs">
-                · {{ ev.status_from || '—' }} → {{ ev.status_to || '—' }}
+                · {{ ev.status_from || '-' }} → {{ ev.status_to || '-' }}
               </span>
             </div>
             <div v-if="ev.message" class="text-xs text-ink-muted">{{ ev.message }}</div>

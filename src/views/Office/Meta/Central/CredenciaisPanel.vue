@@ -1,14 +1,14 @@
 <script setup>
-// Central Meta › aba Credenciais — TUDO pra conectar a Meta num lugar só:
+// Central Meta › aba Credenciais - TUDO pra conectar a Meta num lugar só:
 //
-//   1. Credenciais do App (App ID, App Secret, versão Graph) — compartilhadas
+//   1. Credenciais do App (App ID, App Secret, versão Graph) - compartilhadas
 //      com o WhatsApp (mesmo App na Meta). Fonte: meta_app_configs (/api/meta-app).
-//   2. Token de Gestão de Campanhas (admin, vê todos os BMs) — relatório/atribuição.
+//   2. Token de Gestão de Campanhas (admin, vê todos os BMs) - relatório/atribuição.
 //   3. Tokens do Lead Ads (verify token do webhook + access token do System User)
-//      — próprios da captação. Fonte: marketing_configs (/api/marketing/config).
+//      - próprios da captação. Fonte: marketing_configs (/api/marketing/config).
 //
 // Absorve a antiga tela /settings/meta (redirect pra cá) + a aba "Meta Lead Ads"
-// da antiga Config. Captação. O storage NÃO mudou — só a apresentação.
+// da antiga Config. Captação. O storage NÃO mudou - só a apresentação.
 
 import { ref, watch, computed, onMounted, onBeforeUnmount, onActivated } from 'vue';
 import { useToast } from 'vue-toastification';
@@ -248,13 +248,13 @@ async function copyWebhook() {
       <p class="text-micro text-ink-subtle">Último teste: {{ lastTest }}</p>
     </section>
 
-    <!-- ══ Gestão de Campanhas (token admin — enxerga todas as contas/BMs) ══ -->
+    <!-- ══ Gestão de Campanhas (token admin - enxerga todas as contas/BMs) ══ -->
     <section class="rounded-xl border border-line bg-surface-raised p-5 shadow-soft space-y-4">
       <header>
         <h2 class="text-sm font-semibold text-ink">Gestão de Campanhas (Meta)</h2>
         <p class="text-xs text-ink-muted">
           Conecta um usuário <b>admin</b> que enxerga <b>todas as contas de anúncio de todos os BMs</b>
-          (inclusive as futuras) — usado só pelo relatório e atribuição de campanhas.
+          (inclusive as futuras) - usado só pelo relatório e atribuição de campanhas.
           <b>Os leads não usam este token:</b> se ele cair, os leads continuam entrando; só o relatório
           para de atualizar até reconectar.
         </p>
@@ -280,7 +280,7 @@ async function copyWebhook() {
         <div v-else-if="campExpired" class="space-y-0.5">
           <div class="flex items-center gap-2 text-data-neg font-medium">
             <i class="fas fa-circle-xmark"></i>
-            Token expirado ({{ store.campaignsStatus.name || 'admin' }}) — {{ campExpiry }}
+            Token expirado ({{ store.campaignsStatus.name || 'admin' }}) - {{ campExpiry }}
           </div>
           <div class="text-xs text-ink-muted">
             Token expirado não tem renovação: só o login de novo em <b>Reconectar com Facebook</b> resolve.
@@ -289,7 +289,7 @@ async function copyWebhook() {
         </div>
         <div v-else class="flex items-center gap-2 text-data-warn">
           <i class="fas fa-triangle-exclamation"></i>
-          Não conectado — o sync usa o token do System User (vê só as contas atribuídas a ele).
+          Não conectado - o sync usa o token do System User (vê só as contas atribuídas a ele).
         </div>
       </div>
 
@@ -320,7 +320,7 @@ async function copyWebhook() {
         <div class="mt-2 flex flex-col sm:flex-row gap-2 sm:items-end">
           <div class="flex-1">
             <Input v-model="campaignToken" type="password" label="Token de acesso admin"
-              placeholder="cole o token (curto ou longo — troco por um de 60 dias)" />
+              placeholder="cole o token (curto ou longo - troco por um de 60 dias)" />
           </div>
           <Button :loading="store.campaignsBusy" :disabled="!campaignToken.trim()" icon="fas fa-plug" @click="onConnectPaste">Conectar</Button>
         </div>
@@ -356,14 +356,14 @@ async function copyWebhook() {
       <h3 class="text-sm font-semibold text-ink mb-1">Token de verificação do webhook</h3>
       <p class="text-xs text-ink-muted mb-3">
         Você escolhe esse valor. O Meta usa pra fazer o handshake inicial (chama GET no callback
-        com esse token, e o backend confere). Use o gerado aqui — ou cole um seu — e informe
+        com esse token, e o backend confere). Use o gerado aqui - ou cole um seu - e informe
         o <strong>mesmo valor</strong> no Meta ao cadastrar o webhook.
       </p>
       <div class="flex items-center gap-2">
         <div class="flex-1">
           <Input v-model="leadAds.meta_verify_token"
             :type="showSecrets.verify_token ? 'text' : 'password'"
-            :placeholder="mktCfg.has_meta_verify_token ? '•••• já configurado — preencha pra trocar' : 'Token aleatório'"
+            :placeholder="mktCfg.has_meta_verify_token ? '•••• já configurado - preencha pra trocar' : 'Token aleatório'"
             size="sm" />
         </div>
         <Button variant="ghost" size="sm" icon="fas fa-dice" @click="generateVerifyToken">Gerar</Button>
@@ -396,7 +396,7 @@ async function copyWebhook() {
         <div class="flex-1">
           <Input v-model="leadAds.meta_access_token"
             :type="showSecrets.access_token ? 'text' : 'password'"
-            :placeholder="mktCfg.has_meta_access_token ? '•••• já configurado — preencha pra trocar' : 'EAALKa... (cole o token completo)'"
+            :placeholder="mktCfg.has_meta_access_token ? '•••• já configurado - preencha pra trocar' : 'EAALKa... (cole o token completo)'"
             size="sm" />
         </div>
         <Button variant="ghost" size="sm"
@@ -436,7 +436,7 @@ async function copyWebhook() {
           class="rounded-lg border border-data-pos/30 bg-data-pos/10 px-3 py-2.5 text-sm">
           <div class="flex items-center gap-2 text-data-pos font-medium">
             <i class="fas fa-circle-check"></i>
-            Token válido — conta: <strong>{{ test.identity.name }}</strong> (id {{ test.identity.id }})
+            Token válido - conta: <strong>{{ test.identity.name }}</strong> (id {{ test.identity.id }})
           </div>
           <div v-if="test.pages?.length" class="mt-2 text-xs text-ink-muted">
             <strong>{{ test.pages.length }}</strong> página(s) acessível(eis):
@@ -448,7 +448,7 @@ async function copyWebhook() {
             </ul>
           </div>
           <div v-else class="mt-2 text-xs text-data-warn">
-            <i class="fas fa-triangle-exclamation mr-1"></i>Token válido, mas nenhuma Página acessível —
+            <i class="fas fa-triangle-exclamation mr-1"></i>Token válido, mas nenhuma Página acessível -
             vincule uma Página ao System User no business.facebook.com.
           </div>
         </div>

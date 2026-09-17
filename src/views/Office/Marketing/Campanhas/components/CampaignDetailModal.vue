@@ -1,14 +1,31 @@
 <script setup>
-// Detalhe de uma campanha Meta: KPIs, gráfico de leads/dia, lista de leads,
-// configuração interna (notes, priority, archived).
+// Detalhe de uma campanha Meta: KPIs, vínculo CV, estrutura (conjuntos e
+// anúncios), leads, série diária e gestão interna (notes, priority, archived).
+//
+// Modal `screen` no molde do BuildingModal: cabeçalho fixo, seções numa barra
+// sticky, KPIs em StatRow, cada bloco num Panel, listas em DataTable. Só
+// primitivos de components/UI - nada de tabela ou checkbox à mão.
 
 import { ref, computed, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import Button from '@/components/UI/Button.vue';
+import IconButton from '@/components/UI/IconButton.vue';
 import Modal from '@/components/UI/Modal.vue';
+import Panel from '@/components/UI/Panel.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import MetricInline from '@/components/UI/MetricInline.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import Badge from '@/components/UI/Badge.vue';
+import Switch from '@/components/UI/Switch.vue';
+import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+import Collapsible from '@/components/UI/Collapsible.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
+import { fieldBase, labelBase } from '@/components/UI/_classes.js';
 import EnterpriseMultiSelect from '@/components/Marketing/EnterpriseMultiSelect.vue';
+import LeadStatusBadge from '@/views/Office/Marketing/Captacao/components/LeadStatusBadge.vue';
 import MetaFormMappingModal from '@/views/Office/Marketing/Formularios/components/MetaFormMappingModal.vue';
 import CreativeLightbox from './CreativeLightbox.vue';
 import CampaignDailyChart from './CampaignDailyChart.vue';
@@ -16,7 +33,7 @@ import CampaignDailyChart from './CampaignDailyChart.vue';
 const props = defineProps({
     open: { type: Boolean, default: false },
     campaignId: { type: String, default: null },
-    // Período do relatório — recorta o gráfico dia-a-dia e a lista de leads.
+    // Período do relatório - recorta o gráfico dia-a-dia e a lista de leads.
     // Sem período (ex.: aberto pela Central de Vínculos) → janela padrão de 30d
     // e leads mais recentes (comportamento legado).
     since: { type: String, default: null },
@@ -60,7 +77,7 @@ const heldChecking = ref(false);
 function close() { emit('update:open', false); }
 
 watch([() => props.open, () => props.campaignId, () => props.since, () => props.until], async ([isOpen, id], [prevOpen, prevId]) => {
-    // Reset SEMPRE que muda de campanha (ou fecha modal) — evita ver dados
+    // Reset SEMPRE que muda de campanha (ou fecha modal) - evita ver dados
     // da campanha anterior enquanto carrega.
     campaign.value = null;
     leads.value = [];
@@ -96,25 +113,25 @@ watch([() => props.open, () => props.campaignId, () => props.since, () => props.
 }, { immediate: true });
 
 function fmtMoney(v, currency = 'BRL') {
-    if (v == null) return '—';
+    if (v == null) return '-';
     try {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(Number(v));
     } catch { return `R$ ${v}`; }
 }
 function fmtInt(v) {
-    if (v == null) return '—';
+    if (v == null) return '-';
     return new Intl.NumberFormat('pt-BR').format(Number(v));
 }
 function fmtPct(v, digits = 2) {
-    if (v == null) return '—';
+    if (v == null) return '-';
     return `${Number(v).toFixed(digits)}%`;
 }
 function fmtDate(iso) {
-    if (!iso) return '—';
-    try { return new Date(iso).toLocaleDateString('pt-BR'); } catch { return '—'; }
+    if (!iso) return '-';
+    try { return new Date(iso).toLocaleDateString('pt-BR'); } catch { return '-'; }
 }
 function fmtRelative(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     const ms = Date.now() - new Date(iso).getTime();
     const min = Math.floor(ms / 60000);
     if (min < 1)    return 'agora';
@@ -135,19 +152,23 @@ const scopeLabel = computed(() => {
     return 'últimos 30 dias';
 });
 
+// Status da Meta em variante do Badge (cor de estado, não de série).
+function statusVariant(s) {
+    const up = String(s || '').toUpperCase();
+    if (up.includes('ACTIVE'))  return 'success';
+    if (up.includes('PAUSED'))  return 'warning';
+    if (up.includes('DELETED')) return 'danger';
+    return 'neutral';
+}
 const statusBadge = computed(() => {
     const s = String(campaign.value?.effective_status || campaign.value?.status || '').toUpperCase();
-    if (s.includes('ACTIVE'))   return { label: s.replace(/_/g, ' '), cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
-    if (s.includes('PAUSED'))   return { label: s.replace(/_/g, ' '), cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
-    if (s.includes('DELETED'))  return { label: s.replace(/_/g, ' '), cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
-    if (s.includes('ARCHIVED')) return { label: s.replace(/_/g, ' '), cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
-    return { label: s || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    return { label: s ? s.replace(/_/g, ' ') : '-', variant: statusVariant(s) };
 });
 
 const kpis = computed(() => {
     const c = campaign.value;
     if (!c) return null;
-    // Leads da NOSSA base (inbound_leads sem spam) — a contagem da Meta inclui
+    // Leads da NOSSA base (inbound_leads sem spam) - a contagem da Meta inclui
     // pixel, que é agregado e sem identificação.
     const leads = Number(c.office_leads ?? c.lead_stats?.valid) || 0;
     const spend = Number(c.spend) || 0;
@@ -167,9 +188,108 @@ const kpis = computed(() => {
     };
 });
 
-// Para o gráfico — escalas independentes pra spend (R$) e leads (count).
-const dailyMaxSpend = computed(() => Math.max(1, ...daily.value.map(d => Number(d.spend) || 0)));
-const dailyMaxLeads = computed(() => Math.max(1, ...daily.value.map(d => Number(d.office_leads) || 0)));
+// ── KPIs do período (StatRow no topo, a mesma linha em toda seção) ────────
+const money = (v) => fmtMoney(v, campaign.value?.currency);
+const kpiCards = computed(() => {
+    const k = kpis.value;
+    if (!k) return [];
+    return [
+        { key: 'spend',       label: 'Investido',     raw: k.spend,       format: money,  decimals: 2, icon: 'fas fa-coins',         tone: 'accent' },
+        { key: 'leads',       label: 'Leads (base)',  raw: k.leads,       format: fmtInt,              icon: 'fas fa-users',         tone: 'pos' },
+        { key: 'cac',         label: 'CAC',           raw: k.cac ?? 0,    format: money,  decimals: 2, icon: 'fas fa-hand-holding-dollar', tone: 'neutral', hint: k.cac == null ? 'sem lead' : 'por lead da base' },
+        { key: 'impressions', label: 'Impressões',    raw: k.impressions, format: fmtInt,              icon: 'fas fa-eye',           tone: 'neutral' },
+        { key: 'clicks',      label: 'Cliques',       raw: k.clicks,      format: fmtInt,              icon: 'fas fa-arrow-pointer', tone: 'neutral' },
+        { key: 'ctr',         label: 'CTR',           value: fmtPct(k.ctr),                            icon: 'fas fa-percent',       tone: 'neutral' },
+    ];
+});
+
+// Execução (Visão geral): tempo rodando, fim, ritmo. Texto porque é o que
+// eles são - só o gasto conta.
+const execItems = computed(() => {
+    const c = campaign.value;
+    if (!c) return [];
+    const pace = pacingBadge(c.spend_pace);
+    const fim = c.days_remaining != null
+        ? { value: `${c.days_remaining} ${c.days_remaining === 1 ? 'dia' : 'dias'}`, tone: c.days_remaining === 0 ? 'neg' : c.days_remaining <= 3 ? 'warn' : '', hint: c.stop_time ? `até ${fmtDate(c.stop_time)}` : '' }
+        : { value: 'em andamento', tone: 'pos', hint: 'sem data de fim' };
+    return [
+        { label: 'Gasto total', raw: Number(c.spend) || 0, format: money, decimals: 2, tone: 'accent', hint: c.daily_avg_spend != null ? `~${money(c.daily_avg_spend)}/dia` : '' },
+        { label: 'Rodando há', value: c.days_running != null ? `${c.days_running} ${c.days_running === 1 ? 'dia' : 'dias'}` : '-', hint: c.start_time ? `desde ${fmtDate(c.start_time)}` : '' },
+        { label: 'Encerra em', ...fim },
+        pace
+            ? { label: 'Ritmo de gasto', value: pace.label, tone: pace.tone, hint: c.daily_budget ? `orçamento ${money(c.daily_budget)}/dia` : '' }
+            : { label: 'Ritmo de gasto', value: 'sem orçamento diário', hint: c.lifetime_budget ? `total ${money(c.lifetime_budget)}` : '' },
+    ];
+});
+
+// Funil: barra proporcional ao topo (impressões). Cliques e leads são uma
+// fração ínfima, então a largura mínima garante que a barra exista.
+const funnelRows = computed(() => {
+    const k = kpis.value;
+    if (!k) return [];
+    const pct = (n) => k.impressions > 0 ? Math.max(1.5, (n / k.impressions) * 100) + '%' : '0%';
+    return [
+        { key: 'impr',   label: 'Impressões', value: k.impressions, width: '100%',       cls: 'bg-series-1-soft' },
+        { key: 'clicks', label: 'Cliques',    value: k.clicks,      width: pct(k.clicks), cls: 'bg-series-1-soft', hint: k.ctr ? `(${fmtPct(k.ctr)})` : '' },
+        { key: 'leads',  label: 'Leads',      value: k.leads,       width: pct(k.leads),  cls: 'bg-data-pos/40', hint: k.conversionRate != null ? `(${fmtPct(k.conversionRate)} dos cliques)` : '' },
+    ];
+});
+
+const identificacao = computed(() => {
+    const c = campaign.value;
+    if (!c) return [];
+    return [
+        { label: 'Objetivo', value: c.objective || '-', mono: true },
+        { label: 'Conta de anúncio', value: c.account_name || '-' },
+        { label: 'Mídia (CV)', value: efetivo.value?.midia_slug || 'sem vínculo', mono: true, hint: herdaDaConta.value ? '(da conta)' : '' },
+        { label: 'Tipo de compra', value: c.buying_type || '-', mono: true },
+        { label: 'Última sync', value: fmtRelative(c.last_synced_at) },
+    ];
+});
+
+// Opções dos seletores (o Select só aceita { value, label }).
+const ORIGEM_DEFAULT = '__padrao__';
+const origemOptions = computed(() => [
+    { value: ORIGEM_DEFAULT, label: `Padrão (${efetivo.value?.cv_origem || 'FB'})` },
+    { value: 'FB', label: 'FB (Facebook)' },
+    { value: 'IG', label: 'IG (Instagram)' },
+]);
+const cvOrigemSel = computed({
+    get: () => vinculo.value.cv_origem || ORIGEM_DEFAULT,
+    set: (v) => { vinculo.value.cv_origem = v === ORIGEM_DEFAULT ? '' : v; },
+});
+const priorityOptions = [
+    { value: 'low', label: 'Baixa' }, { value: 'normal', label: 'Normal' }, { value: 'high', label: 'Alta' },
+];
+const adsStatusOptions = [
+    { value: 'ALL', label: 'Todos' }, { value: 'ACTIVE', label: 'Ativos' },
+    { value: 'PAUSED', label: 'Pausados' }, { value: 'OTHER', label: 'Outros' },
+];
+const adsetSortOptions = [
+    { value: 'spend', label: 'Maior gasto' }, { value: 'leads', label: 'Mais leads' },
+    { value: 'name', label: 'Nome A-Z' }, { value: 'recent', label: 'Mais recentes' },
+];
+
+// Colunas das listas (DataTable: prioridade decide a ordem no celular).
+const LEADS_COLUMNS = [
+    { key: 'nome',         label: 'Contato', priority: 1, sortable: true },
+    { key: 'status',       label: 'Status',  priority: 1, sortable: true, width: '11rem' },
+    { key: 'created_at',   label: 'Quando',  priority: 2, sortable: true, width: '8rem' },
+    { key: 'midia_slug',   label: 'Mídia',   priority: 2, sortable: true },
+    { key: 'meta_form_id', label: 'Form',    priority: 3 },
+];
+const DAILY_COLUMNS = [
+    { key: 'day',         label: 'Dia',      priority: 1, sortable: true },
+    { key: 'spend',       label: 'Gasto',    priority: 1, sortable: true, numeric: true, format: (v) => money(v) },
+    { key: 'office_leads',label: 'Leads',    priority: 1, sortable: true, numeric: true, format: fmtInt },
+    { key: 'impressions', label: 'Impr.',    priority: 2, sortable: true, numeric: true, format: fmtInt },
+    { key: 'clicks',      label: 'Cliques',  priority: 2, sortable: true, numeric: true, format: fmtInt },
+];
+const dailyRows = computed(() => daily.value.map(d => ({
+    ...d, spend: Number(d.spend) || 0, office_leads: Number(d.office_leads) || 0,
+    impressions: Number(d.impressions) || 0, clicks: Number(d.clicks) || 0,
+})));
+
 const dailyTotals = computed(() => {
     const acc = { spend: 0, leads: 0, clicks: 0, impressions: 0 };
     for (const d of daily.value) {
@@ -181,13 +301,12 @@ const dailyTotals = computed(() => {
     return acc;
 });
 
-function statusColor(s) {
-    if (s === 'delivered')               return 'text-data-pos';
-    if (s === 'held')                    return 'text-data-warn';
-    if (s === 'spam')                    return 'text-data-neg';
-    if (s === 'failed' || s === 'rejected') return 'text-data-neg';
-    return 'text-ink-muted';
-}
+const dailyTotalsItems = computed(() => [
+    { label: 'Gasto no período', raw: dailyTotals.value.spend, format: money, decimals: 2, tone: 'accent' },
+    { label: 'Leads na base',    raw: dailyTotals.value.leads, format: fmtInt, tone: 'pos' },
+    { label: 'Impressões',       raw: dailyTotals.value.impressions, format: fmtInt },
+    { label: 'Cliques',          raw: dailyTotals.value.clicks, format: fmtInt },
+]);
 
 async function saveInternal() {
     const updated = await store.updateInternal(campaign.value.id, {
@@ -203,12 +322,12 @@ async function saveInternal() {
 }
 
 const sections = [
-    { key: 'overview',  label: 'Visão geral',  icon: 'fas fa-chart-pie' },
-    { key: 'vinculo',   label: 'Vínculo CV',   icon: 'fas fa-link' },
-    { key: 'structure', label: 'Estrutura',    icon: 'fas fa-sitemap' },
-    { key: 'leads',     label: 'Leads',        icon: 'fas fa-users' },
-    { key: 'daily',     label: 'Dia-a-dia',    icon: 'fas fa-chart-column' },
-    { key: 'gestao',    label: 'Gestão',       icon: 'fas fa-clipboard-list' },
+    { key: 'overview',  label: 'Visão geral',  icon: 'fas fa-chart-pie',      hint: 'Execução, funil e identificação' },
+    { key: 'vinculo',   label: 'Vínculo CV',   icon: 'fas fa-link',           hint: 'Para onde o lead vai no CV' },
+    { key: 'structure', label: 'Estrutura',    icon: 'fas fa-sitemap',        hint: 'Conjuntos e anúncios' },
+    { key: 'leads',     label: 'Leads',        icon: 'fas fa-users',          hint: 'Quem chegou por esta campanha' },
+    { key: 'daily',     label: 'Dia-a-dia',    icon: 'fas fa-chart-column',   hint: 'Investimento e leads por dia' },
+    { key: 'gestao',    label: 'Gestão',       icon: 'fas fa-clipboard-list', hint: 'Notas, prioridade e arquivo' },
 ];
 
 // ── Vínculo CV (mapping da campanha) ───────────────────────────────────────
@@ -223,7 +342,7 @@ const vinculoSaving = ref(false);
 const vinculoError = ref(null);
 
 // ── Represados DESTA campanha ──────────────────────────────────────────────
-// Vincular a campanha só vale pro PRÓXIMO lead — os que chegaram antes ficaram
+// Vincular a campanha só vale pro PRÓXIMO lead - os que chegaram antes ficaram
 // em `held` e continuavam parados. Aqui, no mesmo lugar em que a pessoa vincula,
 // dá pra soltar os que já estão presos. (`heldPreview` e `heldChecking` estão
 // declarados antes do watch de abertura, que os zera.)
@@ -266,7 +385,7 @@ async function enviarRepresados() {
     }
 }
 
-// A contagem é uma varredura no represado — só roda quando a aba de vínculo
+// A contagem é uma varredura no represado - só roda quando a aba de vínculo
 // abre (e depois de salvar), não em todo detalhe de campanha aberto.
 watch([() => activeSection.value, () => campaign.value?.id], ([sec, id]) => {
     if (sec === 'vinculo' && id && !heldPreview.value && !heldChecking.value) checarRepresados();
@@ -406,7 +525,7 @@ async function syncAds() {
 }
 
 // Carrega adsets+ads quando entra na aba Estrutura pela 1ª vez OU quando a
-// campanha muda. Os arrays já foram resetados pelo watch principal — aqui só
+// campanha muda. Os arrays já foram resetados pelo watch principal - aqui só
 // dispara o fetch quando precisa.
 watch([activeSection, campaign], async ([s, c]) => {
     if (s === 'structure' && c?.id && !adsLoading.value && !adsetsLoading.value
@@ -433,9 +552,9 @@ function collapseAllAdsets() {
 }
 
 function pacingBadge(pace) {
-    if (pace === 'on_track') return { label: 'No ritmo', cls: 'bg-data-pos/10 text-data-pos border-data-pos/20', icon: 'fas fa-bullseye' };
-    if (pace === 'fast')     return { label: 'Acelerado', cls: 'bg-data-warn/10 text-data-warn border-data-warn/20', icon: 'fas fa-gauge-high' };
-    if (pace === 'slow')     return { label: 'Lento',     cls: 'bg-accent/10 text-accent border-accent/20', icon: 'fas fa-gauge-simple-low' };
+    if (pace === 'on_track') return { label: 'No ritmo',  tone: 'pos' };
+    if (pace === 'fast')     return { label: 'Acelerado', tone: 'warn' };
+    if (pace === 'slow')     return { label: 'Lento',     tone: 'accent' };
     return null;
 }
 
@@ -446,11 +565,29 @@ function isVideoAd(ad) {
 
 function adStatusBadge(s) {
     const status = String(s || '').toUpperCase();
-    if (status.includes('ACTIVE'))   return { label: 'Ativo',     cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
-    if (status.includes('PAUSED'))   return { label: 'Pausado',   cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
-    if (status.includes('DELETED'))  return { label: 'Excluído',  cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
-    if (status.includes('ARCHIVED')) return { label: 'Arquivado', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
-    return { label: status || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    if (status.includes('ACTIVE'))   return { label: 'Ativo',     variant: 'success' };
+    if (status.includes('PAUSED'))   return { label: 'Pausado',   variant: 'warning' };
+    if (status.includes('DELETED'))  return { label: 'Excluído',  variant: 'danger' };
+    if (status.includes('ARCHIVED')) return { label: 'Arquivado', variant: 'neutral' };
+    return { label: status || '-', variant: 'neutral' };
+}
+
+// Métricas inline do conjunto (cabeçalho) e do anúncio (cartão).
+function adsetMetrics(group) {
+    return [
+        { label: 'Gasto',   value: money(group.totals.spend),        cls: 'text-accent' },
+        { label: 'Leads',   value: fmtInt(group.totals.leads),       cls: 'text-data-pos' },
+        { label: 'Impr.',   value: fmtInt(group.totals.impressions), cls: 'text-ink' },
+        { label: 'Cliques', value: fmtInt(group.totals.clicks),      cls: 'text-ink' },
+    ];
+}
+function adMetrics(ad) {
+    return [
+        { label: 'Gasto', value: money(ad.spend),         cls: 'text-accent' },
+        { label: 'Leads', value: fmtInt(ad.office_leads), cls: 'text-data-pos' },
+        { label: 'CTR',   value: fmtPct(ad.ctr),          cls: 'text-ink' },
+        { label: 'CPC',   value: money(ad.cpc),           cls: 'text-ink' },
+    ];
 }
 
 const filteredAds = computed(() => {
@@ -475,10 +612,17 @@ const adsTotals = computed(() => {
     }
     return acc;
 });
+const adsTotalsItems = computed(() => [
+    { label: 'Anúncios',    raw: adsTotals.value.count, format: fmtInt, hint: `${adsTotals.value.withForm} com formulário` },
+    { label: 'Gasto',       raw: adsTotals.value.spend, format: money, decimals: 2, tone: 'accent' },
+    { label: 'Leads (base)',raw: adsTotals.value.leads, format: fmtInt, tone: 'pos' },
+    { label: 'Impressões',  raw: adsTotals.value.impressions, format: fmtInt },
+    { label: 'Cliques',     raw: adsTotals.value.clicks, format: fmtInt },
+]);
 
 // ── Estrutura hierárquica: Conjuntos → Ads ───────────────────────────────
 // Agrupa os ads filtrados sob cada adset; mantém também um "bucket" sintético
-// pra ads sem adset_id (caso raro — Meta retorna isso). Aplica sort por adset.
+// pra ads sem adset_id (caso raro - Meta retorna isso). Aplica sort por adset.
 const adsetsWithAds = computed(() => {
     // Index ads por adset_id (usando o status filter já aplicado em filteredAds)
     const byAdSet = new Map();
@@ -493,7 +637,7 @@ const adsetsWithAds = computed(() => {
     const items = adsets.value.map(adset => {
         const adsList = byAdSet.get(adset.id) || [];
         // Recalcula os totais a partir dos ads filtrados (pra refletir o filtro
-        // de status) — pra spend/leads/impressões/cliques o adset.* original
+        // de status) - pra spend/leads/impressões/cliques o adset.* original
         // continua disponível como "totalDoAdSet".
         const filteredTotals = adsList.reduce((acc, a) => ({
             spend: acc.spend + (Number(a.spend) || 0),
@@ -596,906 +740,443 @@ function onFormEditorSaved() {
 
 <template>
   <div>
-  <Modal :open="open" size="full" :padded="false" @close="close">
+  <!-- `screen`: a campanha é uma PÁGINA (como o empreendimento em /crm/buildings).
+       Fechar mora no canto do Modal; as seções ficam numa barra sticky. -->
+  <Modal :open="open" size="screen" :padded="false" @close="close">
     <template #header>
-      <div class="flex items-start gap-3">
-        <div class="shrink-0 w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center">
-          <i class="fas fa-bullseye text-lg"></i>
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="shrink-0 h-9 w-9 rounded-lg bg-accent-soft text-accent flex items-center justify-center">
+          <i class="fas fa-bullseye"></i>
         </div>
-        <div class="flex-1 min-w-0">
-          <h3 class="text-base font-semibold text-ink leading-tight truncate">{{ campaign?.name || 'Campanha' }}</h3>
-          <p v-if="campaign" class="text-xs text-ink-subtle mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink truncate">{{ campaign?.name || 'Campanha' }}</h2>
+          <p v-if="campaign" class="text-xs text-ink-muted mt-0.5 truncate">
             <span class="font-mono">#{{ campaign.id }}</span>
-            <span v-if="campaign.account_name">· {{ campaign.account_name }}</span>
-            <span v-if="campaign.objective">· {{ campaign.objective }}</span>
+            <span v-if="campaign.account_name"> · {{ campaign.account_name }}</span>
+            <span v-if="campaign.objective"> · {{ campaign.objective }}</span>
+            <span v-if="campaign.last_synced_at"> · sync {{ fmtRelative(campaign.last_synced_at) }}</span>
           </p>
         </div>
-        <span v-if="campaign" :class="['inline-flex shrink-0 rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge.cls]">
+        <Badge v-if="campaign" :variant="statusBadge.variant" size="sm" dot class="ml-auto shrink-0">
           {{ statusBadge.label }}
-        </span>
+        </Badge>
       </div>
     </template>
 
-      <!-- KPI bar -->
-      <div v-if="kpis" class="grid grid-cols-2 sm:grid-cols-6 gap-2 px-5 py-3 border-b border-line bg-surface-sunken/30 shrink-0">
-        <div class="text-center">
-          <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
-          <div class="text-lg font-semibold text-ink">{{ fmtMoney(kpis.spend, campaign?.currency) }}</div>
-        </div>
-        <div class="text-center">
-          <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads (base)</div>
-          <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.leads) }}</div>
-        </div>
-        <div class="text-center">
-          <div class="text-micro uppercase tracking-wider text-ink-subtle" title="Custo por lead">CAC</div>
-          <div class="text-lg font-semibold" :class="kpis.cac ? 'text-ink' : 'text-ink-subtle'">
-            {{ kpis.cac ? fmtMoney(kpis.cac, campaign?.currency) : '—' }}
-          </div>
-        </div>
-        <div class="text-center">
-          <div class="text-micro uppercase tracking-wider text-ink-subtle">Impressões</div>
-          <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.impressions) }}</div>
-        </div>
-        <div class="text-center">
-          <div class="text-micro uppercase tracking-wider text-ink-subtle">Cliques</div>
-          <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.clicks) }}</div>
-        </div>
-        <div class="text-center">
-          <div class="text-micro uppercase tracking-wider text-ink-subtle">CTR</div>
-          <div class="text-lg font-semibold text-ink">{{ fmtPct(kpis.ctr) }}</div>
-        </div>
-      </div>
+    <div class="h-full overflow-y-auto">
 
-      <!-- Tabs -->
-      <nav class="px-5 border-b border-line shrink-0 overflow-x-auto">
-        <div class="flex gap-0">
-          <button v-for="s in sections" :key="s.key" @click="activeSection = s.key"
-            :class="['px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5',
-              activeSection === s.key
-                ? 'border-accent text-accent'
-                : 'border-transparent text-ink-muted hover:text-ink']">
-            <i :class="s.icon" class="text-[10px]"></i>
-            {{ s.label }}
+      <!-- Seções: sticky no scroll único, todas à vista. -->
+      <nav class="sticky top-0 z-30 border-b border-line bg-surface" role="tablist" aria-label="Seções da campanha">
+        <div class="px-2 sm:px-4 grid grid-cols-3 sm:flex sm:items-stretch">
+          <button v-for="s in sections" :key="s.key" type="button" role="tab"
+            :aria-selected="activeSection === s.key" :title="s.hint"
+            @click="activeSection = s.key"
+            class="relative flex items-center justify-center sm:justify-start gap-2 px-2 sm:px-4 py-3 min-h-[48px] min-w-0 transition-colors duration-120 focus-ring rounded-md sm:flex-1 sm:basis-0"
+            :class="activeSection === s.key ? 'text-accent' : 'text-ink-muted hover:text-ink'">
+            <i :class="s.icon" class="text-sm w-4 text-center shrink-0"></i>
+            <span class="text-sm font-semibold leading-tight truncate">{{ s.label }}</span>
+            <span class="absolute left-2 right-2 bottom-0 h-0.5 rounded-t"
+              :class="activeSection === s.key ? 'bg-accent' : 'bg-transparent'"></span>
           </button>
         </div>
       </nav>
 
-      <!-- Body -->
-      <div class="px-5 py-4 space-y-5">
+      <div class="p-4 sm:p-6 space-y-4">
 
-        <div v-if="loading" class="text-center py-12 text-ink-subtle">
-          <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando campanha...
-        </div>
+        <!-- Carga -->
+        <template v-if="loading">
+          <StatRow :items="[]" :loading="true" :cols="{ sm: 2, md: 3, lg: 6 }" size="sm" />
+          <Panel :loading="true" loading-variant="chart" />
+        </template>
+
+        <!-- KPIs do período: a mesma linha em toda seção, para o número não sumir ao trocar de aba -->
+        <StatRow v-else-if="kpiCards.length" :items="kpiCards" :cols="{ sm: 2, md: 3, lg: 6 }" size="sm" />
 
         <!-- ── Visão geral ───────────────────────────────────────────────── -->
-        <section v-if="!loading && activeSection === 'overview' && campaign" class="space-y-4">
+        <template v-if="!loading && activeSection === 'overview' && campaign">
 
-          <!-- ── HERO EXECUTIVO ─────────────────────────────────────────── -->
-          <div class="rounded-xl border border-line bg-gradient-to-br from-surface to-surface-sunken/40 p-4">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <!-- Total gasto -->
-              <div>
-                <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto total</div>
-                <div class="text-2xl font-semibold text-accent leading-tight">
-                  {{ fmtMoney(campaign.spend, campaign.currency) }}
-                </div>
-                <div v-if="campaign.daily_avg_spend != null" class="text-micro text-ink-subtle">
-                  ~{{ fmtMoney(campaign.daily_avg_spend, campaign.currency) }}/dia
-                </div>
-              </div>
+          <Panel title="Execução" icon="fas fa-gauge-high"
+            :subtitle="campaign.insights_since ? `Insights de ${fmtDate(campaign.insights_since)} a ${fmtDate(campaign.insights_until)}` : ''">
+            <MetricInline :items="execItems" />
 
-              <!-- Dias rodando -->
-              <div>
-                <div class="text-micro uppercase tracking-wider text-ink-subtle">Rodando há</div>
-                <div class="text-2xl font-semibold text-ink leading-tight">
-                  {{ campaign.days_running ?? '—' }}<span v-if="campaign.days_running" class="text-base text-ink-subtle ml-1">{{ campaign.days_running === 1 ? 'dia' : 'dias' }}</span>
-                </div>
-                <div class="text-micro text-ink-subtle">
-                  desde {{ campaign.start_time ? fmtDate(campaign.start_time) : '—' }}
-                </div>
-              </div>
-
-              <!-- Dias restantes -->
-              <div>
-                <div class="text-micro uppercase tracking-wider text-ink-subtle">Encerra em</div>
-                <div class="text-2xl font-semibold leading-tight"
-                  :class="campaign.days_remaining === 0 ? 'text-data-neg' : campaign.days_remaining != null && campaign.days_remaining <= 3 ? 'text-data-warn' : 'text-ink'">
-                  <template v-if="campaign.days_remaining != null">
-                    {{ campaign.days_remaining }}<span class="text-base text-ink-subtle ml-1">{{ campaign.days_remaining === 1 ? 'dia' : 'dias' }}</span>
-                  </template>
-                  <template v-else>
-                    <span class="text-data-pos text-base">em andamento</span>
-                  </template>
-                </div>
-                <div class="text-micro text-ink-subtle">
-                  <template v-if="campaign.stop_time">até {{ fmtDate(campaign.stop_time) }}</template>
-                  <template v-else>sem data de fim</template>
-                </div>
-              </div>
-
-              <!-- Ritmo -->
-              <div>
-                <div class="text-micro uppercase tracking-wider text-ink-subtle">Ritmo de gasto</div>
-                <template v-if="campaign.spend_pace && pacingBadge(campaign.spend_pace)">
-                  <div class="mt-1">
-                    <span :class="['inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium', pacingBadge(campaign.spend_pace).cls]">
-                      <i :class="pacingBadge(campaign.spend_pace).icon"></i>
-                      {{ pacingBadge(campaign.spend_pace).label }}
-                    </span>
-                  </div>
-                  <div class="text-micro text-ink-subtle mt-1">
-                    Diário Meta: {{ fmtMoney(campaign.daily_budget, campaign.currency) }}
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="text-base text-ink-subtle italic mt-1">sem budget diário</div>
-                  <div v-if="campaign.lifetime_budget" class="text-micro text-ink-subtle">
-                    Total: {{ fmtMoney(campaign.lifetime_budget, campaign.currency) }}
-                  </div>
-                </template>
-              </div>
-            </div>
-
-            <!-- Barra de consumo do budget lifetime -->
-            <div v-if="campaign.lifetime_budget && campaign.budget_consumed_pct != null"
-              class="mt-4 pt-3 border-t border-line/60">
+            <!-- Consumo do orçamento total -->
+            <div v-if="campaign.lifetime_budget && campaign.budget_consumed_pct != null" class="mt-4 pt-3 border-t border-line">
               <div class="flex justify-between text-micro text-ink-subtle mb-1">
                 <span>Consumo do orçamento total</span>
-                <span class="font-mono">{{ campaign.budget_consumed_pct }}% · {{ fmtMoney(campaign.spend, campaign.currency) }} / {{ fmtMoney(campaign.lifetime_budget, campaign.currency) }}</span>
+                <span class="metric">{{ campaign.budget_consumed_pct }}% · {{ fmtMoney(campaign.spend, campaign.currency) }} / {{ fmtMoney(campaign.lifetime_budget, campaign.currency) }}</span>
               </div>
               <div class="w-full h-2 rounded-full bg-surface-sunken overflow-hidden">
-                <div :class="['h-full transition-all',
-                  campaign.budget_consumed_pct >= 95 ? 'bg-data-neg' :
-                  campaign.budget_consumed_pct >= 80 ? 'bg-data-warn' : 'bg-accent']"
+                <div class="h-full transition-all duration-420 ease-out-expo"
+                  :class="campaign.budget_consumed_pct >= 95 ? 'bg-data-neg' : campaign.budget_consumed_pct >= 80 ? 'bg-data-warn' : 'bg-accent'"
                   :style="{ width: Math.min(100, campaign.budget_consumed_pct) + '%' }"></div>
               </div>
             </div>
 
-            <!-- Projeção (se tem stop_time) -->
-            <div v-if="campaign.projected_total_spend != null && campaign.days_total"
-              class="mt-3 text-micro text-ink-subtle flex items-center gap-1.5">
-              <i class="fas fa-chart-line text-accent"></i>
-              <span>
-                Projeção (no ritmo atual): <b class="text-ink">{{ fmtMoney(campaign.projected_total_spend, campaign.currency) }}</b>
-                em {{ campaign.days_total }} dias
-              </span>
-            </div>
-          </div>
+            <template v-if="campaign.projected_total_spend != null && campaign.days_total" #footer>
+              <p class="text-micro text-ink-subtle flex items-center gap-1.5">
+                <i class="fas fa-chart-line text-accent"></i>
+                Projeção no ritmo atual: <b class="text-ink">{{ fmtMoney(campaign.projected_total_spend, campaign.currency) }}</b> em {{ campaign.days_total }} dias
+              </p>
+            </template>
+          </Panel>
 
-          <!-- ── KPIs de performance ──────────────────────────────────── -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads (base)</div>
-              <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.leads) }}</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">CAC</div>
-              <div class="text-lg font-semibold text-ink">{{ kpis.cac != null ? fmtMoney(kpis.cac, campaign.currency) : '—' }}</div>
-              <div class="text-micro text-ink-subtle">
-                <span><i class="fab fa-meta"></i> fonte Meta</span>
-              </div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Impressões / Cliques</div>
-              <div class="text-lg font-semibold text-ink">{{ fmtInt(kpis.impressions) }} <span class="text-ink-subtle text-base">/ {{ fmtInt(kpis.clicks) }}</span></div>
-              <div class="text-micro text-ink-subtle">CTR: {{ kpis.ctr ? fmtPct(kpis.ctr) : '—' }}</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">CPM / CPC</div>
-              <div class="text-sm font-semibold text-ink">{{ kpis.cpm ? fmtMoney(kpis.cpm, campaign.currency) : '—' }}</div>
-              <div class="text-micro text-ink-subtle">CPC: {{ kpis.cpc ? fmtMoney(kpis.cpc, campaign.currency) : '—' }}</div>
-            </div>
-          </div>
-
-          <!-- ── Funil de conversão ────────────────────────────────────── -->
-          <div class="rounded-lg border border-line/60 bg-surface-sunken/30 p-3">
-            <div class="text-micro uppercase tracking-wider text-ink-subtle mb-2">
-              <i class="fas fa-funnel-dollar mr-1 text-accent"></i>Funil de conversão
-            </div>
-            <div class="space-y-1.5">
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-ink-muted w-24">Impressões</span>
-                <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
-                  <div class="h-full bg-accent/30" :style="{ width: '100%' }"></div>
-                  <span class="absolute inset-0 flex items-center px-2 text-micro font-mono text-ink">{{ fmtInt(kpis.impressions) }}</span>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Panel title="Funil de conversão" icon="fas fa-filter" class="lg:col-span-2"
+              subtitle="Impressões que viraram clique e cliques que viraram lead na nossa base">
+              <div class="space-y-2">
+                <div v-for="st in funnelRows" :key="st.key" class="flex items-center gap-3">
+                  <span class="text-xs text-ink-muted w-24 shrink-0">{{ st.label }}</span>
+                  <div class="flex-1 h-6 rounded-md bg-surface-sunken relative overflow-hidden">
+                    <div class="h-full transition-all duration-420 ease-out-expo" :class="st.cls" :style="{ width: st.width }"></div>
+                    <span class="absolute inset-0 flex items-center px-2 text-xs text-ink">
+                      <b class="tabular-nums">{{ fmtInt(st.value) }}</b>
+                      <span v-if="st.hint" class="text-ink-subtle ml-2">{{ st.hint }}</span>
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-ink-muted w-24">Cliques</span>
-                <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
-                  <div class="h-full bg-accent/30"
-                    :style="{ width: kpis.impressions > 0 ? Math.max(2, (kpis.clicks / kpis.impressions) * 100) + '%' : '0%' }"></div>
-                  <span class="absolute inset-0 flex items-center px-2 text-micro font-mono text-ink">
-                    {{ fmtInt(kpis.clicks) }}
-                    <span v-if="kpis.ctr" class="text-ink-subtle ml-2">({{ fmtPct(kpis.ctr) }})</span>
-                  </span>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-ink-muted w-24">Leads</span>
-                <div class="flex-1 h-5 rounded bg-surface relative overflow-hidden">
-                  <div class="h-full bg-data-pos/30"
-                    :style="{ width: kpis.impressions > 0 ? Math.max(2, (kpis.leads / kpis.impressions) * 100) + '%' : '0%' }"></div>
-                  <span class="absolute inset-0 flex items-center px-2 text-micro font-mono text-ink">
-                    {{ fmtInt(kpis.leads) }}
-                    <span v-if="kpis.conversionRate != null" class="text-ink-subtle ml-2">({{ fmtPct(kpis.conversionRate) }} dos cliques)</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+            </Panel>
 
-          <!-- ── Metadados ────────────────────────────────────────────── -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Objetivo</div>
-              <div class="text-xs font-mono text-ink">{{ campaign.objective || '—' }}</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Conta</div>
-              <div class="text-xs text-ink truncate">{{ campaign.account_name || '—' }}</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Mídia (CV)</div>
-              <div class="text-xs font-mono text-ink">{{ efetivo?.midia_slug || 'sem vínculo' }}<span v-if="herdaDaConta" class="text-ink-subtle font-sans"> (da conta)</span></div>
-            </div>
+            <Panel title="Identificação" icon="fas fa-id-card">
+              <dl class="space-y-2.5">
+                <div v-for="f in identificacao" :key="f.label">
+                  <dt class="text-micro uppercase tracking-wider text-ink-subtle">{{ f.label }}</dt>
+                  <dd class="text-sm text-ink break-words" :class="f.mono ? 'font-mono' : ''">{{ f.value }}<span v-if="f.hint" class="text-ink-subtle font-sans"> {{ f.hint }}</span></dd>
+                </div>
+              </dl>
+            </Panel>
           </div>
-
-          <div class="text-micro text-ink-subtle">
-            Insights de {{ campaign.insights_since }} → {{ campaign.insights_until }}
-            · Última sync: {{ fmtRelative(campaign.last_synced_at) }}
-          </div>
-        </section>
+        </template>
 
         <!-- ── Vínculo CV ────────────────────────────────────────────────── -->
-        <section v-if="!loading && activeSection === 'vinculo'" class="space-y-4">
-          <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
-            <div class="text-sm font-medium text-ink mb-0.5">
-              <i class="fas fa-link text-accent mr-1.5"></i>Vínculo CV desta campanha
-            </div>
-            <p class="text-xs text-ink-subtle">
-              O destino do lead vem da CONTA de anúncio (vínculo padrão, aba Vínculos CV). Preencha aqui só quando
-              esta campanha for exceção: outro empreendimento, outra mídia ou outra origem que a conta.
-            </p>
-          </div>
+        <template v-if="!loading && activeSection === 'vinculo' && campaign">
 
           <!-- Herdado da conta: é o caso normal, e a tela diz o que vale hoje -->
-          <div v-if="herdaDaConta" class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-xs text-ink">
-            <i class="fas fa-building-user text-accent mr-1.5"></i>
-            <b>Herdando o vínculo da conta</b> {{ campaign.account_name }}:
-            empreendimento(s) <span class="font-mono">{{ (efetivo.bound_empreendimentos || []).join(', ') || 'nenhum' }}</span>,
-            mídia "{{ efetivo.midia_slug }}", origem {{ efetivo.cv_origem }}.
-            Nada a fazer, a menos que esta campanha seja de outro produto.
-          </div>
-
-          <!-- Toggle ativo -->
-          <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
-            <label class="flex items-center gap-2.5 cursor-pointer">
-              <input type="checkbox" v-model="vinculo.mapping_active" class="h-4 w-4 rounded border-line accent-emerald-500" />
-              <span class="text-sm font-medium text-ink">Roteamento automático ativo</span>
-            </label>
-            <p class="text-micro text-ink-subtle mt-1 ml-6">
-              Ativo → lead Meta entra direto como <span class="font-mono">routed</span> com o vínculo próprio ou o da conta.
-              Desativado → vira <span class="font-mono">held</span> pra roteamento manual, mesmo com a conta vinculada.
+          <Panel v-if="herdaDaConta" title="Herdando o vínculo da conta" icon="fas fa-building-user"
+            :subtitle="campaign.account_name">
+            <p class="text-sm text-ink">
+              Empreendimento(s) <span class="font-mono">{{ (efetivo.bound_empreendimentos || []).join(', ') || 'nenhum' }}</span>,
+              mídia "{{ efetivo.midia_slug }}", origem {{ efetivo.cv_origem }}.
+              Nada a fazer, a menos que esta campanha seja de outro produto.
             </p>
-          </div>
+          </Panel>
 
-          <!-- Campanha externa -->
-          <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
-            <label class="flex items-center gap-2.5 cursor-pointer">
-              <input type="checkbox" v-model="vinculo.cv_skip" class="h-4 w-4 rounded border-line accent-emerald-500" />
-              <span class="text-sm font-medium text-ink">Campanha fora do CV (não envia)</span>
-            </label>
-            <p class="text-micro text-ink-subtle mt-1 ml-6">
-              Lead desta campanha fica no Office como "Fora do CV": não represa, não cobra vínculo e não dispara alerta.
-              Os que já estão represados saem da cobrança ao salvar.
-            </p>
-          </div>
+          <Panel title="Vínculo desta campanha" icon="fas fa-link"
+            subtitle="O destino do lead vem da conta de anúncio (aba Vínculos CV). Preencha aqui só quando esta campanha for exceção: outro empreendimento, mídia ou origem.">
+            <div class="space-y-5">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="rounded-lg border border-line bg-surface-sunken/40 px-3 py-3">
+                  <Switch v-model="vinculo.mapping_active" label="Roteamento automático ativo"
+                    description="Ativo: o lead entra roteado com o vínculo próprio ou o da conta. Desativado: vira represado para roteamento manual." />
+                </div>
+                <div class="rounded-lg border border-line bg-surface-sunken/40 px-3 py-3">
+                  <Switch v-model="vinculo.cv_skip" label="Campanha fora do CV (não envia)"
+                    description="Lead fica no Office como Fora do CV: não represa, não cobra vínculo e não dispara alerta." />
+                </div>
+              </div>
 
-          <!-- Empreendimentos -->
-          <div>
-            <label class="text-sm font-medium text-ink block mb-1">Empreendimentos vinculados</label>
-            <p class="text-xs text-ink-subtle mb-2">
-              Vazio = herda o empreendimento da conta. Preencha só quando esta campanha for de outro produto.
-            </p>
-            <EnterpriseMultiSelect v-model="vinculo.bound_empreendimentos" />
-          </div>
+              <div>
+                <label :class="labelBase">Empreendimentos vinculados</label>
+                <p class="text-xs text-ink-muted mb-2">Vazio = herda o empreendimento da conta. Preencha só quando esta campanha for de outro produto.</p>
+                <EnterpriseMultiSelect v-model="vinculo.bound_empreendimentos" />
+              </div>
 
-          <!-- Mídia + origem + tags -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="sm:col-span-2">
-              <label class="text-sm font-medium text-ink block mb-1">Mídia (CV)</label>
-              <input v-model="vinculo.midia_slug" type="text" :placeholder="efetivo?.midia_slug || 'padrão de Configurações'"
-                class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 font-mono" />
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Input v-model="vinculo.midia_slug" label="Mídia (CV)" class="sm:col-span-2"
+                  :placeholder="efetivo?.midia_slug || 'padrão de Configurações'"
+                  hint="Vazio = padrão da conta ou de Configurações." />
+                <Select v-model="cvOrigemSel" label="Origem CV" :options="origemOptions" placeholder="" />
+              </div>
+
+              <Input v-model="vinculo.tags_str" label="Tags" placeholder="lancamento, vip" hint="Separadas por vírgula." />
+
+              <Collapsible title="UTMs default" icon="fas fa-tag" hint="opcional - aplicados quando o payload não traz">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <Input v-model="vinculo.default_utm_source"   label="utm_source"   size="sm" />
+                  <Input v-model="vinculo.default_utm_medium"   label="utm_medium"   size="sm" />
+                  <Input v-model="vinculo.default_utm_campaign" label="utm_campaign" size="sm" />
+                  <Input v-model="vinculo.default_utm_content"  label="utm_content"  size="sm" />
+                  <Input v-model="vinculo.default_utm_term"     label="utm_term"     size="sm" class="sm:col-span-2" />
+                </div>
+              </Collapsible>
+
+              <Collapsible title="Campos extras pro CV" icon="fas fa-code" hint="JSON mesclado em extra_fields">
+                <textarea v-model="vinculo.cv_extra_json" rows="5" placeholder='{ "corretor_id": 42 }'
+                  :class="[fieldBase, 'rounded-lg px-3 py-2 text-xs font-mono resize-y mt-2']" />
+              </Collapsible>
+
+              <!-- Preview do próximo lead -->
+              <div class="rounded-lg border px-3 py-2.5 text-sm font-medium flex items-center gap-2"
+                :class="willRoute ? 'border-data-pos/30 bg-data-pos/5 text-data-pos' : (foraDoCv ? 'border-line bg-surface-sunken/40 text-ink-muted' : 'border-data-warn/30 bg-data-warn/5 text-data-warn')">
+                <i :class="willRoute ? 'fas fa-bolt' : (foraDoCv ? 'fas fa-arrow-right-from-bracket' : 'fas fa-hand')"></i>
+                <template v-if="willRoute">Próximo lead desta campanha entra roteado{{ !temVinculoProprio && contaCobre ? ' com o vínculo da conta' : '' }}.</template>
+                <template v-else-if="foraDoCv">Próximo lead fica no Office como Fora do CV, sem ir ao CRM.</template>
+                <template v-else>Próximo lead fica represado, aguardando vínculo.</template>
+              </div>
+
+              <div v-if="vinculoError" class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
+                <i class="fas fa-circle-exclamation mr-1.5"></i>{{ vinculoError }}
+              </div>
             </div>
-            <div>
-              <label class="text-sm font-medium text-ink block mb-1">Origem CV</label>
-              <select v-model="vinculo.cv_origem" class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
-                <option value="">Padrão ({{ efetivo?.cv_origem || 'FB' }})</option>
-                <option value="FB">FB (Facebook)</option>
-                <option value="IG">IG (Instagram)</option>
-              </select>
-            </div>
-          </div>
 
-          <div>
-            <label class="text-sm font-medium text-ink block mb-1">Tags</label>
-            <input v-model="vinculo.tags_str" type="text" placeholder="lancamento, vip"
-              class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
-          </div>
-
-          <!-- UTMs default -->
-          <details class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
-            <summary class="text-xs font-medium text-ink cursor-pointer"><i class="fas fa-tag mr-1.5 text-accent"></i>UTMs default (opcional)</summary>
-            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label class="text-micro text-ink-subtle">utm_source</label><input v-model="vinculo.default_utm_source" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
-              <div><label class="text-micro text-ink-subtle">utm_medium</label><input v-model="vinculo.default_utm_medium" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
-              <div><label class="text-micro text-ink-subtle">utm_campaign</label><input v-model="vinculo.default_utm_campaign" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
-              <div><label class="text-micro text-ink-subtle">utm_content</label><input v-model="vinculo.default_utm_content" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
-              <div class="sm:col-span-2"><label class="text-micro text-ink-subtle">utm_term</label><input v-model="vinculo.default_utm_term" class="w-full rounded border border-line bg-surface px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none" /></div>
-            </div>
-          </details>
-
-          <!-- cv_extra_fields -->
-          <details class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
-            <summary class="text-xs font-medium text-ink cursor-pointer"><i class="fas fa-code mr-1.5 text-accent"></i>Campos extras pro CV (JSON)</summary>
-            <textarea v-model="vinculo.cv_extra_json" rows="5" placeholder='{ "corretor_id": 42 }'
-              class="mt-3 w-full rounded border border-line bg-surface px-3 py-2 text-xs font-mono text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 resize-y" />
-          </details>
-
-          <!-- Preview -->
-          <div class="rounded-lg border px-3 py-2.5"
-            :class="willRoute ? 'border-data-pos/30 bg-data-pos/5' : (foraDoCv ? 'border-line bg-surface-sunken/30' : 'border-data-warn/30 bg-data-warn/5')">
-            <div class="text-xs font-medium" :class="willRoute ? 'text-data-pos' : (foraDoCv ? 'text-ink-muted' : 'text-data-warn')">
-              <i :class="willRoute ? 'fas fa-bolt' : (foraDoCv ? 'fas fa-arrow-right-from-bracket' : 'fas fa-hand')" class="mr-1.5"></i>
-              <template v-if="willRoute">Próximo lead desta campanha vira <span class="font-mono">routed</span>{{ !temVinculoProprio && contaCobre ? ' com o vínculo da conta' : '' }}.</template>
-              <template v-else-if="foraDoCv">Próximo lead fica no Office como <span class="font-mono">Fora do CV</span>, sem ir ao CRM.</template>
-              <template v-else>Próximo lead fica em <span class="font-mono">held</span>.</template>
-            </div>
-          </div>
+            <template #footer>
+              <div class="flex justify-end">
+                <Button variant="primary" icon="fas fa-floppy-disk" :loading="vinculoSaving" @click="saveVinculo">Salvar vínculo</Button>
+              </div>
+            </template>
+          </Panel>
 
           <!-- Leads que JÁ chegaram represados (o vínculo acima não os solta sozinho) -->
-          <div v-if="heldChecking" class="text-micro text-ink-subtle flex items-center gap-1.5">
-            <i class="fas fa-circle-notch fa-spin"></i> Verificando leads represados desta campanha...
-          </div>
-          <div v-else-if="heldPreview && heldPreview.scanned > 0"
-            class="rounded-lg border px-3 py-2.5 flex items-start gap-3 flex-wrap"
-            :class="heldPreview.recoverable ? 'border-accent/30 bg-accent/5' : 'border-data-warn/30 bg-data-warn/5'">
-            <i :class="heldPreview.recoverable ? 'fas fa-rotate-right text-accent' : 'fas fa-hand text-data-warn'"
-               class="mt-0.5"></i>
-            <div class="flex-1 min-w-[180px]">
-              <div class="text-xs font-medium text-ink">
-                {{ fmtInt(heldPreview.scanned) }} lead(s) desta campanha já chegaram represados
+          <Panel title="Represados desta campanha" icon="fas fa-hand" :loading="heldChecking" loading-variant="row"
+            :empty="!heldChecking && (!heldPreview || !heldPreview.scanned)" empty-icon="fas fa-circle-check"
+            empty-title="Nenhum lead represado" empty-text="Vincular vale para o próximo lead; os anteriores, se existissem, apareceriam aqui.">
+            <div v-if="heldPreview && heldPreview.scanned > 0" class="flex items-start gap-3 flex-wrap">
+              <div class="flex-1 min-w-[200px]">
+                <div class="text-sm font-medium text-ink">{{ fmtInt(heldPreview.scanned) }} lead(s) chegaram represados</div>
+                <p class="text-xs text-ink-muted mt-0.5">
+                  <template v-if="heldPreview.recoverable"><b class="text-ink">{{ fmtInt(heldPreview.recoverable) }}</b> saem agora com o vínculo salvo. Vincular sozinho só vale para o próximo lead; estes precisam ser enviados.</template>
+                  <template v-else>Nenhum sai ainda: salve um vínculo com o roteamento ativo e verifique de novo.</template>
+                  <template v-if="heldPreview.no_contact"> · {{ fmtInt(heldPreview.no_contact) }} sem e-mail/telefone (não vão)</template>
+                </p>
               </div>
-              <div class="text-micro text-ink-muted mt-0.5">
-                <template v-if="heldPreview.recoverable">
-                  <b>{{ fmtInt(heldPreview.recoverable) }}</b> saem agora com o vínculo salvo.
-                  Vincular sozinho só vale pro próximo lead — estes precisam ser enviados.
-                </template>
-                <template v-else>
-                  Nenhum sai ainda: salve uma mídia com o roteamento ativo acima e verifique de novo.
-                </template>
-                <template v-if="heldPreview.no_contact"> · {{ fmtInt(heldPreview.no_contact) }} sem e-mail/telefone (não vão)</template>
+              <Button v-if="heldPreview.recoverable" icon="fas fa-paper-plane" :loading="heldSending" :disabled="heldSending" @click="pedindoEnvioHeld = true">
+                Enviar {{ fmtInt(heldPreview.recoverable) }} ao CV
+              </Button>
+              <Button v-else variant="secondary" icon="fas fa-arrows-rotate" :loading="heldChecking" @click="checarRepresados">Verificar de novo</Button>
+            </div>
+          </Panel>
+        </template>
+
+        <!-- ── Estrutura (Conjuntos → Anúncios) ──────────────────────────── -->
+        <template v-if="!loading && activeSection === 'structure'">
+          <Panel title="Conjuntos e anúncios" icon="fas fa-sitemap"
+            :subtitle="`${adsets.length} conjunto(s) · ${ads.length} anúncio(s) - hierarquia da Meta`"
+            :loading="adsLoading || adsetsLoading" loading-variant="row"
+            :empty="!adsLoading && !adsetsLoading && !ads.length && !adsets.length" empty-icon="fas fa-sitemap"
+            empty-title="Sem conjuntos ou anúncios sincronizados" empty-text="Sincronize com a Meta para puxar a hierarquia.">
+            <template #actions>
+              <div class="flex items-center gap-2 flex-wrap justify-end">
+                <SegmentedControl v-model="adsStatusFilter" :options="adsStatusOptions" size="sm" />
+                <Select v-model="adsetSortBy" :options="adsetSortOptions" size="sm" placeholder="" class="w-40" />
+                <IconButton icon="fas fa-expand" variant="ghost" size="sm" v-tippy="'Expandir todos'" @click="expandAllAdsets" />
+                <IconButton icon="fas fa-compress" variant="ghost" size="sm" v-tippy="'Recolher todos'" @click="collapseAllAdsets" />
+                <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" :loading="adsLoading || adsetsLoading" @click="loadStructure" v-tippy="'Recarrega do Office, sem chamar a Meta'">
+                  <span class="hidden sm:inline">Atualizar</span>
+                </Button>
+                <Button variant="primary" size="sm" icon="fab fa-meta" :loading="adsSyncing" @click="syncAds" v-tippy="'Refaz a busca na Meta (ads + conjuntos)'">
+                  <span class="hidden sm:inline">Sincronizar com Meta</span>
+                </Button>
               </div>
+            </template>
+            <template #emptyActions>
+              <Button variant="primary" size="sm" icon="fab fa-meta" :loading="adsSyncing" @click="syncAds">Sincronizar com Meta</Button>
+            </template>
+
+            <div v-if="adsLastSync" class="rounded-lg border border-data-pos/20 bg-data-pos/5 px-3 py-2 text-xs text-data-pos mb-3">
+              <i class="fas fa-circle-check mr-1"></i>
+              Sincronizado: <b>{{ adsLastSync.ads_total }}</b> ads ({{ adsLastSync.ads_new }} novos, {{ adsLastSync.ads_updated }} atualizados)<template v-if="adsLastSync.adsets_total"> · <b>{{ adsLastSync.adsets_total }}</b> conjuntos ({{ adsLastSync.adsets_new }} novos)</template>
             </div>
-            <Button v-if="heldPreview.recoverable" size="sm" icon="fas fa-paper-plane"
-              :loading="heldSending" :disabled="heldSending"
-              @click="pedindoEnvioHeld = true">
-              Enviar {{ fmtInt(heldPreview.recoverable) }} ao CV
-            </Button>
-            <Button v-else variant="secondary" size="sm" icon="fas fa-arrows-rotate"
-              :loading="heldChecking" @click="checarRepresados">
-              Verificar de novo
-            </Button>
-          </div>
 
-          <div v-if="vinculoError" class="rounded border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg">
-            <i class="fas fa-circle-exclamation mr-1.5"></i>{{ vinculoError }}
-          </div>
+            <MetricInline v-if="ads.length" :items="adsTotalsItems" class="mb-4" />
 
-          <div class="flex justify-end">
-            <Button variant="primary" size="sm" icon="fas fa-save" :loading="vinculoSaving" @click="saveVinculo">
-              Salvar vínculo
-            </Button>
-          </div>
-        </section>
-
-        <!-- ── Estrutura (Conjuntos → Anúncios — hierárquico estilo Meta) ── -->
-        <section v-if="!loading && activeSection === 'structure'" class="space-y-3">
-          <!-- Toolbar -->
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <div class="text-micro text-ink-subtle">
-              <i class="fas fa-sitemap mr-1 text-accent"></i>
-              <b>{{ adsets.length }}</b> conjunto(s) ·
-              <b>{{ ads.length }}</b> anúncio(s) — hierarquia Meta: Conjunto → Anúncio.
-            </div>
-            <div class="flex items-center gap-2">
-              <select v-model="adsStatusFilter"
-                class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none"
-                title="Filtrar ads por status">
-                <option value="ALL">Todos status</option>
-                <option value="ACTIVE">Ativos</option>
-                <option value="PAUSED">Pausados</option>
-                <option value="OTHER">Outros</option>
-              </select>
-              <select v-model="adsetSortBy"
-                class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none"
-                title="Ordenar conjuntos por">
-                <option value="spend">Maior gasto</option>
-                <option value="leads">Mais leads</option>
-                <option value="name">Nome A→Z</option>
-                <option value="recent">Mais recentes</option>
-              </select>
-              <Button variant="ghost" size="sm" icon="fas fa-expand" @click="expandAllAdsets"
-                title="Expandir todos os conjuntos">
-                <span class="hidden sm:inline">Expandir</span>
-              </Button>
-              <Button variant="ghost" size="sm" icon="fas fa-compress" @click="collapseAllAdsets"
-                title="Recolher todos os conjuntos">
-                <span class="hidden sm:inline">Recolher</span>
-              </Button>
-              <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate"
-                :loading="adsLoading || adsetsLoading" @click="loadStructure"
-                title="Recarrega do nosso DB (não chama Meta).">
-                Atualizar
-              </Button>
-              <Button variant="primary" size="sm" icon="fab fa-meta" :loading="adsSyncing" @click="syncAds"
-                title="Refaz a busca na Meta (ads + conjuntos) — pode demorar.">
-                Sincronizar com Meta
-              </Button>
-            </div>
-          </div>
-
-          <!-- Aviso pós-sync -->
-          <div v-if="adsLastSync"
-            class="rounded-lg border border-data-pos/20 bg-data-pos/5 px-3 py-2 text-xs text-data-pos">
-            <i class="fas fa-circle-check mr-1"></i>
-            Sincronizado: <b>{{ adsLastSync.ads_total }}</b> ads ({{ adsLastSync.ads_new }} novos, {{ adsLastSync.ads_updated }} atualizados)<template v-if="adsLastSync.adsets_total"> · <b>{{ adsLastSync.adsets_total }}</b> conjuntos ({{ adsLastSync.adsets_new }} novos)</template>
-          </div>
-
-          <!-- Totais agregados da campanha (refletem o filtro de status) -->
-          <div v-if="ads.length" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Anúncios</div>
-              <div class="text-sm font-semibold text-ink">{{ adsTotals.count }}</div>
-              <div class="text-micro text-ink-subtle">{{ adsTotals.withForm }} com form</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
-              <div class="text-sm font-semibold text-accent">{{ fmtMoney(adsTotals.spend, campaign?.currency) }}</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads (base)</div>
-              <div class="text-sm font-semibold text-data-pos">{{ fmtInt(adsTotals.leads) }}</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Impr. / Cliques</div>
-              <div class="text-sm font-semibold text-ink">{{ fmtInt(adsTotals.impressions) }} / {{ fmtInt(adsTotals.clicks) }}</div>
-            </div>
-          </div>
-
-          <!-- Loading -->
-          <div v-if="adsLoading || adsetsLoading" class="text-center py-8 text-ink-subtle text-sm">
-            <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando estrutura...
-          </div>
-
-          <!-- Empty state -->
-          <div v-else-if="!ads.length && !adsets.length" class="text-center py-8 text-ink-subtle text-sm rounded-lg border border-dashed border-line">
-            <i class="fas fa-sitemap text-2xl mb-2 block"></i>
-            Sem conjuntos/anúncios sincronizados.<br>
-            Clique em <b>Sincronizar com Meta</b> pra puxar a hierarquia.
-          </div>
-
-          <!-- Hierarquia: Conjuntos → Ads -->
-          <div v-else class="space-y-2">
-            <div v-for="group in adsetsWithAds" :key="group.adset.id"
-              class="rounded-xl border border-line bg-surface overflow-hidden">
-
-              <!-- Header do conjunto (clickable → expandir) -->
-              <button @click="toggleAdsetExpanded(group.adset.id)"
-                class="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-surface-hover/40 transition-colors">
-                <!-- Chevron -->
-                <i :class="['fas fa-chevron-right text-[10px] text-ink-subtle mt-1.5 transition-transform shrink-0',
-                  expandedAdsets.has(group.adset.id) ? 'rotate-90' : '']"></i>
-
-                <!-- Identificação -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <i class="fas fa-folder-tree text-[11px] text-accent"></i>
-                    <span class="text-sm font-medium text-ink truncate">{{ group.adset.name || '(sem nome)' }}</span>
-                    <span v-if="group.adset.id !== '__orphans__' && (group.adset.effective_status || group.adset.status)"
-                      :class="['inline-flex rounded-md border px-1.5 py-0.5 text-micro font-medium',
-                        adStatusBadge(group.adset.effective_status || group.adset.status).cls]">
-                      {{ adStatusBadge(group.adset.effective_status || group.adset.status).label }}
-                    </span>
-                    <span class="inline-flex rounded bg-slate-500/10 text-ink-muted border border-line/20 px-1.5 py-0.5 text-micro font-medium">
-                      <i class="fas fa-rectangle-ad text-[8px] mr-1"></i>{{ group.adsCount }} {{ group.adsCount === 1 ? 'ad' : 'ads' }}
-                    </span>
-                  </div>
-                  <div class="text-micro font-mono text-ink-subtle truncate mt-0.5">
-                    <template v-if="group.adset.id !== '__orphans__'">#{{ group.adset.id }}</template>
-                    <span v-if="group.adset.optimization_goal"> · {{ group.adset.optimization_goal }}</span>
-                    <span v-if="fmtBudget(group.adset)"> · <i class="fas fa-coins text-[8px]"></i> {{ fmtBudget(group.adset) }}</span>
-                    <span v-if="group.adset.start_time"> · {{ fmtDate(group.adset.start_time) }} <template v-if="group.adset.end_time">→ {{ fmtDate(group.adset.end_time) }}</template></span>
-                  </div>
-                </div>
-
-                <!-- Métricas inline do conjunto -->
-                <div class="hidden sm:flex items-center gap-3 shrink-0 text-right">
-                  <div>
-                    <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
-                    <div class="text-xs font-semibold text-accent">{{ fmtMoney(group.totals.spend, campaign?.currency) }}</div>
-                  </div>
-                  <div>
-                    <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads</div>
-                    <div class="text-xs font-semibold text-data-pos">{{ fmtInt(group.totals.leads) }}</div>
-                  </div>
-                  <div>
-                    <div class="text-micro uppercase tracking-wider text-ink-subtle">Impr.</div>
-                    <div class="text-xs font-semibold text-ink">{{ fmtInt(group.totals.impressions) }}</div>
-                  </div>
-                  <div>
-                    <div class="text-micro uppercase tracking-wider text-ink-subtle">Cliques</div>
-                    <div class="text-xs font-semibold text-ink">{{ fmtInt(group.totals.clicks) }}</div>
-                  </div>
-                </div>
-              </button>
-
-              <!-- Ads dentro do conjunto (expandido) -->
-              <div v-if="expandedAdsets.has(group.adset.id)"
-                class="border-t border-line/60 bg-surface-sunken/20 p-3">
-
-                <!-- Sem ads filtrados nesse conjunto -->
-                <div v-if="!group.ads.length" class="text-center py-6 text-micro text-ink-subtle italic">
-                  Nenhum anúncio neste conjunto bate com o filtro atual.
-                </div>
-
-                <!-- Grid de ads -->
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div v-for="ad in group.ads" :key="ad.id"
-                    class="rounded-lg border border-line bg-surface overflow-hidden flex flex-col shadow-sm hover:shadow-md transition-shadow">
-
-                    <!-- Thumbnail + status (clickable → abre lightbox) -->
-                    <button @click="openLightbox(ad)"
-                      class="relative aspect-square bg-black flex items-center justify-center overflow-hidden group cursor-pointer"
-                      :title="isVideoAd(ad) ? 'Reproduzir vídeo' : 'Ampliar imagem'">
-                      <img v-if="ad.creative_image_url || ad.creative_thumbnail"
-                        :src="ad.creative_image_url || ad.creative_thumbnail"
-                        class="w-full h-full object-contain transition-transform group-hover:scale-[1.02]"
-                        :alt="ad.name" loading="lazy"
-                        @error="$event.target.src = ad.creative_thumbnail || ''" />
-                      <div v-else class="text-white/40 text-5xl">
-                        <i :class="isVideoAd(ad) ? 'fas fa-video' : 'fas fa-image'"></i>
-                      </div>
-
-                      <!-- Play overlay pra vídeos -->
-                      <div v-if="isVideoAd(ad)"
-                        class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                        <div class="w-14 h-14 rounded-full bg-surface-raised/90 group-hover:bg-surface-raised flex items-center justify-center shadow-2xl transition-all group-hover:scale-110">
-                          <i class="fas fa-play text-xl text-black ml-1"></i>
-                        </div>
-                      </div>
-
-                      <!-- Status (top-right) -->
-                      <span :class="['absolute top-2 right-2 inline-flex rounded-md border px-2 py-0.5 text-micro font-medium backdrop-blur-sm', adStatusBadge(ad.effective_status || ad.status).cls]">
-                        {{ adStatusBadge(ad.effective_status || ad.status).label }}
-                      </span>
-
-                      <!-- Lead Ad badge (top-left) -->
-                      <span v-if="ad.lead_form_id"
-                        class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-md bg-accent/40 text-white border border-accent/50 backdrop-blur-sm px-2 py-0.5 text-micro font-medium"
-                        title="Lead Ad — form vinculado">
-                        <i class="fas fa-file-lines text-[9px]"></i>Lead Ad
-                      </span>
-
-                      <!-- Tipo (bottom-left) -->
-                      <span v-if="ad.creative_object_type || isVideoAd(ad)"
-                        class="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded bg-black/60 text-white/90 backdrop-blur-sm px-1.5 py-0.5 text-micro font-mono">
-                        <i :class="isVideoAd(ad) ? 'fas fa-video' : 'fas fa-image'" class="text-[8px]"></i>
-                        {{ ad.creative_object_type || (isVideoAd(ad) ? 'VIDEO' : 'PHOTO') }}
-                      </span>
-                    </button>
-
-                    <!-- Conteúdo -->
-                    <div class="p-3 flex-1 flex flex-col">
-                      <div class="text-sm font-medium text-ink leading-tight truncate" :title="ad.name">{{ ad.name || '(sem nome)' }}</div>
-                      <div class="text-micro font-mono text-ink-subtle truncate">
-                        #{{ ad.id }}
-                      </div>
-
-                      <div v-if="ad.creative_title" class="mt-2 text-micro text-ink font-medium truncate" :title="ad.creative_title">
-                        "{{ ad.creative_title }}"
-                      </div>
-                      <div v-if="ad.creative_body" class="text-micro text-ink-muted line-clamp-2 mt-0.5">{{ ad.creative_body }}</div>
-
-                      <!-- Métricas -->
-                      <div class="grid grid-cols-4 gap-1.5 mt-3 pt-2 border-t border-line/60">
-                        <div>
-                          <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto</div>
-                          <div class="text-xs font-semibold text-accent">{{ fmtMoney(ad.spend, campaign?.currency) }}</div>
-                        </div>
-                        <div>
-                          <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads</div>
-                          <div class="text-xs font-semibold text-data-pos">{{ fmtInt(ad.office_leads) }}</div>
-                        </div>
-                        <div>
-                          <div class="text-micro uppercase tracking-wider text-ink-subtle">CTR</div>
-                          <div class="text-xs font-semibold text-ink">{{ fmtPct(ad.ctr) }}</div>
-                        </div>
-                        <div>
-                          <div class="text-micro uppercase tracking-wider text-ink-subtle">CPC</div>
-                          <div class="text-xs font-semibold text-ink">{{ fmtMoney(ad.cpc, campaign?.currency) }}</div>
-                        </div>
-                      </div>
-
-                      <!-- Link / form -->
-                      <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                        <a v-if="ad.creative_link_url" :href="ad.creative_link_url" target="_blank" rel="noopener"
-                          class="inline-flex items-center gap-1 text-micro text-accent hover:underline truncate max-w-full"
-                          :title="ad.creative_link_url">
-                          <i class="fas fa-arrow-up-right-from-square"></i>
-                          {{ ad.creative_link_url }}
-                        </a>
-                        <button v-if="ad.lead_form_id"
-                          @click.stop="openFormDetail(ad)"
-                          :title="ad.lead_form?.name ? `Ver perguntas do form '${ad.lead_form.name}'` : `Form #${ad.lead_form_id} (não sincronizado)`"
-                          class="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 text-accent px-1.5 py-0.5 text-micro font-medium hover:bg-accent/20 transition-colors max-w-full">
-                          <i class="fas fa-file-lines text-[9px] shrink-0"></i>
-                          <span class="truncate">
-                            <template v-if="ad.lead_form">{{ ad.lead_form.name || `Form #${ad.lead_form_id}` }}</template>
-                            <template v-else>Form #{{ ad.lead_form_id }} <span class="opacity-60">(não sync)</span></template>
-                          </span>
-                          <span v-if="ad.lead_form?.questions?.length" class="text-micro opacity-70 shrink-0">· {{ ad.lead_form.questions.length }}q</span>
-                        </button>
-                      </div>
-
-                      <!-- Última sync -->
-                      <div class="mt-1.5 pt-1.5 border-t border-line/40 text-micro text-ink-subtle">
-                        <i class="fas fa-clock"></i> sync {{ ad.last_synced_at ? fmtRelative(ad.last_synced_at) : '—' }}
-                      </div>
+            <div class="space-y-2">
+              <div v-for="group in adsetsWithAds" :key="group.adset.id" class="rounded-xl border border-line bg-surface-raised overflow-hidden">
+                <button type="button" @click="toggleAdsetExpanded(group.adset.id)"
+                  class="w-full flex items-start gap-3 px-3 py-3 text-left hover:bg-surface-sunken/60 transition-colors duration-120 focus-ring min-h-[48px]">
+                  <i class="fas fa-chevron-right text-micro text-ink-subtle mt-1.5 transition-transform duration-200 shrink-0"
+                    :class="expandedAdsets.has(group.adset.id) ? 'rotate-90' : ''"></i>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="text-sm font-medium text-ink truncate">{{ group.adset.name || '(sem nome)' }}</span>
+                      <Badge v-if="group.adset.id !== '__orphans__' && (group.adset.effective_status || group.adset.status)"
+                        :variant="adStatusBadge(group.adset.effective_status || group.adset.status).variant" size="sm">
+                        {{ adStatusBadge(group.adset.effective_status || group.adset.status).label }}
+                      </Badge>
+                      <Badge variant="neutral" size="sm">{{ group.adsCount }} {{ group.adsCount === 1 ? 'anúncio' : 'anúncios' }}</Badge>
+                    </div>
+                    <div class="text-micro font-mono text-ink-subtle truncate mt-0.5">
+                      <template v-if="group.adset.id !== '__orphans__'">#{{ group.adset.id }}</template>
+                      <span v-if="group.adset.optimization_goal"> · {{ group.adset.optimization_goal }}</span>
+                      <span v-if="fmtBudget(group.adset)"> · {{ fmtBudget(group.adset) }}</span>
+                      <span v-if="group.adset.start_time"> · {{ fmtDate(group.adset.start_time) }}<template v-if="group.adset.end_time"> a {{ fmtDate(group.adset.end_time) }}</template></span>
                     </div>
                   </div>
+                  <div class="hidden sm:grid grid-cols-4 gap-4 shrink-0 text-right">
+                    <div v-for="m in adsetMetrics(group)" :key="m.label">
+                      <div class="text-micro uppercase tracking-wider text-ink-subtle">{{ m.label }}</div>
+                      <div class="text-sm font-semibold tabular-nums" :class="m.cls">{{ m.value }}</div>
+                    </div>
+                  </div>
+                </button>
+
+                <div v-if="expandedAdsets.has(group.adset.id)" class="border-t border-line bg-surface-sunken/30 p-3">
+                  <p v-if="!group.ads.length" class="text-center py-6 text-xs text-ink-subtle">Nenhum anúncio neste conjunto bate com o filtro atual.</p>
+                  <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    <article v-for="ad in group.ads" :key="ad.id"
+                      class="rounded-xl border border-line bg-surface-raised overflow-hidden flex flex-col shadow-soft hover:shadow-elevated transition-shadow duration-200">
+                      <button type="button" @click="openLightbox(ad)"
+                        class="relative aspect-square bg-surface-sunken flex items-center justify-center overflow-hidden group focus-ring"
+                        :title="isVideoAd(ad) ? 'Reproduzir vídeo' : 'Ampliar imagem'">
+                        <img v-if="ad.creative_image_url || ad.creative_thumbnail" :src="ad.creative_image_url || ad.creative_thumbnail"
+                          class="w-full h-full object-contain transition-transform duration-200 group-hover:scale-[1.02]" :alt="ad.name" loading="lazy"
+                          @error="$event.target.src = ad.creative_thumbnail || ''" />
+                        <i v-else :class="isVideoAd(ad) ? 'fas fa-video' : 'fas fa-image'" class="text-4xl text-ink-subtle"></i>
+                        <div v-if="isVideoAd(ad)" class="absolute inset-0 flex items-center justify-center">
+                          <span class="w-12 h-12 rounded-full bg-surface-raised/90 border border-line flex items-center justify-center shadow-elevated transition-transform duration-200 group-hover:scale-110">
+                            <i class="fas fa-play text-accent ml-0.5"></i>
+                          </span>
+                        </div>
+                        <Badge :variant="adStatusBadge(ad.effective_status || ad.status).variant" size="sm" class="absolute top-2 right-2">
+                          {{ adStatusBadge(ad.effective_status || ad.status).label }}
+                        </Badge>
+                        <Badge v-if="ad.lead_form_id" variant="accent" size="sm" class="absolute top-2 left-2">Lead Ad</Badge>
+                        <Badge v-if="ad.creative_object_type || isVideoAd(ad)" variant="neutral" size="sm" class="absolute bottom-2 left-2 font-mono">
+                          {{ ad.creative_object_type || (isVideoAd(ad) ? 'VIDEO' : 'PHOTO') }}
+                        </Badge>
+                      </button>
+
+                      <div class="p-3 flex-1 flex flex-col gap-1">
+                        <div class="text-sm font-medium text-ink leading-tight truncate" :title="ad.name">{{ ad.name || '(sem nome)' }}</div>
+                        <div class="text-micro font-mono text-ink-subtle truncate">#{{ ad.id }}</div>
+                        <div v-if="ad.creative_title" class="mt-1 text-xs text-ink font-medium truncate" :title="ad.creative_title">"{{ ad.creative_title }}"</div>
+                        <div v-if="ad.creative_body" class="text-xs text-ink-muted line-clamp-2">{{ ad.creative_body }}</div>
+
+                        <div class="grid grid-cols-4 gap-2 mt-3 pt-2 border-t border-line">
+                          <div v-for="m in adMetrics(ad)" :key="m.label">
+                            <div class="text-micro uppercase tracking-wider text-ink-subtle">{{ m.label }}</div>
+                            <div class="text-xs font-semibold tabular-nums" :class="m.cls">{{ m.value }}</div>
+                          </div>
+                        </div>
+
+                        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                          <a v-if="ad.creative_link_url" :href="ad.creative_link_url" target="_blank" rel="noopener"
+                            class="inline-flex items-center gap-1 text-micro text-accent hover:underline truncate max-w-full focus-ring rounded" :title="ad.creative_link_url">
+                            <i class="fas fa-arrow-up-right-from-square"></i>{{ ad.creative_link_url }}
+                          </a>
+                          <button v-if="ad.lead_form_id" type="button" @click.stop="openFormDetail(ad)"
+                            :title="ad.lead_form?.name ? `Ver perguntas do form '${ad.lead_form.name}'` : `Form #${ad.lead_form_id} (não sincronizado)`"
+                            class="inline-flex items-center gap-1 rounded-md border border-accent/30 bg-accent-soft text-accent px-2 py-1 text-micro font-medium hover:bg-accent/20 transition-colors duration-120 max-w-full focus-ring">
+                            <i class="fas fa-file-lines shrink-0"></i>
+                            <span class="truncate">
+                              <template v-if="ad.lead_form">{{ ad.lead_form.name || `Form #${ad.lead_form_id}` }}</template>
+                              <template v-else>Form #{{ ad.lead_form_id }} (não sincronizado)</template>
+                            </span>
+                            <span v-if="ad.lead_form?.questions?.length" class="opacity-70 shrink-0">· {{ ad.lead_form.questions.length }}q</span>
+                          </button>
+                        </div>
+                        <div class="mt-auto pt-2 text-micro text-ink-subtle"><i class="fas fa-clock mr-1"></i>sync {{ ad.last_synced_at ? fmtRelative(ad.last_synced_at) : '-' }}</div>
+                      </div>
+                    </article>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </Panel>
+        </template>
 
         <!-- ── Leads ─────────────────────────────────────────────────────── -->
-        <section v-if="!loading && activeSection === 'leads'" class="space-y-2">
-          <div class="text-micro text-ink-subtle">
-            Leads da campanha <template v-if="since && until">no período ({{ scopeLabel }})</template><template v-else>(mais recentes)</template>.
-          </div>
-          <div v-if="!leads.length" class="text-center py-8 text-ink-subtle text-sm">
-            <i class="fas fa-inbox text-2xl mb-2 block"></i>
-            <template v-if="since && until">Nenhum lead nesse período.</template>
-            <template v-else>Nenhum lead chegou por essa campanha ainda.</template>
-          </div>
-          <div v-else class="rounded-lg border border-line overflow-hidden">
-            <!-- Celular: uma linha por lead, sem rolagem lateral dentro do modal -->
-            <ul class="md:hidden divide-y divide-line/60">
-              <li v-for="l in leads" :key="`m-${l.id}`" class="px-3 py-2.5 flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="text-ink text-sm leading-tight break-words">{{ l.nome || '—' }}</div>
-                  <div class="text-micro text-ink-subtle break-all">{{ l.email || l.telefone || '' }}</div>
-                  <div class="text-micro font-mono text-ink-subtle mt-0.5">
-                    {{ l.midia_slug || 'sem mídia' }}
-                    <span v-if="l.meta_form_id"> · form {{ l.meta_form_id }}</span>
-                  </div>
-                </div>
-                <div class="text-right shrink-0">
-                  <div :class="['text-micro font-medium', statusColor(l.status)]">{{ l.status }}</div>
-                  <div class="text-micro text-ink-subtle mt-0.5">{{ fmtRelative(l.created_at) }}</div>
-                </div>
-              </li>
-            </ul>
-
-            <table class="hidden md:table min-w-full text-sm">
-              <thead class="bg-surface-sunken/30 border-b border-line">
-                <tr>
-                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Quando</th>
-                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Contato</th>
-                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Mídia</th>
-                  <th class="px-3 py-2 text-left  text-micro font-mono uppercase tracking-wider text-ink-subtle">Form</th>
-                  <th class="px-3 py-2 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-line/60">
-                <tr v-for="l in leads" :key="l.id" class="hover:bg-surface-hover/40">
-                  <td class="px-3 py-2 text-micro text-ink-subtle whitespace-nowrap">{{ fmtRelative(l.created_at) }}</td>
-                  <td class="px-3 py-2">
-                    <div class="text-ink text-xs">{{ l.nome || '—' }}</div>
-                    <div class="text-micro text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
-                  </td>
-                  <td class="px-3 py-2 text-micro font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
-                  <td class="px-3 py-2 text-micro font-mono text-ink-subtle">{{ l.meta_form_id || '—' }}</td>
-                  <td class="px-3 py-2 text-center">
-                    <span :class="['text-micro font-medium', statusColor(l.status)]">{{ l.status }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <template v-if="!loading && activeSection === 'leads'">
+          <Panel title="Leads da campanha" icon="fas fa-users" :padded="false"
+            :subtitle="since && until ? `Período ${scopeLabel}` : 'Os mais recentes (até 100)'">
+            <DataTable :columns="LEADS_COLUMNS" :rows="leads" row-key="id" sort-by="created_at" sort-dir="desc"
+              empty-icon="fas fa-inbox" empty-title="Nenhum lead"
+              :empty-text="since && until ? 'Nenhum lead nesse período.' : 'Nenhum lead chegou por essa campanha ainda.'">
+              <template #cell-created_at="{ value }"><span class="text-ink-muted">{{ fmtRelative(value) }}</span></template>
+              <template #cell-nome="{ row }">
+                <div class="text-ink">{{ row.nome || '-' }}</div>
+                <div class="text-micro text-ink-subtle truncate">{{ row.email || row.telefone || '' }}</div>
+              </template>
+              <template #cell-midia_slug="{ value }"><span class="font-mono text-ink-muted">{{ value || '-' }}</span></template>
+              <template #cell-meta_form_id="{ value }"><span class="font-mono text-ink-subtle">{{ value || '-' }}</span></template>
+              <template #cell-status="{ value }"><LeadStatusBadge :status="value" size="sm" /></template>
+            </DataTable>
+          </Panel>
+        </template>
 
         <!-- ── Dia-a-dia ─────────────────────────────────────────────────── -->
-        <section v-if="!loading && activeSection === 'daily'" class="space-y-3">
-          <div class="text-micro text-ink-subtle">Período: {{ scopeLabel }} - gasto da Meta (azul) e leads da nossa base (verde).</div>
+        <template v-if="!loading && activeSection === 'daily'">
+          <Panel title="Totais do período" icon="fas fa-calendar-days"
+            :subtitle="`${scopeLabel} - investimento da Meta e leads da nossa base`"
+            :empty="!daily.length" empty-icon="fas fa-chart-column" empty-title="Sem série diária" empty-text="Nenhum dia com dados neste período.">
+            <MetricInline :items="dailyTotalsItems" />
+          </Panel>
 
-          <!-- Totais agregados -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Gasto 30d</div>
-              <div class="text-sm font-semibold text-accent">{{ fmtMoney(dailyTotals.spend, campaign?.currency) }}</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Leads na base</div>
-              <div class="text-sm font-semibold text-data-pos">{{ fmtInt(dailyTotals.leads) }}</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Impr. / Cliques</div>
-              <div class="text-sm font-semibold text-ink">{{ fmtInt(dailyTotals.impressions) }} / {{ fmtInt(dailyTotals.clicks) }}</div>
-            </div>
-          </div>
+          <!-- O gráfico já é um cartão próprio (mesmo da aba Campanhas). -->
+          <CampaignDailyChart v-if="daily.length" :daily="daily" :currency="campaign?.currency || 'BRL'" />
 
-          <!-- Duas faixas dividindo o eixo de tempo: investimento e leads. -->
-          <CampaignDailyChart :daily="daily" :currency="campaign?.currency || 'BRL'" />
-
-          <!-- Tabela detalhada por dia -->
-          <details v-if="daily.length" class="rounded-lg border border-line/60 bg-surface-sunken/30">
-            <summary class="px-3 py-2 cursor-pointer text-xs text-ink-subtle hover:text-ink">
-              <i class="fas fa-table mr-1"></i>Ver tabela detalhada por dia ({{ daily.length }} dias)
-            </summary>
-            <div class="overflow-x-auto border-t border-line/60">
-              <table class="min-w-full text-xs">
-                <thead class="bg-surface-sunken/40">
-                  <tr>
-                    <th class="px-2 py-1.5 text-left  font-mono uppercase text-micro text-ink-subtle">Dia</th>
-                    <th class="px-2 py-1.5 text-right font-mono uppercase text-micro text-ink-subtle">Gasto</th>
-                    <th class="px-2 py-1.5 text-right font-mono uppercase text-micro text-ink-subtle">Impr.</th>
-                    <th class="px-2 py-1.5 text-right font-mono uppercase text-micro text-ink-subtle">Cliques</th>
-                    <th class="px-2 py-1.5 text-right font-mono uppercase text-micro text-ink-subtle">Leads</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-line/40">
-                  <tr v-for="(d, i) in [...daily].reverse()" :key="i">
-                    <td class="px-2 py-1 text-ink-muted">{{ d.day }}</td>
-                    <td class="px-2 py-1 text-right text-accent font-mono">{{ fmtMoney(d.spend, campaign?.currency) }}</td>
-                    <td class="px-2 py-1 text-right text-ink-muted">{{ fmtInt(d.impressions) }}</td>
-                    <td class="px-2 py-1 text-right text-ink-muted">{{ fmtInt(d.clicks) }}</td>
-                    <td class="px-2 py-1 text-right text-data-pos">{{ fmtInt(d.office_leads) }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </section>
+          <Panel v-if="daily.length" title="Tabela por dia" icon="fas fa-table" :padded="false" :subtitle="`${daily.length} dia(s)`">
+            <DataTable :columns="DAILY_COLUMNS" :rows="dailyRows" row-key="day" sort-by="day" sort-dir="desc" />
+          </Panel>
+        </template>
 
         <!-- ── Gestão interna ────────────────────────────────────────────── -->
-        <section v-if="!loading && activeSection === 'gestao' && campaign" class="space-y-4">
-          <div>
-            <label class="text-sm font-medium text-ink block mb-1">Notas internas</label>
-            <textarea v-model="notes" rows="4"
-              placeholder="Observações sobre essa campanha — não vão pro Meta nem pro CV."
-              class="w-full rounded border border-line bg-surface px-3 py-2 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 resize-y" />
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="text-sm font-medium text-ink block mb-1">Prioridade</label>
-              <select v-model="priority" class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
-                <option value="low">Baixa</option>
-                <option value="normal">Normal</option>
-                <option value="high">Alta</option>
-              </select>
-            </div>
-            <div class="flex items-end">
-              <label class="flex items-center gap-2.5 cursor-pointer select-none">
-                <input type="checkbox" v-model="archived" class="h-4 w-4 rounded border-line accent-slate-500" />
-                <span class="text-sm text-ink font-medium">Arquivar (oculta da listagem)</span>
-              </label>
-            </div>
-          </div>
-          <div class="flex justify-end">
-            <Button variant="primary" size="sm" icon="fas fa-save" :loading="store.saving" @click="saveInternal">Salvar</Button>
-          </div>
-        </section>
-      </div>
-
-    <template #footer>
-      <div class="flex-1 text-micro text-ink-subtle">
-        Última sync: {{ campaign?.last_synced_at ? new Date(campaign.last_synced_at).toLocaleString('pt-BR') : '-' }}
-      </div>
-      <Button variant="secondary" size="sm" @click="close">Fechar</Button>
-    </template>
-  </Modal>
-
-    <!-- Sub-modal: detalhes do Lead Form. `zIndex` acima do de cima, que e o
-         que o primitivo pede para empilhar dialogo sobre dialogo. -->
-    <Modal :open="formDetailOpen && !!formDetailData" size="lg" :padded="false"
-      :z-index="10010" @close="closeFormDetail">
-      <template #header>
-        <div class="flex items-start gap-3">
-          <div class="shrink-0 w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center">
-            <i class="fas fa-file-lines text-lg"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="text-base font-semibold text-ink leading-tight truncate">{{ formDetailData.name || '(sem nome)' }}</h3>
-            <p class="text-xs text-ink-subtle mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
-              <span class="font-mono">#{{ formDetailData.id }}</span>
-              <span v-if="formDetailData.page_name">· {{ formDetailData.page_name }}</span>
-              <span v-if="formDetailData.status">· {{ formDetailData.status }}</span>
-              <span v-if="formDetailData.created_time">· Criado {{ new Date(formDetailData.created_time).toLocaleDateString('pt-BR') }}</span>
-            </p>
-          </div>
-        </div>
-      </template>
-
-        <div class="p-5 space-y-4">
-          <!-- Status do mapping local -->
-          <div class="grid grid-cols-2 gap-2">
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Mídia (Office)</div>
-              <div class="text-sm font-mono text-ink">{{ formDetailData.midia_slug || '—' }}</div>
-            </div>
-            <div class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2">
-              <div class="text-micro uppercase tracking-wider text-ink-subtle">Roteamento</div>
-              <div class="text-sm font-medium">
-                <span v-if="formDetailData.mapping_active && formDetailData.midia_slug" class="text-data-pos">
-                  <i class="fas fa-bolt text-xs"></i> Auto
-                </span>
-                <span v-else class="text-data-warn">
-                  <i class="fas fa-hand text-xs"></i> Manual (held)
-                </span>
+        <template v-if="!loading && activeSection === 'gestao' && campaign">
+          <Panel title="Gestão interna" icon="fas fa-clipboard-list" subtitle="Só no Office: nada vai para a Meta nem para o CV">
+            <div class="space-y-4">
+              <div>
+                <label :class="labelBase">Notas internas</label>
+                <textarea v-model="notes" rows="4" placeholder="Observações sobre esta campanha."
+                  :class="[fieldBase, 'rounded-lg px-3 py-2 text-sm resize-y']" />
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                <Select v-model="priority" label="Prioridade" :options="priorityOptions" placeholder="" />
+                <div class="rounded-lg border border-line bg-surface-sunken/40 px-3 py-3">
+                  <Switch v-model="archived" label="Arquivar" description="Some da listagem padrão; continua sincronizando." />
+                </div>
               </div>
             </div>
-          </div>
+            <template #footer>
+              <div class="flex justify-end">
+                <Button variant="primary" icon="fas fa-floppy-disk" :loading="store.saving" @click="saveInternal">Salvar</Button>
+              </div>
+            </template>
+          </Panel>
+        </template>
+      </div>
+    </div>
+  </Modal>
 
-          <!-- Perguntas -->
-          <div>
-            <div class="text-micro uppercase tracking-wider text-ink-subtle mb-2">
-              <i class="fas fa-list-check mr-1"></i>Perguntas do formulário
-              <span v-if="formDetailData.questions?.length" class="text-ink">({{ formDetailData.questions.length }})</span>
-            </div>
-            <div v-if="!Array.isArray(formDetailData.questions) || !formDetailData.questions.length"
-              class="text-center py-6 text-ink-subtle text-sm rounded-lg border border-dashed border-line">
-              <i class="fas fa-circle-info text-xl mb-1 block"></i>
-              Sincronize os Forms Meta na Central Meta → <span class="font-mono">Captação → Sincronizar Meta</span> pra puxar as perguntas.
-            </div>
-            <ol v-else class="space-y-1.5 text-sm">
-              <li v-for="(q, i) in formDetailData.questions" :key="i"
-                class="flex items-start gap-2 rounded border border-line/60 bg-surface px-2.5 py-1.5">
-                <span class="text-micro font-mono text-ink-subtle pt-0.5">{{ String(i + 1).padStart(2, '0') }}</span>
-                <div class="flex-1 min-w-0">
-                  <div class="text-ink font-medium leading-tight">{{ q.label || q.key }}</div>
-                  <div class="text-micro text-ink-subtle font-mono mt-0.5">
-                    <span v-if="q.type">{{ q.type }}</span>
-                    <span v-if="q.key && q.key !== q.label"> · key: {{ q.key }}</span>
-                  </div>
+    <!-- Sub-modal: detalhes do Lead Form. `zIndex` acima do de cima, que é o
+         que o primitivo pede para empilhar diálogo sobre diálogo. -->
+    <Modal :open="formDetailOpen && !!formDetailData" size="lg" :z-index="10010"
+      :title="formDetailData?.name || '(sem nome)'"
+      :subtitle="formDetailData ? [`#${formDetailData.id}`, formDetailData.page_name, formDetailData.status, formDetailData.created_time ? `criado ${fmtDate(formDetailData.created_time)}` : ''].filter(Boolean).join(' · ') : ''"
+      @close="closeFormDetail">
+      <div v-if="formDetailData" class="space-y-4">
+        <MetricInline :items="[
+          { label: 'Mídia (Office)', value: formDetailData.midia_slug || '-' },
+          { label: 'Roteamento', value: formDetailData.mapping_active && formDetailData.midia_slug ? 'Automático' : 'Manual (represa)', tone: formDetailData.mapping_active && formDetailData.midia_slug ? 'pos' : 'warn' },
+          { label: 'Perguntas', value: formDetailData.questions?.length || 0 },
+        ]" />
+
+        <Panel title="Perguntas do formulário" icon="fas fa-list-check" :padded="false"
+          :empty="!Array.isArray(formDetailData.questions) || !formDetailData.questions.length"
+          empty-icon="fas fa-circle-info" empty-title="Perguntas ainda não sincronizadas"
+          empty-text="Sincronize os formulários na aba Formulários da Central Meta.">
+          <ol class="divide-y divide-line">
+            <li v-for="(q, i) in formDetailData.questions" :key="i" class="flex items-start gap-3 px-4 py-2.5">
+              <span class="text-micro font-mono text-ink-subtle pt-0.5">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm text-ink font-medium leading-tight">{{ q.label || q.key }}</div>
+                <div class="text-micro text-ink-subtle font-mono mt-0.5">
+                  <span v-if="q.type">{{ q.type }}</span><span v-if="q.key && q.key !== q.label"> · key: {{ q.key }}</span>
                 </div>
-              </li>
-            </ol>
-          </div>
+              </div>
+            </li>
+          </ol>
+        </Panel>
 
-          <!-- Botões: editar mapeamento de campos -->
-          <div class="pt-3 border-t border-line/60 flex items-center justify-between gap-2">
-            <div class="text-micro text-ink-subtle">
-              <i class="fas fa-circle-info mr-1"></i>
-              Vínculo CV (empreendimento, mídia) vive na <b>campanha</b>. Aqui você só configura o mapeamento <b>pergunta → campo CV</b>.
-            </div>
-            <Button variant="primary" size="sm" icon="fas fa-list-check" @click="openFormEditor">
-              Editar mapeamento
-            </Button>
-          </div>
-        </div>
+        <p class="text-micro text-ink-subtle"><i class="fas fa-circle-info mr-1"></i>O vínculo CV (empreendimento, mídia) vive na campanha. Aqui você só configura o mapeamento pergunta → campo CV.</p>
+      </div>
+      <template #footer>
+        <Button variant="secondary" @click="closeFormDetail">Fechar</Button>
+        <Button variant="primary" icon="fas fa-list-check" @click="openFormEditor">Editar mapeamento</Button>
+      </template>
     </Modal>
 
     <!-- Editor completo (Estrutura & Mapeamento + Comparativo + Leads).
-         Independente do sub-modal de preview — quando abre, o preview fecha. -->
-    <MetaFormMappingModal
-      v-if="formDetailData"
-      v-model:open="formEditorOpen"
-      :form="formDetailData"
-      @saved="onFormEditorSaved" />
+         Independente do sub-modal de preview - quando abre, o preview fecha. -->
+    <MetaFormMappingModal v-if="formDetailData" v-model:open="formEditorOpen" :form="formDetailData" @saved="onFormEditorSaved" />
 
     <ConfirmDialog :open="pedindoEnvioHeld" tone="accent"
       :title="`Enviar ${heldPreview?.recoverable || 0} lead(s) represado(s) ao CV?`"
@@ -1506,14 +1187,8 @@ function onFormEditorSaved() {
       @confirm="enviarRepresados" @cancel="pedindoEnvioHeld = false" />
 
     <!-- Lightbox de criativo (imagem ou vídeo do ad) -->
-    <CreativeLightbox
-      v-if="lightboxData"
-      v-model:open="lightboxOpen"
-      :image-url="lightboxData.imageUrl"
-      :video-url="lightboxData.videoUrl"
-      :video-id="lightboxData.videoId"
-      :video-permalink="lightboxData.videoPermalink"
-      :title="lightboxData.title"
-      :subtitle="lightboxData.subtitle" />
+    <CreativeLightbox v-if="lightboxData" v-model:open="lightboxOpen"
+      :image-url="lightboxData.imageUrl" :video-url="lightboxData.videoUrl" :video-id="lightboxData.videoId"
+      :video-permalink="lightboxData.videoPermalink" :title="lightboxData.title" :subtitle="lightboxData.subtitle" />
   </div>
 </template>

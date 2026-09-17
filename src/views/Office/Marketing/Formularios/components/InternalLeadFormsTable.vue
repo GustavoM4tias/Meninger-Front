@@ -27,9 +27,9 @@ const store = useLeadFormsStore();
 const toast = useToast();
 
 // As contagens de leads (colunas/resumo) são recortadas pelo período mestre da
-// store (store.periodo, default mês atual — sem picker na tela). O filtro de
+// store (store.periodo, default mês atual - sem picker na tela). O filtro de
 // datas abaixo é OUTRA coisa: filtra quais FORMULÁRIOS aparecem (pela data de
-// início/criação) — por isso começa vazio (mostra todos).
+// início/criação) - por isso começa vazio (mostra todos).
 const search = ref('');
 const filterActive   = ref('ALL');  // ALL | ACTIVE | INACTIVE
 const filterPriority = ref('ALL');  // ALL | high | normal | low
@@ -128,7 +128,7 @@ const filtered = computed(() => {
     } else if (sortBy.value === 'name') {
         arr.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
     } else {
-        // created — mais recentes primeiro (default)
+        // created - mais recentes primeiro (default)
         arr.sort((a, b) => {
             const da = a.created_at ? new Date(a.created_at).getTime() : 0;
             const db = b.created_at ? new Date(b.created_at).getTime() : 0;
@@ -191,12 +191,12 @@ const summary = computed(() => {
 
 function priorityDot(p) {
     if (p === 'high')   return { cls: 'bg-data-neg',     title: 'Prioridade alta' };
-    if (p === 'low')    return { cls: 'bg-slate-400',   title: 'Prioridade baixa' };
+    if (p === 'low')    return { cls: 'bg-ink-subtle',   title: 'Prioridade baixa' };
     return { cls: 'bg-data-pos', title: 'Prioridade normal' };
 }
 
 function fmtRelative(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     const ms = Date.now() - new Date(iso).getTime();
     if (ms < 0) return 'agora';
     const min = Math.floor(ms / 60000);
@@ -216,9 +216,9 @@ function deliveryRate(stats) {
 }
 
 function fmtShortDate(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }); }
-    catch { return '—'; }
+    catch { return '-'; }
 }
 </script>
 
@@ -304,10 +304,10 @@ function fmtShortDate(iso) {
 
         <div :class="[ctlClass, 'inline-flex items-center gap-1.5 px-2.5 text-ink-subtle']"
           title="Filtra quais FORMULÁRIOS aparecem (pela data de início/criação). O recorte dos leads é o período no topo da tela.">
-          <i class="fas fa-square-poll-vertical text-[9px]" title="Data do formulário"></i>
+          <i class="fas fa-square-poll-vertical text-micro" title="Data do formulário"></i>
           <input v-model="filterDateFrom" type="date"
             class="bg-transparent text-xs text-ink outline-none w-[6.8rem] border-0 p-0 focus:ring-0 shadow-none" />
-          <i class="fas fa-arrow-right-long text-[9px]"></i>
+          <i class="fas fa-arrow-right-long text-micro"></i>
           <input v-model="filterDateTo" type="date"
             class="bg-transparent text-xs text-ink outline-none w-[6.8rem] border-0 p-0 focus:ring-0 shadow-none" />
         </div>
@@ -319,7 +319,7 @@ function fmtShortDate(iso) {
 
         <button v-if="hasFilters" @click="clearFilters"
           class="h-8 inline-flex items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-accent hover:bg-accent-soft transition-colors">
-          <i class="fas fa-filter-circle-xmark text-[10px]"></i>Limpar
+          <i class="fas fa-filter-circle-xmark text-micro"></i>Limpar
         </button>
 
         <div class="flex-1"></div>
@@ -369,8 +369,8 @@ function fmtShortDate(iso) {
                 :class="['inline-flex items-center gap-1 rounded-md border px-2 py-1 text-micro font-medium transition-colors',
                   f.active
                     ? 'bg-data-pos/10 text-data-pos border-data-pos/20'
-                    : 'bg-slate-500/10 text-ink-muted border-line/20']">
-                <i :class="f.active ? 'fas fa-circle-check' : 'fas fa-circle-pause'" class="text-[10px]"></i>
+                    : 'bg-surface-sunken text-ink-muted border-line']">
+                <i :class="f.active ? 'fas fa-circle-check' : 'fas fa-circle-pause'" class="text-micro"></i>
                 {{ f.active ? 'Ativo' : 'Inativo' }}
               </button>
               <span v-if="endedAlready(f)" class="text-micro text-data-neg font-medium">encerrado</span>
@@ -382,15 +382,15 @@ function fmtShortDate(iso) {
               <div class="min-w-0">
                 <dt class="metric-label">Mídia</dt>
                 <dd class="text-xs text-ink font-mono break-all">
-                  {{ f.midia_slug || '—' }}
-                  <span class="text-ink-subtle">· {{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '—' }}</span>
+                  {{ f.midia_slug || '-' }}
+                  <span class="text-ink-subtle">· {{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '-' }}</span>
                 </dd>
               </div>
               <div class="min-w-0">
                 <dt class="metric-label">Entrega ao CV</dt>
                 <dd class="text-xs text-ink-muted tabular-nums">
                   <template v-if="deliveryRate(f.stats) !== null">{{ deliveryRate(f.stats) }}%</template>
-                  <template v-else>—</template>
+                  <template v-else>-</template>
                 </dd>
               </div>
               <div class="min-w-0">
@@ -413,17 +413,17 @@ function fmtShortDate(iso) {
               <a :href="lpUrl(f)" target="_blank" rel="noopener" @click.stop
                 class="h-10 rounded-lg border border-line text-micro font-medium text-ink-muted
                        inline-flex items-center justify-center gap-1.5">
-                <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>Abrir LP
+                <i class="fas fa-arrow-up-right-from-square text-micro"></i>Abrir LP
               </a>
               <button @click="copyLpUrl($event, f)"
                 class="h-10 rounded-lg border border-line text-micro font-medium text-ink-muted
                        inline-flex items-center justify-center gap-1.5">
-                <i class="fas fa-copy text-[10px]"></i>Copiar
+                <i class="fas fa-copy text-micro"></i>Copiar
               </button>
               <button @click="openEdit(f)"
                 class="h-10 rounded-lg bg-accent text-white text-micro font-medium
                        inline-flex items-center justify-center gap-1.5">
-                <i class="fas fa-pen text-[10px]"></i>Editar
+                <i class="fas fa-pen text-micro"></i>Editar
               </button>
             </div>
           </li>
@@ -484,8 +484,8 @@ function fmtShortDate(iso) {
               <!-- Mídia -->
               <td class="px-4 py-3">
                 <div v-if="f.midia_slug" class="font-mono text-micro text-ink">{{ f.midia_slug }}</div>
-                <div v-else class="text-micro text-ink-subtle italic">—</div>
-                <div class="text-micro text-ink-subtle mt-0.5">{{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '—' }}</div>
+                <div v-else class="text-micro text-ink-subtle italic">-</div>
+                <div class="text-micro text-ink-subtle mt-0.5">{{ ORIGEM_LABELS[f.cv_origem] || f.cv_origem || '-' }}</div>
               </td>
 
               <!-- Período -->
@@ -504,7 +504,7 @@ function fmtShortDate(iso) {
               <td class="px-4 py-3 text-center text-ink-muted">
                 <span v-if="Array.isArray(f.bound_empreendimentos) && f.bound_empreendimentos.length"
                   class="text-xs">{{ f.bound_empreendimentos.length }}</span>
-                <span v-else class="text-micro text-ink-subtle italic">—</span>
+                <span v-else class="text-micro text-ink-subtle italic">-</span>
               </td>
 
               <!-- Leads count (recorte do período mestre) -->
@@ -515,7 +515,7 @@ function fmtShortDate(iso) {
                 <div class="text-micro leading-tight mt-0.5"
                   :class="f.stats?.failed ? 'text-data-neg font-medium' : 'text-ink-subtle'">
                   <span v-if="f.stats?.failed">{{ f.stats.failed }} com erro</span>
-                  <span v-else>—</span>
+                  <span v-else>-</span>
                 </div>
               </td>
 
@@ -530,7 +530,7 @@ function fmtShortDate(iso) {
                   </div>
                   <div v-if="f.stats.held" class="text-micro text-data-warn mt-0.5">{{ f.stats.held }} held</div>
                 </template>
-                <span v-else class="text-micro text-ink-subtle italic">—</span>
+                <span v-else class="text-micro text-ink-subtle italic">-</span>
               </td>
 
               <!-- Último lead -->
@@ -545,8 +545,8 @@ function fmtShortDate(iso) {
                   :class="['inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-micro font-medium transition-colors',
                     f.active
                       ? 'bg-data-pos/10 text-data-pos border-data-pos/20 hover:bg-data-pos/20'
-                      : 'bg-slate-500/10 text-ink-muted border-line/20 hover:bg-surface-sunken']">
-                  <i :class="f.active ? 'fas fa-circle-check' : 'fas fa-circle-pause'" class="text-[10px]"></i>
+                      : 'bg-surface-sunken text-ink-muted border-line hover:bg-surface-sunken']">
+                  <i :class="f.active ? 'fas fa-circle-check' : 'fas fa-circle-pause'" class="text-micro"></i>
                   {{ f.active ? 'Ativo' : 'Inativo' }}
                 </button>
               </td>

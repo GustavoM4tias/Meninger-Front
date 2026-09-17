@@ -1,5 +1,5 @@
 <script setup>
-// KPIs principais da Captação — espelham os agregados que o backend devolve em
+// KPIs principais da Captação - espelham os agregados que o backend devolve em
 // /capture/health?since=YYYY-MM-DD&until=YYYY-MM-DD (o período vem do
 // PeriodPicker mestre da tela, padronizado com Campanhas/Leads/Formulários).
 // Cada card é clicável: ao clicar, aplica o filtro de status correspondente.
@@ -16,7 +16,7 @@ const emit = defineEmits(['focus-status']);
 const intFmt = new Intl.NumberFormat('pt-BR');
 
 function fmtSeconds(s) {
-    if (s == null) return '—';
+    if (s == null) return '-';
     if (s < 60) return `${Math.round(s)}s`;
     const m = s / 60;
     if (m < 60) return `${m.toFixed(1)}m`;
@@ -107,7 +107,7 @@ const kpis = computed(() => {
             value: intFmt.format(pc.spam || 0),
             sub: 'no período',
             icon: 'fas fa-trash',
-            accent: 'text-ink-muted bg-slate-500/10',
+            accent: 'text-ink-muted bg-surface-sunken',
             filter: 'spam',
         },
     ];

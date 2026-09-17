@@ -1,8 +1,8 @@
 <script setup>
-// Central Meta › aba Formulários — gerencia formulários INTERNOS (LPs
+// Central Meta › aba Formulários - gerencia formulários INTERNOS (LPs
 // hospedadas, embeds em site externo). Forms da Meta são gerenciados dentro
-// das Campanhas — abrindo o anúncio que usa aquele form.
-// (Panel do hub /meta — sem PageContainer/PageHeader próprios.)
+// das Campanhas - abrindo o anúncio que usa aquele form.
+// (Panel do hub /meta - sem PageContainer/PageHeader próprios.)
 
 import { onMounted, ref } from 'vue';
 import { useLeadFormsStore } from '@/stores/Marketing/Capture/leadFormsStore';

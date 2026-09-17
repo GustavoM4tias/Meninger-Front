@@ -1,14 +1,14 @@
 <script setup>
-// FiltersBar da Captação — mesma estrutura visual do FiltersBar de Campanhas.
+// FiltersBar da Captação - mesma estrutura visual do FiltersBar de Campanhas.
 // Toolbar header (sempre visível, com badge de filtros ativos) + grid expansível.
 //
 // Filtros: status, canal, origem CV, campanha, mídia, busca, período, sort.
 
 import { computed, ref } from 'vue';
+import FilterBar from '@/components/UI/FilterBar.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
-import Button from '@/components/UI/Button.vue';
-import Badge from '@/components/UI/Badge.vue';
+import { labelBase } from '@/components/UI/_classes.js';
 
 const props = defineProps({
     filtros: { type: Object, required: true },
@@ -63,7 +63,7 @@ const cvOrigemSelected = computed({
     set: (v) => updateField('cv_origem', v.map(l => CV_ORIGEM_TOKENS[l] || l)),
 });
 
-// ── Campanha — value=id, mas exibe name ──────────────────────────────────────
+// ── Campanha - value=id, mas exibe name ──────────────────────────────────────
 const campLabelById = computed(() =>
     Object.fromEntries((props.campaignOptions || []).map(c => [String(c.id), c.name])));
 const campIdByLabel = computed(() =>
@@ -96,129 +96,56 @@ const periodEnd = computed({
     set: (v) => updateField('period_end', v || ''),
 });
 
-// ── Expand/collapse ──────────────────────────────────────────────────────────
-// Recolhido por padrão (padrão do sistema) — o usuário abre quando precisar.
-const isExpanded = ref(false);
-function toggle() { isExpanded.value = !isExpanded.value; }
+// Selo "N ativos" da barra: ordenação não é filtro.
+const activeFiltersCount = computed(() => {
+    const f = props.filtros || {};
+    return Object.entries(f).reduce((acc, [k, v]) => {
+        if (k === 'sort') return acc;
+        if (Array.isArray(v)) return acc + (v.length > 0 ? 1 : 0);
+        if (typeof v === 'boolean') return acc + (v ? 1 : 0);
+        return acc + (v && String(v).trim() !== '' ? 1 : 0);
+    }, 0);
+});
+
 </script>
-
 <template>
-  <section class="rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient">
+  <!-- Filtros da inbox sobre o FilterBar do Office: barra fechada por padrão,
+       selo de "N ativos", Limpar/Aplicar. A busca livre mora DENTRO do painel
+       de filtros, junto dos outros campos (um caminho de filtro só). -->
+  <FilterBar :active-count="activeFiltersCount" apply-label="Aplicar" @apply="$emit('buscar')" @clear="$emit('limpar')">
+    <template #actions><slot name="extra-actions" /></template>
 
-    <!-- Toolbar header -->
-    <div class="filters-toolbar">
-      <button @click="toggle"
-        class="filters-toolbar-trigger">
-        <i class="fas fa-filter text-xs text-ink-muted"></i>
-        <span>Filtros</span>
-        <Badge v-if="hasActive" variant="accent" size="sm">ativos</Badge>
-        <i class="fas fa-chevron-down text-[10px] text-ink-subtle transition-transform duration-200"
-          :class="{ 'rotate-180': isExpanded }"></i>
-      </button>
+    <Input :model-value="filtros.q" @update:modelValue="v => updateField('q', v)" @keyup.enter="$emit('buscar')"
+      label="Buscar" placeholder="Nome, e-mail, telefone ou mídia..." icon-left="fas fa-magnifying-glass" size="sm" class="sm:col-span-2" />
 
-      <div class="flex-1 min-w-0 hidden md:block">
-        <Input :model-value="filtros.q"
-          @update:modelValue="v => updateField('q', v)"
-          @keyup.enter="$emit('buscar')"
-          placeholder="Nome, e-mail, telefone ou mídia..."
-          icon-left="fas fa-magnifying-glass" size="sm" />
-      </div>
-
-      <div class="ml-auto flex items-center gap-1.5">
-        <slot name="extra-actions" />
-        <Button variant="ghost" size="sm" icon="fas fa-eraser" @click="$emit('limpar')">
-          <span class="hidden sm:inline">Limpar</span>
-        </Button>
-        <Button size="sm" icon="fas fa-magnifying-glass" @click="$emit('buscar')">
-          <span class="hidden sm:inline">Aplicar</span>
-        </Button>
-      </div>
+    <div>
+      <label :class="labelBase">Status do lead</label>
+      <MultiSelector v-model="statusSelected" :options="statusOptions" placeholder="Todos os status" :page-size="50" />
+    </div>
+    <div>
+      <label :class="labelBase">Canal de entrada</label>
+      <MultiSelector v-model="channelSelected" :options="channelOptions" placeholder="Todos os canais" :page-size="10" />
+    </div>
+    <div>
+      <label :class="labelBase">Origem (CV)</label>
+      <MultiSelector v-model="cvOrigemSelected" :options="cvOrigemUnionOptions" placeholder="Todas as origens" :page-size="20" />
+    </div>
+    <div>
+      <label :class="labelBase">Campanha (Meta)</label>
+      <MultiSelector v-model="campaignSelected" :options="campaignLabels" placeholder="Todas as campanhas" :page-size="100" />
+    </div>
+    <div>
+      <label :class="labelBase">Mídia (slug)</label>
+      <MultiSelector :model-value="filtros.midia_slug" @update:modelValue="v => updateField('midia_slug', v)"
+        :options="midiaOptions" placeholder="Todas as mídias visíveis" :page-size="100" />
     </div>
 
-    <!-- Campos -->
-    <div v-show="isExpanded"
-      class="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
-      style="overflow: visible;">
+    <Input v-model="periodStart" type="date" label="Entrada Office (de)" size="sm" />
+    <Input v-model="periodEnd" type="date" label="Entrada Office (até)" size="sm" />
 
-      <!-- Busca (mobile) -->
-      <div class="md:hidden sm:col-span-2">
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-magnifying-glass text-[10px] mr-1 text-ink-subtle"></i>Buscar
-        </label>
-        <Input :model-value="filtros.q"
-          @update:modelValue="v => updateField('q', v)"
-          @keyup.enter="$emit('buscar')"
-          placeholder="Nome, e-mail, telefone..." size="sm" />
-      </div>
-
-      <!-- Status -->
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-circle-dot text-[10px] mr-1 text-ink-subtle"></i>Status do lead
-        </label>
-        <MultiSelector v-model="statusSelected" :options="statusOptions"
-          placeholder="Todos os status" :page-size="50" />
-      </div>
-
-      <!-- Canal -->
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-broadcast-tower text-[10px] mr-1 text-ink-subtle"></i>Canal de entrada
-        </label>
-        <MultiSelector v-model="channelSelected" :options="channelOptions"
-          placeholder="Todos os canais" :page-size="10" />
-      </div>
-
-      <!-- Origem CV -->
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-tags text-[10px] mr-1 text-ink-subtle"></i>Origem (CV)
-        </label>
-        <MultiSelector v-model="cvOrigemSelected" :options="cvOrigemUnionOptions"
-          placeholder="Todas as origens" :page-size="20" />
-      </div>
-
-      <!-- Campanha -->
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-bullhorn text-[10px] mr-1 text-ink-subtle"></i>Campanha (Meta)
-        </label>
-        <MultiSelector v-model="campaignSelected" :options="campaignLabels"
-          placeholder="Todas as campanhas visíveis" :page-size="150" />
-      </div>
-
-      <!-- Mídia -->
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-hashtag text-[10px] mr-1 text-ink-subtle"></i>Mídia (slug)
-        </label>
-        <MultiSelector :model-value="filtros.midia_slug"
-          @update:modelValue="v => updateField('midia_slug', v)"
-          :options="midiaOptions" placeholder="Todas as mídias visíveis" :page-size="100" />
-      </div>
-
-      <!-- Datas -->
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-calendar-day text-[10px] mr-1 text-ink-subtle"></i>Entrada Office (de)
-        </label>
-        <Input v-model="periodStart" type="date" size="sm" />
-      </div>
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-calendar-check text-[10px] mr-1 text-ink-subtle"></i>Entrada Office (até)
-        </label>
-        <Input v-model="periodEnd" type="date" size="sm" />
-      </div>
-
-      <!-- Sort -->
-      <div>
-        <label class="block text-micro font-medium text-ink-muted mb-1.5">
-          <i class="fas fa-arrow-down-wide-short text-[10px] mr-1 text-ink-subtle"></i>Ordenar por
-        </label>
-        <MultiSelector v-model="sortSelected" :options="sortOptions"
-          placeholder="Mais recentes" :page-size="5" />
-      </div>
+    <div>
+      <label :class="labelBase">Ordenar por</label>
+      <MultiSelector v-model="sortSelected" :options="sortOptions" placeholder="Mais recentes" :page-size="10" />
     </div>
-  </section>
+  </FilterBar>
 </template>

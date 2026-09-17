@@ -5,7 +5,7 @@
 //  - Fallback: thumbnail HD + link "Abrir no Facebook" (permalink ou Ad Library)
 //
 // Vídeos de ad (uploaded ao ad account) NÃO funcionam no iframe embed do
-// Facebook — esses só funcionam pra videos publicados em Page. Aí o fallback
+// Facebook - esses só funcionam pra videos publicados em Page. Aí o fallback
 // é mostrar thumbnail + link.
 
 import { ref, computed, watch } from 'vue';
@@ -32,7 +32,7 @@ watch(() => props.open, (v) => {
 });
 
 function onVideoError() {
-    console.warn('[lightbox] video falhou ao carregar — caindo no fallback');
+    console.warn('[lightbox] video falhou ao carregar - caindo no fallback');
     videoFailed.value = true;
 }
 
@@ -69,14 +69,14 @@ const facebookLink = computed(() => {
       <!-- Vídeo: tenta video tag direto -->
       <video v-if="isVideo && videoUrl && !videoFailed"
         :src="videoUrl"
-        class="max-w-full max-h-full rounded-lg shadow-2xl bg-black"
+        class="max-w-full max-h-full rounded-lg shadow-overlay bg-black"
         controls autoplay playsinline
         @error="onVideoError"
         @click.stop />
 
       <!-- Vídeo fallback: thumbnail + CTAs -->
       <div v-else-if="isVideo" class="max-w-2xl w-full text-center" @click.stop>
-        <div class="rounded-xl overflow-hidden bg-surface border border-white/10 shadow-2xl">
+        <div class="rounded-xl overflow-hidden bg-surface border border-white/10 shadow-overlay">
           <div class="relative aspect-video bg-black flex items-center justify-center">
             <img v-if="imageUrl"
               :src="imageUrl"
@@ -112,7 +112,7 @@ const facebookLink = computed(() => {
       <!-- Imagem -->
       <img v-else-if="imageUrl"
         :src="imageUrl"
-        class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+        class="max-w-full max-h-full object-contain rounded-lg shadow-overlay"
         alt="Creative preview"
         @click.stop />
 

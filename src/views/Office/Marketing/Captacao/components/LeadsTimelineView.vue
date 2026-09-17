@@ -1,5 +1,5 @@
 <script setup>
-// Visão Timeline — agrupa por dia de entrada no Office, mostrando picos e
+// Visão Timeline - agrupa por dia de entrada no Office, mostrando picos e
 // distribuição temporal. Cada item é uma linha compacta dentro do dia.
 
 import { computed } from 'vue';
@@ -31,7 +31,7 @@ const fmtDay = (key) => {
     return date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const fmtTime = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
+const fmtTime = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
 
 const days = computed(() => {
     const map = new Map();
@@ -88,22 +88,22 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
                 <div class="text-sm text-ink truncate">{{ lead.nome || contato(lead) }}</div>
                 <div class="text-micro text-ink-subtle truncate">
                   <span v-if="lead.meta_campaign_name">
-                    <i class="fas fa-bullhorn text-[9px] mr-1"></i>{{ lead.meta_campaign_name }}
+                    <i class="fas fa-bullhorn text-micro mr-1"></i>{{ lead.meta_campaign_name }}
                   </span>
                   <span v-else-if="lead.meta_form_name">
-                    <i class="fas fa-square-poll-vertical text-[9px] mr-1"></i>{{ lead.meta_form_name }}
+                    <i class="fas fa-square-poll-vertical text-micro mr-1"></i>{{ lead.meta_form_name }}
                     <span class="text-ink-subtle/70 italic"> · sem campanha</span>
                   </span>
                   <span v-else-if="lead.lead_form_name">
-                    <i class="fas fa-globe text-[9px] mr-1"></i>{{ lead.lead_form_name }}
+                    <i class="fas fa-globe text-micro mr-1"></i>{{ lead.lead_form_name }}
                   </span>
                   <span v-else-if="lead.midia_slug" class="font-mono">{{ lead.midia_slug }}</span>
-                  <span v-else>—</span>
+                  <span v-else>-</span>
                 </div>
               </div>
               <i v-if="lead.meta_is_organic === true || lead.meta_is_organic === 'true'"
-                class="fas fa-seedling text-teal-500 text-[11px]"
-                title="Lead orgânico — sem campanha rastreada"></i>
+                class="fas fa-seedling text-data-pos text-[11px]"
+                title="Lead orgânico - sem campanha rastreada"></i>
               <i v-if="lead.last_error" class="fas fa-triangle-exclamation text-data-neg"
                 :title="lead.last_error"></i>
             </button>

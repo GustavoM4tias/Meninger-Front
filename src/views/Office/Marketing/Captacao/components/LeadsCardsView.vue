@@ -1,5 +1,5 @@
 <script setup>
-// Visão Kanban — agrupa leads por estado em 5 colunas. Útil pra ter ideia rápida
+// Visão Kanban - agrupa leads por estado em 5 colunas. Útil pra ter ideia rápida
 // de onde está o gargalo (held / em despacho / entregue / com erro / spam).
 
 import { computed } from 'vue';
@@ -31,7 +31,7 @@ const grouped = computed(() => {
     return out;
 });
 
-const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-';
 const contato = (l) => l.email || l.telefone || '(sem contato)';
 </script>
 
@@ -72,9 +72,9 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
               <LeadStatusBadge :status="lead.status" size="sm" :dot="false" />
               <span class="flex items-center gap-1">
                 <i v-if="lead.meta_is_organic === true || lead.meta_is_organic === 'true'"
-                  class="fas fa-seedling text-teal-500 text-[10px]"
-                  title="Lead orgânico — sem campanha rastreada"></i>
-                <i v-if="lead.last_error" class="fas fa-triangle-exclamation text-data-neg text-[10px]"
+                  class="fas fa-seedling text-data-pos text-micro"
+                  title="Lead orgânico - sem campanha rastreada"></i>
+                <i v-if="lead.last_error" class="fas fa-triangle-exclamation text-data-neg text-micro"
                   :title="lead.last_error"></i>
               </span>
             </div>
@@ -86,7 +86,7 @@ const contato = (l) => l.email || l.telefone || '(sem contato)';
               class="mt-1 text-micro text-ink-subtle truncate"
               :title="lead.meta_campaign_name || lead.meta_form_name || lead.lead_form_name">
               <i :class="lead.meta_campaign_name ? 'fas fa-bullhorn' : lead.meta_form_name ? 'fas fa-square-poll-vertical' : 'fas fa-globe'"
-                class="text-[9px] mr-0.5"></i>
+                class="text-micro mr-0.5"></i>
               {{ lead.meta_campaign_name || lead.meta_form_name || lead.lead_form_name }}
             </div>
             <div class="mt-1 text-micro font-mono text-ink-subtle tabular-nums">

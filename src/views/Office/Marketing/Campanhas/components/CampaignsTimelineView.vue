@@ -1,5 +1,5 @@
 <script setup>
-// View Timeline: tipo Gantt — cada campanha é uma linha com uma barra horizontal
+// View Timeline: tipo Gantt - cada campanha é uma linha com uma barra horizontal
 // indicando o período (start_time → stop_time ou "hoje" se ativa).
 // A largura da barra é proporcional à duração; a cor representa o status.
 //
@@ -110,17 +110,17 @@ function barColor(c) {
     if (s.includes('ACTIVE'))   return 'bg-data-pos/70 hover:bg-data-pos border-data-pos';
     if (s.includes('PAUSED'))   return 'bg-data-warn/60 hover:bg-data-warn border-data-warn';
     if (s.includes('DELETED'))  return 'bg-data-neg/50 hover:bg-data-neg border-data-neg';
-    if (s.includes('ARCHIVED')) return 'bg-slate-400/40 hover:bg-surface-sunken border-line';
-    return 'bg-slate-400/40 hover:bg-surface-sunken border-line';
+    if (s.includes('ARCHIVED')) return 'bg-line hover:bg-surface-sunken border-line';
+    return 'bg-line hover:bg-surface-sunken border-line';
 }
 
 function fmtMoney(v) {
-    if (v == null) return '—';
+    if (v == null) return '-';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: props.currency || 'BRL' }).format(Number(v));
 }
 function fmtShortDate(iso) {
-    if (!iso) return '—';
-    try { return new Date(iso).toLocaleDateString('pt-BR'); } catch { return '—'; }
+    if (!iso) return '-';
+    try { return new Date(iso).toLocaleDateString('pt-BR'); } catch { return '-'; }
 }
 
 // Ordena: ativas primeiro, depois por start_time asc
@@ -198,7 +198,7 @@ const sorted = computed(() => {
     <div class="px-3 py-2 border-t border-line/60 bg-surface-sunken/30 flex flex-wrap items-center gap-3 text-micro text-ink-subtle">
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-data-pos/70"></span>Ativa</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-data-warn/60"></span>Pausada</span>
-      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-400/40"></span>Arquivada / Outras</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-line"></span>Arquivada / Outras</span>
       <span class="ml-auto">{{ sorted.length }} campanha(s) no período</span>
     </div>
   </div>

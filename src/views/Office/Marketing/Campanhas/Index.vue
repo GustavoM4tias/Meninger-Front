@@ -1,6 +1,6 @@
 <script setup>
-// Central Meta › aba Campanhas — relatório de desempenho Meta no padrão de mercado:
-// (Panel do hub /meta — sem PageContainer/PageHeader próprios.)
+// Central Meta › aba Campanhas - relatório de desempenho Meta no padrão de mercado:
+// (Panel do hub /meta - sem PageContainer/PageHeader próprios.)
 //
 //   RÉGUA DE TEMPO (mestre)  → PeriodPicker no topo; TODAS as métricas
 //                              (KPIs, gráfico, tabelas) são do período.
@@ -19,20 +19,19 @@ import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStor
 import dayjs from 'dayjs';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 import { useMetaFormsStore } from '@/stores/Marketing/Capture/metaFormsStore';
-import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import IconButton from '@/components/UI/IconButton.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
 import Badge from '@/components/UI/Badge.vue';
+import Panel from '@/components/UI/Panel.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import MetaFormMappingModal from '../Formularios/components/MetaFormMappingModal.vue';
 import CampaignDetailModal from './components/CampaignDetailModal.vue';
-import CampaignsCardsView from './components/CampaignsCardsView.vue';
 import CampaignsTimelineView from './components/CampaignsTimelineView.vue';
 import CampaignsAdminModal from './components/CampaignsAdminModal.vue';
 import CampaignsFiltersBar from './components/CampaignsFiltersBar.vue';
 import ReportKpiCards from './components/ReportKpiCards.vue';
 import CampaignDailyChart from './components/CampaignDailyChart.vue';
-import AdSetsTable from './components/AdSetsTable.vue';
 import AdsGalleryView from './components/AdsGalleryView.vue';
 
 const store = useCampaignsStore();
@@ -105,12 +104,20 @@ const filtros = ref({
 
 const adminModalOpen = ref(false);
 
-// View mode do nível campanha: 'list' | 'cards' | 'timeline'
-const viewMode = ref(localStorage.getItem('marketing.campaigns.viewMode') || 'list');
-function setViewMode(mode) {
-    viewMode.value = mode;
-    localStorage.setItem('marketing.campaigns.viewMode', mode);
-}
+// View do nível campanha: 'list' (DataTable, que vira cartão no celular) ou
+// 'timeline' (Gantt das janelas de veiculação). A view "Cards" saiu: era a
+// mesma lista em caixas, e o Office não tem alternador de visualização.
+const VIEW_MODES = ['list', 'timeline'];
+const viewModeInicial = localStorage.getItem('marketing.campaigns.viewMode');
+const viewMode = ref(VIEW_MODES.includes(viewModeInicial) ? viewModeInicial : 'list');
+watch(viewMode, (mode) => localStorage.setItem('marketing.campaigns.viewMode', mode));
+const viewOptions = [
+    { value: 'list',     label: 'Lista',    icon: 'fas fa-list' },
+    { value: 'timeline', label: 'Timeline', icon: 'fas fa-chart-gantt' },
+];
+// SegmentedControl de nível: v-model chama setLevel (que limpa o drill).
+const levelSel = computed({ get: () => level.value, set: (l) => setLevel(l) });
+const levelOptions = computed(() => levelTabs.value.map(t => ({ value: t.key, label: t.label, icon: t.icon, count: t.count ?? undefined })));
 
 const detailOpen = ref(false);
 const detailId   = ref(null);
@@ -162,7 +169,7 @@ onMounted(() => {
 
 watch(reportKey, () => { loadReport(); });
 
-// ── Nível FORMULÁRIOS (lead forms da Meta — carrega 1x ao entrar no nível) ──
+// ── Nível FORMULÁRIOS (lead forms da Meta - carrega 1x ao entrar no nível) ──
 const metaFormsStore = useMetaFormsStore();
 const metaFormsLoaded = ref(false);
 watch(level, (l) => {
@@ -319,7 +326,7 @@ const accountRows = computed(() => {
     const map = new Map();
     for (const r of rows) {
         const cache = cacheById.value.get(String(r.id)) || {};
-        const id = r.account_id || cache.account_id || '—';
+        const id = r.account_id || cache.account_id || '-';
         const name = r.account_name || cache.account_name || id;
         const cur = map.get(id) || {
             id, name, spend: 0, leads: 0, campaigns: 0, active: 0,
@@ -384,25 +391,25 @@ async function runBackfill() {
 
 // ── Formatters ──────────────────────────────────────────────────────────────
 function fmtMoney(v, curr = 'BRL') {
-    if (v == null) return '—';
+    if (v == null) return '-';
     try { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: curr }).format(Number(v)); }
     catch { return `R$ ${v}`; }
 }
 function fmtInt(v) {
-    if (v == null) return '—';
+    if (v == null) return '-';
     return new Intl.NumberFormat('pt-BR').format(Number(v));
 }
 function fmtPct(v) {
-    if (v == null) return '—';
+    if (v == null) return '-';
     return `${Number(v).toFixed(2)}%`;
 }
 function fmtShortDate(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }); }
-    catch { return '—'; }
+    catch { return '-'; }
 }
 function fmtRelative(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     const ms = Date.now() - new Date(iso).getTime();
     const min = Math.floor(ms / 60000);
     if (min < 1)    return 'agora';
@@ -416,17 +423,80 @@ function fmtRelative(iso) {
 
 function statusBadge(c) {
     const s = String(c.effective_status || c.status || '').toUpperCase();
-    if (s.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
-    if (s.includes('PAUSED'))   return { label: 'Pausada',   cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
-    if (s.includes('DELETED'))  return { label: 'Excluída',  cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
-    if (s.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
-    if (s.includes('COMPLETED')) return { label: 'Concluída', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
-    return { label: s || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    if (s.includes('ACTIVE'))    return { label: 'Ativa',     variant: 'success' };
+    if (s.includes('PAUSED'))    return { label: 'Pausada',   variant: 'warning' };
+    if (s.includes('DELETED'))   return { label: 'Excluída',  variant: 'danger' };
+    if (s.includes('ARCHIVED'))  return { label: 'Arquivada', variant: 'neutral' };
+    if (s.includes('COMPLETED')) return { label: 'Concluída', variant: 'neutral' };
+    return { label: s || '-', variant: 'neutral' };
 }
+
+// ── Colunas das listas (DataTable) ──────────────────────────────────────────
+// Prioridade decide a ordem no celular: 1 = título do card, 2 = corpo, 3 = "Ver detalhes".
+const CAMPAIGN_COLUMNS = [
+    { key: 'name',         label: 'Campanha',  priority: 1, sortable: true },
+    { key: 'account_name', label: 'Conta',     priority: 2, sortable: true },
+    { key: 'status_label', label: 'Status',    priority: 2, sortable: true, width: '7rem' },
+    { key: 'spend',        label: 'Investido', priority: 1, sortable: true, numeric: true },
+    { key: 'office_leads', label: 'Leads',     priority: 1, sortable: true, numeric: true },
+    { key: 'cac',          label: 'CAC',       priority: 2, sortable: true, numeric: true },
+    { key: 'ctr',          label: 'CTR',       priority: 3, sortable: true, numeric: true, format: fmtPct },
+    { key: 'cpm',          label: 'CPM',       priority: 3, sortable: true, numeric: true, format: (v) => v != null ? fmtMoney(v) : '-' },
+    { key: 'last_lead_at', label: 'Último lead', priority: 3, sortable: true, format: fmtRelative },
+];
+const ACCOUNT_COLUMNS = [
+    { key: 'name',      label: 'Conta',      priority: 1, sortable: true },
+    { key: 'active',    label: 'Ativas',     priority: 2, sortable: true, numeric: true, format: fmtInt },
+    { key: 'campaigns', label: 'Campanhas',  priority: 3, sortable: true, numeric: true, format: fmtInt },
+    { key: 'spend',     label: 'Investido',  priority: 1, sortable: true, numeric: true },
+    { key: 'leads',     label: 'Leads',      priority: 1, sortable: true, numeric: true, format: fmtInt },
+    { key: 'cac',       label: 'CAC médio',  priority: 2, sortable: true, numeric: true },
+];
+const ADSET_COLUMNS = [
+    { key: 'name',          label: 'Conjunto',   priority: 1, sortable: true },
+    { key: 'campaign_name', label: 'Campanha',   priority: 2, sortable: true },
+    { key: 'status_label',  label: 'Status',     priority: 2, sortable: true, width: '7rem' },
+    { key: 'goal',          label: 'Otimização', priority: 3, sortable: true },
+    { key: 'spend',         label: 'Investido',  priority: 1, sortable: true, numeric: true },
+    { key: 'office_leads',  label: 'Leads',      priority: 1, sortable: true, numeric: true, format: fmtInt },
+    { key: 'cac',           label: 'CAC',        priority: 2, sortable: true, numeric: true },
+    { key: 'ctr',           label: 'CTR',        priority: 3, sortable: true, numeric: true, format: fmtPct },
+    { key: 'cpm',           label: 'CPM',        priority: 3, sortable: true, numeric: true, format: (v) => v != null ? fmtMoney(v) : '-' },
+    { key: 'impressions',   label: 'Impressões', priority: 3, sortable: true, numeric: true, format: fmtInt },
+];
+const FORM_COLUMNS = [
+    { key: 'name',       label: 'Formulário', priority: 1, sortable: true },
+    { key: 'page_name',  label: 'Página',     priority: 2, sortable: true },
+    { key: 'status',     label: 'Status',     priority: 2, sortable: true, width: '7rem' },
+    { key: 'perguntas',  label: 'Perguntas',  priority: 2, sortable: true, numeric: true },
+    { key: 'midia_slug', label: 'Mídia (fallback)', priority: 3 },
+];
+const GOAL_LABELS = {
+    LEAD_GENERATION: 'Leads', LINK_CLICKS: 'Cliques', OFFSITE_CONVERSIONS: 'Conversões',
+    REACH: 'Alcance', IMPRESSIONS: 'Impressões', LANDING_PAGE_VIEWS: 'Visitas LP',
+    THRUPLAY: 'ThruPlay', POST_ENGAGEMENT: 'Engajamento', CONVERSATIONS: 'Conversas',
+};
+// Linhas prontas para ordenar: número como número, rótulo de status como texto.
+const campaignTableRows = computed(() => filtered.value.map(c => ({
+    ...c, status_label: statusBadge(c).label,
+    spend: Number(c.spend) || 0, office_leads: Number(c.office_leads) || 0,
+    cac: c.cac != null ? Number(c.cac) : null, ctr: c.ctr != null ? Number(c.ctr) : null, cpm: c.cpm != null ? Number(c.cpm) : null,
+    last_lead_at: c.lead_stats?.last_lead_at || null,
+})));
+const adsetTableRows = computed(() => adsetRows.value.map(a => ({
+    ...a, status_label: statusBadge(a).label, campaign_name: a.campaign?.name || '',
+    goal: GOAL_LABELS[a.optimization_goal] || a.optimization_goal || '-',
+    spend: Number(a.spend) || 0, office_leads: Number(a.office_leads) || 0,
+    cac: a.cac != null ? Number(a.cac) : null, ctr: a.ctr != null ? Number(a.ctr) : null, cpm: a.cpm != null ? Number(a.cpm) : null,
+    impressions: Number(a.impressions) || 0,
+})));
+const formTableRows = computed(() => metaFormRows.value.map(f => ({
+    ...f, perguntas: Array.isArray(f.questions) ? f.questions.length : 0,
+})));
 
 function priorityDot(p) {
     if (p === 'high')   return { cls: 'bg-data-neg',     title: 'Prioridade alta' };
-    if (p === 'low')    return { cls: 'bg-slate-400',   title: 'Prioridade baixa' };
+    if (p === 'low')    return { cls: 'bg-ink-subtle',   title: 'Prioridade baixa' };
     return { cls: 'bg-data-pos', title: 'Prioridade normal' };
 }
 
@@ -453,11 +523,8 @@ const levelTabs = computed(() => [
             :loading="store.loading || store.loadingReport" @click="buscar">
             Atualizar
           </Button>
-          <button v-if="isAdmin" @click="adminModalOpen = true"
-            title="Ferramentas admin (sincronizar, importar histórico, disparar ao CV, etc.)"
-            class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-line bg-surface hover:bg-surface-hover hover:border-accent/40 text-ink-muted hover:text-ink transition-colors">
-            <i class="fas fa-screwdriver-wrench text-xs"></i>
-          </button>
+          <IconButton v-if="isAdmin" icon="fas fa-screwdriver-wrench" variant="secondary" size="sm"
+            label="Ferramentas admin (sincronizar, importar histórico, disparar ao CV)" @click="adminModalOpen = true" />
       </div>
 
       <!-- Retorno das ferramentas de admin: uma gaveta so, fechada por
@@ -498,7 +565,7 @@ const levelTabs = computed(() => [
                     op.type === 'backfill'  ? 'bg-accent/10 text-accent' :
                     op.type === 'reconcile' ? 'bg-data-pos/10 text-data-pos' :
                     op.type === 'ads'       ? 'bg-data-warn/10 text-data-warn' :
-                    'bg-slate-500/10 text-ink-muted'
+                    'bg-surface-sunken text-ink-muted'
                   ]">{{ op.type }}</span>
                   <span class="font-medium text-ink truncate">{{ op.label }}</span>
                   <span class="text-micro text-ink-subtle ml-auto whitespace-nowrap">
@@ -606,11 +673,11 @@ const levelTabs = computed(() => [
         </div>
       </details>
 
-      <!-- Período mestre: as datas moram nos Filtros (Data início/fim) — sem
+      <!-- Período mestre: as datas moram nos Filtros (Data início/fim) - sem
            picker separado no topo, igual ao dashboard de Leads. -->
 
       <!-- KPIs do período (com delta vs período anterior). Formulários são
-           asset da Página — sem métrica de período, esconde a régua numérica. -->
+           asset da Página - sem métrica de período, esconde a régua numérica. -->
       <div v-if="level !== 'forms'" class="mb-4">
         <ReportKpiCards
           :totals="store.report?.totals"
@@ -663,33 +730,26 @@ const levelTabs = computed(() => [
       <!-- ══ RÉGUA DE ESTRUTURA: nível + breadcrumb de drill ═════════════ -->
       <div class="mb-3 flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-2 flex-wrap min-w-0">
-          <!-- Tabs de nível (com contador quando o nível está carregado) -->
-          <div class="inline-flex rounded-lg border border-line bg-surface p-0.5 max-w-full overflow-x-auto">
-            <button v-for="t in levelTabs" :key="t.key" @click="setLevel(t.key)"
-              :class="['px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0',
-                level === t.key ? 'bg-accent text-white' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
-              <i :class="[t.icon, 'text-[10px]']"></i>{{ t.label }}
-              <span v-if="t.count != null" class="text-micro opacity-70 tabular-nums">{{ t.count }}</span>
-            </button>
-          </div>
+          <!-- Nível da hierarquia (contador quando o nível está carregado) -->
+          <SegmentedControl v-model="levelSel" :options="levelOptions" size="sm" />
 
           <!-- Breadcrumb do drill -->
           <div v-if="drill.campaign" class="flex items-center gap-1.5 min-w-0 flex-wrap">
-            <i class="fas fa-chevron-right text-[9px] text-ink-subtle"></i>
+            <i class="fas fa-chevron-right text-micro text-ink-subtle"></i>
             <span class="inline-flex items-center gap-1.5 max-w-[260px] rounded-md border border-accent/30 bg-accent/10 pl-2 pr-1 py-1 text-micro text-accent">
-              <i class="fas fa-bullhorn text-[9px]"></i>
+              <i class="fas fa-bullhorn text-micro"></i>
               <span class="truncate" :title="drill.campaign.name">{{ drill.campaign.name }}</span>
-              <button @click="clearCampaignDrill" class="w-4 h-4 rounded grid place-items-center hover:bg-accent/20" title="Remover escopo da campanha">
-                <i class="fas fa-times text-[9px]"></i>
+              <button type="button" @click="clearCampaignDrill" class="w-6 h-6 rounded grid place-items-center hover:bg-accent/20 focus-ring" title="Remover escopo da campanha">
+                <i class="fas fa-times text-micro"></i>
               </button>
             </span>
             <template v-if="drill.adset">
-              <i class="fas fa-chevron-right text-[9px] text-ink-subtle"></i>
+              <i class="fas fa-chevron-right text-micro text-ink-subtle"></i>
               <span class="inline-flex items-center gap-1.5 max-w-[240px] rounded-md border border-accent/30 bg-accent/10 pl-2 pr-1 py-1 text-micro text-accent">
-                <i class="fas fa-layer-group text-[9px]"></i>
+                <i class="fas fa-layer-group text-micro"></i>
                 <span class="truncate" :title="drill.adset.name">{{ drill.adset.name }}</span>
-                <button @click="clearAdsetDrill" class="w-4 h-4 rounded grid place-items-center hover:bg-accent/20" title="Remover escopo do conjunto">
-                  <i class="fas fa-times text-[9px]"></i>
+                <button type="button" @click="clearAdsetDrill" class="w-6 h-6 rounded grid place-items-center hover:bg-accent/20 focus-ring" title="Remover escopo do conjunto">
+                  <i class="fas fa-times text-micro"></i>
                 </button>
               </span>
             </template>
@@ -697,24 +757,8 @@ const levelTabs = computed(() => [
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- View mode: só no nível campanha -->
-          <div v-if="level === 'campaign'" class="inline-flex rounded-lg border border-line bg-surface p-0.5">
-            <button @click="setViewMode('list')"
-              :class="['px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
-                viewMode === 'list' ? 'bg-surface-sunken text-ink' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
-              <i class="fas fa-list text-[10px]"></i>Lista
-            </button>
-            <button @click="setViewMode('cards')"
-              :class="['px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
-                viewMode === 'cards' ? 'bg-surface-sunken text-ink' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
-              <i class="fas fa-grip text-[10px]"></i>Cards
-            </button>
-            <button @click="setViewMode('timeline')"
-              :class="['px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5',
-                viewMode === 'timeline' ? 'bg-surface-sunken text-ink' : 'text-ink-muted hover:text-ink hover:bg-surface-hover']">
-              <i class="fas fa-chart-gantt text-[10px]"></i>Timeline
-            </button>
-          </div>
+          <!-- Lista ou linha do tempo: só no nível campanha -->
+          <SegmentedControl v-if="level === 'campaign'" v-model="viewMode" :options="viewOptions" size="sm" />
 
           <div v-if="level === 'campaign'" class="text-micro text-ink-subtle whitespace-nowrap">
             <b>{{ filtered.length }}</b> campanha(s) no período
@@ -725,213 +769,108 @@ const levelTabs = computed(() => [
         </div>
       </div>
 
-      <!-- ══ NÍVEL: CONTAS (cards com direcionamento pro nível Campanhas) ══ -->
-      <template v-if="level === 'account'">
-        <div v-if="store.loadingReport && !accountRows.length"
-          class="py-16 text-center text-ink-subtle rounded-xl border border-line bg-surface-raised">
-          <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando contas...
-        </div>
-        <EmptyState v-else-if="!accountRows.length"
-          icon="fas fa-building-columns" title="Nenhuma conta com veiculação no período"
-          description="Amplie o período ou rode o backfill da série diária." />
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
-          <button v-for="(a, idx) in accountRows" :key="a.id" @click="focusAccount(a.name)"
-            class="text-left card-interactive card-enter surface-gradient overflow-hidden"
-            :style="{ '--i': Math.min(idx, 14) }"
-            :title="`Ver campanhas de ${a.name}`">
-            <div class="px-4 py-3.5 flex items-center gap-3 border-b border-line">
-              <span class="w-10 h-10 shrink-0 rounded-xl grid place-items-center text-white text-base
-                           bg-gradient-to-br from-brand-meta to-brand-meta-deep">
-                <i class="fab fa-meta"></i>
-              </span>
-              <div class="flex-1 min-w-0">
-                <div class="text-sm font-semibold text-ink truncate" :title="a.name">{{ a.name }}</div>
-                <div class="text-micro font-mono text-ink-subtle truncate">{{ a.id }}</div>
-              </div>
-              <span v-if="a.active" class="inline-flex rounded-md border border-data-pos/20 bg-data-pos/10 px-2 py-0.5 text-micro font-medium text-data-pos whitespace-nowrap">
-                {{ a.active }} ativa{{ a.active > 1 ? 's' : '' }}
-              </span>
-            </div>
-            <div class="px-4 py-3 grid grid-cols-2 gap-x-3 gap-y-2.5">
-              <div>
-                <div class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Investido</div>
-                <div class="text-base font-semibold text-ink tabular-nums mt-0.5">{{ fmtMoney(a.spend, a.currency) }}</div>
-              </div>
-              <div>
-                <div class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads</div>
-                <div class="text-base font-semibold text-ink tabular-nums mt-0.5">{{ fmtInt(a.leads) }}</div>
-              </div>
-              <div>
-                <div class="text-micro font-mono uppercase tracking-wider text-ink-subtle">CAC médio</div>
-                <div class="text-sm font-semibold text-ink tabular-nums mt-0.5">{{ a.cac != null ? fmtMoney(a.cac, a.currency) : '—' }}</div>
-              </div>
-              <div>
-                <div class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Campanhas</div>
-                <div class="text-sm font-semibold text-ink tabular-nums mt-0.5">{{ fmtInt(a.campaigns) }}</div>
-              </div>
-            </div>
-            <div class="px-4 pb-3 flex items-center gap-2 text-xs font-medium text-accent">
-              Ver campanhas <i class="fas fa-arrow-right text-[10px]"></i>
-            </div>
-          </button>
-        </div>
-      </template>
+      <!-- ══ NÍVEL: CONTAS (clique = filtra o nível Campanhas nesta conta) ══ -->
+      <Panel v-if="level === 'account'" :padded="false" title="Contas de anúncio" icon="fas fa-building-columns"
+        subtitle="Clique numa conta para ver as campanhas dela no período"
+        :loading="store.loadingReport && !accountRows.length" loading-variant="table"
+        :empty="!store.loadingReport && !accountRows.length" empty-icon="fas fa-building-columns"
+        empty-title="Nenhuma conta com veiculação no período" empty-text="Amplie o período ou rode o backfill da série diária.">
+        <DataTable :columns="ACCOUNT_COLUMNS" :rows="accountRows" row-key="id" sort-by="spend" sort-dir="desc" clickable
+          @row-click="focusAccount($event.name)">
+          <template #cell-name="{ row }">
+            <div class="text-ink font-medium truncate" :title="row.name">{{ row.name }}</div>
+            <div class="text-micro font-mono text-ink-subtle truncate">{{ row.id }}</div>
+          </template>
+          <template #cell-active="{ row }">
+            <Badge v-if="row.active" variant="success" size="sm">{{ row.active }} ativa{{ row.active > 1 ? 's' : '' }}</Badge>
+            <span v-else class="text-ink-subtle">0</span>
+          </template>
+          <template #cell-spend="{ row }"><b class="tabular-nums text-ink">{{ fmtMoney(row.spend, row.currency) }}</b></template>
+          <template #cell-cac="{ row }"><span class="tabular-nums">{{ row.cac != null ? fmtMoney(row.cac, row.currency) : '-' }}</span></template>
+        </DataTable>
+      </Panel>
 
       <!-- ══ NÍVEL: CAMPANHAS ═════════════════════════════════════════════ -->
       <template v-else-if="level === 'campaign'">
-        <!-- View: Cards -->
-        <div v-if="viewMode === 'cards'">
-          <CampaignsCardsView :campaigns="filtered" @select="openDetail" />
-        </div>
+        <!-- Timeline (Gantt) - janela = período mestre -->
+        <CampaignsTimelineView v-if="viewMode === 'timeline'"
+          :campaigns="filtered" :period-start="periodo.since" :period-end="periodo.until" @select="openDetail" />
 
-        <!-- View: Timeline (Gantt) — janela = período mestre -->
-        <div v-else-if="viewMode === 'timeline'">
-          <CampaignsTimelineView
-            :campaigns="filtered"
-            :period-start="periodo.since"
-            :period-end="periodo.until"
-            @select="openDetail" />
-        </div>
-
-        <!-- View: Lista -->
-        <!-- No celular a lista de 10 colunas so rolava de lado. Abaixo de md ela
-             usa o mesmo cartao da view Cards; a tabela continua no desktop. -->
-        <div v-else-if="filtered.length" class="md:hidden">
-          <CampaignsCardsView :campaigns="filtered" :currency="currency" @select="openDetail" />
-        </div>
-
-        <Surface v-if="viewMode === 'list'" variant="raised" padding="none"
-          :class="['overflow-hidden', filtered.length ? 'hidden md:block' : '']">
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-              <thead class="bg-surface-sunken/30 border-b border-line">
-                <tr>
-                  <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
-                  <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Conta</th>
-                  <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">Investido</th>
-                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads</th>
-                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle" title="Custo por lead no período">CAC</th>
-                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">CTR</th>
-                  <th class="px-3 py-2.5 text-right  text-micro font-mono uppercase tracking-wider text-ink-subtle">CPM</th>
-                  <th class="px-3 py-2.5 text-left   text-micro font-mono uppercase tracking-wider text-ink-subtle">Último</th>
-                  <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle w-32">Ações</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-line/60">
-                <tr v-if="store.loadingReport && !filtered.length">
-                  <td colspan="10" class="px-4 py-10 text-center text-ink-subtle">
-                    <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando...
-                  </td>
-                </tr>
-                <tr v-else-if="!filtered.length">
-                  <td colspan="10" class="px-4 py-10 text-center text-ink-subtle">
-                    Nenhuma campanha com veiculação no período.
-                    <span class="block text-xs mt-1">Amplie o período, ative "Sem veiculação no período" nos filtros, ou rode o backfill da série diária.</span>
-                  </td>
-                </tr>
-                <!-- Clique na linha abre o modal de detalhe (é onde se configura
-                     o vínculo); o drill pra conjuntos/anúncios fica na coluna Ações. -->
-                <tr v-else v-for="c in filtered" :key="c.id"
-                  @click="openDetail(c)"
-                  class="hover:bg-surface-hover/40 cursor-pointer transition-colors group">
-
-                  <!-- Campanha -->
-                  <td class="px-3 py-2.5">
-                    <div class="flex items-center gap-2">
-                      <span :class="['inline-block w-2 h-2 rounded-full shrink-0', priorityDot(c.priority).cls]" :title="priorityDot(c.priority).title"></span>
-                      <div class="min-w-0">
-                        <div class="text-ink font-medium leading-tight truncate max-w-[320px]" :title="c.name || c.id">
-                          {{ c.name || '(sem nome)' }}
-                          <span v-if="c.no_delivery" class="ml-1 text-micro text-ink-subtle italic font-normal">sem veiculação</span>
-                        </div>
-                        <div class="text-micro font-mono text-ink-subtle truncate">
-                          #{{ c.id }}<span v-if="c.objective"> · {{ c.objective }}</span>
-                          <span v-if="c.start_time"> · {{ fmtShortDate(c.start_time) }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Conta (clique = filtra a listagem nesta conta) -->
-                  <td class="px-3 py-2.5 text-xs max-w-[150px]">
-                    <button v-if="c.account_name" @click.stop="focusAccount(c.account_name)"
-                      class="text-ink-muted hover:text-accent hover:underline truncate max-w-full text-left"
-                      :title="`Filtrar pela conta ${c.account_name}`">
-                      {{ c.account_name }}
-                    </button>
-                    <span v-else class="text-ink-muted">{{ c.account_id }}</span>
-                  </td>
-
-                  <!-- Status (clique = filtra a listagem por este status) -->
-                  <td class="px-3 py-2.5 text-center">
-                    <button @click.stop="focusStatus(statusBadge(c).label)"
-                      :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium hover:ring-1 hover:ring-accent/40 transition', statusBadge(c).cls]"
-                      :title="`Filtrar por ${statusBadge(c).label}`">
-                      {{ statusBadge(c).label }}
-                    </button>
-                  </td>
-
-                  <!-- Métricas do período -->
-                  <td class="px-3 py-2.5 text-right whitespace-nowrap">
-                    <div class="text-sm font-semibold text-ink leading-tight">{{ fmtMoney(c.spend, c.currency) }}</div>
-                    <div v-if="c.daily_budget_cents" class="text-micro text-ink-subtle">{{ fmtMoney(c.daily_budget_cents / 100, c.currency) }}/dia</div>
-                  </td>
-
-                  <td class="px-3 py-2.5 text-right whitespace-nowrap">
-                    <div class="text-sm font-semibold text-ink leading-tight"
-                      title="Leads da nossa base no período (com nome, telefone e e-mail). Spam fora.">
-                      {{ fmtInt(c.office_leads || 0) }}
-                    </div>
-                    <div v-if="(c.office_leads_delivered || 0) > 0"
-                      class="text-micro text-ink-subtle tabular-nums"
-                      title="Leads já entregues ao CV">
-                      {{ fmtInt(c.office_leads_delivered) }} no CV
-                    </div>
-                  </td>
-
-                  <td class="px-3 py-2.5 text-right whitespace-nowrap text-sm">
-                    <span v-if="c.cac != null" class="font-medium text-ink" title="CAC = investido ÷ leads da nossa base no período">
-                      {{ fmtMoney(c.cac, c.currency) }}
-                    </span>
-                    <span v-else class="text-ink-subtle italic text-xs">—</span>
-                  </td>
-
-                  <td class="px-3 py-2.5 text-right text-micro text-ink-muted">{{ fmtPct(c.ctr) }}</td>
-                  <td class="px-3 py-2.5 text-right text-micro text-ink-muted">{{ c.cpm != null ? fmtMoney(c.cpm, c.currency) : '—' }}</td>
-
-                  <!-- Último lead -->
-                  <td class="px-3 py-2.5 text-micro text-ink-muted whitespace-nowrap">
-                    {{ fmtRelative(c.lead_stats?.last_lead_at) }}
-                  </td>
-
-                  <!-- Ações: direcionamento por item (detalhe / conjuntos / anúncios) -->
-                  <td class="px-3 py-2.5">
-                    <div class="flex gap-1 justify-center">
-                      <IconButton icon="fas fa-eye" size="sm" label="Detalhe da campanha (vínculo, leads)"
-                        @click.stop="openDetail(c)" />
-                      <IconButton icon="fas fa-layer-group" size="sm" label="Ver conjuntos desta campanha"
-                        @click.stop="drillIntoCampaign(c)" />
-                      <IconButton icon="fas fa-image" size="sm" label="Ver anúncios (artes) desta campanha"
-                        @click.stop="drillIntoCampaignAds(c)" />
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Surface>
+        <!-- Lista: clique na linha abre o detalhe (é onde se configura o vínculo);
+             o drill para conjuntos/anúncios fica nas ações da linha. -->
+        <Panel v-else :padded="false" title="Campanhas" icon="fas fa-bullhorn"
+          :subtitle="`${fmtInt(filtered.length)} campanha(s) no período`"
+          :loading="store.loadingReport && !filtered.length" loading-variant="table"
+          :empty="!store.loadingReport && !filtered.length" empty-icon="fas fa-bullhorn"
+          empty-title="Nenhuma campanha com veiculação no período"
+          empty-text="Amplie o período, ative &quot;Sem veiculação no período&quot; nos filtros, ou rode o backfill da série diária.">
+          <DataTable :columns="CAMPAIGN_COLUMNS" :rows="campaignTableRows" row-key="id" sort-by="spend" sort-dir="desc" clickable
+            @row-click="openDetail">
+            <template #cell-name="{ row }">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="inline-block w-2 h-2 rounded-full shrink-0" :class="priorityDot(row.priority).cls" v-tippy="priorityDot(row.priority).title"></span>
+                <div class="min-w-0">
+                  <div class="text-ink font-medium leading-tight truncate" :title="row.name || row.id">
+                    {{ row.name || '(sem nome)' }}
+                    <span v-if="row.no_delivery" class="ml-1 text-micro text-ink-subtle italic font-normal">sem veiculação</span>
+                  </div>
+                  <div class="text-micro font-mono text-ink-subtle truncate">
+                    #{{ row.id }}<span v-if="row.objective"> · {{ row.objective }}</span><span v-if="row.start_time"> · {{ fmtShortDate(row.start_time) }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template #cell-account_name="{ row }">
+              <button v-if="row.account_name" type="button" @click.stop="focusAccount(row.account_name)"
+                class="text-ink-muted hover:text-accent hover:underline truncate max-w-full text-left focus-ring rounded"
+                :title="`Filtrar pela conta ${row.account_name}`">{{ row.account_name }}</button>
+              <span v-else class="text-ink-muted">{{ row.account_id }}</span>
+            </template>
+            <template #cell-status_label="{ row }">
+              <button type="button" @click.stop="focusStatus(statusBadge(row).label)" class="focus-ring rounded-md" :title="`Filtrar por ${statusBadge(row).label}`">
+                <Badge :variant="statusBadge(row).variant" size="sm">{{ statusBadge(row).label }}</Badge>
+              </button>
+            </template>
+            <template #cell-spend="{ row }">
+              <b class="tabular-nums text-ink">{{ fmtMoney(row.spend, row.currency) }}</b>
+              <div v-if="row.daily_budget_cents" class="text-micro text-ink-subtle">{{ fmtMoney(row.daily_budget_cents / 100, row.currency) }}/dia</div>
+            </template>
+            <template #cell-office_leads="{ row }">
+              <b class="tabular-nums text-ink" v-tippy="'Leads da nossa base no período (com nome, telefone e e-mail). Spam fora.'">{{ fmtInt(row.office_leads) }}</b>
+              <div v-if="(row.office_leads_delivered || 0) > 0" class="text-micro text-ink-subtle tabular-nums">{{ fmtInt(row.office_leads_delivered) }} no CV</div>
+            </template>
+            <template #cell-cac="{ row }">
+              <span v-if="row.cac != null" class="tabular-nums text-ink" v-tippy="'CAC = investido ÷ leads da nossa base no período'">{{ fmtMoney(row.cac, row.currency) }}</span>
+              <span v-else class="text-ink-subtle">-</span>
+            </template>
+            <template #actions="{ row }">
+              <div class="flex gap-1 justify-end">
+                <IconButton icon="fas fa-eye" size="sm" label="Detalhe da campanha (vínculo, leads)" @click.stop="openDetail(row)" />
+                <IconButton icon="fas fa-layer-group" size="sm" label="Ver conjuntos desta campanha" @click.stop="drillIntoCampaign(row)" />
+                <IconButton icon="fas fa-image" size="sm" label="Ver anúncios (artes) desta campanha" @click.stop="drillIntoCampaignAds(row)" />
+              </div>
+            </template>
+          </DataTable>
+        </Panel>
       </template>
 
       <!-- ══ NÍVEL: CONJUNTOS ═════════════════════════════════════════════ -->
-      <template v-else-if="level === 'adset'">
-        <AdSetsTable
-          :adsets="adsetRows"
-          :loading="store.loadingReport"
-          :currency="currency"
-          :show-campaign="!drill.campaign"
-          @drill="drillIntoAdSet" />
-      </template>
+      <Panel v-else-if="level === 'adset'" :padded="false" title="Conjuntos de anúncio" icon="fas fa-layer-group"
+        subtitle="Clique num conjunto para ver os anúncios dele"
+        :loading="store.loadingReport && !adsetRows.length" loading-variant="table"
+        :empty="!store.loadingReport && !adsetRows.length" empty-icon="fas fa-layer-group"
+        empty-title="Nenhum conjunto com veiculação no período">
+        <DataTable :columns="drill.campaign ? ADSET_COLUMNS.filter(c => c.key !== 'campaign_name') : ADSET_COLUMNS"
+          :rows="adsetTableRows" row-key="id" sort-by="spend" sort-dir="desc" clickable @row-click="drillIntoAdSet">
+          <template #cell-name="{ row }">
+            <div class="text-ink font-medium leading-tight truncate" :title="row.name">{{ row.name || '(não sincronizado)' }}</div>
+            <div class="text-micro font-mono text-ink-subtle truncate">#{{ row.id }}</div>
+          </template>
+          <template #cell-status_label="{ row }"><Badge :variant="statusBadge(row).variant" size="sm">{{ statusBadge(row).label }}</Badge></template>
+          <template #cell-spend="{ row }"><b class="tabular-nums text-ink">{{ fmtMoney(row.spend, row.currency || currency) }}</b></template>
+          <template #cell-cac="{ row }"><span class="tabular-nums">{{ row.cac != null ? fmtMoney(row.cac, row.currency || currency) : '-' }}</span></template>
+        </DataTable>
+      </Panel>
 
       <!-- ══ NÍVEL: ANÚNCIOS (artes) ══════════════════════════════════════ -->
       <template v-else-if="level === 'ad'">
@@ -942,67 +881,37 @@ const levelTabs = computed(() => [
           :show-campaign="!drill.campaign" />
       </template>
 
-      <!-- ══ NÍVEL: FORMULÁRIOS (lead forms da Meta — clique abre o mapping) ══ -->
-      <template v-else>
-        <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
-          <p class="text-xs text-ink-muted">
-            <i class="fab fa-meta text-accent mr-1"></i>
-            Formulários de Lead Ads da Página. O vínculo (empreendimento/mídia) vive na <b>campanha</b>;
-            aqui você mapeia os <b>campos</b> (pergunta → CV) e vê os leads recentes de cada form.
-          </p>
-          <Button v-if="isAdmin" variant="secondary" size="sm" icon="fas fa-arrows-rotate"
-            :loading="metaFormsStore.syncing" @click="metaFormsStore.syncFromMeta()">
-            Sincronizar forms
+      <!-- ══ NÍVEL: FORMULÁRIOS (lead forms da Meta - clique abre o mapping) ══ -->
+      <Panel v-else :padded="false" title="Formulários de Lead Ads" icon="fas fa-rectangle-list"
+        subtitle="O vínculo (empreendimento/mídia) vive na campanha; aqui você mapeia os campos (pergunta → CV) e vê os leads de cada form"
+        :loading="metaFormsStore.loading && !metaFormRows.length" loading-variant="table"
+        :empty="!metaFormsStore.loading && !metaFormRows.length" empty-icon="fas fa-rectangle-list"
+        empty-title="Nenhum formulário Meta no cache" empty-text="Sincronize os formulários para puxar os da Página.">
+        <template v-if="isAdmin" #actions>
+          <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" :loading="metaFormsStore.syncing" @click="metaFormsStore.syncFromMeta()">
+            <span class="hidden sm:inline">Sincronizar forms</span>
           </Button>
-        </div>
-
-        <div v-if="metaFormsStore.loading && !metaFormRows.length"
-          class="py-16 text-center text-ink-subtle rounded-xl border border-line bg-surface-raised">
-          <i class="fas fa-circle-notch fa-spin mr-2"></i>Carregando formulários...
-        </div>
-        <EmptyState v-else-if="!metaFormRows.length"
-          icon="fas fa-rectangle-list" title="Nenhum formulário Meta no cache"
-          description="Clique em Sincronizar forms para puxar os formulários da Página." />
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          <button v-for="(f, idx) in metaFormRows" :key="f.id" @click="openMetaForm(f)"
-            class="text-left card-interactive card-enter surface-gradient p-4 flex flex-col gap-3"
-            :style="{ '--i': Math.min(idx, 14) }"
-            :title="`Abrir mapeamento de ${f.name}`">
-            <div class="flex items-start gap-3">
-              <span class="w-10 h-10 shrink-0 rounded-xl grid place-items-center text-[15px] bg-accent-soft text-accent">
-                <i class="fas fa-rectangle-list"></i>
-              </span>
-              <div class="flex-1 min-w-0">
-                <div class="text-sm font-semibold text-ink truncate" :title="f.name">{{ f.name || `#${f.id}` }}</div>
-                <div class="text-micro text-ink-subtle truncate mt-0.5">
-                  <i class="fab fa-facebook text-[10px] mr-1"></i>{{ f.page_name || f.page_id }}
-                </div>
-              </div>
-              <span :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium whitespace-nowrap',
-                String(f.status).toUpperCase() === 'ACTIVE'
-                  ? 'border-data-pos/20 bg-data-pos/10 text-data-pos'
-                  : 'border-line/20 bg-slate-500/10 text-ink-muted']">
-                {{ String(f.status).toUpperCase() === 'ACTIVE' ? 'Ativo' : (f.status || '—') }}
-              </span>
+        </template>
+        <template v-if="isAdmin" #emptyActions>
+          <Button variant="primary" size="sm" icon="fas fa-arrows-rotate" :loading="metaFormsStore.syncing" @click="metaFormsStore.syncFromMeta()">Sincronizar forms</Button>
+        </template>
+        <DataTable :columns="FORM_COLUMNS" :rows="formTableRows" row-key="id" sort-by="name" clickable @row-click="openMetaForm">
+          <template #cell-name="{ row }">
+            <div class="text-ink font-medium truncate" :title="row.name">{{ row.name || `#${row.id}` }}</div>
+            <div v-if="formQuestionChips(row).length" class="flex flex-wrap gap-1 mt-1">
+              <span v-for="q in formQuestionChips(row)" :key="q" class="text-micro px-1.5 py-0.5 rounded-md bg-surface-sunken border border-line text-ink-muted truncate max-w-[160px]">{{ q }}</span>
             </div>
-            <div class="flex items-center gap-4 text-xs text-ink-muted">
-              <span v-if="Array.isArray(f.questions)" class="tabular-nums">
-                <i class="fas fa-list-check text-[10px] mr-1 text-ink-subtle"></i>{{ f.questions.length }} pergunta{{ f.questions.length === 1 ? '' : 's' }}
-              </span>
-              <span v-if="f.midia_slug" class="font-mono truncate" :title="`Mídia (fallback): ${f.midia_slug}`">
-                <i class="fas fa-hashtag text-[10px] mr-1 text-ink-subtle"></i>{{ f.midia_slug }}
-              </span>
-              <Badge v-if="f.mapping_active === false" variant="warning" size="sm" :dot="false">mapping off</Badge>
-            </div>
-            <div v-if="formQuestionChips(f).length" class="flex flex-wrap gap-1.5">
-              <span v-for="q in formQuestionChips(f)" :key="q"
-                class="text-micro px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-ink-muted truncate max-w-[160px]">
-                {{ q }}
-              </span>
-            </div>
-          </button>
-        </div>
-      </template>
+          </template>
+          <template #cell-page_name="{ row }"><span class="text-ink-muted">{{ row.page_name || row.page_id }}</span></template>
+          <template #cell-status="{ row }">
+            <Badge :variant="String(row.status).toUpperCase() === 'ACTIVE' ? 'success' : 'neutral'" size="sm">
+              {{ String(row.status).toUpperCase() === 'ACTIVE' ? 'Ativo' : (row.status || '-') }}
+            </Badge>
+            <Badge v-if="row.mapping_active === false" variant="warning" size="sm" class="ml-1">mapping off</Badge>
+          </template>
+          <template #cell-midia_slug="{ row }"><span class="font-mono text-ink-muted">{{ row.midia_slug || '-' }}</span></template>
+        </DataTable>
+      </Panel>
 
       <CampaignDetailModal
         v-model:open="detailOpen"

@@ -12,6 +12,10 @@ import { useToast } from 'vue-toastification';
 import Modal from '@/components/UI/Modal.vue';
 import Button from '@/components/UI/Button.vue';
 import Switch from '@/components/UI/Switch.vue';
+import Input from '@/components/UI/Input.vue';
+import Select from '@/components/UI/Select.vue';
+import Collapsible from '@/components/UI/Collapsible.vue';
+import { fieldBase, labelBase } from '@/components/UI/_classes.js';
 import EnterpriseMultiSelect from '@/components/Marketing/EnterpriseMultiSelect.vue';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
 
@@ -85,6 +89,29 @@ const vaiRotear = computed(() => form.value.mapping_active && form.value.bound_e
 // Conta externa: o empreendimento nem tem fila no CV (caso London). Lead
 // entra como "Fora do CV" e a Central para de cobrar vínculo e de alertar.
 const foraDoCv = computed(() => form.value.mapping_active && form.value.cv_skip && !form.value.bound_empreendimentos.length);
+
+// Opções dos seletores (o Select só aceita { value, label }; "" é o placeholder
+// dele, então o padrão usa um sentinela).
+const ORIGEM_DEFAULT = '__padrao__';
+const origemOptions = computed(() => [
+    { value: ORIGEM_DEFAULT, label: `Padrão (${props.defaults?.cv_origem || 'FB'})` },
+    { value: 'FB', label: 'FB (Facebook)' },
+    { value: 'IG', label: 'IG (Instagram)' },
+]);
+const cvOrigemSel = computed({
+    get: () => form.value.cv_origem || ORIGEM_DEFAULT,
+    set: (v) => { form.value.cv_origem = v === ORIGEM_DEFAULT ? '' : v; },
+});
+const SEM_FILA = '__sem_fila__';
+const filaOptions = computed(() => [
+    { value: SEM_FILA, label: 'Sem fila (retorno não se aplica)' },
+    ...queues.value.map(f => ({
+        value: String(f.idfila),
+        label: `${f.nome} · ${atendeDaFila(f) ? `atende: ${atendeDaFila(f)}` : 'ainda não atende ninguém'}${f.qtd_corretores ? ` · ${f.qtd_corretores} atendente(s)` : ''}`,
+    })),
+]);
+function filaSel(id) { const v = filaDe(id); return v ? String(v) : SEM_FILA; }
+function onFilaSel(id, v) { setFila(id, v === SEM_FILA ? null : v); }
 
 // Fila escolhida para um empreendimento: o rascunho do modal, senão a atual.
 function filaDe(id) {
@@ -212,14 +239,8 @@ async function save() {
               <span class="text-xs text-ink sm:w-56 truncate" :title="nomeEmp(id)">
                 {{ nomeEmp(id) }}<span v-if="empCity.get(Number(id))" class="text-ink-subtle"> ({{ empCity.get(Number(id)) }})</span>
               </span>
-              <select :value="filaDe(id) ?? ''" @change="e => setFila(id, e.target.value)"
-                class="flex-1 min-h-[40px] rounded border bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-accent/40"
-                :class="filaForaDaPraca(id) ? 'border-data-neg/60' : 'border-line'">
-                <option value="">Sem fila (retorno não se aplica)</option>
-                <option v-for="f in queues" :key="f.idfila" :value="f.idfila">
-                  {{ f.nome }} · {{ atendeDaFila(f) ? `atende: ${atendeDaFila(f)}` : 'ainda não atende ninguém' }}{{ f.qtd_corretores ? ` · ${f.qtd_corretores} atendente(s)` : '' }}
-                </option>
-              </select>
+              <Select :model-value="filaSel(id)" @update:model-value="v => onFilaSel(id, v)" :options="filaOptions"
+                size="sm" placeholder="" class="flex-1" :classes="filaForaDaPraca(id) ? 'border-data-neg' : ''" />
             </div>
             <p v-if="filaForaDaPraca(id)" class="text-micro text-data-neg sm:pl-[15rem]">
               <i class="fas fa-triangle-exclamation mr-1"></i>
@@ -231,37 +252,21 @@ async function save() {
 
       <!-- Mídia + origem -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="sm:col-span-2">
-          <label class="text-sm font-medium text-ink block mb-1">Mídia (CV)</label>
-          <input v-model="form.midia_slug" type="text" :placeholder="defaults?.midia_slug || 'Facebook Ads'"
-            class="w-full min-h-[40px] rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
-          <p class="text-micro text-ink-subtle mt-1">Vazio = padrão de Configurações ("{{ defaults?.midia_slug || 'Facebook Ads' }}").</p>
-        </div>
-        <div>
-          <label class="text-sm font-medium text-ink block mb-1">Origem CV</label>
-          <select v-model="form.cv_origem" class="w-full min-h-[40px] rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40">
-            <option value="">Padrão ({{ defaults?.cv_origem || 'FB' }})</option>
-            <option value="FB">FB (Facebook)</option>
-            <option value="IG">IG (Instagram)</option>
-          </select>
-        </div>
+        <Input v-model="form.midia_slug" label="Mídia (CV)" class="sm:col-span-2"
+          :placeholder="defaults?.midia_slug || 'Facebook Ads'"
+          :hint="`Vazio = padrão de Configurações (${defaults?.midia_slug || 'Facebook Ads'}).`" />
+        <Select v-model="cvOrigemSel" label="Origem CV" :options="origemOptions" placeholder="" />
       </div>
 
-      <details class="rounded-lg border border-line/60 bg-surface-sunken/30 px-3 py-2.5">
-        <summary class="text-xs font-medium text-ink cursor-pointer"><i class="fas fa-tag mr-1.5 text-accent"></i>Tags e observação (opcional)</summary>
-        <div class="mt-3 space-y-3">
+      <Collapsible title="Tags e observação" icon="fas fa-tag" hint="opcional">
+        <div class="mt-2 space-y-3">
+          <Input v-model="form.tags_str" label="Tags" placeholder="lancamento, vip" hint="Separadas por vírgula." />
           <div>
-            <label class="text-micro text-ink-subtle">Tags (separadas por vírgula)</label>
-            <input v-model="form.tags_str" type="text" placeholder="lancamento, vip"
-              class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40" />
-          </div>
-          <div>
-            <label class="text-micro text-ink-subtle">Observação interna</label>
-            <textarea v-model="form.notes" rows="2"
-              class="w-full rounded border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:border-accent/40 resize-y" />
+            <label :class="labelBase">Observação interna</label>
+            <textarea v-model="form.notes" rows="2" :class="[fieldBase, 'rounded-lg px-3 py-2 text-sm resize-y']" />
           </div>
         </div>
-      </details>
+      </Collapsible>
 
       <!-- Preview -->
       <div class="rounded-lg border px-3 py-2.5"

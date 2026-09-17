@@ -30,7 +30,7 @@ const meta = computed(() => META[props.status] || { label: props.status, variant
 
 <template>
   <Badge :variant="meta.variant" :size="size" :dot="dot">
-    <i :class="meta.icon" class="text-[10px]"></i>
+    <i :class="meta.icon" class="text-micro"></i>
     <span>{{ meta.label }}</span>
   </Badge>
 </template>

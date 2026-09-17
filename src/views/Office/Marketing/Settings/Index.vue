@@ -1,10 +1,10 @@
 <script setup>
-// Central Meta › aba Configurações — regras do pipeline de captação:
+// Central Meta › aba Configurações - regras do pipeline de captação:
 // modo sombra, resiliência do despacho, destinatários dos alertas e endpoint CV.
-// (Panel do hub /meta — sem PageContainer/PageHeader próprios.)
+// (Panel do hub /meta - sem PageContainer/PageHeader próprios.)
 //
 // As credenciais (App ID/Secret, verify token, access token do Lead Ads)
-// moraram aqui até 2026-07-23 — agora vivem na aba Credenciais da Central Meta.
+// moraram aqui até 2026-07-23 - agora vivem na aba Credenciais da Central Meta.
 
 import { onMounted, ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
@@ -19,7 +19,7 @@ const store = useMarketingSettingsStore();
 const toast = useToast();
 const authStore = useAuthStore();
 
-// Buffer de edição separado da config persistida — usuário edita sem afetar
+// Buffer de edição separado da config persistida - usuário edita sem afetar
 // o estado do banco até clicar Salvar.
 const draft = ref({
     dry_run: true,
@@ -92,7 +92,7 @@ function removeRecipient(id) {
 }
 
 async function save() {
-    // cv_leads_endpoint saiu da tela (padrão do sistema) — o backend preserva o valor.
+    // cv_leads_endpoint saiu da tela (padrão do sistema) - o backend preserva o valor.
     const patch = {
         dry_run: draft.value.dry_run,
         retry_max_attempts: Number(draft.value.retry_max_attempts) || 6,
@@ -147,7 +147,7 @@ async function save() {
               <h3 class="text-sm font-semibold text-ink mb-1">Modo sombra (dry-run)</h3>
               <p class="text-xs text-ink-muted">
                 Quando ligado, leads são capturados e o JSON que iria pro CV é registrado como
-                evento <code class="font-mono">dry_run</code> na timeline — mas <strong>nada é enviado</strong> pro CV.
+                evento <code class="font-mono">dry_run</code> na timeline - mas <strong>nada é enviado</strong> pro CV.
                 Use pra testar em paralelo sem duplicar nada no CRM.
               </p>
             </div>
@@ -155,7 +155,7 @@ async function save() {
           </div>
           <p v-if="draft.dry_run" class="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
             <i class="fas fa-eye-slash mr-1"></i>
-            Modo sombra ligado — os leads não estão sendo enviados ao CV.
+            Modo sombra ligado - os leads não estão sendo enviados ao CV.
           </p>
           <p v-else class="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
             <i class="fas fa-triangle-exclamation mr-1"></i>
@@ -256,7 +256,7 @@ async function save() {
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input v-model="draft.retry_max_attempts" label="Máximo de tentativas" type="number" size="sm"
-              hint="Default 6 — equivale a ~1h de re-tentativas com backoff" />
+              hint="Default 6 - equivale a ~1h de re-tentativas com backoff" />
             <Input v-model="draft.form_rate_limit_per_min" label="Limite de submissões por IP/min" type="number" size="sm"
               hint="Anti-flood do formulário público. Default 10" />
           </div>
@@ -286,7 +286,7 @@ async function save() {
           </div>
           <p v-else class="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
             <i class="fas fa-triangle-exclamation mr-1"></i>
-            Nenhum destinatário selecionado — os alertas irão para <strong>todos os admins ativos</strong>.
+            Nenhum destinatário selecionado - os alertas irão para <strong>todos os admins ativos</strong>.
           </p>
 
           <div class="flex flex-col sm:flex-row gap-2">

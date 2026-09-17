@@ -1,5 +1,5 @@
 <script setup>
-// Banner de saúde da captação — só aparece quando há sinais que merecem ação.
+// Banner de saúde da captação - só aparece quando há sinais que merecem ação.
 // Cada "sinal" é uma faixa colorida discreta no topo da tela. Sinais com
 // `filter` são clicáveis: aplicam o filtro de status no inbox SEM recorte de
 // período (os problemas podem ser antigos e sumiriam no mês atual).
@@ -31,7 +31,7 @@ const signals = computed(() => {
             tone: 'warning',
             icon: 'fas fa-eye-slash',
             title: 'Modo sombra ativo',
-            detail: 'Os leads não estão sendo enviados ao CV — desligue o modo sombra na aba Configurações quando estiver pronto.',
+            detail: 'Os leads não estão sendo enviados ao CV - desligue o modo sombra na aba Configurações quando estiver pronto.',
         });
     }
 
@@ -45,7 +45,7 @@ const signals = computed(() => {
         });
     }
 
-    // Recusados pelo CV (4xx / sucesso:false) NUNCA são re-tentados sozinhos —
+    // Recusados pelo CV (4xx / sucesso:false) NUNCA são re-tentados sozinhos -
     // antes acumulavam em silêncio, sem nenhum alerta.
     const rejectedTotal = h.counts?.rejected || 0;
     if (rejectedTotal > 0) {
@@ -58,14 +58,14 @@ const signals = computed(() => {
         });
     }
 
-    // Webhook chegou mas o fetch dos dados na Graph API falhou — o scheduler
+    // Webhook chegou mas o fetch dos dados na Graph API falhou - o scheduler
     // re-tenta com backoff; se persistir, é token/permissão da Meta.
     if (h.pending_fetch > 0) {
         arr.push({
             tone: 'warning',
             icon: 'fas fa-cloud-arrow-down',
             title: `${h.pending_fetch} lead${h.pending_fetch > 1 ? 's' : ''} aguardando dados da Meta`,
-            detail: 'O webhook avisou do lead, mas a busca dos dados na Graph API falhou. Re-tentando automaticamente — se persistir, confira o token na aba Credenciais.',
+            detail: 'O webhook avisou do lead, mas a busca dos dados na Graph API falhou. Re-tentando automaticamente - se persistir, confira o token na aba Credenciais.',
             filter: 'received',
         });
     }
@@ -75,7 +75,7 @@ const signals = computed(() => {
             tone: 'warning',
             icon: 'fas fa-hourglass-half',
             title: `Lead mais antigo em "Aguardando vínculo": ${oldestHeldAge.value} dia${oldestHeldAge.value > 1 ? 's' : ''}`,
-            detail: 'Defina mapping de campanha na aba Campanhas pra rotear automaticamente — ou clique pra abrir os leads e resolver o vínculo.',
+            detail: 'Defina mapping de campanha na aba Campanhas pra rotear automaticamente - ou clique pra abrir os leads e resolver o vínculo.',
             filter: 'held',
         });
     }

@@ -1,12 +1,12 @@
 <script setup>
-// Modal do Lead Form Meta — visão por form (não confunde com mapping de
+// Modal do Lead Form Meta - visão por form (não confunde com mapping de
 // roteamento, que vive na campanha agora).
 //
 // Tabs:
-//   1. Estrutura & Mapeamento — perguntas do form e pra qual campo CV vão
-//   2. Gestão interna — descrição, prioridade, referência de campanha
-//   3. Comparativo — Meta × Office × CV (números + funil)
-//   4. Leads recentes — últimos 20 + CSV export
+//   1. Estrutura & Mapeamento - perguntas do form e pra qual campo CV vão
+//   2. Gestão interna - descrição, prioridade, referência de campanha
+//   3. Comparativo - Meta × Office × CV (números + funil)
+//   4. Leads recentes - últimos 20 + CSV export
 //
 // Vínculo CV (empreendimento, mídia, UTMs, extras) MIGROU pra MetaCampaign.
 
@@ -91,7 +91,7 @@ watch([() => props.open, () => props.form], async ([isOpen, f]) => {
 function fmtMoney(v) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0); }
 function fmtInt(v)   { return new Intl.NumberFormat('pt-BR').format(Number(v) || 0); }
 function fmtRelative(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     const ms = Date.now() - new Date(iso).getTime();
     if (ms < 0) return 'agora';
     const min = Math.floor(ms / 60000);
@@ -118,8 +118,8 @@ const statusBadge = computed(() => {
     if (s === 'ACTIVE')   return { label: 'Ativo na Meta',  cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
     if (s === 'ARCHIVED') return { label: 'Arquivado',      cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
     if (s === 'DELETED')  return { label: 'Excluído',       cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
-    if (s === 'DRAFT')    return { label: 'Rascunho',       cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
-    return { label: s || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    if (s === 'DRAFT')    return { label: 'Rascunho',       cls: 'bg-surface-sunken text-ink-muted border-line' };
+    return { label: s || '-', cls: 'bg-surface-sunken text-ink-muted border-line' };
 });
 
 const stats = computed(() => props.form?.stats || { total: 0, last_30d: 0, delivered: 0, held: 0, spam: 0, failed: 0, last_lead_at: null });
@@ -141,7 +141,7 @@ function effectiveMapping(item) {
 }
 
 function targetLabel(targetKey) {
-    if (!targetKey) return '—';
+    if (!targetKey) return '-';
     const target = fmEditor.value?.available_targets?.find(t => t.key === targetKey);
     return target?.label || targetKey;
 }
@@ -263,7 +263,7 @@ const sections = [
               activeSection === s.key
                 ? 'border-accent text-accent'
                 : 'border-transparent text-ink-muted hover:text-ink']">
-            <i :class="s.icon" class="text-[10px]"></i>
+            <i :class="s.icon" class="text-micro"></i>
             {{ s.label }}
           </button>
         </div>
@@ -312,7 +312,7 @@ const sections = [
               <div class="flex items-center gap-2 shrink-0 min-w-[280px]">
                 <select v-model="fmDraft[item.question_key]"
                   class="rounded border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:outline-none focus:border-accent/40">
-                  <option value="">— Auto ({{ targetLabel(item.auto_detected) || 'extra_fields' }}) —</option>
+                  <option value="">- Auto ({{ targetLabel(item.auto_detected) || 'extra_fields' }}) -</option>
                   <optgroup v-for="grp in fmGrouped" :key="grp.group" :label="grp.group">
                     <option v-for="t in grp.items" :key="t.key" :value="t.key">{{ t.label }}</option>
                   </optgroup>
@@ -365,7 +365,7 @@ const sections = [
           <div>
             <label class="text-sm font-medium text-ink block mb-1">Descrição interna</label>
             <textarea v-model="description" rows="3"
-              placeholder="Notas pra equipe — ex: form do lançamento Wish, criado em 03/2026"
+              placeholder="Notas pra equipe - ex: form do lançamento Wish, criado em 03/2026"
               class="w-full rounded border border-line bg-surface px-3 py-2 text-sm text-ink placeholder-ink-subtle focus:outline-none focus:border-accent/40 resize-y" />
           </div>
 
@@ -397,7 +397,7 @@ const sections = [
         <!-- ── Leads recentes ────────────────────────────────────────────── -->
         <section v-show="activeSection === 'leads'" class="space-y-2">
           <div class="flex justify-between items-center">
-            <div class="text-micro text-ink-subtle">Últimos 20 — pra ver todos, exporte CSV.</div>
+            <div class="text-micro text-ink-subtle">Últimos 20 - pra ver todos, exporte CSV.</div>
             <Button variant="ghost" size="sm" icon="fas fa-download" :loading="downloadingCsv" @click="exportCsv(null)">Exportar CSV</Button>
           </div>
 
@@ -417,7 +417,7 @@ const sections = [
                   <div class="text-micro font-mono text-ink-subtle mt-0.5">{{ l.midia_slug || 'sem mídia' }}</div>
                   <div class="text-micro mt-0.5">
                     <span v-if="l.cv_idlead" class="font-mono text-data-pos">
-                      <i class="fas fa-check-circle text-[9px]"></i> CV #{{ l.cv_idlead }}
+                      <i class="fas fa-check-circle text-micro"></i> CV #{{ l.cv_idlead }}
                     </span>
                     <span v-else class="text-ink-subtle italic">sem match no CV</span>
                   </div>
@@ -446,10 +446,10 @@ const sections = [
                     <div class="text-ink text-xs">{{ l.nome || '(sem nome)' }}</div>
                     <div class="text-micro text-ink-subtle">{{ l.email || l.telefone || '' }}</div>
                   </td>
-                  <td class="px-3 py-2 text-micro font-mono text-ink-muted">{{ l.midia_slug || '—' }}</td>
+                  <td class="px-3 py-2 text-micro font-mono text-ink-muted">{{ l.midia_slug || '-' }}</td>
                   <td class="px-3 py-2 text-center">
                     <span v-if="l.cv_idlead" class="inline-flex items-center gap-1 text-micro font-mono text-data-pos">
-                      <i class="fas fa-check-circle text-[9px]"></i>#{{ l.cv_idlead }}
+                      <i class="fas fa-check-circle text-micro"></i>#{{ l.cv_idlead }}
                     </span>
                     <span v-else class="text-micro text-ink-subtle italic">sem match</span>
                   </td>

@@ -23,7 +23,7 @@ const CHANNEL_META = {
     meta_lead_ads: { label: 'Meta', icon: 'fab fa-meta', cls: 'text-accent' },
     site_form:     { label: 'Site', icon: 'fas fa-globe',  cls: 'text-accent' },
 };
-const channelMeta = (c) => CHANNEL_META[c] || { label: c || '—', icon: 'fas fa-question', cls: 'text-ink-subtle' };
+const channelMeta = (c) => CHANNEL_META[c] || { label: c || '-', icon: 'fas fa-question', cls: 'text-ink-subtle' };
 
 const CV_ORIGEM_LABEL = {
     FB: 'FB · Facebook', IG: 'IG · Instagram', SI: 'SI · Site',
@@ -70,13 +70,13 @@ const CV_ORIGEM_LABEL = {
                 class="hover:opacity-80 transition" :title="`Filtrar por este status`">
                 <LeadStatusBadge :status="lead.status" size="sm" />
               </button>
-              <Badge v-if="lead.is_reentry" variant="info" size="sm" class="ml-1" :dot="false" title="Re-entrada — pessoa já era lead no CV">
-                <i class="fas fa-arrows-rotate text-[10px]"></i> reentry
+              <Badge v-if="lead.is_reentry" variant="info" size="sm" class="ml-1" :dot="false" title="Re-entrada - pessoa já era lead no CV">
+                <i class="fas fa-arrows-rotate text-micro"></i> reentry
               </Badge>
               <Badge v-if="lead.meta_is_organic === true || lead.meta_is_organic === 'true'"
                 variant="info" size="sm" class="ml-1" :dot="false"
-                title="Lead orgânico — veio do CTA da Página, sem campanha de Ads">
-                <i class="fas fa-seedling text-[10px]"></i> orgânico
+                title="Lead orgânico - veio do CTA da Página, sem campanha de Ads">
+                <i class="fas fa-seedling text-micro"></i> orgânico
               </Badge>
             </td>
 
@@ -98,10 +98,10 @@ const CV_ORIGEM_LABEL = {
               </div>
               <div v-else class="text-xs italic text-ink-subtle">(sem nome)</div>
               <div class="text-micro text-ink-muted truncate" :title="lead.email">
-                <i v-if="lead.email" class="fas fa-envelope text-[9px] mr-1 text-ink-subtle"></i>{{ lead.email || '—' }}
+                <i v-if="lead.email" class="fas fa-envelope text-micro mr-1 text-ink-subtle"></i>{{ lead.email || '-' }}
               </div>
               <div class="text-micro text-ink-muted truncate" :title="lead.telefone">
-                <i v-if="lead.telefone" class="fas fa-phone text-[9px] mr-1 text-ink-subtle"></i>{{ lead.telefone || '—' }}
+                <i v-if="lead.telefone" class="fas fa-phone text-micro mr-1 text-ink-subtle"></i>{{ lead.telefone || '-' }}
               </div>
             </td>
 
@@ -113,43 +113,43 @@ const CV_ORIGEM_LABEL = {
                   @click.stop="emit('open-campaign', lead.meta_campaign_id)"
                   class="block text-xs text-ink truncate max-w-full text-left hover:text-accent hover:underline"
                   :title="`Abrir campanha ${lead.meta_campaign_name}`">
-                  <i class="fas fa-bullhorn text-[10px] text-data-warn mr-1"></i>{{ lead.meta_campaign_name }}
+                  <i class="fas fa-bullhorn text-micro text-data-warn mr-1"></i>{{ lead.meta_campaign_name }}
                 </button>
                 <div v-else class="text-xs text-ink truncate" :title="lead.meta_campaign_name">
-                  <i class="fas fa-bullhorn text-[10px] text-data-warn mr-1"></i>{{ lead.meta_campaign_name }}
+                  <i class="fas fa-bullhorn text-micro text-data-warn mr-1"></i>{{ lead.meta_campaign_name }}
                 </div>
                 <div v-if="lead.meta_form_name" class="text-micro text-ink-muted truncate" :title="lead.meta_form_name">
-                  <i class="fas fa-square-poll-vertical text-[9px] text-ink-subtle mr-1"></i>{{ lead.meta_form_name }}
+                  <i class="fas fa-square-poll-vertical text-micro text-ink-subtle mr-1"></i>{{ lead.meta_form_name }}
                 </div>
                 <div v-if="lead.meta_page_name" class="text-micro text-ink-subtle truncate" :title="lead.meta_page_name">
-                  <i class="fas fa-flag text-[9px] mr-1"></i>{{ lead.meta_page_name }}
+                  <i class="fas fa-flag text-micro mr-1"></i>{{ lead.meta_page_name }}
                 </div>
               </template>
 
               <!-- 2) Meta sem campanha mas com form (orgânico, campanha antiga, lead de teste) -->
               <template v-else-if="lead.meta_form_name">
                 <div class="text-micro text-ink-subtle italic mb-0.5">
-                  <i class="fas fa-bullhorn text-[9px] mr-1"></i>sem campanha rastreada
+                  <i class="fas fa-bullhorn text-micro mr-1"></i>sem campanha rastreada
                 </div>
                 <div class="text-xs text-ink-muted truncate" :title="lead.meta_form_name">
-                  <i class="fas fa-square-poll-vertical text-[10px] text-ink-subtle mr-1"></i>{{ lead.meta_form_name }}
+                  <i class="fas fa-square-poll-vertical text-micro text-ink-subtle mr-1"></i>{{ lead.meta_form_name }}
                 </div>
                 <div v-if="lead.meta_page_name" class="text-micro text-ink-subtle truncate" :title="lead.meta_page_name">
-                  <i class="fas fa-flag text-[9px] mr-1"></i>{{ lead.meta_page_name }}
+                  <i class="fas fa-flag text-micro mr-1"></i>{{ lead.meta_page_name }}
                 </div>
               </template>
 
               <!-- 3) Form interno -->
               <template v-else-if="lead.lead_form_name">
                 <div class="text-xs text-ink truncate">
-                  <i class="fas fa-globe text-[10px] text-accent mr-1"></i>{{ lead.lead_form_name }}
+                  <i class="fas fa-globe text-micro text-accent mr-1"></i>{{ lead.lead_form_name }}
                 </div>
                 <div v-if="lead.lead_form_slug" class="text-micro text-ink-subtle font-mono truncate">
                   /{{ lead.lead_form_slug }}
                 </div>
               </template>
 
-              <span v-else class="text-xs text-ink-subtle italic">—</span>
+              <span v-else class="text-xs text-ink-subtle italic">-</span>
             </td>
 
             <!-- Mídia / Vínculo (clique = filtra o inbox por esta mídia) -->
@@ -165,7 +165,7 @@ const CV_ORIGEM_LABEL = {
               </div>
               <div v-if="Array.isArray(lead.bound_empreendimentos) && lead.bound_empreendimentos.length"
                 class="text-micro text-ink-subtle">
-                <i class="fas fa-building text-[9px] mr-0.5"></i>{{ lead.bound_empreendimentos.length }} empr.
+                <i class="fas fa-building text-micro mr-0.5"></i>{{ lead.bound_empreendimentos.length }} empr.
               </div>
             </td>
 
@@ -184,7 +184,7 @@ const CV_ORIGEM_LABEL = {
                 :title="lead.last_error"></i>
               <i v-else-if="lead.status === 'held'" class="fas fa-hourglass-half text-data-warn"
                 title="Aguardando vínculo"></i>
-              <i v-else class="fas fa-chevron-right text-[10px] text-ink-subtle opacity-0 group-hover:opacity-100 transition"></i>
+              <i v-else class="fas fa-chevron-right text-micro text-ink-subtle opacity-0 group-hover:opacity-100 transition"></i>
             </td>
           </tr>
         </tbody>

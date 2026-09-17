@@ -1,6 +1,6 @@
 <script setup>
 // Central Meta › aba Vínculos CV.
-// (Panel do hub /meta — sem PageContainer/PageHeader próprios.)
+// (Panel do hub /meta - sem PageContainer/PageHeader próprios.)
 //
 // Responde: tudo que deveria chegar ao CV está chegando? E onde vaza?
 //   • Funil de entrega (recebidos → entregues / represados / falhas / aguardando)
@@ -17,8 +17,13 @@ import { useToast } from 'vue-toastification';
 import * as fmt from '@/utils/format';
 import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import { useCampaignsStore } from '@/stores/Marketing/Campaigns/campaignsStore';
-import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
+import Badge from '@/components/UI/Badge.vue';
+import Panel from '@/components/UI/Panel.vue';
+import StatRow from '@/components/UI/StatRow.vue';
+import DataTable from '@/components/UI/DataTable.vue';
+import Skeleton from '@/components/UI/Skeleton.vue';
+import EmptyState from '@/components/UI/EmptyState.vue';
 import CampaignDetailModal from '../Campanhas/components/CampaignDetailModal.vue';
 import AccountBindingModal from './components/AccountBindingModal.vue';
 
@@ -206,14 +211,14 @@ const held = computed(() => ov.value?.held || { campaigns: [], forms: [] });
 const activeUnbound = computed(() => ov.value?.active_unbound_campaigns || []);
 const fallbackInUse = computed(() => ov.value?.fallback_in_use || []);
 // 'no_campaign' (default): campanha sem vínculo REPRESA os leads.
-// 'always' (toggle em Configurações): o form cobre e o lead SAI — destino pode
+// 'always' (toggle em Configurações): o form cobre e o lead SAI - destino pode
 // estar errado. Os textos da tela dizem a consequência do modo vigente.
 const formCobre = computed(() => ov.value?.form_fallback_scope === 'always');
 const mismatched = computed(() => ov.value?.mismatched_delivered || []);
 const mismatchedLeads = computed(() => summary.value.mismatched_delivered_leads || 0);
 const backlog = computed(() => ov.value?.backlog || null);
 
-/* Vazio é '0', não '—': aqui a ausência de represado significa zero mesmo. */
+/* Vazio é '0', não '-': aqui a ausência de represado significa zero mesmo. */
 const fmtInt = (v) => fmt.fmtInt(v, '0');
 
 // Por que essa campanha represa. Mesma frase na tabela e no cartão do celular.
@@ -240,7 +245,7 @@ const healthTone = computed(() => {
     // Lead ENTREGUE mas com destino decidido pelo formulário, não pela campanha:
     // pode estar indo pro empreendimento errado (incidente Esmeralda×Três Marias).
     if (fallbackInUse.value.length > 0) return 'warn';
-    // Vínculo resolvido mas lead ainda parado: não é "tudo certo" — falta enviar.
+    // Vínculo resolvido mas lead ainda parado: não é "tudo certo" - falta enviar.
     if (s.leads_recoverable > 0) return 'warn';
     if (s.active_unbound_campaigns > 0 || s.unbound_accounts > 0) return 'warn';
     if (funnel.value.coverage_pct != null && funnel.value.coverage_pct < 90) return 'warn';
@@ -306,25 +311,80 @@ const toneClasses = {
     danger: { wrap: 'border-data-neg/30 bg-data-neg/5',         icon: 'fas fa-circle-exclamation text-data-neg', ring: 'text-data-neg' },
 };
 
-// Cards do funil
+// KPIs do funil (StatRow; ausência de represado é zero mesmo, não "-").
 const funnelCards = computed(() => {
     const f = funnel.value;
     return [
-        { key: 'delivered',  label: 'Entregues ao CV', value: f.delivered,  icon: 'fas fa-circle-check', accent: 'text-data-pos bg-data-pos/10' },
-        { key: 'held',       label: 'Represados',       value: f.held,       icon: 'fas fa-hand',         accent: 'text-data-neg bg-data-neg/10' },
-        { key: 'pending',    label: 'Aguardando envio', value: f.pending,    icon: 'fas fa-hourglass-half', accent: 'text-accent bg-accent/10' },
-        { key: 'failed',     label: 'Falhas',           value: f.failed,     icon: 'fas fa-circle-xmark', accent: 'text-data-warn bg-data-warn/10' },
+        { key: 'delivered', label: 'Entregues ao CV', raw: f.delivered || 0, format: fmtInt, icon: 'fas fa-circle-check',   tone: 'pos' },
+        { key: 'held',      label: 'Represados',      raw: f.held || 0,      format: fmtInt, icon: 'fas fa-hand',           tone: f.held ? 'neg' : 'neutral' },
+        { key: 'pending',   label: 'Aguardando envio',raw: f.pending || 0,   format: fmtInt, icon: 'fas fa-hourglass-half', tone: 'accent' },
+        { key: 'failed',    label: 'Falhas',          raw: f.failed || 0,    format: fmtInt, icon: 'fas fa-circle-xmark',   tone: f.failed ? 'warn' : 'neutral' },
     ];
 });
 
 function statusBadge(s) {
     const up = String(s || '').toUpperCase();
-    if (up.includes('ACTIVE'))   return { label: 'Ativa',     cls: 'bg-data-pos/10 text-data-pos border-data-pos/20' };
-    if (up.includes('PAUSED'))   return { label: 'Pausada',   cls: 'bg-data-warn/10 text-data-warn border-data-warn/20' };
-    if (up.includes('ARCHIVED')) return { label: 'Arquivada', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
-    if (up.includes('DELETED'))  return { label: 'Excluída',  cls: 'bg-data-neg/10 text-data-neg border-data-neg/20' };
-    return { label: up || '—', cls: 'bg-slate-500/10 text-ink-muted border-line/20' };
+    if (up.includes('ACTIVE'))   return { label: 'Ativa',     variant: 'success' };
+    if (up.includes('PAUSED'))   return { label: 'Pausada',   variant: 'warning' };
+    if (up.includes('ARCHIVED')) return { label: 'Arquivada', variant: 'neutral' };
+    if (up.includes('DELETED'))  return { label: 'Excluída',  variant: 'danger' };
+    return { label: up || '-', variant: 'neutral' };
 }
+
+// ── Colunas das listas (DataTable) ──────────────────────────────────────────
+// Prioridade decide a ordem no celular: 1 = título do card, 2 = corpo, 3 = "Ver detalhes".
+const ACCOUNT_COLUMNS = [
+    { key: 'account_name',          label: 'Conta',                    priority: 1 },
+    { key: 'destino',               label: 'Destino padrão',           priority: 1, truncate: false },
+    { key: 'midia_slug',            label: 'Mídia',                    priority: 3 },
+    { key: 'lead_campaigns_active', label: 'Campanhas de lead ativas', priority: 2, numeric: true },
+    { key: 'leads_30d',             label: 'Leads 30d',                priority: 2, numeric: true, format: fmtInt },
+];
+const BLOCKED_COLUMNS = [
+    { key: 'name',             label: 'Campanha',        priority: 1, sortable: true },
+    { key: 'account_name',     label: 'Conta',           priority: 2, sortable: true },
+    { key: 'effective_status', label: 'Status',          priority: 2 },
+    { key: 'motivo',           label: 'Motivo',          priority: 3, truncate: false },
+    { key: 'blocked_count',    label: 'Leads represados',priority: 1, numeric: true, sortable: true },
+];
+const MISMATCH_COLUMNS = [
+    { key: 'name',       label: 'Campanha / formulário', priority: 1, sortable: true },
+    { key: 'destino',    label: 'Vínculo atual',         priority: 1, truncate: false },
+    { key: 'lead_count', label: 'Leads com destino antigo', priority: 1, numeric: true, sortable: true, format: fmtInt },
+];
+const FALLBACK_COLUMNS = [
+    { key: 'name',       label: 'Campanha',           priority: 1, sortable: true },
+    { key: 'destino',    label: 'Indo para',          priority: 1, truncate: false },
+    { key: 'lead_count', label: 'Leads no período',   priority: 1, numeric: true, sortable: true, format: fmtInt },
+];
+const RECOVER_COLUMNS = [
+    { key: 'name',  label: 'Campanha / formulário', priority: 1, sortable: true },
+    { key: 'count', label: 'Leads',                 priority: 1, numeric: true, sortable: true, format: fmtInt },
+];
+const UNBOUND_COLUMNS = [
+    { key: 'name',   label: 'Campanha', priority: 1, sortable: true },
+    { key: 'reason', label: 'Motivo',   priority: 2, truncate: false },
+];
+const FORMS_COLUMNS = [
+    { key: 'name',       label: 'Formulário',        priority: 1, sortable: true },
+    { key: 'held_count', label: 'Leads represados',  priority: 1, numeric: true, sortable: true, format: fmtInt },
+];
+
+// Linhas com chave própria (a tabela precisa de um id por linha).
+const mismatchedRows = computed(() => mismatched.value.map(m => ({
+    ...m, _key: m.kind === 'form' ? `form:${m.form_id}` : `campaign:${m.campaign_id}`,
+})));
+const fallbackRows = computed(() => fallbackInUse.value.map(c => ({ ...c, _key: `fb:${c.campaign_id}:${c.form_id}` })));
+const recuperaveisRows = computed(() => [
+    ...campanhasRecuperaveis.value.map(c => ({
+        ...c, kind: 'campaign', _key: `campaign:${c.campaign_id}`, count: c.resolvable_count,
+        origem: c.resolvable_via_form ? 'vínculo do formulário' : (c.account_name || ''),
+    })),
+    ...formsRecuperaveis.value.map(f => ({
+        ...f, kind: 'form', _key: `form:${f.form_id}`, count: f.held_count, origem: 'formulário - lead sem campanha',
+    })),
+]);
+const formsSemVinculo = computed(() => (held.value.forms || []).filter(f => !f.is_bound));
 </script>
 
 <template>
@@ -332,14 +392,15 @@ function statusBadge(s) {
       <!-- Toolbar da aba (o header vive no hub Central Meta) -->
       <div class="flex items-center justify-end gap-2 mb-3">
           <Button variant="secondary" size="sm" icon="fas fa-arrows-rotate" :loading="store.loadingBinding" @click="reload">
-            Atualizar
+            <span class="hidden sm:inline">Atualizar</span>
           </Button>
       </div>
 
-      <!-- Loading inicial -->
-      <div v-if="store.loadingBinding && !ov" class="py-20 text-center text-ink-subtle">
-        <i class="fas fa-circle-notch fa-spin text-2xl mb-2 block"></i>
-        Analisando vínculos...
+      <!-- Carga inicial -->
+      <div v-if="store.loadingBinding && !ov" class="space-y-4">
+        <Skeleton variant="card" />
+        <StatRow :items="[]" :loading="true" :cols="{ sm: 2, md: 4, lg: 4 }" />
+        <Panel :loading="true" loading-variant="table" />
       </div>
 
       <template v-else-if="ov">
@@ -352,7 +413,7 @@ function statusBadge(s) {
           </div>
           <!-- Cobertura -->
           <div v-if="funnel.coverage_pct != null" class="text-center shrink-0 pl-3">
-            <div :class="['text-3xl font-bold tabular-nums leading-none', toneClasses[healthTone].ring]">
+            <div :class="['text-metric metric leading-none', toneClasses[healthTone].ring]">
               {{ funnel.coverage_pct }}<span class="text-lg">%</span>
             </div>
             <div class="text-micro uppercase tracking-wider font-mono text-ink-subtle mt-1">cobertura</div>
@@ -360,558 +421,230 @@ function statusBadge(s) {
         </div>
 
         <!-- ══ Funil de entrega (fluxo AO VIVO) ═════════════════════════════ -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-2">
-          <div v-for="(c, i) in funnelCards" :key="c.key" :style="{ '--i': i }"
-            class="flex flex-col gap-1 p-3 rounded-xl border border-line bg-surface-raised shadow-soft surface-gradient
-                   card-enter transition-all duration-200 ease-out-expo
-                   hover:border-accent/40 hover:-translate-y-px hover:shadow-elevated">
-            <div class="flex items-center justify-between">
-              <span class="h-7 w-7 rounded-lg grid place-items-center text-xs" :class="c.accent">
-                <i :class="c.icon"></i>
-              </span>
-            </div>
-            <span class="text-xl font-semibold text-ink tabular-nums leading-none mt-1">{{ fmtInt(c.value) }}</span>
-            <span class="text-micro text-ink-muted">{{ c.label }}</span>
-          </div>
-        </div>
-
-        <!-- Contexto: cobertura mede só o fluxo ao vivo; espelho histórico à parte -->
-        <div class="mb-5 text-micro text-ink-subtle flex items-start gap-1.5">
+        <StatRow :items="funnelCards" :cols="{ sm: 2, md: 4, lg: 4 }" size="sm" />
+        <p class="mt-2 mb-5 text-micro text-ink-subtle flex items-start gap-1.5">
           <i class="fas fa-circle-info mt-0.5"></i>
           <span>
             A <b>cobertura</b> mede só os leads que entraram pelo fluxo ao vivo (entregues ÷ ao vivo).
-            <template v-if="funnel.historical">
-              Há também <b>{{ fmtInt(funnel.historical) }}</b> lead(s) de <b>espelho histórico</b> (importados da Meta —
-              a maioria já está no CV desde antes do cutover); eles <b>não</b> entram na cobertura.
-            </template>
+            <template v-if="funnel.historical">Há também <b>{{ fmtInt(funnel.historical) }}</b> lead(s) de <b>espelho histórico</b> (importados da Meta, a maioria já no CV desde antes do cutover); eles <b>não</b> entram na cobertura.</template>
+            <template v-if="funnel.ignored"> <b>{{ fmtInt(funnel.ignored) }}</b> lead(s) marcados como fora do CV também ficam de fora.</template>
           </span>
-        </div>
+        </p>
+
+        <div class="space-y-5">
 
         <!-- ══ Vínculo padrão por conta de anúncio ══════════════════════════ -->
-        <section class="mb-5">
-          <div class="flex items-center gap-2 mb-2 flex-wrap">
-            <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-building-user text-accent"></i>
-              Vínculo padrão por conta de anúncio
-            </h2>
-            <span v-if="contasSemVinculo"
-              class="inline-flex rounded-full bg-data-warn/10 text-data-warn text-micro font-semibold px-2 py-0.5">
-              {{ contasSemVinculo }} sem vínculo
-            </span>
-            <span class="text-micro text-ink-subtle">a conta decide o destino; campanha nova herda, e só precisa de vínculo próprio quando é exceção</span>
-          </div>
-
-          <Surface variant="raised" padding="none" class="overflow-hidden">
-            <div v-if="!accountsOrdenadas.length" class="px-4 py-8 text-center text-ink-subtle text-sm">
-              Nenhuma conta de anúncio sincronizada ainda. Sincronize as campanhas na aba Campanhas.
-            </div>
-
-            <!-- Celular: cartão por conta -->
-            <ul v-else class="md:hidden divide-y divide-line/60">
-              <li v-for="a in accountsOrdenadas" :key="`ma-${a.account_id}`" class="p-3 flex flex-col gap-2">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <div class="text-ink font-medium leading-tight break-words">{{ a.account_name || a.account_id }}</div>
-                    <div class="text-micro font-mono text-ink-subtle mt-0.5">{{ a.account_id }}</div>
-                  </div>
-                  <div class="text-right shrink-0">
-                    <div class="text-lg font-semibold tabular-nums leading-none"
-                      :class="a.lead_campaigns_unbound ? 'text-data-warn' : 'text-ink'">{{ fmtInt(a.lead_campaigns_active) }}</div>
-                    <div class="metric-label">de lead ativas</div>
-                  </div>
+        <Panel title="Vínculo padrão por conta de anúncio" icon="fas fa-building-user" :padded="false"
+          subtitle="A conta decide o destino; campanha nova herda, e só precisa de vínculo próprio quando é exceção"
+          :empty="!accountsOrdenadas.length" empty-icon="fas fa-building-user"
+          empty-title="Nenhuma conta de anúncio sincronizada" empty-text="Sincronize as campanhas na aba Campanhas.">
+          <template v-if="contasSemVinculo" #actions>
+            <Badge variant="warning" size="sm">{{ contasSemVinculo }} sem vínculo</Badge>
+          </template>
+          <DataTable :columns="ACCOUNT_COLUMNS" :rows="accountsOrdenadas" row-key="account_id" :sortable="false">
+            <template #cell-account_name="{ row }">
+              <div class="text-ink font-medium truncate" :title="row.account_name">{{ row.account_name || row.account_id }}</div>
+              <div class="text-micro font-mono text-ink-subtle">{{ row.account_id }}</div>
+            </template>
+            <template #cell-destino="{ row }">
+              <template v-if="row.is_bound">
+                <div class="text-ink">{{ empresasDaConta(row) }}</div>
+                <div class="text-micro text-ink-subtle">fila: {{ filasDaConta(row) || 'sem fila' }}</div>
+                <div v-for="e in filaForaDaPraca(row)" :key="e.idempreendimento" class="text-micro text-data-neg">
+                  <i class="fas fa-triangle-exclamation mr-1"></i>{{ e.nome }} ({{ e.cidade }}) está na fila de {{ e.fila_cidades.join(', ') }}
                 </div>
-                <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5">
-                  <div class="col-span-2 min-w-0">
-                    <dt class="metric-label">Destino padrão</dt>
-                    <dd class="text-xs" :class="a.is_bound ? 'text-ink' : (a.fora_do_cv ? 'text-ink-muted' : 'text-data-warn')">
-                      {{ a.is_bound ? empresasDaConta(a) : (a.fora_do_cv ? 'fora do CV (conta externa)' : (a.mapping_active ? 'sem vínculo' : 'desativado')) }}
-                      <span v-if="a.is_bound && filasDaConta(a)" class="text-ink-subtle"> · fila: {{ filasDaConta(a) }}</span>
-                      <span v-for="e in filaForaDaPraca(a)" :key="e.idempreendimento" class="block text-data-neg">
-                        <i class="fas fa-triangle-exclamation mr-1"></i>{{ e.nome }} ({{ e.cidade }}) está na fila de {{ e.fila_cidades.join(', ') }}
-                      </span>
-                    </dd>
-                  </div>
-                  <div class="min-w-0">
-                    <dt class="metric-label">Mídia</dt>
-                    <dd class="text-xs text-ink-muted">{{ a.midia_slug || `padrão (${bindingDefaults?.midia_slug || 'Facebook Ads'})` }}</dd>
-                  </div>
-                  <div class="min-w-0">
-                    <dt class="metric-label">Leads 30d</dt>
-                    <dd class="text-xs text-ink-muted tabular-nums">{{ fmtInt(a.leads_30d) }}</dd>
-                  </div>
-                  <div v-if="a.lead_campaigns_unbound || a.campaigns_own_binding" class="col-span-2 text-micro text-ink-subtle">
-                    <span v-if="a.lead_campaigns_unbound" class="text-data-warn">{{ a.lead_campaigns_unbound }} campanha(s) de lead sem vínculo</span>
-                    <span v-if="a.lead_campaigns_unbound && a.campaigns_own_binding"> · </span>
-                    <span v-if="a.campaigns_own_binding">{{ a.campaigns_own_binding }} com vínculo próprio</span>
-                  </div>
-                </dl>
-                <button @click="openAccount(a)"
-                  class="h-10 w-full rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
-                  :class="a.is_bound || a.fora_do_cv ? 'border border-line text-ink-muted' : 'bg-accent text-white'">
-                  <i class="fas fa-link text-[10px]"></i>{{ a.is_bound || a.fora_do_cv ? 'Editar vínculo da conta' : 'Vincular conta' }}
-                </button>
-              </li>
-            </ul>
-
-            <!-- Desktop: tabela -->
-            <div class="hidden md:block overflow-x-auto">
-              <table class="min-w-full text-sm">
-                <thead class="bg-surface-sunken/40 text-micro uppercase tracking-wider text-ink-subtle">
-                  <tr>
-                    <th class="px-3 py-2 text-left font-medium">Conta</th>
-                    <th class="px-3 py-2 text-left font-medium">Destino padrão</th>
-                    <th class="px-3 py-2 text-left font-medium">Mídia</th>
-                    <th class="px-3 py-2 text-right font-medium">Campanhas de lead ativas</th>
-                    <th class="px-3 py-2 text-right font-medium">Leads 30d</th>
-                    <th class="px-3 py-2 w-28"></th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-line/60">
-                  <tr v-for="a in accountsOrdenadas" :key="a.account_id" class="hover:bg-surface-hover/40 transition-colors">
-                    <td class="px-3 py-2.5">
-                      <div class="text-ink font-medium leading-tight truncate max-w-[260px]" :title="a.account_name">{{ a.account_name || a.account_id }}</div>
-                      <div class="text-micro font-mono text-ink-subtle">{{ a.account_id }}</div>
-                    </td>
-                    <td class="px-3 py-2.5 text-xs">
-                      <template v-if="a.is_bound">
-                        <div class="text-ink">{{ empresasDaConta(a) }}</div>
-                        <div class="text-micro text-ink-subtle">fila: {{ filasDaConta(a) || 'sem fila' }}</div>
-                        <div v-for="e in filaForaDaPraca(a)" :key="e.idempreendimento" class="text-micro text-data-neg">
-                          <i class="fas fa-triangle-exclamation mr-1"></i>{{ e.nome }} ({{ e.cidade }}) está na fila de {{ e.fila_cidades.join(', ') }}
-                        </div>
-                      </template>
-                      <span v-else-if="a.fora_do_cv" class="text-ink-muted">fora do CV (conta externa)</span>
-                      <span v-else class="text-data-warn">{{ a.mapping_active ? 'sem vínculo' : 'desativado' }}</span>
-                    </td>
-                    <td class="px-3 py-2.5 text-xs text-ink-muted">
-                      {{ a.midia_slug || `padrão (${bindingDefaults?.midia_slug || 'Facebook Ads'})` }}
-                    </td>
-                    <td class="px-3 py-2.5 text-right tabular-nums">
-                      <span :class="a.lead_campaigns_unbound ? 'text-data-warn font-semibold' : 'text-ink'">{{ fmtInt(a.lead_campaigns_active) }}</span>
-                      <div class="text-micro text-ink-subtle">
-                        <span v-if="a.lead_campaigns_unbound" class="text-data-warn">{{ a.lead_campaigns_unbound }} sem vínculo</span>
-                        <span v-if="a.lead_campaigns_unbound && a.campaigns_own_binding"> · </span>
-                        <span v-if="a.campaigns_own_binding">{{ a.campaigns_own_binding }} próprio(s)</span>
-                      </div>
-                    </td>
-                    <td class="px-3 py-2.5 text-right tabular-nums text-ink-muted">{{ fmtInt(a.leads_30d) }}</td>
-                    <td class="px-3 py-2.5 text-right">
-                      <button @click="openAccount(a)"
-                        class="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-micro font-medium transition-colors"
-                        :class="a.is_bound || a.fora_do_cv
-                          ? 'border-line text-ink-muted hover:text-accent hover:border-accent/40'
-                          : 'border-accent/40 bg-accent/10 text-accent hover:bg-accent/20'">
-                        <i class="fas fa-link text-[9px]"></i>{{ a.is_bound || a.fora_do_cv ? 'Editar' : 'Vincular' }}
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </Surface>
-        </section>
+              </template>
+              <span v-else-if="row.fora_do_cv" class="text-ink-muted">fora do CV (conta externa)</span>
+              <span v-else class="text-data-warn">{{ row.mapping_active ? 'sem vínculo' : 'desativado' }}</span>
+            </template>
+            <template #cell-midia_slug="{ row }">
+              <span class="text-ink-muted">{{ row.midia_slug || `padrão (${bindingDefaults?.midia_slug || 'Facebook Ads'})` }}</span>
+            </template>
+            <template #cell-lead_campaigns_active="{ row }">
+              <span class="tabular-nums" :class="row.lead_campaigns_unbound ? 'text-data-warn font-semibold' : 'text-ink'">{{ fmtInt(row.lead_campaigns_active) }}</span>
+              <div class="text-micro text-ink-subtle">
+                <span v-if="row.lead_campaigns_unbound" class="text-data-warn">{{ row.lead_campaigns_unbound }} sem vínculo</span>
+                <span v-if="row.lead_campaigns_unbound && row.campaigns_own_binding"> · </span>
+                <span v-if="row.campaigns_own_binding">{{ row.campaigns_own_binding }} próprio(s)</span>
+              </div>
+            </template>
+            <template #actions="{ row }">
+              <Button :variant="row.is_bound || row.fora_do_cv ? 'secondary' : 'primary'" size="sm" icon="fas fa-link" @click.stop="openAccount(row)">
+                {{ row.is_bound || row.fora_do_cv ? 'Editar' : 'Vincular' }}
+              </Button>
+            </template>
+          </DataTable>
+        </Panel>
 
         <!-- ══ Campanhas sem vínculo represando leads (ação) ════════════════ -->
-        <section class="mb-5">
-          <div class="flex items-center gap-2 mb-2">
-            <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-triangle-exclamation text-data-neg"></i>
-              Campanhas sem vínculo represando leads
-            </h2>
-            <span v-if="campanhasBloqueadas.length"
-              class="inline-flex rounded-full bg-data-neg/10 text-data-neg text-micro font-semibold px-2 py-0.5">
-              {{ campanhasBloqueadas.length }}
-            </span>
-          </div>
-
-          <Surface variant="raised" padding="none" class="overflow-hidden">
-            <div v-if="!campanhasBloqueadas.length" class="px-4 py-8 text-center text-ink-subtle text-sm">
-              <i class="fas fa-circle-check text-data-pos text-xl mb-1.5 block"></i>
-              Nenhuma campanha sem vínculo com leads represados. 🎉
-            </div>
-            <!-- Celular: cartão. A tabela de 6 colunas não cabe em 375px e
-                 empurrava a página inteira na horizontal. -->
-            <ul v-else class="md:hidden divide-y divide-line/60">
-              <li v-for="c in campanhasBloqueadas" :key="`m-${c.campaign_id}`" class="p-3 flex flex-col gap-2">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
-                      class="text-ink font-medium leading-tight text-left hover:text-accent break-words">
-                      {{ c.name || '(não sincronizada)' }}
-                    </button>
-                    <div v-else class="text-ink font-medium leading-tight break-words">
-                      {{ c.name || '(não sincronizada)' }}
-                    </div>
-                    <div class="text-micro font-mono text-ink-subtle mt-0.5">#{{ c.campaign_id }}</div>
-                  </div>
-                  <div class="text-right shrink-0">
-                    <div class="text-lg font-semibold text-data-neg tabular-nums leading-none">{{ fmtInt(c.blocked_count) }}</div>
-                    <div class="metric-label">represados</div>
-                  </div>
-                </div>
-
-                <dl class="grid grid-cols-2 gap-x-3 gap-y-1.5">
-                  <div class="min-w-0">
-                    <dt class="metric-label">Conta</dt>
-                    <dd class="text-xs text-ink-muted break-words">{{ c.account_name || '—' }}</dd>
-                  </div>
-                  <div class="min-w-0">
-                    <dt class="metric-label">Status</dt>
-                    <dd class="text-xs">
-                      <span v-if="!c.not_synced" :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge(c.effective_status).cls]">
-                        {{ statusBadge(c.effective_status).label }}
-                      </span>
-                      <span v-else class="text-micro text-ink-subtle italic">fora do cache</span>
-                    </dd>
-                  </div>
-                  <div class="col-span-2 min-w-0">
-                    <dt class="metric-label">Motivo</dt>
-                    <dd class="text-xs text-ink-muted">{{ motivoBloqueio(c) }}</dd>
-                  </div>
-                  <div v-if="c.resolvable_count" class="col-span-2">
-                    <dd class="text-micro text-ink-subtle">+ {{ fmtInt(c.resolvable_count) }} já recuperável nesta campanha</dd>
-                  </div>
-                </dl>
-
-                <!-- alvo de 40px: o dedo tem que acertar -->
-                <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
-                  class="h-10 w-full rounded-lg bg-accent text-white text-xs font-medium
-                         inline-flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity">
-                  <i class="fas fa-link text-[10px]"></i>Vincular campanha
-                </button>
-                <div v-else class="text-micro text-ink-subtle italic text-center py-1">
-                  Sincronize as campanhas para poder vincular.
-                </div>
-              </li>
-            </ul>
-
-            <table v-if="campanhasBloqueadas.length" class="hidden md:table min-w-full text-sm">
-              <thead class="bg-surface-sunken/30 border-b border-line">
-                <tr>
-                  <th class="px-3 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Campanha</th>
-                  <th class="px-3 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Conta</th>
-                  <th class="px-3 py-2.5 text-center text-micro font-mono uppercase tracking-wider text-ink-subtle">Status</th>
-                  <th class="px-3 py-2.5 text-left text-micro font-mono uppercase tracking-wider text-ink-subtle">Motivo</th>
-                  <th class="px-3 py-2.5 text-right text-micro font-mono uppercase tracking-wider text-ink-subtle">Leads represados</th>
-                  <th class="px-3 py-2.5 w-28"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-line/60">
-                <tr v-for="c in campanhasBloqueadas" :key="c.campaign_id"
-                  class="hover:bg-surface-hover/40 transition-colors">
-                  <td class="px-3 py-2.5">
-                    <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
-                      class="text-ink font-medium leading-tight truncate max-w-[280px] text-left hover:text-accent hover:underline block"
-                      :title="`Abrir campanha ${c.name || c.campaign_id}`">
-                      {{ c.name || '(não sincronizada)' }}
-                    </button>
-                    <div v-else class="text-ink font-medium leading-tight truncate max-w-[280px]" :title="c.name || c.campaign_id">
-                      {{ c.name || '(não sincronizada)' }}
-                    </div>
-                    <div class="text-micro font-mono text-ink-subtle">#{{ c.campaign_id }}</div>
-                  </td>
-                  <td class="px-3 py-2.5 text-xs text-ink-muted truncate max-w-[160px]">{{ c.account_name || '—' }}</td>
-                  <td class="px-3 py-2.5 text-center">
-                    <span v-if="!c.not_synced" :class="['inline-flex rounded-md border px-2 py-0.5 text-micro font-medium', statusBadge(c.effective_status).cls]">
-                      {{ statusBadge(c.effective_status).label }}
-                    </span>
-                    <span v-else class="text-micro text-ink-subtle italic">fora do cache</span>
-                  </td>
-                  <td class="px-3 py-2.5 text-xs text-ink-muted">{{ motivoBloqueio(c) }}</td>
-                  <td class="px-3 py-2.5 text-right">
-                    <span class="inline-flex items-center gap-1 font-semibold text-data-neg">
-                      {{ fmtInt(c.blocked_count) }}
-                    </span>
-                    <div v-if="c.resolvable_count" class="text-micro text-ink-subtle">
-                      + {{ fmtInt(c.resolvable_count) }} já recuperável
-                    </div>
-                  </td>
-                  <td class="px-3 py-2.5 text-right">
-                    <button v-if="!c.not_synced" @click="openCampaign(c.campaign_id)"
-                      class="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium hover:opacity-90 transition-opacity">
-                      <i class="fas fa-link text-[9px]"></i>Vincular
-                    </button>
-                    <span v-else class="text-micro text-ink-subtle italic">sincronize as campanhas</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </Surface>
-        </section>
+        <Panel title="Campanhas sem vínculo represando leads" icon="fas fa-triangle-exclamation" :padded="false"
+          :empty="!campanhasBloqueadas.length" empty-icon="fas fa-circle-check"
+          empty-title="Nenhuma campanha represando leads" empty-text="Todo lead captado tem para onde ir.">
+          <template v-if="campanhasBloqueadas.length" #actions>
+            <Badge variant="danger" size="sm">{{ campanhasBloqueadas.length }}</Badge>
+          </template>
+          <DataTable :columns="BLOCKED_COLUMNS" :rows="campanhasBloqueadas" row-key="campaign_id" sort-by="blocked_count" sort-dir="desc">
+            <template #cell-name="{ row }">
+              <button v-if="!row.not_synced" type="button" @click="openCampaign(row.campaign_id)"
+                class="text-ink font-medium leading-tight truncate max-w-full text-left hover:text-accent hover:underline block focus-ring rounded"
+                :title="`Abrir campanha ${row.name || row.campaign_id}`">{{ row.name || '(não sincronizada)' }}</button>
+              <div v-else class="text-ink font-medium leading-tight truncate">{{ row.name || '(não sincronizada)' }}</div>
+              <div class="text-micro font-mono text-ink-subtle">#{{ row.campaign_id }}</div>
+            </template>
+            <template #cell-effective_status="{ row }">
+              <Badge v-if="!row.not_synced" :variant="statusBadge(row.effective_status).variant" size="sm">{{ statusBadge(row.effective_status).label }}</Badge>
+              <span v-else class="text-micro text-ink-subtle italic">fora do cache</span>
+            </template>
+            <template #cell-motivo="{ row }"><span class="text-ink-muted">{{ motivoBloqueio(row) }}</span></template>
+            <template #cell-blocked_count="{ row }">
+              <span class="font-semibold text-data-neg tabular-nums">{{ fmtInt(row.blocked_count) }}</span>
+              <div v-if="row.resolvable_count" class="text-micro text-ink-subtle">+ {{ fmtInt(row.resolvable_count) }} já recuperável</div>
+            </template>
+            <template #actions="{ row }">
+              <Button v-if="!row.not_synced" variant="primary" size="sm" icon="fas fa-link" @click.stop="openCampaign(row.campaign_id)">Vincular</Button>
+              <span v-else class="text-micro text-ink-subtle italic">sincronize as campanhas</span>
+            </template>
+          </DataTable>
+        </Panel>
 
         <!-- ══ Entregues com destino DIFERENTE do vínculo atual (corrigir no CV) ══ -->
-        <section v-if="mismatched.length" class="mb-5">
-          <div class="flex items-center gap-2 mb-2">
-            <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-arrows-rotate text-data-neg"></i>
-              Entregues com destino diferente do vínculo atual
-            </h2>
-            <span class="text-micro text-ink-subtle">últimos 90 dias - reenviar aplica o destino certo no CV</span>
-          </div>
-
-          <!-- Resultado do reenvio -->
-          <div v-if="resendResult" class="mb-2 rounded-lg border px-3 py-2.5 text-sm"
-            :class="resendResult.failed ? 'border-data-warn/30 bg-data-warn/5 text-data-warn'
-                                        : 'border-data-pos/20 bg-data-pos/5 text-data-pos'">
+        <Panel v-if="mismatched.length" title="Entregues com destino diferente do vínculo atual" icon="fas fa-arrows-rotate" :padded="false"
+          subtitle="Últimos 90 dias - reenviar aplica o destino certo no CV (upsert: registra nova conversão e re-enfileira; o interesse antigo permanece, remoção só pelo painel do CV)">
+          <div v-if="resendResult" class="mx-4 mt-3 rounded-lg border px-3 py-2.5 text-sm"
+            :class="resendResult.failed ? 'border-data-warn/30 bg-data-warn/5 text-data-warn' : 'border-data-pos/20 bg-data-pos/5 text-data-pos'">
             <i :class="resendResult.failed ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check'" class="mr-1.5"></i>
             <b>{{ fmtInt(resendResult.delivered) }}</b> reenviado(s) com o destino atual
             <template v-if="resendResult.unchanged"> · {{ fmtInt(resendResult.unchanged) }} já batiam</template>
             <template v-if="resendResult.no_binding"> · {{ fmtInt(resendResult.no_binding) }} sem vínculo resolvível</template>
             <template v-if="resendResult.failed"> · {{ fmtInt(resendResult.failed) }} falha(s)</template>
-            <template v-if="resendResult.reached_limit"> · atingiu o lote - clique de novo pra continuar</template>
+            <template v-if="resendResult.reached_limit"> · atingiu o lote - clique de novo para continuar</template>
           </div>
-
-          <Surface variant="raised" padding="none" class="overflow-hidden">
-            <ul class="divide-y divide-line/60">
-              <li v-for="m in mismatched" :key="`mm-${m.kind}-${m.campaign_id || m.form_id}`"
-                class="p-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-3 text-sm">
-                <div class="flex-1 min-w-0">
-                  <button v-if="m.kind === 'campaign'" @click="openCampaign(m.campaign_id)"
-                    class="text-ink font-medium leading-tight text-left hover:text-accent hover:underline break-words"
-                    :title="`Abrir campanha ${m.name || m.campaign_id}`">
-                    {{ m.name || `#${m.campaign_id}` }}
-                  </button>
-                  <span v-else class="text-ink font-medium leading-tight break-words" :title="m.name">
-                    {{ m.name || `#${m.form_id}` }} <span class="text-micro text-ink-subtle">(formulário - leads sem campanha)</span>
-                  </span>
-                  <div class="text-micro text-ink-subtle mt-0.5">{{ m.account_name || '' }}</div>
-                </div>
-                <div class="md:text-right shrink-0">
-                  <div class="text-xs text-ink-muted">
-                    vínculo atual: <b class="text-ink">{{ (m.target_emp_names || []).join(', ') || '-' }}</b>
-                  </div>
-                  <div class="text-micro text-ink-subtle">{{ fmtInt(m.lead_count) }} lead(s) com destino antigo</div>
-                </div>
-                <button
-                  class="h-10 md:h-auto rounded-lg md:rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium
-                         inline-flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity shrink-0
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="resending"
-                  @click="reenviar(m)">
-                  <i :class="resending && resendingKey === (m.kind === 'form' ? `form:${m.form_id}` : `campaign:${m.campaign_id}`)
-                      ? 'fas fa-circle-notch fa-spin' : 'fas fa-paper-plane'" class="text-[9px]"></i>
-                  Reenviar {{ fmtInt(m.lead_count) }}
-                </button>
-              </li>
-            </ul>
-          </Surface>
-          <p class="mt-1.5 text-micro text-ink-subtle flex items-start gap-1.5">
-            <i class="fas fa-circle-info mt-0.5"></i>
-            <span>O reenvio é upsert: registra nova conversão, adiciona o interesse certo e re-enfileira o lead
-            (fora das etapas blindadas). O interesse antigo permanece no CV - remover interesse só pelo painel do CV.</span>
-          </p>
-        </section>
+          <DataTable :columns="MISMATCH_COLUMNS" :rows="mismatchedRows" row-key="_key" sort-by="lead_count" sort-dir="desc">
+            <template #cell-name="{ row }">
+              <button v-if="row.kind === 'campaign'" type="button" @click="openCampaign(row.campaign_id)"
+                class="text-ink font-medium leading-tight text-left hover:text-accent hover:underline truncate max-w-full block focus-ring rounded"
+                :title="`Abrir campanha ${row.name || row.campaign_id}`">{{ row.name || `#${row.campaign_id}` }}</button>
+              <span v-else class="text-ink font-medium leading-tight block truncate" :title="row.name">{{ row.name || `#${row.form_id}` }}</span>
+              <div class="text-micro text-ink-subtle">{{ row.kind === 'form' ? 'formulário - leads sem campanha' : (row.account_name || '') }}</div>
+            </template>
+            <template #cell-destino="{ row }"><b class="text-ink">{{ (row.target_emp_names || []).join(', ') || '-' }}</b></template>
+            <template #actions="{ row }">
+              <Button variant="primary" size="sm" icon="fas fa-paper-plane" :disabled="resending"
+                :loading="resending && resendingKey === row._key" @click.stop="reenviar(row)">
+                Reenviar {{ fmtInt(row.lead_count) }}
+              </Button>
+            </template>
+          </DataTable>
+        </Panel>
 
         <!-- ══ Entregando pelo vínculo do FORMULÁRIO (destino pode estar errado) ══ -->
-        <section v-if="fallbackInUse.length" class="mb-5">
-          <div class="flex items-center gap-2 mb-2">
-            <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-diamond-turn-right text-data-warn"></i>
-              Campanhas entregando pelo vínculo do formulário
-            </h2>
-            <span class="text-micro text-ink-subtle">últimos 30 dias — confira se o destino é o produto da campanha</span>
-          </div>
-          <Surface variant="raised" padding="none" class="overflow-hidden">
-            <ul class="divide-y divide-line/60">
-              <li v-for="c in fallbackInUse" :key="`fb-${c.campaign_id}-${c.form_id}`"
-                class="p-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-3 text-sm">
-                <div class="flex-1 min-w-0">
-                  <button @click="openCampaign(c.campaign_id)"
-                    class="text-ink font-medium leading-tight text-left hover:text-accent hover:underline break-words"
-                    :title="`Abrir campanha ${c.name || c.campaign_id}`">
-                    {{ c.name || `#${c.campaign_id}` }}
-                  </button>
-                  <div class="text-micro text-ink-subtle mt-0.5">
-                    {{ c.account_name || '—' }} · form "{{ c.form_name || c.form_id }}"
-                  </div>
-                </div>
-                <div class="md:text-right shrink-0">
-                  <div class="text-xs text-ink-muted">
-                    indo para
-                    <b class="text-data-warn">{{ (c.form_emp_names || []).join(', ') || 'sem empreendimento' }}</b>
-                  </div>
-                  <div class="text-micro text-ink-subtle">{{ fmtInt(c.lead_count) }} lead(s) no período</div>
-                </div>
-                <button @click="openCampaign(c.campaign_id)"
-                  class="h-10 md:h-auto rounded-lg md:rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium
-                         inline-flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity shrink-0">
-                  <i class="fas fa-link text-[9px]"></i>Vincular campanha
-                </button>
-              </li>
-            </ul>
-          </Surface>
-          <p class="mt-1.5 text-micro text-ink-subtle flex items-start gap-1.5">
-            <i class="fas fa-circle-info mt-0.5"></i>
-            <span>O formulário é da página e atende campanhas de produtos diferentes. Com o vínculo na
-            campanha, o destino fica explícito e este aviso some.</span>
-          </p>
-        </section>
+        <Panel v-if="fallbackInUse.length" title="Campanhas entregando pelo vínculo do formulário" icon="fas fa-diamond-turn-right" :padded="false"
+          subtitle="Últimos 30 dias - o formulário é da página e atende produtos diferentes; com o vínculo na campanha o destino fica explícito e este aviso some">
+          <DataTable :columns="FALLBACK_COLUMNS" :rows="fallbackRows" row-key="_key" sort-by="lead_count" sort-dir="desc">
+            <template #cell-name="{ row }">
+              <button type="button" @click="openCampaign(row.campaign_id)"
+                class="text-ink font-medium leading-tight text-left hover:text-accent hover:underline truncate max-w-full block focus-ring rounded"
+                :title="`Abrir campanha ${row.name || row.campaign_id}`">{{ row.name || `#${row.campaign_id}` }}</button>
+              <div class="text-micro text-ink-subtle truncate">{{ row.account_name || '-' }} · form "{{ row.form_name || row.form_id }}"</div>
+            </template>
+            <template #cell-destino="{ row }"><b class="text-data-warn">{{ (row.form_emp_names || []).join(', ') || 'sem empreendimento' }}</b></template>
+            <template #actions="{ row }">
+              <Button variant="primary" size="sm" icon="fas fa-link" @click.stop="openCampaign(row.campaign_id)">Vincular</Button>
+            </template>
+          </DataTable>
+        </Panel>
 
         <!-- ══ Represados recuperáveis (vínculo já resolve) ═════════════════ -->
-        <section v-if="temRecuperavel" class="mb-5">
-          <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
-            <div class="flex items-center gap-2">
-              <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-                <i class="fas fa-rotate-right text-accent"></i>
-                Represados recuperáveis
-              </h2>
-              <span class="text-micro text-ink-subtle">o vínculo já resolve — falta enviar ao CV</span>
-            </div>
+        <Panel v-if="temRecuperavel" title="Represados recuperáveis" icon="fas fa-rotate-right" :padded="false"
+          subtitle="O vínculo já resolve - falta enviar ao CV">
+          <template #actions>
             <Button size="sm" icon="fas fa-paper-plane" :loading="sending && sendingKey === 'all'"
-              :disabled="sending || !summary.leads_recoverable"
-              @click="enviarTodos">
+              :disabled="sending || !summary.leads_recoverable" @click="enviarTodos">
               Enviar todos ({{ fmtInt(summary.leads_recoverable) }})
             </Button>
-          </div>
-
-          <!-- Resultado do envio -->
-          <div v-if="sendResult" class="mb-2 rounded-lg border px-3 py-2.5 text-sm"
-            :class="sendResult.failed ? 'border-data-warn/30 bg-data-warn/5 text-data-warn'
-                                      : 'border-data-pos/20 bg-data-pos/5 text-data-pos'">
+          </template>
+          <div v-if="sendResult" class="mx-4 mt-3 rounded-lg border px-3 py-2.5 text-sm"
+            :class="sendResult.failed ? 'border-data-warn/30 bg-data-warn/5 text-data-warn' : 'border-data-pos/20 bg-data-pos/5 text-data-pos'">
             <i :class="sendResult.failed ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check'" class="mr-1.5"></i>
-            <b>{{ fmtInt(sendResult.delivered) }}</b> entregue(s) ao CV,
-            <b>{{ fmtInt(sendResult.recoverable) }}</b> recuperado(s)
+            <b>{{ fmtInt(sendResult.delivered) }}</b> entregue(s) ao CV, <b>{{ fmtInt(sendResult.recoverable) }}</b> recuperado(s)
             <template v-if="sendResult.no_binding"> · {{ fmtInt(sendResult.no_binding) }} ainda sem vínculo</template>
             <template v-if="sendResult.failed"> · {{ fmtInt(sendResult.failed) }} falha(s)</template>
-            <template v-if="sendResult.reached_limit"> · atingiu o lote — clique de novo pra continuar</template>
+            <template v-if="sendResult.reached_limit"> · atingiu o lote - clique de novo para continuar</template>
           </div>
-
-          <Surface variant="raised" padding="md">
-            <ul class="divide-y divide-line/60 -my-1">
-              <li v-for="c in campanhasRecuperaveis" :key="c.campaign_id"
-                class="py-2 flex items-center gap-3 text-sm flex-wrap">
-                <i class="fas fa-hand text-ink-subtle text-xs"></i>
-                <button @click="openCampaign(c.campaign_id)"
-                  class="flex-1 min-w-0 truncate text-ink text-left hover:text-accent hover:underline"
-                  :title="`Abrir campanha ${c.name || c.campaign_id}`">
-                  {{ c.name || `#${c.campaign_id}` }}
-                  <span v-if="c.resolvable_via_form" class="text-micro text-ink-subtle">(vínculo do formulário)</span>
-                </button>
-                <span class="text-ink-muted whitespace-nowrap">{{ fmtInt(c.resolvable_count) }} lead(s)</span>
-                <button
-                  class="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium
-                         hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="sending"
-                  @click="enviarCampanha(c)">
-                  <i :class="sending && sendingKey === `campaign:${c.campaign_id}` ? 'fas fa-circle-notch fa-spin' : 'fas fa-paper-plane'"
-                     class="text-[9px]"></i>
-                  Enviar {{ fmtInt(c.resolvable_count) }}
-                </button>
-                <RouterLink to="/meta?tab=captacao" class="text-micro text-accent hover:underline whitespace-nowrap">
-                  ver na inbox →
-                </RouterLink>
-              </li>
-
-              <li v-for="f in formsRecuperaveis" :key="`form-${f.form_id}`"
-                class="py-2 flex items-center gap-3 text-sm flex-wrap">
-                <i class="fas fa-file-lines text-ink-subtle text-xs"></i>
-                <span class="flex-1 min-w-0 truncate text-ink" :title="f.name">
-                  {{ f.name || `#${f.form_id}` }}
-                  <span class="text-micro text-ink-subtle">(lead sem campanha)</span>
-                </span>
-                <span class="text-ink-muted whitespace-nowrap">{{ fmtInt(f.held_count) }} lead(s)</span>
-                <button
-                  class="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-2.5 py-1 text-micro font-medium
-                         hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="sending"
-                  @click="enviarFormulario(f)">
-                  <i :class="sending && sendingKey === `form:${f.form_id}` ? 'fas fa-circle-notch fa-spin' : 'fas fa-paper-plane'"
-                     class="text-[9px]"></i>
-                  Enviar {{ fmtInt(f.held_count) }}
-                </button>
-              </li>
-            </ul>
-          </Surface>
-        </section>
+          <DataTable :columns="RECOVER_COLUMNS" :rows="recuperaveisRows" row-key="_key" sort-by="count" sort-dir="desc">
+            <template #cell-name="{ row }">
+              <button v-if="row.kind === 'campaign'" type="button" @click="openCampaign(row.campaign_id)"
+                class="text-ink font-medium leading-tight text-left hover:text-accent hover:underline truncate max-w-full block focus-ring rounded"
+                :title="`Abrir campanha ${row.name || row.campaign_id}`">{{ row.name || `#${row.campaign_id}` }}</button>
+              <span v-else class="text-ink font-medium block truncate" :title="row.name">{{ row.name || `#${row.form_id}` }}</span>
+              <div class="text-micro text-ink-subtle">{{ row.origem }}</div>
+            </template>
+            <template #actions="{ row }">
+              <Button variant="primary" size="sm" icon="fas fa-paper-plane" :disabled="sending"
+                :loading="sending && sendingKey === row._key"
+                @click.stop="row.kind === 'campaign' ? enviarCampanha(row) : enviarFormulario(row)">
+                Enviar {{ fmtInt(row.count) }}
+              </Button>
+              <RouterLink v-if="row.kind === 'campaign'" to="/meta?tab=captacao" class="ml-2 text-micro text-accent hover:underline whitespace-nowrap">ver na inbox</RouterLink>
+            </template>
+          </DataTable>
+        </Panel>
 
         <!-- ══ Campanhas ativas sem vínculo (preventivo) ════════════════════ -->
-        <section v-if="activeUnbound.length" class="mb-5">
-          <div class="flex items-center gap-2 mb-2">
-            <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-shield-halved text-data-warn"></i>
-              Campanhas ativas sem vínculo (preventivo)
-            </h2>
-            <span class="text-micro text-ink-subtle">{{ formCobre
-                ? 'os próximos leads sairão pelo vínculo do formulário - destino pode ir errado'
-                : 'os próximos leads ficarão represados até vincular' }}</span>
-          </div>
-          <Surface variant="raised" padding="none" class="overflow-hidden">
-            <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-              <tbody class="divide-y divide-line/60">
-                <tr v-for="c in activeUnbound" :key="c.campaign_id" class="hover:bg-surface-hover/40 transition-colors">
-                  <td class="px-3 py-2.5">
-                    <button @click="openCampaign(c.campaign_id)"
-                      class="text-ink font-medium leading-tight truncate max-w-[320px] text-left hover:text-accent hover:underline block"
-                      :title="`Abrir campanha ${c.name || c.campaign_id}`">{{ c.name || `#${c.campaign_id}` }}</button>
-                    <div class="text-micro font-mono text-ink-subtle">{{ c.account_name || '—' }}</div>
-                  </td>
-                  <td class="px-3 py-2.5 text-xs text-ink-muted">
-                    {{ c.reason === 'mapping_desativado' ? 'vínculo desativado' : 'sem vínculo próprio e a conta não tem padrão' }}
-                  </td>
-                  <td class="px-3 py-2.5 text-right w-28">
-                    <button @click="openCampaign(c.campaign_id)"
-                      class="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1 text-micro font-medium text-ink-muted hover:text-accent hover:border-accent/40 transition-colors">
-                      <i class="fas fa-link text-[9px]"></i>Vincular
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            </div>
-          </Surface>
-        </section>
+        <Panel v-if="activeUnbound.length" title="Campanhas ativas sem vínculo (preventivo)" icon="fas fa-shield-halved" :padded="false"
+          :subtitle="formCobre ? 'Os próximos leads sairão pelo vínculo do formulário - o destino pode ir errado' : 'Os próximos leads ficarão represados até vincular'">
+          <DataTable :columns="UNBOUND_COLUMNS" :rows="activeUnbound" row-key="campaign_id">
+            <template #cell-name="{ row }">
+              <button type="button" @click="openCampaign(row.campaign_id)"
+                class="text-ink font-medium leading-tight text-left hover:text-accent hover:underline truncate max-w-full block focus-ring rounded"
+                :title="`Abrir campanha ${row.name || row.campaign_id}`">{{ row.name || `#${row.campaign_id}` }}</button>
+              <div class="text-micro font-mono text-ink-subtle">{{ row.account_name || '-' }}</div>
+            </template>
+            <template #cell-reason="{ row }">
+              <span class="text-ink-muted">{{ row.reason === 'mapping_desativado' ? 'vínculo desativado' : 'sem vínculo próprio e a conta não tem padrão' }}</span>
+            </template>
+            <template #actions="{ row }">
+              <Button variant="secondary" size="sm" icon="fas fa-link" @click.stop="openCampaign(row.campaign_id)">Vincular</Button>
+            </template>
+          </DataTable>
+        </Panel>
 
-        <!-- ══ Backlog pronto pra enviar ════════════════════════════════════ -->
-        <section v-if="backlog && (backlog.historical_total > 0 || backlog.routed_pending > 0)" class="mb-5">
-          <Surface variant="raised" padding="md" class="flex items-start gap-3">
-            <i class="fas fa-paper-plane text-accent text-lg mt-0.5"></i>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium text-ink">Backlog pronto pra enviar ao CV</div>
-              <div class="text-xs text-ink-muted mt-0.5">
-                <b>{{ fmtInt(backlog.historical_total) }}</b> histórico(s)
-                <template v-if="backlog.routed_pending"> · <b>{{ fmtInt(backlog.routed_pending) }}</b> na fila</template>
-                aguardando disparo (desde {{ backlog.cutoff }}).
-                <span v-if="backlog.shadow_mode" class="text-data-warn">Modo sombra ligado — desligue antes de disparar.</span>
-              </div>
-            </div>
-            <RouterLink to="/meta?tab=campanhas"
-              class="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-micro font-medium text-ink-muted hover:text-accent hover:border-accent/40 transition-colors whitespace-nowrap">
-              Disparar em Campanhas <i class="fas fa-arrow-right text-[9px]"></i>
+        <!-- ══ Backlog pronto para enviar ═══════════════════════════════════ -->
+        <Panel v-if="backlog && (backlog.historical_total > 0 || backlog.routed_pending > 0)" title="Backlog pronto para enviar ao CV" icon="fas fa-paper-plane">
+          <template #actions>
+            <RouterLink to="/meta?tab=campanhas">
+              <Button variant="secondary" size="sm" icon="fas fa-arrow-right">Disparar em Campanhas</Button>
             </RouterLink>
-          </Surface>
-        </section>
+          </template>
+          <p class="text-sm text-ink-muted">
+            <b class="text-ink">{{ fmtInt(backlog.historical_total) }}</b> histórico(s)
+            <template v-if="backlog.routed_pending"> · <b class="text-ink">{{ fmtInt(backlog.routed_pending) }}</b> na fila</template>
+            aguardando disparo (desde {{ backlog.cutoff }}).
+            <span v-if="backlog.shadow_mode" class="text-data-warn">Modo sombra ligado - desligue antes de disparar.</span>
+          </p>
+        </Panel>
 
         <!-- Forms sem vínculo (fallback) -->
-        <section v-if="held.forms && held.forms.filter(f => !f.is_bound).length" class="mb-5">
-          <div class="flex items-center gap-2 mb-2">
-            <h2 class="text-sm font-semibold text-ink flex items-center gap-2">
-              <i class="fas fa-list-check text-ink-subtle"></i>
-              Formulários sem vínculo (leads sem campanha)
-            </h2>
-          </div>
-          <Surface variant="raised" padding="md">
-            <ul class="divide-y divide-line/60 -my-1">
-              <li v-for="f in held.forms.filter(f => !f.is_bound)" :key="f.form_id"
-                class="py-2 flex items-center gap-3 text-sm">
-                <i class="fas fa-file-lines text-ink-subtle text-xs"></i>
-                <span class="flex-1 min-w-0 truncate text-ink" :title="f.name">{{ f.name || `#${f.form_id}` }}</span>
-                <span class="text-ink-muted">{{ fmtInt(f.held_count) }} lead(s)</span>
-                <RouterLink to="/meta?tab=formularios" class="text-micro text-accent hover:underline whitespace-nowrap">
-                  configurar →
-                </RouterLink>
-              </li>
-            </ul>
-          </Surface>
-        </section>
+        <Panel v-if="formsSemVinculo.length" title="Formulários sem vínculo (leads sem campanha)" icon="fas fa-list-check" :padded="false">
+          <DataTable :columns="FORMS_COLUMNS" :rows="formsSemVinculo" row-key="form_id" sort-by="held_count" sort-dir="desc">
+            <template #cell-name="{ row }"><span class="text-ink" :title="row.name">{{ row.name || `#${row.form_id}` }}</span></template>
+            <template #actions>
+              <RouterLink to="/meta?tab=formularios">
+                <Button variant="secondary" size="sm" icon="fas fa-sliders">Configurar</Button>
+              </RouterLink>
+            </template>
+          </DataTable>
+        </Panel>
+
+        </div>
       </template>
 
       <!-- Erro -->
-      <div v-if="store.error && !ov"
-        class="rounded-lg border border-data-neg/20 bg-data-neg/10 px-3 py-2 text-sm text-data-neg flex items-start gap-2">
-        <i class="fas fa-circle-exclamation mt-0.5"></i>
-        <div>{{ store.error }}</div>
-      </div>
+      <EmptyState v-if="store.error && !ov" icon="fas fa-circle-exclamation" title="Não deu para ler os vínculos" :description="store.error">
+        <template #actions>
+          <Button variant="primary" size="sm" icon="fas fa-arrows-rotate" @click="reload">Tentar de novo</Button>
+        </template>
+      </EmptyState>
 
       <!-- Modal de campanha (vincular) -->
       <CampaignDetailModal v-model:open="detailOpen" :campaign-id="detailId" @saved="reload" />
