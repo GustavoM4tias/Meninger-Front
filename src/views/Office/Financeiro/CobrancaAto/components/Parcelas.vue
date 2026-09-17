@@ -18,7 +18,7 @@
          quando o selo "N ativos" aparece), começa fechada no celular e a grade
          de campos já vem responsiva. "Novo plano" e "Rodar ciclo" são ações da
          tela, não filtros, então vão no slot de ações. -->
-    <FilterBar title="Filtros dos planos" :active-count="activeFiltersCount" :cols="3"
+    <FilterBar title="Filtros dos planos" :active-count="activeFiltersCount" :cols="4"
       :loading="store.loading" @apply="aplicar" @clear="limpar">
 
       <template #actions>
@@ -31,6 +31,11 @@
           <span class="hidden sm:inline">Rodar ciclo</span>
         </Button>
       </template>
+
+      <!-- Emitido de/até e pago de/até: os mesmos campos da aba Histórico, na
+           mesma posição (primeira linha). Vazio, a lista não recorta por data
+           (é fila de trabalho); os cartões e a coluna "No período" ficam em 30 dias. -->
+      <PeriodoFilter v-model="store.filtro.periodo" @change="aplicarComFolga" />
 
       <div>
         <label class="block text-xs font-medium text-ink-muted mb-1.5">Situação do plano</label>
@@ -48,14 +53,10 @@
         icon-left="fas fa-magnifying-glass"
         placeholder="Ex.: 8050 ou Maria" @keydown.enter="aplicar" />
 
-      <!-- Emitido de/até e pago de/até: o mesmo bloco da aba Histórico. Vazio, a
-           lista não recorta por data (é fila de trabalho); os cartões e a coluna
-           "No período" ficam em 30 dias. -->
-      <PeriodoFilter v-model="store.filtro.periodo" span="sm:col-span-2 lg:col-span-3" @change="aplicarComFolga" />
 
       <!-- Ocupa a linha inteira: é um interruptor, não um campo, e dividindo
            coluna com um seletor ficava com metade da largura do seu texto. -->
-      <div class="sm:col-span-2 lg:col-span-3 pt-1 border-t border-line-subtle">
+      <div class="sm:col-span-2 lg:col-span-4 pt-1 border-t border-line-subtle">
         <Switch v-model="store.filtro.comAtraso" label="Só com parcela em atraso"
           description="Mostra apenas reservas com parcela vencida sem pagamento." @change="aplicar" />
       </div>

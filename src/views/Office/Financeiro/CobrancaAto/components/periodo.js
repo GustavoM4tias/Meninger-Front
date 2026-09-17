@@ -22,15 +22,6 @@ export function ultimosDias(n) {
   return { de: isoLocal(de), ate: isoLocal(ate) };
 }
 
-/* Atalhos do PeriodoFilter: cada um devolve { de, ate }. */
-export const ATALHOS = [
-  { key: 'hoje', label: 'Hoje', range: () => ultimosDias(1) },
-  { key: '7d', label: '7 dias', range: () => ultimosDias(7) },
-  { key: '30d', label: '30 dias', range: () => ultimosDias(30) },
-  { key: 'mes', label: 'Este mês', range: () => { const h = new Date(); return { de: isoLocal(new Date(h.getFullYear(), h.getMonth(), 1)), ate: isoLocal(h) }; } },
-  { key: 'mes-1', label: 'Mês anterior', range: () => { const h = new Date(); return { de: isoLocal(new Date(h.getFullYear(), h.getMonth() - 1, 1)), ate: isoLocal(new Date(h.getFullYear(), h.getMonth(), 0)) }; } },
-];
-
 /* Quantos dos dois períodos estão preenchidos (para o selo "N ativos"). */
 export function periodosAtivos(p) {
   return ((p.emitidoDe || p.emitidoAte) ? 1 : 0) + ((p.pagoDe || p.pagoAte) ? 1 : 0);
