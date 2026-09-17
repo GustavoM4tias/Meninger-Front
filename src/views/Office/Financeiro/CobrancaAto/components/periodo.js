@@ -22,6 +22,13 @@ export function ultimosDias(n) {
   return { de: isoLocal(de), ate: isoLocal(ate) };
 }
 
+/* Padrão das duas abas: emitido nos últimos 30 dias (hoje incluso), pago em
+   aberto. Quem limpa o filtro volta para isto, não para tudo vazio. */
+export function periodoPadrao() {
+  const { de, ate } = ultimosDias(30);
+  return { ...PERIODO_VAZIO, emitidoDe: de, emitidoAte: ate };
+}
+
 /* Quantos dos dois períodos estão preenchidos (para o selo "N ativos"). */
 export function periodosAtivos(p) {
   return ((p.emitidoDe || p.emitidoAte) ? 1 : 0) + ((p.pagoDe || p.pagoAte) ? 1 : 0);

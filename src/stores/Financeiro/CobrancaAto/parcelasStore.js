@@ -7,7 +7,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
-import { PERIODO_VAZIO, periodoParaQuery } from '@/views/Office/Financeiro/CobrancaAto/components/periodo';
+import { periodoPadrao, periodoParaQuery } from '@/views/Office/Financeiro/CobrancaAto/components/periodo';
 
 const BASE = '/cobranca-ato/parcelas';
 
@@ -18,10 +18,9 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         empreendimento: [],
         q: '',
         comAtraso: false,
-        // emitido de/até e pago de/até, independentes, o mesmo bloco da aba
-        // Histórico. Vazio = a lista não recorta por data; os cartões e a coluna
-        // "no período" caem em 30 dias.
-        periodo: { ...PERIODO_VAZIO },
+        // emitido de/até e pago de/até, independentes, os mesmos campos da aba
+        // Histórico e com o mesmo padrão dela: emitido nos últimos 30 dias.
+        periodo: periodoPadrao(),
     });
     const sortBy = ref('proxima');
     const sortDir = ref('asc');

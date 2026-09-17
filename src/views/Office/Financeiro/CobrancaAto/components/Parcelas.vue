@@ -33,8 +33,8 @@
       </template>
 
       <!-- Emitido de/até e pago de/até: os mesmos campos da aba Histórico, na
-           mesma posição (primeira linha). Vazio, a lista não recorta por data
-           (é fila de trabalho); os cartões e a coluna "No período" ficam em 30 dias. -->
+           mesma posição (primeira linha) e com o mesmo padrão (emitido nos
+           últimos 30 dias). Apagar as datas mostra a fila inteira. -->
       <PeriodoFilter v-model="store.filtro.periodo" @change="aplicarComFolga" />
 
       <div>
@@ -274,7 +274,7 @@ import Spinner from '@/components/UI/Spinner.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Collapsible from '@/components/UI/Collapsible.vue';
 import PeriodoFilter from './PeriodoFilter.vue';
-import { PERIODO_VAZIO, periodoResumo, periodosAtivos } from './periodo';
+import { periodoPadrao, periodoResumo, periodosAtivos } from './periodo';
 import PlanoDetailModal from './PlanoDetailModal.vue';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 import { planoLabel, planoVariant, motivoLabel, formatCurrency, formatDate, formatDateTime, diasLabel } from './parcelasFormat';
@@ -309,7 +309,7 @@ function aplicar() {
 }
 function limpar() {
   store.filtro.status = ['ativo']; store.filtro.empreendimento = []; store.filtro.q = ''; store.filtro.comAtraso = false;
-  store.filtro.periodo = { ...PERIODO_VAZIO };
+  store.filtro.periodo = periodoPadrao();
   recorte.value = '';
   aplicar();
 }

@@ -7,7 +7,7 @@ import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
 import FilterBar from '@/components/UI/FilterBar.vue';
 import PeriodoFilter from './PeriodoFilter.vue';
-import { PERIODO_VAZIO, ultimosDias, periodosAtivos } from './periodo';
+import { periodoPadrao, periodosAtivos } from './periodo';
 
 // Emits Filtros aplicados → pai dispara fetchHistory.
 const emit = defineEmits(['filter-changed']);
@@ -15,13 +15,6 @@ const emit = defineEmits(['filter-changed']);
 const store = useBoletoStore();
 const route = useRoute();
 const router = useRouter();
-
-// Período padrão = emitido nos últimos 30 dias (hoje incluso); pago em
-// aberto. Os dois períodos são independentes (ver PeriodoFilter).
-function periodoPadrao() {
-  const { de, ate } = ultimosDias(30);
-  return { ...PERIODO_VAZIO, emitidoDe: de, emitidoAte: ate };
-}
 
 // Estado local (espelho do store.historyFilter pra controlar v-model). Ao
 // aplicar (botão Filtrar ou input com debounce), copia pro store + emite.
