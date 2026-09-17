@@ -48,11 +48,33 @@ const router = createRouter({
 // isso acontece, recarregamos a página UMA vez para baixar o index.html fresco
 // (com os novos hashes). Trava por tempo evita loop se a falha for real.
 const RELOAD_FLAG = 'app:chunk-reload-at';
+// Marca de pergunta no ar da Eme (officeAIStore grava enquanto a resposta não
+// chega). Lida direto do storage para o router não depender da store.
+const EME_EM_VOO_KEY = 'eme:pergunta-em-voo';
+// Conversa aberta na Eme (officeAIStore grava enquanto há mensagens na tela):
+// recarregar apagaria o que a pessoa está lendo, então vale a mesma espera.
+const EME_ATIVA_KEY = 'eme:conversa-ativa';
+// Build obsoleto detectado com a Eme respondendo: a recarga fica adiada para a
+// próxima troca de tela (ver beforeEach), em vez de matar a resposta no meio.
+let recargaAdiada = false;
+
 function isStaleChunkError(err) {
   const msg = String(err?.message || err || '');
   return /dynamically imported module|module script|Importing a module script failed|error loading dynamically imported/i.test(msg);
 }
+function emeEmUso() {
+  try { return !!(sessionStorage.getItem(EME_EM_VOO_KEY) || sessionStorage.getItem(EME_ATIVA_KEY)); }
+  catch { return false; }
+}
 function reloadForFreshBuild(targetPath) {
+  // A resposta da Eme chega com gráfico, o gráfico é um pedaço carregado sob
+  // demanda, e depois de um deploy esse pedaço já não existe: recarregar AQUI
+  // era o que apagava a pergunta e a resposta da tela ("qual a meta desse
+  // mês?", 17/09). Com a Eme em uso (pergunta no ar ou conversa na tela),
+  // adia: o texto da resposta não depende de pedaço nenhum, o visual que
+  // falhou avisa e oferece atualizar (ChatBlock), e a próxima navegação faz
+  // a recarga inteira.
+  if (!targetPath && emeEmUso()) { recargaAdiada = true; return; }
   const last = Number(sessionStorage.getItem(RELOAD_FLAG) || 0);
   if (Date.now() - last < 10000) return; // já recarregou há pouco: não insiste (evita loop)
   sessionStorage.setItem(RELOAD_FLAG, String(Date.now()));
@@ -67,6 +89,14 @@ router.onError((error, to) => {
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault(); // não deixa virar erro não tratado
   reloadForFreshBuild();
+});
+// Recarga adiada: a troca de tela vira navegação completa, que baixa o build
+// novo. A conversa da Eme volta pela retomada (pergunta no ar / últimos 30 min).
+router.beforeEach((to) => {
+  if (!recargaAdiada) return true;
+  recargaAdiada = false;
+  window.location.assign(to.fullPath);
+  return false;
 });
 
 // ─── Barreira de acesso → sempre o login ─────────────────────────────────────

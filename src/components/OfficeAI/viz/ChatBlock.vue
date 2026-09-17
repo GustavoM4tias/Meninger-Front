@@ -12,55 +12,76 @@
  * Tudo assíncrono menos o texto: o ECharts e o ExcelJS só entram quando a
  * resposta tem gráfico ou tabela (mesma decisão do ChatMessage antigo).
  */
-import { ref, computed, watch, defineAsyncComponent } from 'vue';
+import { ref, computed, watch, h, defineAsyncComponent } from 'vue';
 import { useRouter } from 'vue-router';
 import { validarBlock } from './emeBlock.js';
 import { visuaisPossiveis, visualDoBloco } from './escolherVisual.js';
 import { exportarDatasetExcel, copiarDataset } from './exportar.js';
 import VizFrame from './VizFrame.vue';
 
-const VizTable = defineAsyncComponent(() => import('./VizTable.vue'));
-const VizChart = defineAsyncComponent(() => import('./VizChart.vue'));
-const VizRank = defineAsyncComponent(() => import('./VizRank.vue'));
-const VizFunnel = defineAsyncComponent(() => import('./VizFunnel.vue'));
-const VizKpis = defineAsyncComponent(() => import('./VizKpis.vue'));
-const VizCards = defineAsyncComponent(() => import('./VizCards.vue'));
-const VizDetail = defineAsyncComponent(() => import('./VizDetail.vue'));
-const VizChoice = defineAsyncComponent(() => import('./VizChoice.vue'));
-const VizConfirm = defineAsyncComponent(() => import('./VizConfirm.vue'));
-const VizNav = defineAsyncComponent(() => import('./VizNav.vue'));
-const VizTimeline = defineAsyncComponent(() => import('./VizTimeline.vue'));
-const VizMap = defineAsyncComponent(() => import('./VizMap.vue'));
-const ChatText = defineAsyncComponent(() => import('../renderers/ChatText.vue'));
+/* Todo visual desce sob demanda. Depois de um deploy, o pedaço que a aba
+ * antiga pede já não existe no servidor: antes isso virava recarga da página
+ * no meio da resposta (router, vite:preloadError) e a pergunta sumia da tela.
+ * Agora o router adia a recarga com a Eme em uso e o visual que não carregou
+ * diz isso no lugar dele, com o botão de atualizar - o texto da resposta
+ * continua lá. */
+const VizIndisponivel = {
+  render: () => h('div', {
+    class: 'flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-line bg-surface-sunken/60 px-3 py-2 text-xs text-ink-muted',
+  }, [
+    h('i', { class: 'fas fa-triangle-exclamation text-data-warn' }),
+    h('span', 'Este visual pede a versão nova do Office.'),
+    h('button', {
+      type: 'button',
+      class: 'inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md font-medium border border-accent/30 bg-accent-soft text-accent hover:border-accent/60 focus-ring',
+      onClick: () => window.location.reload(),
+    }, [h('i', { class: 'fas fa-rotate-right' }), 'Atualizar']),
+  ]),
+};
+const lazy = (loader) => defineAsyncComponent({ loader, errorComponent: VizIndisponivel });
+
+const VizTable = lazy(() => import('./VizTable.vue'));
+const VizChart = lazy(() => import('./VizChart.vue'));
+const VizRank = lazy(() => import('./VizRank.vue'));
+const VizFunnel = lazy(() => import('./VizFunnel.vue'));
+const VizKpis = lazy(() => import('./VizKpis.vue'));
+const VizCards = lazy(() => import('./VizCards.vue'));
+const VizDetail = lazy(() => import('./VizDetail.vue'));
+const VizChoice = lazy(() => import('./VizChoice.vue'));
+const VizConfirm = lazy(() => import('./VizConfirm.vue'));
+const VizNav = lazy(() => import('./VizNav.vue'));
+const VizTimeline = lazy(() => import('./VizTimeline.vue'));
+const VizMap = lazy(() => import('./VizMap.vue'));
+const ChatText = lazy(() => import('../renderers/ChatText.vue'));
 
 /* Renderers antigos, por `legacyType`. Somem na fase 5. */
 const LEGADOS = {
-  detail: defineAsyncComponent(() => import('../renderers/ChatEnterpriseDetail.vue')),
-  precadastros_summary: defineAsyncComponent(() => import('../renderers/ChatPrecadastrosSummary.vue')),
-  reservas_summary: defineAsyncComponent(() => import('../renderers/ChatReservasSummary.vue')),
-  open_alert_editor: defineAsyncComponent(() => import('../renderers/ChatAlertEditor.vue')),
-  academy_cards: defineAsyncComponent(() => import('../renderers/ChatAcademyCards.vue')),
-  imobiliaria_cards: defineAsyncComponent(() => import('../renderers/ChatImobiliariaCards.vue')),
-  condition_sheet: defineAsyncComponent(() => import('../renderers/ChatConditionSheet.vue')),
-  campaign_cards: defineAsyncComponent(() => import('../renderers/ChatCampaignCards.vue')),
-  person_cards: defineAsyncComponent(() => import('../renderers/ChatPersonCards.vue')),
-  notification_prefs: defineAsyncComponent(() => import('../renderers/ChatNotificationPrefs.vue')),
-  report_cards: defineAsyncComponent(() => import('../renderers/ChatReportCards.vue')),
-  checklist_cards: defineAsyncComponent(() => import('../renderers/ChatChecklistCards.vue')),
-  checklist_tasks: defineAsyncComponent(() => import('../renderers/ChatChecklistCards.vue')),
-  assistant_tasks: defineAsyncComponent(() => import('../renderers/ChatAssistantTasks.vue')),
-  assistant_task: defineAsyncComponent(() => import('../renderers/ChatAssistantTasks.vue')),
-  assistant_invites: defineAsyncComponent(() => import('../renderers/ChatAssistantInvites.vue')),
-  meeting_card: defineAsyncComponent(() => import('../renderers/ChatMeetingCard.vue')),
+  detail: lazy(() => import('../renderers/ChatEnterpriseDetail.vue')),
+  precadastros_summary: lazy(() => import('../renderers/ChatPrecadastrosSummary.vue')),
+  reservas_summary: lazy(() => import('../renderers/ChatReservasSummary.vue')),
+  open_alert_editor: lazy(() => import('../renderers/ChatAlertEditor.vue')),
+  academy_cards: lazy(() => import('../renderers/ChatAcademyCards.vue')),
+  imobiliaria_cards: lazy(() => import('../renderers/ChatImobiliariaCards.vue')),
+  condition_sheet: lazy(() => import('../renderers/ChatConditionSheet.vue')),
+  campaign_cards: lazy(() => import('../renderers/ChatCampaignCards.vue')),
+  person_cards: lazy(() => import('../renderers/ChatPersonCards.vue')),
+  notification_prefs: lazy(() => import('../renderers/ChatNotificationPrefs.vue')),
+  report_cards: lazy(() => import('../renderers/ChatReportCards.vue')),
+  checklist_cards: lazy(() => import('../renderers/ChatChecklistCards.vue')),
+  checklist_tasks: lazy(() => import('../renderers/ChatChecklistCards.vue')),
+  assistant_tasks: lazy(() => import('../renderers/ChatAssistantTasks.vue')),
+  assistant_task: lazy(() => import('../renderers/ChatAssistantTasks.vue')),
+  assistant_invites: lazy(() => import('../renderers/ChatAssistantInvites.vue')),
+  meeting_card: lazy(() => import('../renderers/ChatMeetingCard.vue')),
 };
 /* Faixas de sugestão por módulo (recebem `context`, não `action`). */
 const FAIXAS = {
-  'source:leads': defineAsyncComponent(() => import('../renderers/ChatLeadsActions.vue')),
-  'source:events': defineAsyncComponent(() => import('../renderers/ChatEventsActions.vue')),
-  'source:enterprises': defineAsyncComponent(() => import('../renderers/ChatEnterprisesActions.vue')),
-  'source:mcmv': defineAsyncComponent(() => import('../renderers/ChatMcmvActions.vue')),
-  'source:precadastros': defineAsyncComponent(() => import('../renderers/ChatPrecadastrosActions.vue')),
-  'source:reservas': defineAsyncComponent(() => import('../renderers/ChatReservasActions.vue')),
+  'source:leads': lazy(() => import('../renderers/ChatLeadsActions.vue')),
+  'source:events': lazy(() => import('../renderers/ChatEventsActions.vue')),
+  'source:enterprises': lazy(() => import('../renderers/ChatEnterprisesActions.vue')),
+  'source:mcmv': lazy(() => import('../renderers/ChatMcmvActions.vue')),
+  'source:precadastros': lazy(() => import('../renderers/ChatPrecadastrosActions.vue')),
+  'source:reservas': lazy(() => import('../renderers/ChatReservasActions.vue')),
 };
 
 const props = defineProps({

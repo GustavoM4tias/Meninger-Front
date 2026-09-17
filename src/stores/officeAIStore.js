@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   getSessions,
   getSessionMessages,
@@ -137,6 +137,15 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   function limparEmVoo() {
     try { sessionStorage.removeItem(EM_VOO_KEY) } catch { /* idem */ }
   }
+  // Conversa na tela: o router lê esta marca para NÃO recarregar a página por
+  // build obsoleto enquanto a pessoa está lendo uma resposta (ver
+  // reloadForFreshBuild). Some quando a conversa é zerada.
+  const ATIVA_KEY = 'eme:conversa-ativa'
+  watch(() => messages.value.length, (n) => {
+    try { n > 0 ? sessionStorage.setItem(ATIVA_KEY, '1') : sessionStorage.removeItem(ATIVA_KEY) }
+    catch { /* sem storage */ }
+  }, { immediate: true })
+
   /** A pergunta que estava no ar quando a página recarregou, se for recente. */
   function perguntaEmVoo() {
     try {
