@@ -178,6 +178,11 @@ export default function middleware(request) {
         // do PNG e o preview ficaria sem imagem. Deixa passar.
         if (/\.[a-zA-Z0-9]+$/.test(url.pathname)) return passar();
 
+        // Páginas estáticas de public/ (dossiês de empreendimento em
+        // lp.menin.com.br/dossie/<slug>/) trazem as próprias meta tags de
+        // compartilhamento: o crawler lê o HTML real, sem o resumo do Office.
+        if (url.pathname.toLowerCase().startsWith('/dossie/')) return passar();
+
         const meta = buildMeta(url.pathname);
 
         return new Response(page(url.href, meta), {
