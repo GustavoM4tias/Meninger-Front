@@ -18,10 +18,11 @@ defineProps({
 </template>
 
 <style scoped>
-.eme-label-enter-active { transition: opacity .22s ease, transform .22s ease; }
-.eme-label-leave-active { transition: opacity .16s ease, transform .16s ease; }
-.eme-label-enter-from   { opacity: 0; transform: translateY(6px); }
-.eme-label-leave-to     { opacity: 0; transform: translateY(-6px); }
+/* Rápido de propósito: a troca é um piscar, não um número de teatro. */
+.eme-label-enter-active { transition: opacity .1s ease-out, transform .1s ease-out; }
+.eme-label-leave-active { transition: opacity .07s ease-in, transform .07s ease-in; }
+.eme-label-enter-from   { opacity: 0; transform: translateY(4px); }
+.eme-label-leave-to     { opacity: 0; transform: translateY(-4px); }
 
 .eme-shimmer {
   color: transparent;
@@ -36,5 +37,7 @@ defineProps({
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
+  /* O utilitário animate-shimmer varre em 2,4 s; aqui é um passe curto. */
+  animation-duration: 1.1s;
 }
 </style>

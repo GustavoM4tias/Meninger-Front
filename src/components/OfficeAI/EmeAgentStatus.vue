@@ -64,6 +64,6 @@ const showCancel = computed(() => elapsed.value >= 8)
 
 <style scoped>
 /* Passo concluído entra deslizando da esquerda. */
-.eme-step-enter-active { transition: opacity .25s ease, transform .25s ease; }
+.eme-step-enter-active { transition: opacity .12s ease-out, transform .12s ease-out; }
 .eme-step-enter-from   { opacity: 0; transform: translateX(-6px); }
 </style>

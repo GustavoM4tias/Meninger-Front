@@ -20,7 +20,7 @@ import { verboDoPasso } from '@/utils/OfficeAI/toolKind'
 
 const FRASES_PENSANDO = ['Pensando…', 'Interpretando a pergunta…', 'Organizando o raciocínio…', 'Decidindo o próximo passo…']
 const FRASES_ANALISANDO = ['Analisando os dados…', 'Cruzando os resultados…', 'Decidindo o próximo passo…']
-const GIRO_MS = 4000
+const GIRO_MS = 2500
 
 export function useEmeStatusLabel() {
   const aiStore = useOfficeAIStore()
