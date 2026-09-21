@@ -60,7 +60,10 @@ let recargaAdiada = false;
 
 function isStaleChunkError(err) {
   const msg = String(err?.message || err || '');
-  return /dynamically imported module|module script|Importing a module script failed|error loading dynamically imported/i.test(msg);
+  // "Couldn't resolve component" é o mesmo chunk obsoleto visto pelo
+  // vue-router: o `preventDefault` do vite:preloadError engole o erro do
+  // import, o loader da rota resolve para undefined e é o router quem acusa.
+  return /dynamically imported module|module script|Importing a module script failed|error loading dynamically imported|Couldn't resolve component/i.test(msg);
 }
 function emeEmUso() {
   try { return !!(sessionStorage.getItem(EME_EM_VOO_KEY) || sessionStorage.getItem(EME_ATIVA_KEY)); }
@@ -82,8 +85,17 @@ function reloadForFreshBuild(targetPath) {
   else window.location.reload();
 }
 // Falha de import dinâmico durante uma navegação (router lazy).
+//
+// A recarga adiada (Eme em uso) valia para chunk que falha FORA de navegação.
+// Só que o preload da própria rota também dispara vite:preloadError, e com a
+// Eme aberta ele marcava "adiada" e a navegação morria em silêncio: a pessoa
+// clicava no menu, nada acontecia, e só o SEGUNDO clique (beforeEach abaixo)
+// recarregava. Navegar É a "próxima troca de tela" que a adiada esperava,
+// então aqui ela vale na hora, com o destino do clique.
 router.onError((error, to) => {
-  if (isStaleChunkError(error)) reloadForFreshBuild(to?.fullPath);
+  if (!isStaleChunkError(error) && !recargaAdiada) return;
+  recargaAdiada = false;
+  reloadForFreshBuild(to?.fullPath);
 });
 // Falha de preload de chunk do Vite (mesma causa, fora de navegação).
 window.addEventListener('vite:preloadError', (event) => {
