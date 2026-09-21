@@ -8,17 +8,30 @@ const props = defineProps({
 const a = computed(() => props.action || {})
 
 const kpis = computed(() => [
-  { label: 'Total de Reservas', value: a.value.total ?? 0,        color: 'indigo',  icon: 'fas fa-bookmark' },
+  {
+    label: 'Total de Reservas', value: a.value.total ?? 0, color: 'indigo', icon: 'fas fa-bookmark',
+    // Com as canceladas fora, o total é menor que o universo - e um número
+    // que não bate com o CV precisa se explicar no próprio card.
+    sub: a.value.cancelados_excluidos && a.value.cancelada_excluida
+      ? `${a.value.cancelada_excluida} cancelada(s) fora · universo ${a.value.universo}`
+      : undefined,
+  },
   { label: 'Reservada / Análise', value: a.value.reservada ?? 0,  color: 'yellow',  icon: 'fas fa-bookmark' },
   { label: 'Em Contrato',         value: a.value.contrato ?? 0,   color: 'violet',  icon: 'fas fa-file-contract' },
   { label: 'Em Repasse',          value: a.value.em_repasse ?? 0, color: 'sky',     icon: 'fas fa-money-bill-transfer' },
   { label: 'Vendida (CRM)',       value: a.value.vendida ?? 0,    color: 'emerald', icon: 'fas fa-flag-checkered', sub: 'Etapa CRM (não venda real)' },
   { label: 'Cancelada / Distrato', value: a.value.cancelada ?? 0, color: 'rose',    icon: 'fas fa-ban' },
+  // "Outros" só aparece quando existe, e aparece PORQUE existe: sem ele os
+  // cards não somam o total, e um painel que não fecha é um painel em que
+  // ninguém confia - mesmo quando todos os números estão certos.
+  ...((a.value.outros ?? 0) > 0
+    ? [{ label: 'Outros', value: a.value.outros, color: 'slate', icon: 'fas fa-circle-question', sub: 'Etapa fora do funil padrão' }]
+    : []),
 ])
 
 const rates = computed(() => [
-  { label: '% Vendida (CRM)', value: a.value.taxa_venda,    suffix: '%', color: 'emerald', tooltip: 'Vendida (etapa CRM) ÷ Total. NÃO confundir com venda concretizada.' },
-  { label: '% Distrato',      value: a.value.taxa_distrato, suffix: '%', color: 'rose',    tooltip: 'Canceladas ÷ Total' },
+  { label: '% Vendida (CRM)', value: a.value.taxa_venda,    suffix: '%', color: 'emerald', tooltip: 'Vendida (etapa CRM) ÷ universo bruto. NÃO confundir com venda concretizada.' },
+  { label: '% Distrato',      value: a.value.taxa_distrato, suffix: '%', color: 'rose',    tooltip: 'Canceladas ÷ universo bruto (não muda quando as canceladas saem do total)' },
 ])
 
 const tempos = computed(() => [
