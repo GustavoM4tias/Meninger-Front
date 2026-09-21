@@ -21,6 +21,10 @@ const saveLS = (k, a) => { try { localStorage.setItem(k, JSON.stringify(a)); } c
 export const useReservasStore = defineStore('reservas', () => {
     const reservas = ref([]);
     const count = ref(0);
+    // O servidor confirma se filtrou. A tela mostra isso em cima da lista:
+    // número que muda por causa de um filtro invisível é o que faz alguém
+    // comparar com o CV e achar que o sistema está errado.
+    const canceladosExcluidos = ref(true);
     const periodo = ref({ data_inicio: null, data_fim: null });
     // O periodo que o SERVIDOR escolhe quando ninguem manda data. Mora na store
     // (e nao na tela) porque a tela e remontada a cada troca de guia: se
@@ -48,6 +52,11 @@ export const useReservasStore = defineStore('reservas', () => {
         empresa_correspondente: [],
         lead_origem: [],
         only_active: false, only_vendida: false, with_lead: false, excluir_painel: false,
+        // Canceladas, distratadas, reprovadas e vencidas ficam FORA por padrão
+        // (decisão de 2026-09-21). `false` aqui significa "usar o padrão do
+        // servidor", que é excluir - `buildQuery` só manda booleano quando é
+        // true, então marcar isto é o que PEDE o universo cheio.
+        incluir_cancelados: false,
         // Travada para o ERP: entrou em Envio Sienge e não virou contrato no
         // Sienge dentro do prazo do lote (ver Meninger-Back/lib/alertaEnvioErp.js).
         only_alerta_erp: false,
@@ -142,6 +151,7 @@ export const useReservasStore = defineStore('reservas', () => {
             reservas.value = Array.isArray(data.results) ? data.results : [];
             count.value = data.count ?? reservas.value.length ?? 0;
             periodo.value = data.periodo ?? { data_inicio: null, data_fim: null };
+            canceladosExcluidos.value = data.cancelados_excluidos !== false;
             mergeOptions(reservas.value);
         } catch (e) {
             if (e?.name === 'AbortError') return; // cancelada por uma busca mais nova
@@ -167,7 +177,7 @@ export const useReservasStore = defineStore('reservas', () => {
 
     return {
         // state
-        reservas, count, periodo, periodoPadrao, error, filtros,
+        reservas, count, periodo, periodoPadrao, error, filtros, canceladosExcluidos,
         // options
         empreendimentosOptions, situacoesOptions, statusRepasseOptions,
         imobiliariasOptions, corretoresOptions, empresasCorrespondentesOptions,

@@ -56,6 +56,8 @@ const router = useRouter();
 const { isVendida, isCancelada, isEmRepasse } = store;
 
 const reservas = toRef(store, 'reservas');
+// Confirmado pelo SERVIDOR, não deduzido do filtro local: é ele que decide.
+const canceladosExcluidos = toRef(store, 'canceladosExcluidos');
 const periodo = toRef(store, 'periodo');
 const error = toRef(store, 'error');
 const filtros = toRef(store, 'filtros');
@@ -67,7 +69,7 @@ error.value = null;
 /* ── Filtros do servidor (URL + API) ─────────────────────────────────────── */
 const ARRAY_FIELDS = ['empreendimento', 'etapa', 'bloco', 'unidade', 'situacao', 'status_repasse', 'tipovenda', 'imobiliaria', 'corretor', 'empresa_correspondente', 'lead_origem'];
 const STR_FIELDS = ['nome', 'documento', 'data_inicio', 'data_fim'];
-const BOOL_FIELDS = ['only_active', 'only_vendida', 'with_lead', 'excluir_painel', 'only_alerta_erp'];
+const BOOL_FIELDS = ['only_active', 'only_vendida', 'with_lead', 'excluir_painel', 'only_alerta_erp', 'incluir_cancelados'];
 
 function syncFiltersFromUrl() {
   const q = route.query;
@@ -183,6 +185,8 @@ function limpar() {
     lead_origem: [],
     only_active: false, only_vendida: false, with_lead: false, excluir_painel: false,
     only_alerta_erp: false,
+    // Desmarcado = canceladas/distratadas/vencidas FORA (o padrão).
+    incluir_cancelados: false,
     data_inicio: '', data_fim: '',
   });
   recorte.value = '';
@@ -507,6 +511,14 @@ onMounted(async () => {
 
         <div class="sm:col-span-2 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2
                     pt-3 border-t border-line-subtle">
+          <!--
+            Canceladas ficam fora por padrão. Este switch PEDE o universo
+            cheio, e por isso o rótulo fala do que ele acrescenta: "excluir
+            canceladas" marcado por padrão seria um filtro ligado que ninguém
+            ligou, e a pessoa passaria a desconfiar dos outros.
+          -->
+          <Switch v-model="filtros.incluir_cancelados" size="sm" label="Incluir canceladas/vencidas"
+            title="Por padrão o total não inclui canceladas, distratadas, reprovadas e vencidas." />
           <Switch v-model="filtros.only_active" size="sm" label="Em curso (ativa)" />
           <Switch v-model="filtros.only_vendida" size="sm" label="Só etapa Vendida (CRM)"
             description="Etapa do CRM, não venda concretizada" />
@@ -549,6 +561,19 @@ onMounted(async () => {
           de {{ nf.format(reservas.length) }} reserva{{ reservas.length === 1 ? '' : 's' }}
         </span>
         <span class="font-mono text-ink-subtle tabular-nums">{{ periodoLabel }}</span>
+        <!--
+          O recorte padrão aparece SEMPRE que está valendo, e é clicável para
+          desligar. Um total que não bate com o CV precisa se explicar sozinho;
+          sem isto, a conclusão de quem compara é que o sistema está errado.
+        -->
+        <button v-if="canceladosExcluidos" type="button"
+          class="inline-flex items-center gap-1.5 h-7 px-2 rounded-md bg-surface-sunken border border-line
+                 text-micro font-medium text-ink-muted hover:border-accent/40 transition-colors duration-120 focus-ring"
+          title="Clique para incluir as canceladas, distratadas, reprovadas e vencidas no total."
+          @click="filtros.incluir_cancelados = true">
+          <i class="fas fa-filter-circle-xmark"></i>
+          canceladas/vencidas fora
+        </button>
         <button v-if="recorteAtivo" type="button"
           class="inline-flex items-center gap-1.5 h-7 px-2 rounded-md bg-accent-soft text-accent
                  text-micro font-medium hover:bg-accent/15 transition-colors duration-120 focus-ring"
