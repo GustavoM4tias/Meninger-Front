@@ -162,8 +162,12 @@ export const useOutlookStore = defineStore('outlook', () => {
             selected.value = await api.getMessage(id);
             // Abrir marca como lida, igual ao Outlook. Silencioso: se falhar, a
             // pessoa continua lendo — não é motivo de erro na tela.
-            const naLista = messages.value.find(m => m.id === id);
-            if (naLista && !naLista.isRead) markRead(id, true).catch(() => {});
+            //
+            // A decisão sai do DETALHE que acabou de chegar, não da lista: quem
+            // abre pela Triagem, pelo "Abrir na tela" da Eme ou logo depois de
+            // trocar de pasta chega aqui sem a mensagem na lista, e ficava
+            // lendo sem marcar.
+            if (selected.value && !selected.value.isRead) markRead(id, true).catch(() => {});
         } catch (err) {
             error.value = err.message; noteGraphError(err);
         } finally {
