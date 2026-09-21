@@ -107,14 +107,35 @@ export const getFeedback = async ({ page = 1, per_page = 30, rating } = {}) => {
 }
 
 // Incidentes do validador anti-alucinação (Brain Studio > Validação, admin)
-export const getValidationIncidents = async ({ page = 1, per_page = 30, outcome, reviewed } = {}) => {
+export const getValidationIncidents = async ({ page = 1, per_page = 30, outcome, reviewed, verdict } = {}) => {
   const params = new URLSearchParams({ page, per_page })
   if (outcome) params.set('outcome', outcome)
   if (reviewed !== undefined && reviewed !== '') params.set('reviewed', reviewed)
+  if (verdict !== undefined && verdict !== '') params.set('verdict', verdict)
   const response = await fetch(`${BASE}/incidents?${params}`, {
     headers: { ...authHeader(), 'Content-Type': 'application/json' },
   })
   if (!response.ok) throw new Error('Erro ao carregar incidentes de validação.')
+  return response.json()
+}
+
+/**
+ * O VEREDITO da triagem: a trava acertou ou atrapalhou?
+ *
+ * É a única pergunta que diz se ela deve ficar como está, endurecer ou sair.
+ * "corrected/blocked/warned" conta o que a trava FEZ; isto conta se ela estava
+ * certa ao fazer. `veredito = null` desfaz (quem julga também erra).
+ */
+export const setIncidentVerdict = async (incidentId, veredito, nota) => {
+  const response = await fetch(`${BASE}/incidents/${incidentId}`, {
+    method: 'PATCH',
+    headers: { ...authHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ verdict: veredito, ...(nota !== undefined ? { verdict_note: nota } : {}) }),
+  })
+  if (!response.ok) {
+    const e = await response.json().catch(() => ({}))
+    throw new Error(e.error || 'Erro ao registrar o veredito.')
+  }
   return response.json()
 }
 

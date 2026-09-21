@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import * as api from '@/utils/OfficeAI/apiOfficeBrain'
-import { getFeedback, getValidationIncidents, setIncidentReviewed } from '@/utils/OfficeAI/apiOfficeChat'
+import { getFeedback, getValidationIncidents, setIncidentReviewed, setIncidentVerdict } from '@/utils/OfficeAI/apiOfficeChat'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
@@ -83,8 +83,14 @@ const detail = reactive({ open: false, item: null })
 // Validação (incidentes do validador anti-alucinação)
 const inc = reactive({
   loading: false, items: [], total: 0, page: 1,
-  stats: { corrected: 0, blocked: 0, warned: 0, pending: 0, total: 0 },
-  outcome: '', reviewed: 'false', loaded: false,
+  stats: {
+    corrected: 0, blocked: 0, warned: 0, pending: 0, total: 0,
+    alucinacao: 0, falso_positivo: 0, inconclusivo: 0, sem_veredito: 0,
+    julgados: 0, precisao: null,
+  },
+  // A fila de trabalho da triagem começa no que ainda não foi julgado: é o
+  // estado em que a aba é útil.
+  outcome: '', reviewed: '', verdict: 'pendente', loaded: false,
 })
 const incDetail = reactive({ open: false, item: null })
 
@@ -437,12 +443,50 @@ async function loadIncidents() {
       page: inc.page, per_page: 30,
       outcome: inc.outcome || undefined,
       reviewed: inc.reviewed,
+      verdict: inc.verdict,
     })
     inc.items = data.incidents; inc.stats = data.stats; inc.total = data.total; inc.loaded = true
   } catch (e) { notify(e.message || 'Erro ao carregar incidentes.', 'err') } finally { inc.loading = false }
 }
 function setIncOutcome(v) { inc.outcome = v; inc.page = 1; loadIncidents() }
-function setIncReviewedFilter(v) { inc.reviewed = v; inc.page = 1; loadIncidents() }
+function setIncVerdictFilter(v) { inc.verdict = v; inc.page = 1; loadIncidents() }
+
+/**
+ * Julgar o incidente: a trava acertou ou atrapalhou?
+ *
+ * Recarrega a lista depois de gravar porque o filtro padrão é "pendente" - o
+ * item julgado sai da fila, que é o comportamento que faz a triagem andar.
+ */
+async function julgar(item, veredito) {
+  try {
+    const r = await setIncidentVerdict(item.id, item.verdict === veredito ? null : veredito)
+    item.verdict = r.verdict
+    item.reviewed = r.reviewed
+    notify(r.verdict ? 'Veredito registrado.' : 'Veredito desfeito.')
+    if (incDetail.open) incDetail.open = false
+    loadIncidents()
+  } catch (e) { notify(e.message, 'err') }
+}
+
+const veredictoOptions = computed(() => [
+  { value: 'pendente', label: 'A julgar', count: inc.stats.sem_veredito },
+  { value: 'alucinacao', label: 'Alucinação', count: inc.stats.alucinacao },
+  { value: 'falso_positivo', label: 'Falso positivo', count: inc.stats.falso_positivo },
+  { value: 'inconclusivo', label: 'Inconclusivo', count: inc.stats.inconclusivo },
+  { value: '', label: 'Todos', count: inc.stats.total },
+])
+const vereditoLabel = (v) => ({
+  alucinacao: 'Alucinação', falso_positivo: 'Falso positivo', inconclusivo: 'Inconclusivo',
+}[v] || '')
+const vereditoVariant = (v) => ({
+  alucinacao: 'danger', falso_positivo: 'warning', inconclusivo: 'neutral',
+}[v] || 'neutral')
+
+// A taxa de acerto em percentual, ou null quando ninguém julgou nada ainda.
+// Mostrar 0% sem amostra pareceria uma trava péssima; "sem dados" é a verdade.
+const precisaoPct = computed(() => inc.stats.precisao == null
+  ? null
+  : Math.round(inc.stats.precisao * 100))
 function incGo(p) { if (p < 1 || p > incPages.value) return; inc.page = p; loadIncidents() }
 function openIncDetail(item) { incDetail.item = item; incDetail.open = true }
 async function toggleIncReviewed(item) {
@@ -460,11 +504,6 @@ const incOutcomeOptions = computed(() => [
   { value: 'blocked', label: 'Bloqueadas', count: inc.stats.blocked },
   { value: 'warned', label: 'Com aviso', count: inc.stats.warned },
 ])
-const incReviewedOptions = [
-  { value: 'false', label: 'A revisar' },
-  { value: 'true', label: 'Revisados' },
-  { value: '', label: 'Todos' },
-]
 const outcomeLabel = (o) => ({ corrected: 'Corrigida', blocked: 'Bloqueada', warned: 'Com aviso' }[o] || o)
 const outcomeVariant = (o) => ({ corrected: 'info', blocked: 'warning', warned: 'danger' }[o] || 'neutral')
 const outcomeIcon = (o) => ({
@@ -709,10 +748,46 @@ onMounted(load)
       <!-- VALIDAÇÃO -->
       <section v-show="tab === 'validation'">
         <p class="text-xs text-ink-muted mb-4">
-          Cada vez que o validador anti-alucinação pega a Eme citando valores que não constam nos dados consultados,
-          o episódio é registrado aqui - com o texto original, o texto entregue e o desfecho. Use esta tela para
-          entender os padrões de erro e ajustar políticas/glossário.
+          Cada vez que a trava anti-invenção pega a Eme citando valores que não constam nos dados consultados,
+          o episódio é registrado aqui - com a pergunta, o texto original, o entregue e o que a consulta devolveu.
+          <strong class="text-ink">Julgue cada um:</strong> a trava acertou (era invenção) ou atrapalhou (o valor
+          era real)? É esse veredito que diz se ela deve ficar como está, endurecer ou sair - hoje ela tem mais de
+          200 linhas de exceção, e cada uma nasceu de uma resposta certa que foi bloqueada.
         </p>
+
+        <!-- A TAXA DE ACERTO DA TRAVA: o número que esta aba existe para produzir -->
+        <Surface variant="raised" padding="md" class="mb-4">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Taxa de acerto da trava</p>
+              <p v-if="precisaoPct === null" class="text-lg font-semibold text-ink-muted mt-1">
+                Sem dados ainda
+              </p>
+              <p v-else class="text-3xl font-semibold mt-1 tabular-nums"
+                :class="precisaoPct >= 70 ? 'text-data-pos' : precisaoPct >= 40 ? 'text-data-warn' : 'text-data-neg'">
+                {{ precisaoPct }}%
+              </p>
+              <p class="text-xs text-ink-muted mt-1">
+                <template v-if="precisaoPct === null">
+                  Julgue alguns incidentes abaixo para a taxa aparecer.
+                </template>
+                <template v-else>
+                  {{ inc.stats.alucinacao }} invenção real em {{ inc.stats.julgados }} julgado{{ inc.stats.julgados !== 1 ? 's' : '' }}
+                  ({{ inc.stats.falso_positivo }} falso{{ inc.stats.falso_positivo !== 1 ? 's' : '' }} positivo{{ inc.stats.falso_positivo !== 1 ? 's' : '' }}).
+                  Inconclusivos ficam de fora da conta.
+                </template>
+              </p>
+            </div>
+            <div class="text-right text-xs text-ink-muted max-w-xs leading-relaxed">
+              <p v-if="precisaoPct !== null && precisaoPct < 50">
+                Abaixo de 50%, a trava está penalizando mais resposta certa do que impedindo invenção.
+              </p>
+              <p v-else-if="precisaoPct !== null">
+                {{ inc.stats.sem_veredito }} incidente{{ inc.stats.sem_veredito !== 1 ? 's' : '' }} ainda sem veredito.
+              </p>
+            </div>
+          </div>
+        </Surface>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <Surface variant="raised" padding="sm"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Total</p><p class="text-2xl font-semibold text-ink mt-1 tabular-nums">{{ inc.stats.total }}</p></Surface>
@@ -723,8 +798,8 @@ onMounted(load)
 
         <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
           <div class="flex items-center gap-2 flex-wrap">
+            <SegmentedControl :model-value="inc.verdict" :options="veredictoOptions" size="sm" @change="setIncVerdictFilter" />
             <SegmentedControl :model-value="inc.outcome" :options="incOutcomeOptions" size="sm" @change="setIncOutcome" />
-            <SegmentedControl :model-value="inc.reviewed" :options="incReviewedOptions" size="sm" @change="setIncReviewedFilter" />
           </div>
           <span class="text-xs text-ink-subtle font-mono">{{ inc.total }} resultado{{ inc.total !== 1 ? 's' : '' }}</span>
         </div>
@@ -750,7 +825,8 @@ onMounted(load)
                 <Badge :variant="outcomeVariant(item.outcome)" size="sm">{{ outcomeLabel(item.outcome) }}</Badge>
                 <span class="text-sm font-medium text-ink">{{ item.user?.username || 'Usuário' }}</span>
                 <span v-if="item.attempts" class="text-xs text-ink-subtle font-mono">{{ item.attempts }} tentativa{{ item.attempts > 1 ? 's' : '' }}</span>
-                <Badge v-if="item.reviewed" variant="neutral" size="sm">Revisado</Badge>
+                <Badge v-if="item.verdict" :variant="vereditoVariant(item.verdict)" size="sm">{{ vereditoLabel(item.verdict) }}</Badge>
+                <Badge v-else-if="item.reviewed" variant="neutral" size="sm">Revisado</Badge>
                 <span class="text-xs text-ink-subtle ml-auto font-mono">{{ fromNow(item.created_at) }}</span>
               </div>
               <p class="text-xs text-ink-muted line-clamp-2 leading-relaxed mt-1">{{ truncate(item.context?.user_question) }}</p>
@@ -1069,6 +1145,26 @@ onMounted(load)
           <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Pool</p><Badge :variant="poolVariant(incDetail.item.context.pool)" size="sm" class="mt-0.5">{{ poolLabel(incDetail.item.context.pool) }}</Badge></div>
           <div class="rounded-lg bg-surface-sunken border border-line px-3 py-2"><p class="text-micro uppercase tracking-wider text-ink-subtle font-mono">Latência</p><p class="text-xs text-ink font-mono mt-0.5">{{ formatLatency(incDetail.item.context.latency_ms) }}</p></div>
         </section>
+        <!-- A EVIDÊNCIA. Sem ela o veredito seria chute: para dizer se o valor
+             acusado existia, é preciso ver o que a consulta devolveu. -->
+        <section v-if="incDetail.item.evidence?.bloco_autoritativo">
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1.5">
+            O que as consultas devolveram
+            <span v-if="incDetail.item.evidence.consultas?.length > 1" class="normal-case tracking-normal">
+              ({{ incDetail.item.evidence.consultas.length }} consultas no turno)
+            </span>
+          </p>
+          <pre class="rounded-lg border border-line bg-surface-sunken p-3 text-xs font-mono text-ink-muted leading-relaxed max-h-64 overflow-auto whitespace-pre-wrap">{{ incDetail.item.evidence.bloco_autoritativo }}</pre>
+        </section>
+        <section v-else-if="incDetail.item.created_at" class="rounded-lg border border-line bg-surface-sunken p-3">
+          <p class="text-xs text-ink-muted leading-relaxed">
+            <i class="fas fa-circle-info mr-1"></i>
+            Este incidente é anterior à triagem e não guardou o retorno das consultas. Dá para julgar pelo
+            texto e pelos valores acusados, mas sem o dado ao lado - se ficar em dúvida, marque
+            <strong class="text-ink">inconclusivo</strong>.
+          </p>
+        </section>
+
         <section v-if="incDetail.item.context?.tool_calls?.length">
           <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">Ferramentas chamadas ({{ incDetail.item.context.tool_calls.length }})</p>
           <div class="flex items-center gap-1.5 flex-wrap">
@@ -1077,9 +1173,35 @@ onMounted(load)
             </Badge>
           </div>
         </section>
+        <!-- O VEREDITO. Clicar no botão já marcado desfaz: quem julga erra, e
+             veredito preso enviesaria a taxa para sempre. -->
+        <div class="pt-3 border-t border-line">
+          <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-2">
+            A trava acertou?
+          </p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <Button size="sm" :variant="incDetail.item.verdict === 'alucinacao' ? 'danger' : 'outline'"
+              icon="fas fa-ghost" @click="julgar(incDetail.item, 'alucinacao')">
+              Era alucinação
+            </Button>
+            <Button size="sm" :variant="incDetail.item.verdict === 'falso_positivo' ? 'primary' : 'outline'"
+              icon="fas fa-thumbs-down" @click="julgar(incDetail.item, 'falso_positivo')">
+              Era falso positivo
+            </Button>
+            <Button size="sm" :variant="incDetail.item.verdict === 'inconclusivo' ? 'secondary' : 'ghost'"
+              icon="fas fa-circle-question" @click="julgar(incDetail.item, 'inconclusivo')">
+              Não dá para dizer
+            </Button>
+          </div>
+          <p class="text-xs text-ink-subtle mt-2 leading-relaxed">
+            <strong class="text-ink-muted">Alucinação</strong>: o valor acusado não existia nos dados.
+            <strong class="text-ink-muted">Falso positivo</strong>: o valor era real e a resposta certa foi penalizada.
+          </p>
+        </div>
+
         <div class="flex items-center justify-between gap-3 pt-2 border-t border-line">
           <span class="text-xs text-ink-subtle font-mono">{{ fmt(incDetail.item.created_at) }}</span>
-          <Button size="sm" :variant="incDetail.item.reviewed ? 'ghost' : 'primary'"
+          <Button size="sm" variant="ghost"
             :icon="incDetail.item.reviewed ? 'fas fa-rotate-left' : 'fas fa-check'"
             @click="toggleIncReviewed(incDetail.item)">
             {{ incDetail.item.reviewed ? 'Reabrir' : 'Marcar como revisado' }}
