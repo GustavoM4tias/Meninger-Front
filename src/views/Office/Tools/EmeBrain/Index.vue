@@ -104,6 +104,7 @@ const tabOptions = computed(() => [
   { value: 'validation', label: 'Validação', icon: 'fas fa-shield-halved', count: inc.stats.pending || undefined },
   { value: 'versions', label: 'Versões', icon: 'fas fa-code-branch', count: versions.value.length },
   { value: 'retrieval', label: 'Recuperação', icon: 'fas fa-magnifying-glass-chart' },
+  { value: 'anchoring', label: 'Ancoragem', icon: 'fas fa-anchor' },
   { value: 'eval', label: 'Avaliação', icon: 'fas fa-vial-circle-check', count: evalState.cases.length || undefined },
   { value: 'galeria', label: 'Galeria', icon: 'fas fa-shapes' },
   { value: 'sandbox', label: 'Sandbox', icon: 'fas fa-flask' },
@@ -205,6 +206,61 @@ async function saveBehavior() {
 }
 
 // ── Recuperação ──
+// ── Ancoragem (o modelo cita a célula em vez de digitar o número) ──────────
+//
+// A constante existe porque o exemplo TEM chaves duplas, e escrevê-lo direto no
+// template faria o Vue tentar interpretar o próprio exemplo como interpolação.
+const EXEMPLO_REF = '{'.repeat(2) + 'ref:r3.vendas' + '}'.repeat(2)
+
+const anchoring = reactive({ enabled: true, modo: 'suave', min_taxa: 0.8, max_citacoes: 400, loaded: false })
+
+async function loadAnchoring() {
+  try {
+    const { settings } = await api.getAnchoring()
+    Object.assign(anchoring, settings, { loaded: true })
+  } catch (e) { notify(e.message || 'Erro ao carregar a ancoragem.', 'err') }
+}
+async function saveAnchoring() {
+  busy.value = true
+  try {
+    const { settings } = await api.saveAnchoring({
+      enabled: anchoring.enabled, modo: anchoring.modo,
+      min_taxa: Number(anchoring.min_taxa), max_citacoes: Number(anchoring.max_citacoes),
+    })
+    Object.assign(anchoring, settings)
+    notify('Ancoragem salva. Vale no próximo turno, sem publicar.')
+  } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
+}
+
+// ── Portão de publicação (a régua obrigatória) ─────────────────────────────
+//
+// O veredito é carregado ANTES do clique em Publicar: descobrir que o portão
+// barrou na hora de publicar é a pior hora de descobrir.
+const gate = reactive({
+  settings: { enabled: false, min_aprovacao: 1, max_idade_horas: 24 },
+  ultima_rodada: null, veredito: { ok: true }, loaded: false,
+})
+
+async function loadGate() {
+  try {
+    const d = await api.getEvalGate()
+    Object.assign(gate, d, { loaded: true })
+  } catch (e) { notify(e.message || 'Erro ao carregar o portão.', 'err') }
+}
+async function saveGate() {
+  busy.value = true
+  try {
+    const { settings } = await api.saveEvalGate({
+      enabled: gate.settings.enabled,
+      min_aprovacao: Number(gate.settings.min_aprovacao),
+      max_idade_horas: Number(gate.settings.max_idade_horas),
+    })
+    gate.settings = settings
+    notify('Portão salvo.')
+    await loadGate()
+  } catch (e) { notify(e.message, 'err') } finally { busy.value = false }
+}
+
 async function loadRetrieval() {
   try {
     const { settings, index } = await api.getRetrieval()
@@ -370,10 +426,35 @@ async function toggleReport(r, enabled) {
 }
 
 // ── Versões ──
-async function doPublish() {
+async function doPublish(force = false, forceReason = '') {
   busy.value = true
-  try { await api.publish(publishLabel.value || null); publishLabel.value = ''; notify('Rascunho publicado e ativado.'); await load() }
-  catch (e) { notify(e.message, 'err') } finally { busy.value = false }
+  try {
+    await api.publish(publishLabel.value || null, null, force, forceReason)
+    publishLabel.value = ''
+    notify(force ? 'Publicado SEM a régua - o motivo ficou gravado na versão.' : 'Rascunho publicado e ativado.')
+    await load()
+    await loadGate()
+  } catch (e) {
+    // O portão responde 409 com o conserto no texto. Em vez de só mostrar o
+    // erro, a tela oferece a saída - e cobra o motivo, que é o que torna a
+    // exceção auditável depois.
+    if (/régua|regua|avaliação|avaliacao|rascunho mudou|rodada/i.test(e.message || '')) {
+      const seguir = await pedirConfirmacao({
+        title: 'A régua não liberou esta publicação',
+        consequence: e.message,
+        hint: 'Rode a régua na aba Avaliação. Se precisar publicar assim mesmo (o provedor está fora, por exemplo), confirme abaixo: o motivo fica gravado na versão.',
+        tone: 'warn',
+        confirmLabel: 'Publicar sem a régua',
+      })
+      if (seguir) {
+        const motivo = window.prompt('Por que está publicando sem a régua?') || ''
+        if (motivo.trim()) return doPublish(true, motivo.trim())
+        notify('Publicação cancelada: o motivo é obrigatório.', 'err')
+      }
+    } else {
+      notify(e.message, 'err')
+    }
+  } finally { busy.value = false }
 }
 async function doRollback(v) {
   if (!await pedirConfirmacao({
@@ -520,6 +601,9 @@ const outcomeHint = (o) => ({
 watch(tab, (t) => {
   if (t === 'insights' && !fb.loaded) loadFeedback()
   if (t === 'validation' && !inc.loaded) loadIncidents()
+  if (t === 'anchoring' && !anchoring.loaded) loadAnchoring()
+  // O portão aparece em duas abas: onde se configura e onde se publica.
+  if ((t === 'anchoring' || t === 'versions' || t === 'eval') && !gate.loaded) loadGate()
 })
 onMounted(load)
 </script>
@@ -845,6 +929,88 @@ onMounted(load)
         </div>
       </section>
 
+      <!-- ANCORAGEM -->
+      <section v-show="tab === 'anchoring'" class="space-y-4">
+        <p class="text-xs text-ink-muted">
+          Com a ancoragem ligada, a Eme <strong class="text-ink">referencia a célula</strong> em vez de digitar o
+          número: ela escreve <code class="font-mono text-ink">{{ EXEMPLO_REF }}</code> e o servidor troca pelo
+          valor real antes de a pessoa ler. Isso resolve de raiz o que nenhuma regra a mais resolve - citar o número
+          certo na entidade errada deixa de ser possível, porque nome e valor saem da mesma linha; e horário, prazo e
+          data que a Eme escreve em prosa deixam de ser confundidos com dado inventado.
+        </p>
+
+        <Surface variant="raised" padding="md" class="space-y-4">
+          <Switch v-model="anchoring.enabled" label="Ligar a ancoragem"
+            description="Acrescenta a instrução de citação ao prompt e resolve as referências na resposta." />
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1.5">Modo</p>
+              <SegmentedControl :model-value="anchoring.modo" size="sm"
+                :options="[{ value: 'suave', label: 'Suave' }, { value: 'estrito', label: 'Estrito' }]"
+                @change="v => anchoring.modo = v" />
+              <p class="text-xs text-ink-subtle mt-1.5 leading-relaxed">
+                <strong class="text-ink-muted">Suave</strong>: a referência é resolvida e o número cru que sobrar segue
+                pela trava antiga. <strong class="text-ink-muted">Estrito</strong>: além disso, resposta pouco ancorada
+                com dado na mão vira incidente, para você ver o padrão antes de apertar.
+              </p>
+            </div>
+            <Input v-model.number="anchoring.min_taxa" type="number" step="0.05" min="0" max="1" size="sm"
+              label="Ancoragem mínima (modo estrito)"
+              hint="0,8 = quatro em cada cinco números vieram por referência." />
+            <Input v-model.number="anchoring.max_citacoes" type="number" size="sm"
+              label="Teto de itens citáveis"
+              hint="Acima disso o contexto pesa mais que o ganho e o modelo começa a errar o id." />
+          </div>
+
+          <div class="flex justify-end pt-3 border-t border-line">
+            <Button size="sm" icon="fas fa-floppy-disk" :loading="busy" @click="saveAnchoring">Salvar ancoragem</Button>
+          </div>
+        </Surface>
+
+        <!-- PORTÃO DA RÉGUA -->
+        <Surface variant="raised" padding="md" class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-ink">Régua obrigatória para publicar</h3>
+            <p class="text-xs text-ink-muted mt-1 leading-relaxed">
+              Com o portão ligado, publicar exige uma rodada de avaliação aprovada <strong class="text-ink">sobre o
+              rascunho</strong> que vai entrar. A rodada sobre o prompt que já está no ar não serve de prova: ela não
+              diz nada sobre o que você está prestes a publicar. Se o rascunho mudar depois da rodada, o selo perde a
+              validade.
+            </p>
+          </div>
+
+          <div v-if="gate.loaded" class="rounded-lg border p-3 text-sm"
+            :class="gate.veredito?.ok ? 'border-data-pos/30 bg-data-pos/10' : 'border-data-warn/30 bg-data-warn/10'">
+            <p class="font-medium" :class="gate.veredito?.ok ? 'text-data-pos' : 'text-data-warn'">
+              <i :class="gate.veredito?.ok ? 'fas fa-circle-check' : 'fas fa-triangle-exclamation'" class="mr-1.5"></i>
+              {{ gate.veredito?.ok
+                ? (gate.settings.enabled ? 'O rascunho atual está liberado para publicar.' : 'Portão desligado: publica sem exigir a régua.')
+                : gate.veredito?.motivo }}
+            </p>
+            <p v-if="gate.ultima_rodada" class="text-xs text-ink-muted mt-1 font-mono">
+              última rodada de rascunho: {{ gate.ultima_rodada.passed }}/{{ gate.ultima_rodada.total }}
+              · {{ gate.ultima_rodada.status }} · {{ fmt(gate.ultima_rodada.created_at) }}
+            </p>
+            <p v-else class="text-xs text-ink-muted mt-1">Nenhuma rodada sobre o rascunho ainda.</p>
+          </div>
+
+          <Switch v-model="gate.settings.enabled" label="Exigir a régua para publicar"
+            description="Nasce desligado: ligue depois de ter um conjunto de casos que passa, senão todo mundo aprende a usar a saída de emergência." />
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input v-model.number="gate.settings.min_aprovacao" type="number" step="0.05" min="0" max="1" size="sm"
+              label="Aprovação mínima" hint="1 = todos os casos precisam passar." />
+            <Input v-model.number="gate.settings.max_idade_horas" type="number" size="sm"
+              label="Validade da rodada (horas)" hint="Depois disso a rodada é velha demais para valer como prova." />
+          </div>
+
+          <div class="flex justify-end pt-3 border-t border-line">
+            <Button size="sm" icon="fas fa-floppy-disk" :loading="busy" @click="saveGate">Salvar portão</Button>
+          </div>
+        </Surface>
+      </section>
+
       <!-- VERSÕES -->
       <section v-show="tab === 'versions'">
         <Surface variant="raised" padding="sm" class="mb-4">
@@ -853,6 +1019,10 @@ onMounted(load)
             <Button variant="primary" size="sm" icon="fas fa-rocket" :loading="busy" @click="doPublish">Publicar rascunho</Button>
           </div>
         </Surface>
+        <div v-if="gate.loaded && gate.settings.enabled && !gate.veredito?.ok"
+          class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 mb-3 text-sm text-data-warn">
+          <i class="fas fa-triangle-exclamation mr-1.5"></i>{{ gate.veredito?.motivo }}
+        </div>
         <p class="text-xs text-ink-muted mb-3">Cada publicação congela o rascunho. O rollback reativa uma versão na hora (o rascunho não é alterado).</p>
         <div class="space-y-2">
           <Surface v-for="v in versions" :key="v.id" variant="raised" padding="sm" :class="v.is_active ? 'border-data-pos/40' : ''">

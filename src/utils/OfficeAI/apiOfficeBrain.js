@@ -45,7 +45,11 @@ export const updateReport = (id, data) => req(`/reports/${id}`, { method: 'PUT',
 
 // Versões / publicação
 export const getVersions = () => req('/versions')
-export const publish = (label, note) => req('/publish', { method: 'POST', body: JSON.stringify({ label, note }) })
+// `force` só é usado quando o portão da régua barra e a pessoa decide publicar
+// assim mesmo. O motivo fica gravado na versão - é o que separa "exceção
+// justificada" de "portão que ninguém respeita".
+export const publish = (label, note, force = false, forceReason = '') =>
+  req('/publish', { method: 'POST', body: JSON.stringify({ label, note, force, force_reason: forceReason }) })
 export const rollback = (id) => req(`/rollback/${id}`, { method: 'POST' })
 export const deactivate = () => req('/deactivate', { method: 'POST' })
 
@@ -65,4 +69,15 @@ export const updateEvalCase = (id, data) => req(`/eval/cases/${id}`, { method: '
 export const deleteEvalCase = (id) => req(`/eval/cases/${id}`, { method: 'DELETE' })
 export const getEvalRuns = () => req('/eval/runs')
 export const getEvalRun = (id) => req(`/eval/runs/${id}`)
-export const runEval = (caseIds, label) => req('/eval/run', { method: 'POST', body: JSON.stringify({ case_ids: caseIds || null, label: label || null }) })
+// `alvo` decide o que a rodada testa: 'rascunho' (o que vai entrar, e é o que
+// serve de prova para o portão) ou 'ativo' (o prompt que já está no ar).
+export const runEval = (caseIds, label, alvo = 'rascunho') =>
+  req('/eval/run', { method: 'POST', body: JSON.stringify({ case_ids: caseIds || null, label: label || null, alvo }) })
+
+// Ancoragem: o modelo cita a célula em vez de digitar o número.
+export const getAnchoring = () => req('/anchoring')
+export const saveAnchoring = (settings) => req('/anchoring', { method: 'PUT', body: JSON.stringify({ settings }) })
+
+// Portão de publicação (a régua obrigatória) + veredito do rascunho atual.
+export const getEvalGate = () => req('/eval-gate')
+export const saveEvalGate = (settings) => req('/eval-gate', { method: 'PUT', body: JSON.stringify({ settings }) })
