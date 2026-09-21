@@ -272,6 +272,17 @@ onMounted(recarregar);
         <i class="fas fa-circle-info mr-1.5 text-accent"></i>{{ aviso }}
       </div>
 
+      <!--
+        Rodando fora da configuração desta tela. Precisa gritar: escondido,
+        alguém editaria valores que o sistema não está lendo.
+      -->
+      <div v-if="dados?.degradado"
+        class="mb-4 rounded-lg border border-data-warn/40 bg-data-warn/10 p-3 text-sm text-data-warn">
+        <i class="fas fa-triangle-exclamation mr-1.5"></i>
+        <strong>O sistema está no provedor de emergência.</strong> {{ dados.degradado }}
+        Nada do que está abaixo está valendo até isto se resolver.
+      </div>
+
       <div v-if="carregando" class="text-sm text-ink-muted py-10 text-center">
         <i class="fas fa-circle-notch fa-spin mr-1.5"></i>Carregando conexões...
       </div>
