@@ -423,6 +423,9 @@ export const navRegistry = [
             { route: '/settings/sienge', section: 'Sienge', name: 'Sienge', icon: 'fas fa-database', iconImg: '/icons/sienge.png', adminOnly: true },
             { route: '/settings/docusign', section: 'DocuSign', name: 'DocuSign', icon: 'fas fa-file-signature', iconImg: '/icons/docusign.png', adminOnly: true },
             { route: '/tools/eme-brain', section: 'Cérebro da Eme', name: 'Cérebro da Eme', icon: 'fas fa-brain', adminOnly: true },
+            // Sem adminOnly: delegavel por alcada (o gestor comercial e quem
+            // conhece o processo). As acoes de dentro sao cobradas por capacidade.
+            { route: '/tools/eme-processos', section: 'Processos da Eme', name: 'Processos da Eme', icon: 'fas fa-diagram-project' },
             { route: '/tools/eme-atende', section: 'Eme Atende', name: 'Eme Atende', icon: 'fas fa-headset', adminOnly: true },
         ],
     },

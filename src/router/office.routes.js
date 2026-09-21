@@ -581,6 +581,17 @@ export default [
                         meta: { searchable: true, content: 'Looqbox - envio de planilhas de Engenharia e Área Construída ao bucket GCS.' },
                     },
                     {
+                        // SEM adminOnly, de proposito: quem entende o processo
+                        // comercial e o gestor comercial. As acoes de dentro
+                        // seguem lib/screenCapabilities.js (aprovar = tem a
+                        // tela; autonomia e ajustes = admin). Para travar a
+                        // tela inteira, o caminho e o cadeado das Alcadas.
+                        path: 'eme-processos',
+                        name: 'Processos da Eme',
+                        component: () => import('@/views/Office/Tools/Processos/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Mapa dos processos da empresa aprendido pela Eme: regras, fila de propostas, autonomia por processo e evidencia' },
+                    },
+                    {
                         path: 'eme-brain',
                         name: 'Cérebro da Eme',
                         component: () => import('@/views/Office/Tools/EmeBrain/Index.vue'),
