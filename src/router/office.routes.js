@@ -630,6 +630,17 @@ export default [
                         meta: { requiresAuth: true, allowedPosition: '', allowedRole: 'admin', searchable: true, content: 'Departamentos e Cargos do sistema (cidades entram sozinhas pelos empreendimentos sincronizados)' },
                     },
                     {
+                        // Trava de CÓDIGO nos três níveis (adminOnly no
+                        // navRegistry, requiresAdmin aqui, requireAdmin na API):
+                        // aqui se cadastra CREDENCIAL e se escolhe para onde
+                        // vai o dado da empresa. Não é tela para delegar pela
+                        // tela de Alçadas.
+                        path: 'ia',
+                        name: 'Conexões de IA',
+                        component: () => import('@/views/Office/Settings/AiProviders/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Conexões de IA: provedores (Gemini, OpenAI e compatíveis, Anthropic), chaves, modelos por uso e qual provedor atende cada contexto' },
+                    },
+                    {
                         path: 'integrity',
                         name: 'Integridade',
                         component: () => import('@/views/Office/Settings/Integrity/Index.vue'),

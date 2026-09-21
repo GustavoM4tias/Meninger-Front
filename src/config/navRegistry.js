@@ -410,6 +410,7 @@ export const navRegistry = [
             { route: '/settings/permissions', section: 'Alçadas', name: 'Alçadas', icon: 'fas fa-shield-halved', adminOnly: true },
             { route: '/settings/management', section: 'Departamentos', name: 'Departamentos', icon: 'fas fa-building-user', adminOnly: true },
             { route: '/settings/empresas', section: 'Empresas', name: 'Empresas', icon: 'fas fa-building-circle-arrow-right', adminOnly: true },
+            { route: '/settings/ia', section: 'Conexões de IA', name: 'Conexões de IA', icon: 'fas fa-plug-circle-bolt', adminOnly: true },
             { route: '/settings/integrity', section: 'Integridade', name: 'Integridade', icon: 'fas fa-shield-heart', adminOnly: true },
             // hiddenInNav: virou seção da tela do Mural. Continua aqui porque é
             // por este item que a delegação da gestão do mural é configurada -
