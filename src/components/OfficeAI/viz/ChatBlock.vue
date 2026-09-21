@@ -14,6 +14,7 @@
  */
 import { ref, computed, watch, h, defineAsyncComponent } from 'vue';
 import { useRouter } from 'vue-router';
+import { useOfficeAIStore } from '@/stores/officeAIStore';
 import { validarBlock } from './emeBlock.js';
 import { visuaisPossiveis, visualDoBloco } from './escolherVisual.js';
 import { exportarDatasetExcel, copiarDataset } from './exportar.js';
@@ -90,6 +91,7 @@ const props = defineProps({
   compact: { type: Boolean, default: false },
 });
 const router = useRouter();
+const aiStore = useOfficeAIStore();
 
 const valido = computed(() => validarBlock(props.block));
 const b = computed(() => props.block);
@@ -120,8 +122,11 @@ async function copiar() {
   copiado.value = true;
   setTimeout(() => { copiado.value = false; }, 1800);
 }
+/* Ação de bloco/card: abrir tela, ou virar a próxima pergunta (kind 'prompt',
+ * ex.: "Ler" e "Responder" num card de e-mail). */
 function acao(a) {
   if (a?.kind === 'navigate' && a.payload?.route) router.push({ path: a.payload.route, query: a.payload.filters || {} });
+  else if (a?.kind === 'prompt' && a.payload?.prompt && !aiStore.isStreaming) aiStore.sendMessage(a.payload.prompt);
 }
 </script>
 

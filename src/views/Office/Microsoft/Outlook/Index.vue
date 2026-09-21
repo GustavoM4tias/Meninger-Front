@@ -108,7 +108,7 @@ provide('olVerRecorte', (qual) => { tab.value = 'caixa'; recortePedido.value = {
  * lista passa para "toda a caixa" - aí a linha existe, fica marcada, e a pessoa
  * vê onde aquilo mora.
  */
-provide('olAbrirEmail', async (messageId) => {
+async function abrirEmail(messageId) {
   tab.value = 'caixa';
   if (!messageId) return;
 
@@ -116,7 +116,8 @@ provide('olAbrirEmail', async (messageId) => {
   if (!naLista && store.folder !== 'tudo') store.openFolder('tudo');
 
   store.openMessage(messageId);
-});
+}
+provide('olAbrirEmail', abrirEmail);
 
 // ── Escrever ──────────────────────────────────────────────────────────────────
 const compondo = ref(false);
@@ -194,6 +195,15 @@ onMounted(async () => {
   store.init();
   ai.carregarSettings();
   abrirComposicaoPendente();
+
+  // "Abrir na tela" do cartão de leitura da Eme: ?mensagem=<id> abre a
+  // mensagem na aba Caixa. A lista pode ainda estar vindo, e o abrir já
+  // troca para "toda a caixa" quando a mensagem não está nela.
+  if (route.query.mensagem) {
+    const id = String(route.query.mensagem);
+    router.replace({ query: { ...route.query, tab: 'caixa', mensagem: undefined } });
+    abrirEmail(id);
+  }
 
   // O trilho faz DUAS listagens no Graph (enviados + recebidos) e mora numa
   // coluna que nem existe abaixo de 1280px. Ele espera a tela pintar - senão
