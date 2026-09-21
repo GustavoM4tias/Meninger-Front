@@ -21,19 +21,24 @@
 //
 //   TAMANHO persiste     - largura do dock e caixa do flutuante são preferência,
 //                          e não mudam nada enquanto ela está fechada.
-//   ESTADO não persiste  - a Eme SEMPRE começa fechada e flutuante.
+//   ENCOSTADA persiste   - quem colou a Eme na lateral quer ela lá amanhã
+//                          também; perder isso a cada recarga (e o Office
+//                          recarrega sozinho depois de um deploy) era lido
+//                          como "a âncora quebrou".
+//   ABERTA não persiste  - a Eme SEMPRE começa fechada.
 //
-// Guardar "aberta" e "docada" parecia conveniente e era a fonte da bagunça:
-// recarregar trazia a página com um pedaço da largura reservado antes de a Eme
-// existir, o shell e a barra do topo recuavam por causa de um painel que ainda
-// não tinha montado, e qualquer recarga no meio de um ajuste deixava a tela num
-// estado que a pessoa não pediu. Colar é gesto: vale para a sessão em que foi
-// feito, e recomeça limpo.
+// Guardar "aberta" era a fonte da bagunça: recarregar trazia a página com um
+// pedaço da largura reservado antes de a Eme existir, o shell e a barra do
+// topo recuavam por causa de um painel que ainda não tinha montado. Como o
+// recuo exige aberta E visível (abaixo), começar fechada garante que nada é
+// reservado antes de o painel estar na tela - e ao abrir, ela abre encostada,
+// como ficou.
 
 import { ref, computed, watch } from 'vue';
 
 const LARGURA_KEY = 'eme:dock:largura';
 const CAIXA_KEY   = 'eme:flutuante:caixa';
+const MODO_KEY    = 'eme:dock:encostada';   // '1' = docada
 
 const MIN = 320;
 const MAX = 720;
@@ -51,14 +56,19 @@ function lerCaixa() {
     return { ...CAIXA_PADRAO };
 }
 
+function lerModo() {
+    try { return localStorage.getItem(MODO_KEY) === '1' ? 'docada' : 'flutuante'; }
+    catch { return 'flutuante'; }
+}
+
 function lerLargura() {
     const n = Number(localStorage.getItem(LARGURA_KEY));
     return Number.isFinite(n) && n >= MIN && n <= MAX ? n : PADRAO;
 }
 
 // Estado único para o app inteiro: a bolinha e o shell precisam concordar.
-// Começa SEMPRE flutuante e fechada - ver a regra no topo do arquivo.
-const modo    = ref('flutuante');
+// Começa fechada; o modo é o que a pessoa deixou - ver a regra no topo.
+const modo    = ref(lerModo());
 const largura = ref(lerLargura());
 const caixa   = ref(lerCaixa());
 // Durante o arrasto da largura, shell e nav NÃO podem animar: a transição de
@@ -70,13 +80,19 @@ const ajustando = ref(false);
 // espaço continuava reservado: ficava uma faixa vazia à direita e a bolinha no
 // canto. Agora o "aberta" mora aqui, junto do modo, e é ele quem manda no recuo.
 const aberta = ref(false);
+// A bolinha está na tela e a viewport comporta o dock? Quem diz é o
+// OfficeChatFloat: na Home e no builder de relatórios ela não é montada, e
+// abaixo de 1024px o dock não existe. Sem este gate o Office continuava
+// recuado nessas telas por um painel que não estava lá.
+const visivel = ref(false);
 
 const docada = computed(() => modo.value === 'docada');
-/** Docada E aberta: é isto que empurra o Office. */
-const ocupando = computed(() => docada.value && aberta.value);
+/** Docada, aberta E visível: é isto que empurra o Office. */
+const ocupando = computed(() => docada.value && aberta.value && visivel.value);
 
-// Versões anteriores gravavam modo e aberto: sem esta limpeza, quem já usou a
-// Eme continuaria abrindo o Office com o espaço reservado até trocar de máquina.
+// Versões anteriores gravavam modo (outra chave) e aberto: sem esta limpeza,
+// quem já usou a Eme continuaria abrindo o Office com o espaço reservado até
+// trocar de máquina.
 try {
     localStorage.removeItem('eme:dock:modo');
     localStorage.removeItem('eme:aberta');
@@ -95,10 +111,13 @@ function aplicar() {
     document.body.classList.toggle('eme-docada', ocupando.value);
 }
 
-watch([modo, largura, aberta], () => {
-    // Só o tamanho é lembrado. Modo e aberto/fechado morrem com a aba, de
+watch([modo, largura, aberta, visivel], () => {
+    // Tamanho e modo são lembrados. Aberto/fechado morre com a aba, de
     // propósito.
-    localStorage.setItem(LARGURA_KEY, String(largura.value));
+    try {
+        localStorage.setItem(LARGURA_KEY, String(largura.value));
+        localStorage.setItem(MODO_KEY, docada.value ? '1' : '0');
+    } catch { /* navegador sem storage: segue só em memória */ }
     aplicar();
 }, { immediate: true });
 
@@ -112,6 +131,7 @@ export function useEmeDock() {
         docada,
         ocupando,
         aberta,
+        visivel,
         largura,
         MIN,
         MAX,

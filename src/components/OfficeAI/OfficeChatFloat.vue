@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent, h } from 'vue';
+import { ref, computed, watch, watchEffect, onMounted, onUnmounted, defineAsyncComponent, h } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useOfficeAIStore } from '@/stores/officeAIStore';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
@@ -34,6 +34,8 @@ const ChatTitleEditor = defineAsyncComponent(() => import('./ChatTitleEditor.vue
 import IconButton from '@/components/UI/IconButton.vue';
 import { setEmeScreen, instalarCapturaCtrlClique } from '@/composables/useEmeScreenContext';
 import { useEmeDock } from '@/composables/useEmeDock';
+import { useEmeStatusLabel } from '@/composables/useEmeStatusLabel';
+import EmeStatusLabel from './EmeStatusLabel.vue';
 
 const aiStore = useOfficeAIStore();
 // ── Docada x flutuante ───────────────────────────────────────────────────────
@@ -41,9 +43,9 @@ const dock = useEmeDock();
 const permStore = usePermissionStore();
 const router = useRouter();
 const route  = useRoute();
-// Aberto/fechado mora no composable: sobrevive à recarga da página e é ele que
-// reserva o espaço quando ela está encostada. Antes, um reload fechava o painel
-// e o espaço continuava lá, vazio.
+// Aberto/fechado mora no composable: é ele que reserva o espaço quando ela
+// está encostada, e a Eme sempre nasce fechada (ver useEmeDock) - assim nunca
+// há espaço reservado sem painel na tela.
 const expanded = computed({
   get: () => dock.aberta.value,
   set: (v) => { dock.aberta.value = v; },
@@ -406,17 +408,17 @@ function pararResizeCaixa() {
 }
 
 // Tela estreita não comporta o dock: 400px a menos não deixa Office nenhum.
-watch(() => viewportW.value, (w) => { if (w < 1024 && dock.docada.value) dock.soltar(); });
+// Só o gate de visibilidade cai (o modo fica lembrado): virar o tablet de
+// volta, ou voltar do celular para a mesa, devolve a Eme encostada.
+watchEffect(() => { dock.visivel.value = showFloat.value && podeDocar.value; });
+onUnmounted(() => { dock.visivel.value = false; });
 
 // Ao expandir, re-clampa para o painel caber na viewport a partir da posição do pill.
 watch(expanded, () => { pos.value = clampPos(pos.value); });
 
-// Rótulo do que a Eme está fazendo — preview no pill colapsado enquanto não há texto.
-const streamLabel = computed(() => {
-  const running = [...aiStore.agentSteps].reverse().find(s => s.status === 'running');
-  if (running) return `Consultando ${running.label}…`;
-  return 'Eme está pensando…';
-});
+// O que a Eme está fazendo - preview na bolinha fechada enquanto não há
+// texto. Mesma frase (e mesma animação) da linha do tempo dentro do chat.
+const { currentLabel: streamLabel } = useEmeStatusLabel();
 
 // ── Drag-to-move ────────────────────────────────────────────────────────────
 const DRAG_THRESHOLD = 5; // px — abaixo disso é click, acima é drag
@@ -725,7 +727,7 @@ function rename(title) { aiStore.renameSession(title); }
                 <span class="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 animate-ping"></span>
                 <span class="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
               </span>
-              <span class="truncate">{{ streamLabel }}</span>
+              <EmeStatusLabel :label="streamLabel" class="flex-1" />
             </div>
           </Transition>
 
