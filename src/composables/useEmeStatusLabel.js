@@ -6,21 +6,18 @@
 // chat já sabia que ela estava consultando reservas.
 //
 // Ordem de quem manda no rótulo:
-//   1. tool em execução (tool_start)            "Consultando reservas · Sinop…"
-//   2. fase real do preparo no servidor (phase)  "Lendo o histórico da conversa…"
-//   3. frases que giram enquanto o modelo pensa  "Pensando… / Interpretando…"
+//   1. tool em execução (tool_start)         "Consultando reservas · Sinop…"
+//   2. texto chegando                         "Escrevendo a resposta…"
+//   3. fase real vinda do servidor (phase)    "Lendo o histórico…",
+//                                             "Aguardando gemini-2.5-flash…",
+//                                             "Reservas devolveu 37 registros…"
+//   4. "Pensando…" só se o servidor ainda não disse nada
 //
-// Enquanto o modelo pensa não chega evento nenhum. Um rótulo parado por 20 s
-// parece sistema travado; o texto gira a cada poucos segundos (como o
-// "Pondering…/Cogitating…" do Claude Code) para mostrar que segue vivo. Só
-// frases que descrevem o que o modelo faz de fato.
+// Sem frase inventada girando: tudo que aparece aqui é um estado real do
+// turno. Quem quiser mais detalhe põe mais `fase(...)` no OfficeChatService.
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useOfficeAIStore } from '@/stores/officeAIStore'
 import { verboDoPasso } from '@/utils/OfficeAI/toolKind'
-
-const FRASES_PENSANDO = ['Pensando…', 'Interpretando a pergunta…', 'Organizando o raciocínio…', 'Decidindo o próximo passo…']
-const FRASES_ANALISANDO = ['Analisando os dados…', 'Cruzando os resultados…', 'Decidindo o próximo passo…']
-const GIRO_MS = 2500
 
 export function useEmeStatusLabel() {
   const aiStore = useOfficeAIStore()
@@ -43,8 +40,6 @@ export function useEmeStatusLabel() {
   const runningStep = computed(() => aiStore.agentSteps.find(s => s.status === 'running'))
   const finishedSteps = computed(() => aiStore.agentSteps.filter(s => s.status !== 'running'))
 
-  const gira = (frases) => frases[Math.floor((now.value - (aiStore.streamStartedAt || now.value)) / GIRO_MS) % frases.length]
-
   const currentLabel = computed(() => {
     const s = runningStep.value
     if (s) {
@@ -54,8 +49,7 @@ export function useEmeStatusLabel() {
     }
     if (aiStore.streamingText) return 'Escrevendo a resposta…'
     if (aiStore.agentPhase) return aiStore.agentPhase
-    if (finishedSteps.value.length) return gira(FRASES_ANALISANDO)
-    return gira(FRASES_PENSANDO)
+    return 'Pensando…'
   })
 
   return { now, elapsed, runningStep, finishedSteps, currentLabel }
