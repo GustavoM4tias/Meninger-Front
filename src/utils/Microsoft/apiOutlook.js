@@ -57,6 +57,8 @@ export const sendMail     = (data)     => requestWithAuth(`${R}/send`,          
 
 /** kind: reply | replyAll | forward — o Outlook já monta a citação e o assunto. */
 export const createReplyDraft = (id, kind) => requestWithAuth(`${R}/messages/${id}/${kind}`, B());
+// Responder/encaminhar direto, sem rascunho (citacao montada pelo Outlook).
+export const sendReply = (id, kind, data) => requestWithAuth(`${R}/messages/${id}/${kind}/send`, B(data));
 
 export const addAttachment = (id, file) => requestWithAuth(`${R}/drafts/${id}/attachments`, B(file));
 export const removeAttachment = (id, attachmentId) =>

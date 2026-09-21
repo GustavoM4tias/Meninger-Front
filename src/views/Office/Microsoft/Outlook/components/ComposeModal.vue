@@ -96,7 +96,9 @@ watch(() => props.open, (aberto) => {
     // corpo. Jogar isso na caixa de texto mostrava o HTML cru para a pessoa e
     // ainda mandava a citação duas vezes, porque montarCorpo() a acrescenta de
     // novo no fim. A caixa começa vazia; a citação continua indo junto.
-    body:    d?.id ? '' : (d?.body || ''),
+    // `texto` é o que a pessoa já escreveu no cartão da Eme antes de vir
+    // para cá: entra na caixa, em cima da citação.
+    body:    d?.id ? (d?.texto || '') : (d?.body || ''),
   };
   mostrarCc.value = !!(d?.cc || []).length;
   anexos.value = [];

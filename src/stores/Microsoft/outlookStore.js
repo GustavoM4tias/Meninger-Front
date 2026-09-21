@@ -271,8 +271,14 @@ export const useOutlookStore = defineStore('outlook', () => {
     async function send({ draftId, ...data }) {
         sending.value = true;
         try {
-            if (draftId) await api.sendDraft(draftId);
-            else await api.sendMail(data);
+            if (draftId) {
+                // O rascunho do Outlook nasce sem o que a pessoa digitou aqui:
+                // gravar antes de enviar, senão sai só a citação.
+                await api.updateDraft(draftId, data);
+                await api.sendDraft(draftId);
+            } else {
+                await api.sendMail(data);
+            }
             fetchFolders();
         } finally {
             sending.value = false;

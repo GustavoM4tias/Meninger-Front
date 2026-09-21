@@ -4,7 +4,12 @@
  * (Para, cópia, assunto e corpo são editáveis ali mesmo) e envia com um clique,
  * ou leva para o Outlook do Office para terminar lá.
  * ─────────────────────────────────────────────────────────────────────────────
- * email: { to: [{ email, name? }], cc?, bcc?, subject, body (texto simples), note? }
+ * email: { to: [{ email, name? }], cc?, bcc?, subject, body (texto simples), note?,
+ *          replyTo?: { messageId, kind: 'reply'|'replyAll'|'forward', subject, from, preview } }
+ *
+ * Com `replyTo` o cartão é resposta/encaminhamento: o assunto fica fixo (é a
+ * mesma conversa), a citação vai junto montada pelo Outlook, e o envio é por
+ * /outlook/messages/:id/:kind/send - o caminho que só precisa de Mail.Send.
  *
  * Quem envia é a rota /outlook/send, com a alçada `send` conferida no servidor;
  * aqui `useCan` só decide se o botão aparece. A tool que gerou o bloco não
@@ -23,7 +28,7 @@ import { useToast } from 'vue-toastification';
 import { useCan } from '@/composables/useCan';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 import { useOutlookStore } from '@/stores/Microsoft/outlookStore';
-import { sendMail } from '@/utils/Microsoft/apiOutlook';
+import { sendMail, sendReply } from '@/utils/Microsoft/apiOutlook';
 
 const props = defineProps({
   block: { type: Object, required: true },
@@ -56,6 +61,14 @@ const form = ref({
 });
 const digitando = ref({ to: '', cc: '', bcc: '' });
 const mostrar = ref({ cc: form.value.cc.length > 0, bcc: form.value.bcc.length > 0 });
+
+const replyTo = computed(() => (e.value.replyTo?.messageId ? e.value.replyTo : null));
+const TIPO = {
+  reply: { titulo: 'Responder', icone: 'fas fa-reply', dica: 'A conversa anterior vai junto, abaixo do que você escrever.' },
+  replyAll: { titulo: 'Responder a todos', icone: 'fas fa-reply-all', dica: 'A conversa anterior vai junto, abaixo do que você escrever.' },
+  forward: { titulo: 'Encaminhar', icone: 'fas fa-share', dica: 'A mensagem original segue inteira, abaixo do que você escrever.' },
+};
+const tipo = computed(() => (replyTo.value ? TIPO[replyTo.value.kind] || TIPO.reply : null));
 
 const estado = ref('idle');   // idle | sending | sent | cancelled | error
 const erro = ref('');
@@ -151,13 +164,21 @@ async function enviar() {
   estado.value = 'sending';
   erro.value = '';
   try {
-    await sendMail({
-      to: form.value.to,
-      cc: form.value.cc,
-      bcc: form.value.bcc,
-      subject: form.value.subject,
-      body: paraHtml(form.value.body),
-    });
+    if (replyTo.value) {
+      await sendReply(replyTo.value.messageId, replyTo.value.kind, {
+        comment: paraHtml(form.value.body),
+        to: form.value.to,
+        cc: form.value.cc,
+      });
+    } else {
+      await sendMail({
+        to: form.value.to,
+        cc: form.value.cc,
+        bcc: form.value.bcc,
+        subject: form.value.subject,
+        body: paraHtml(form.value.body),
+      });
+    }
     estado.value = 'sent';
     marcarEnviado(props.block?.id);
     toast.success('E-mail enviado.');
@@ -174,6 +195,9 @@ function editarNoOutlook() {
     cc: form.value.cc.map(email => ({ email })),
     subject: form.value.subject,
     body: form.value.body,
+    // Em resposta a tela pede o rascunho ao Outlook (createReply) e põe o
+    // texto daqui em cima da citação.
+    replyTo: replyTo.value ? { messageId: replyTo.value.messageId, kind: replyTo.value.kind } : undefined,
   });
   if (route.path !== ROTA_OUTLOOK) router.push({ path: ROTA_OUTLOOK, query: { tab: 'caixa' } });
 }
@@ -193,7 +217,7 @@ const botaoTexto = 'h-9 px-3 rounded-lg text-xs font-medium text-ink-muted hover
     <!-- Cabeçalho: de onde sai -->
     <div class="flex items-center gap-2 px-3 py-2 border-b border-line bg-surface-sunken/50">
       <img src="/icons/ms-outlook.svg" alt="" class="w-4 h-4" />
-      <span class="text-xs font-medium text-ink">Outlook</span>
+      <span class="text-xs font-medium text-ink">Outlook<span v-if="tipo" class="text-ink-muted font-normal"> · {{ tipo.titulo }}</span></span>
       <span class="text-micro text-ink-subtle ml-auto" v-if="estado === 'sent'"><i class="fas fa-check text-data-pos mr-1"></i>Enviado</span>
       <span class="text-micro text-ink-subtle ml-auto" v-else-if="estado === 'cancelled'">Descartado</span>
       <span class="text-micro text-ink-subtle ml-auto" v-else>Sai no seu nome</span>
@@ -202,7 +226,7 @@ const botaoTexto = 'h-9 px-3 rounded-lg text-xs font-medium text-ink-muted hover
     <!-- Enviado: o cartão fecha e diz o que aconteceu -->
     <div v-if="estado === 'sent'" class="px-3 py-3 space-y-1">
       <p class="text-sm text-ink"><i class="fas fa-paper-plane text-data-pos mr-1.5 text-xs"></i>{{ form.subject || '(sem assunto)' }}</p>
-      <p class="text-xs text-ink-muted">Enviado para {{ form.to.join(', ') }}<span v-if="form.cc.length"> · cópia: {{ form.cc.join(', ') }}</span>. Está na sua pasta Enviados, aqui e no Outlook.</p>
+      <p class="text-xs text-ink-muted">{{ replyTo && replyTo.kind !== 'forward' ? 'Respondido' : 'Enviado' }} para {{ form.to.join(', ') }}<span v-if="form.cc.length"> · cópia: {{ form.cc.join(', ') }}</span>. Está na sua pasta Enviados, aqui e no Outlook.</p>
     </div>
 
     <!-- Descartado: nada saiu, dá para voltar -->
@@ -213,6 +237,16 @@ const botaoTexto = 'h-9 px-3 rounded-lg text-xs font-medium text-ink-muted hover
 
     <template v-else>
       <div class="px-3 pt-3 space-y-2.5">
+
+        <!-- A que mensagem isto responde -->
+        <div v-if="replyTo" class="flex items-start gap-2 px-2.5 py-2 rounded-lg border border-line bg-surface-sunken/60">
+          <i :class="tipo.icone" class="text-accent text-micro mt-0.5 shrink-0"></i>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs text-ink truncate" :title="replyTo.subject">{{ replyTo.subject || '(sem assunto)' }}<span v-if="replyTo.from" class="text-ink-muted"> · de {{ replyTo.from }}</span></p>
+            <p v-if="replyTo.preview" class="text-micro text-ink-subtle truncate">{{ replyTo.preview }}</p>
+            <p class="text-micro text-ink-subtle mt-0.5">{{ tipo.dica }}</p>
+          </div>
+        </div>
 
         <!-- Para -->
         <div>
@@ -227,7 +261,7 @@ const botaoTexto = 'h-9 px-3 rounded-lg text-xs font-medium text-ink-muted hover
               @keydown="teclaChip('to', $event)" @blur="fecharChips('to')" />
             <span class="flex items-center gap-2 text-micro text-ink-subtle shrink-0">
               <button v-if="!mostrar.cc" type="button" class="hover:text-accent" @click.stop="mostrar.cc = true">Cc</button>
-              <button v-if="!mostrar.bcc" type="button" class="hover:text-accent" @click.stop="mostrar.bcc = true">Cco</button>
+              <button v-if="!mostrar.bcc && !replyTo" type="button" class="hover:text-accent" @click.stop="mostrar.bcc = true">Cco</button>
             </span>
           </div>
         </div>
@@ -245,8 +279,9 @@ const botaoTexto = 'h-9 px-3 rounded-lg text-xs font-medium text-ink-muted hover
           </div>
         </div>
 
-        <!-- Assunto -->
-        <input v-model="form.subject" type="text" placeholder="Assunto"
+        <!-- Assunto: em resposta fica fixo, é o que mantém a conversa no mesmo fio -->
+        <p v-if="replyTo" class="h-10 px-2.5 flex items-center rounded-lg border border-line bg-surface-sunken/40 text-sm text-ink-muted truncate" :title="form.subject">{{ form.subject }}</p>
+        <input v-else v-model="form.subject" type="text" placeholder="Assunto"
           class="w-full h-10 px-2.5 rounded-lg border border-line bg-surface-raised text-sm text-ink placeholder:text-ink-subtle outline-none focus:border-accent/60 transition-colors duration-120" />
 
         <!-- Corpo -->

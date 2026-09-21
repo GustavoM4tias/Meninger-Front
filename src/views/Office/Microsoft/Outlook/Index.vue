@@ -132,11 +132,29 @@ provide('olEscrever', (draft = null) => { rascunho.value = draft; compondo.value
 // (o cartão mora fora desta árvore). Se a tela já está aberta, abre na hora;
 // se a pessoa veio navegando, abre depois de montar. Sem alçada de envio o
 // modal nem existe, então o pedido é descartado em vez de abrir uma tela morta.
-function abrirComposicaoPendente() {
+async function abrirComposicaoPendente() {
   if (!store.composicaoPendente) return;
   const d = store.consumirComposicao();
   if (!d || !podeEnviar.value) return;
-  rascunho.value = d;
+  if (d.replyTo?.messageId) {
+    // Resposta/encaminhamento: o Outlook monta a citação; o que a pessoa já
+    // escreveu no cartão entra em cima dela, e o destinatário que ela
+    // ajustou lá ganha do que o Outlook deduziria.
+    try {
+      const draft = await store.startReply(d.replyTo.messageId, d.replyTo.kind);
+      rascunho.value = {
+        ...draft,
+        to: d.to?.length ? d.to : draft.to,
+        cc: d.cc?.length ? d.cc : draft.cc,
+        texto: d.body || '',
+      };
+    } catch (err) {
+      toast.error(err?.message || 'Não foi possível abrir a resposta no Outlook.');
+      return;
+    }
+  } else {
+    rascunho.value = d;
+  }
   compondo.value = true;
 }
 watch(() => store.composicaoPendente, abrirComposicaoPendente);
