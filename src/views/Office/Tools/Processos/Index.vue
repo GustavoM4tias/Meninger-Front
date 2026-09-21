@@ -38,6 +38,8 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useCan } from '@/composables/useCan';
 import {
     carregar, trocarAutonomia, decidir, salvarSettings, observacoesDe, ensaiar, minerar,
+    trilha as apiTrilha, acoes as apiAcoes, evidenciaDaRegra, revogarRegra, restaurarRegra,
+    reverter as apiReverter,
 } from '@/utils/Processos/apiProcessos';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -64,6 +66,7 @@ const aba = ref('mapa');
 const abas = computed(() => [
     { value: 'mapa', label: 'Mapa' },
     { value: 'fila', label: `Fila${pendentes.value.length ? ` (${pendentes.value.length})` : ''}` },
+    { value: 'memoria', label: 'Memória' },
     ...(can('configurar') ? [{ value: 'config', label: 'Ajustes' }] : []),
 ]);
 
@@ -173,6 +176,104 @@ async function verEvidencia(p) {
     try {
         evidencia.value = await observacoesDe(p.processo_key, 50);
         modalEvidencia.value = true;
+    } catch (e) { erro.value = e.message; }
+}
+
+// ── Memória ──────────────────────────────────────────────────────────────────
+//
+// Responde três perguntas que a tela não respondia: o que ela andou fazendo
+// (trilha), o que ela fez sozinha (ações) e o motor está saudável (boletim).
+//
+// A aba de ações é a que destrava subir qualquer processo para "Agir":
+// promover sem ter onde ver e onde desfazer é a promoção que ninguém deveria
+// fazer.
+
+const carregandoMemoria = ref(false);
+const trilha = ref([]);
+const listaAcoes = ref([]);
+const filtroProcesso = ref('');
+const secaoMemoria = ref('trilha');
+
+const saudeMotor = computed(() => dados.value?.saude || null);
+
+const opcoesFiltro = computed(() => [
+    { value: '', label: 'Todos os processos' },
+    ...processos.value.map(p => ({ value: p.key, label: p.nome })),
+]);
+
+const TOM_EVENTO = {
+    observacao: { icone: 'fas fa-eye', cor: 'text-ink-subtle', fundo: 'bg-surface-sunken border-line' },
+    proposta: { icone: 'fas fa-lightbulb', cor: 'text-accent', fundo: 'bg-accent-soft border-accent/20' },
+    decisao: { icone: 'fas fa-gavel', cor: 'text-data-pos', fundo: 'bg-data-pos/10 border-data-pos/30' },
+    acao: { icone: 'fas fa-bolt', cor: 'text-data-warn', fundo: 'bg-data-warn/10 border-data-warn/30' },
+};
+
+const TOM_SAUDE = { bom: 'text-data-pos', atencao: 'text-data-warn', ruim: 'text-data-neg', neutro: 'text-ink-muted' };
+
+function momento(iso) {
+    if (!iso) return '-';
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+async function carregarMemoria() {
+    carregandoMemoria.value = true;
+    erro.value = '';
+    try {
+        const [t, a] = await Promise.all([
+            apiTrilha({ processo: filtroProcesso.value || null }),
+            apiAcoes({ processo: filtroProcesso.value || null }),
+        ]);
+        trilha.value = t;
+        listaAcoes.value = a;
+    } catch (e) { erro.value = e.message; }
+    finally { carregandoMemoria.value = false; }
+}
+
+async function desfazerAcao(a) {
+    const motivo = window.prompt('Por que esta ação estava errada? (o processo será rebaixado um degrau)');
+    if (motivo == null) return;
+    erro.value = '';
+    try {
+        await apiReverter(a.id, motivo);
+        aviso.value = 'Ação desfeita. O processo foi rebaixado um degrau automaticamente.';
+        await Promise.all([carregarMemoria(), recarregar()]);
+    } catch (e) { erro.value = e.message; }
+}
+
+// ── Cadeia de uma regra ──────────────────────────────────────────────────────
+
+const modalRegra = ref(false);
+const cadeia = ref(null);
+const regraDe = ref('');
+
+async function abrirRegra(processoKey, regra) {
+    regraDe.value = processoKey;
+    erro.value = '';
+    try {
+        cadeia.value = await evidenciaDaRegra(processoKey, regra.id);
+        modalRegra.value = true;
+    } catch (e) { erro.value = e.message; }
+}
+
+async function revogar() {
+    const motivo = window.prompt('Por que esta regra sai do mapa? (uma frase, ao menos)');
+    if (motivo == null) return;
+    erro.value = '';
+    try {
+        await revogarRegra(regraDe.value, cadeia.value.regra.id, motivo);
+        modalRegra.value = false;
+        aviso.value = 'Regra revogada. Ela sai do mapa e a Eme para de usá-la, mas continua auditável.';
+        await recarregar();
+    } catch (e) { erro.value = e.message; }
+}
+
+async function restaurar(processoKey, regra) {
+    erro.value = '';
+    try {
+        await restaurarRegra(processoKey, regra.id);
+        aviso.value = 'Regra devolvida ao mapa.';
+        await recarregar();
     } catch (e) { erro.value = e.message; }
 }
 
@@ -366,13 +467,39 @@ onMounted(recarregar);
             </p>
             <ul v-else class="space-y-1.5">
               <li v-for="r in p.regras" :key="r.id"
-                class="rounded-md border border-line bg-surface-sunken px-3 py-2">
+                class="rounded-md border border-line bg-surface-sunken px-3 py-2 transition-colors"
+                :class="can('aprovar') ? 'cursor-pointer hover:border-accent/40' : ''"
+                @click="can('aprovar') && abrirRegra(p.key, r)">
                 <p class="text-xs text-ink leading-relaxed">{{ r.texto }}</p>
                 <p class="text-micro font-mono text-ink-subtle mt-1">
-                  {{ r.evidencia_n }} casos · {{ ROTULO_ALCANCE[r.alcance] || r.alcance }} · aprovada {{ quando(r.aprovada_em) }}
+                  {{ r.casos }} casos · {{ ROTULO_ALCANCE[r.alcance] || r.alcance }} ·
+                  aprovada {{ quando(r.aprovada_em) }} ·
+                  <!-- Regra que ninguém consulta só ocupa espaço no prompt,
+                       mesmo estando correta. Por isso o estado vem junto. -->
+                  <span :class="r.estado === 'em uso' ? 'text-data-pos' : 'text-data-warn'">{{ r.estado }}</span>
+                  <span v-if="r.consultas"> ({{ r.consultas }}x)</span>
                 </p>
               </li>
             </ul>
+
+            <!-- As que saíram do mapa. Ficam à vista porque "por que a Eme
+                 dizia isso em março?" é pergunta que aparece. -->
+            <div v-if="(p.regras_revogadas || []).length" class="mt-3">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle mb-1.5">
+                Revogadas ({{ p.regras_revogadas.length }})
+              </p>
+              <ul class="space-y-1.5">
+                <li v-for="r in p.regras_revogadas" :key="r.id"
+                  class="rounded-md border border-line px-3 py-2 opacity-70">
+                  <p class="text-xs text-ink line-through leading-relaxed">{{ r.texto }}</p>
+                  <p class="text-micro text-ink-subtle mt-1">
+                    Revogada {{ quando(r.revogada_em) }}: {{ r.revogacao_motivo }}
+                  </p>
+                  <Button v-if="can('aprovar')" size="sm" variant="ghost" icon="fas fa-rotate-left"
+                    class="mt-1.5" @click="restaurar(p.key, r)">Devolver ao mapa</Button>
+                </li>
+              </ul>
+            </div>
           </div>
         </Surface>
       </div>
@@ -445,6 +572,122 @@ onMounted(recarregar);
             <strong>{{ paradas.length }}</strong> padrão(ões) em observação: o motor já viu, mas ainda não tem
             evidência ou confiança para propor. Ficam acumulando em vez de sumir.
           </p>
+        </Surface>
+      </div>
+
+      <!-- ── MEMÓRIA ───────────────────────────────────────────────────────── -->
+      <div v-else-if="aba === 'memoria'" class="space-y-4">
+
+        <!-- Boletim: o número que decide se você deve mexer nos Ajustes -->
+        <Surface v-if="saudeMotor" variant="raised" padding="md">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-ink">Saúde do motor</h3>
+              <p class="text-xs mt-1 leading-relaxed max-w-2xl"
+                :class="TOM_SAUDE[saudeMotor.diagnostico?.tom] || 'text-ink-muted'">
+                {{ saudeMotor.diagnostico?.texto }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+            <div v-for="m in [
+              { r: 'Episódios', v: saudeMotor.total.observacoes },
+              { r: 'Propostas', v: saudeMotor.total.propostas },
+              { r: 'Aprovadas', v: saudeMotor.total.aprovadas },
+              { r: 'Recusadas', v: saudeMotor.total.recusadas },
+              { r: 'Taxa de recusa', v: saudeMotor.total.taxa_recusa == null ? '-' : saudeMotor.total.taxa_recusa + '%' },
+              { r: 'Ações desfeitas', v: saudeMotor.total.revertidas },
+            ]" :key="m.r" class="rounded-md border border-line bg-surface-sunken px-3 py-2">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle">{{ m.r }}</p>
+              <p class="text-sm font-semibold text-ink mt-0.5">{{ m.v }}</p>
+            </div>
+          </div>
+          <p class="text-micro text-ink-subtle mt-2">Últimas 8 semanas.</p>
+        </Surface>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <SegmentedControl v-model="secaoMemoria" size="sm" :options="[
+            { value: 'trilha', label: 'Trilha' },
+            { value: 'acoes', label: `O que ela fez${listaAcoes.length ? ` (${listaAcoes.length})` : ''}` },
+          ]" />
+          <div class="w-64">
+            <Select size="sm" v-model="filtroProcesso" :options="opcoesFiltro" @change="carregarMemoria" />
+          </div>
+          <Button size="sm" variant="ghost" icon="fas fa-rotate"
+            :loading="carregandoMemoria" @click="carregarMemoria">Carregar</Button>
+        </div>
+
+        <!-- TRILHA: o caminho, não o estado -->
+        <Surface v-if="secaoMemoria === 'trilha'" variant="raised" padding="md">
+          <EmptyState v-if="!trilha.length" icon="fas fa-timeline"
+            title="Nada registrado ainda"
+            description="Clique em Carregar. Se continuar vazio, o motor ainda não rodou - a mineração é de madrugada." />
+
+          <ol v-else class="space-y-2">
+            <li v-for="(e, i) in trilha" :key="i" class="flex items-start gap-3">
+              <div class="h-8 w-8 grid place-items-center rounded-lg border shrink-0 mt-0.5"
+                :class="TOM_EVENTO[e.tipo].fundo">
+                <i :class="[TOM_EVENTO[e.tipo].icone, TOM_EVENTO[e.tipo].cor, 'text-xs']"></i>
+              </div>
+              <div class="min-w-0 flex-1 pb-2 border-b border-line">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="text-sm text-ink">{{ e.titulo }}</p>
+                  <Badge v-if="e.revertida" variant="danger" size="sm">desfeita</Badge>
+                  <Badge v-if="e.autonomia" variant="neutral" size="sm">{{ ROTULO_NIVEL[e.autonomia] }}</Badge>
+                </div>
+                <p v-if="e.texto" class="text-xs text-ink-muted mt-1 leading-relaxed">{{ e.texto }}</p>
+                <p v-if="e.nota" class="text-xs text-ink-muted mt-1 leading-relaxed italic">"{{ e.nota }}"</p>
+                <p class="text-micro font-mono text-ink-subtle mt-1">
+                  {{ momento(e.em) }} · {{ e.processo_key }}<span v-if="e.detalhe"> · {{ e.detalhe }}</span>
+                </p>
+              </div>
+            </li>
+          </ol>
+        </Surface>
+
+        <!-- AÇÕES: a tela que destrava subir para Agir -->
+        <Surface v-else variant="raised" padding="md">
+          <EmptyState v-if="!listaAcoes.length" icon="fas fa-bolt"
+            title="Ela ainda não fez nada sozinha"
+            description="Todos os processos estão em Observar ou Propor. É o desenho: nada sai sem alguém clicar." />
+
+          <ul v-else class="space-y-2">
+            <li v-for="a in listaAcoes" :key="a.id"
+              class="rounded-lg border p-3"
+              :class="a.revertida ? 'border-data-neg/30 bg-data-neg/5' : 'border-line'">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <p class="text-sm text-ink">{{ a.acao }}</p>
+                    <Badge :variant="a.resultado === 'ok' ? 'success' : 'danger'" size="sm">{{ a.resultado }}</Badge>
+                    <Badge variant="neutral" size="sm">{{ ROTULO_NIVEL[a.autonomia_no_momento] }}</Badge>
+                    <Badge v-if="a.revertida" variant="danger" size="sm">desfeita</Badge>
+                  </div>
+
+                  <!-- A regra ao lado da ação: sem ela, ninguém julga se a
+                       ação fazia sentido. -->
+                  <p v-if="a.regra_texto" class="text-xs text-ink-muted mt-1.5 leading-relaxed max-w-2xl">
+                    <i class="fas fa-quote-left mr-1 text-ink-subtle"></i>{{ a.regra_texto }}
+                    <span v-if="a.regra_revogada" class="text-data-warn"> (regra já revogada)</span>
+                  </p>
+                  <p v-else class="text-xs text-data-warn mt-1.5 leading-relaxed">
+                    Sem regra registrada. Ação sem justificativa na auditoria.
+                  </p>
+
+                  <p class="text-micro font-mono text-ink-subtle mt-1">
+                    {{ momento(a.created_at) }} · {{ a.processo_nome }}
+                    <span v-if="a.alvo_ref"> · {{ a.alvo_tipo }} {{ a.alvo_ref }}</span>
+                  </p>
+                  <p v-if="a.erro" class="text-xs text-data-neg mt-1">{{ a.erro }}</p>
+                  <p v-if="a.revertida_nota" class="text-xs text-ink-muted mt-1 italic">"{{ a.revertida_nota }}"</p>
+                </div>
+
+                <Button v-if="can('aprovar') && !a.revertida" size="sm" variant="ghost"
+                  icon="fas fa-rotate-left" @click="desfazerAcao(a)">Desfazer</Button>
+              </div>
+            </li>
+          </ul>
         </Surface>
       </div>
 
@@ -594,6 +837,91 @@ onMounted(recarregar);
         <template #footer>
           <Button variant="ghost" @click="modalAutonomia = false">Cancelar</Button>
           <Button :loading="salvando" icon="fas fa-check" @click="gravarAutonomia">Salvar</Button>
+        </template>
+      </Modal>
+
+      <!-- ── Modal da cadeia de uma regra ──────────────────────────────────── -->
+      <!--
+        Responde "como eu valido se isto está correto?": a frase, a proposta
+        que a originou, os casos que a sustentaram e o que ela moveu depois.
+        Sem os casos por trás, a regra é uma frase com um número do lado - e
+        número sem lastro é o que se aprova sem conferir.
+      -->
+      <Modal :open="modalRegra" size="lg"
+        title="A cadeia desta regra"
+        subtitle="De onde ela veio, o que a sustenta e o que ela já moveu."
+        @close="modalRegra = false">
+
+        <div v-if="cadeia" class="space-y-4">
+          <Surface variant="sunken" padding="md">
+            <p class="text-sm text-ink leading-relaxed">{{ cadeia.regra.texto }}</p>
+            <div class="flex items-center gap-2 flex-wrap mt-2">
+              <Badge variant="neutral" size="sm">{{ cadeia.regra.casos }} casos</Badge>
+              <Badge variant="neutral" size="sm">{{ ROTULO_ALCANCE[cadeia.regra.alcance] || cadeia.regra.alcance }}</Badge>
+              <Badge :variant="cadeia.regra.estado === 'em uso' ? 'success' : 'warning'" size="sm">
+                {{ cadeia.regra.estado }}<span v-if="cadeia.regra.consultas"> · {{ cadeia.regra.consultas }} consultas</span>
+              </Badge>
+            </div>
+            <p class="text-micro font-mono text-ink-subtle mt-2">
+              aprovada {{ quando(cadeia.regra.aprovada_em) }}
+            </p>
+            <p v-if="cadeia.regra.substituiu" class="text-xs text-ink-muted mt-2 leading-relaxed">
+              Substituiu: "{{ cadeia.regra.substituiu }}"
+            </p>
+          </Surface>
+
+          <div v-if="cadeia.proposta">
+            <h4 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1.5">Como ela foi julgada</h4>
+            <p class="text-xs text-ink-muted leading-relaxed">{{ cadeia.proposta.motivo }}</p>
+            <p v-if="cadeia.proposta.alcance_motivo" class="text-xs text-ink-muted leading-relaxed mt-1">
+              {{ cadeia.proposta.alcance_motivo }}
+            </p>
+            <p v-if="cadeia.proposta.decisao_nota" class="text-xs text-ink mt-1 italic">
+              "{{ cadeia.proposta.decisao_nota }}"
+            </p>
+          </div>
+
+          <!-- O que ela MOVEU. Uma regra errada que moveu trinta ações e uma
+               correta que nunca moveu nada são problemas de tamanhos muito
+               diferentes. -->
+          <div>
+            <h4 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1.5">
+              O que ela moveu ({{ cadeia.acoes.length }})
+            </h4>
+            <p v-if="!cadeia.acoes.length" class="text-xs text-ink-muted leading-relaxed">
+              Nenhuma ação automática. O processo ainda não age sozinho, ou a regra nunca disparou.
+            </p>
+            <p v-else-if="cadeia.acoes_revertidas" class="text-xs text-data-neg leading-relaxed">
+              {{ cadeia.acoes_revertidas }} de {{ cadeia.acoes.length }} ação(ões) foram desfeitas.
+              Isso é sinal de que a regra está errada, não de que a execução falhou.
+            </p>
+            <p v-else class="text-xs text-data-pos leading-relaxed">
+              {{ cadeia.acoes.length }} ação(ões), nenhuma desfeita.
+            </p>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1.5">
+              Os casos que a sustentaram ({{ cadeia.casos_total }})
+            </h4>
+            <ul class="space-y-1.5 max-h-72 overflow-y-auto">
+              <li v-for="o in cadeia.casos" :key="o.id"
+                class="rounded-md border border-line px-3 py-2">
+                <p class="text-xs text-ink leading-relaxed">{{ o.acao }}</p>
+                <p class="text-micro font-mono text-ink-subtle mt-1">
+                  {{ o.caso_tipo }} {{ o.caso_ref }} ·
+                  {{ (o.cidades || []).join(', ') || 'sem cidade' }} ·
+                  {{ o.resultado }} · {{ quando(o.occurred_at) }}
+                </p>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <template #footer>
+          <Button v-if="can('aprovar') && cadeia && !cadeia.regra.revogada_em"
+            variant="ghost" icon="fas fa-ban" @click="revogar">Revogar regra</Button>
+          <Button variant="ghost" @click="modalRegra = false">Fechar</Button>
         </template>
       </Modal>
 

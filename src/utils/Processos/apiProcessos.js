@@ -69,4 +69,38 @@ export const ensaiar = (processo_key = null) =>
 export const minerar = () =>
     req('/minerar', { method: 'POST' }).then(r => r.data)
 
-export default { carregar, salvarProcesso, trocarAutonomia, observacoesDe, fila, decidir, reverter, salvarSettings, ensaiar, minerar }
+// ── Memória ──────────────────────────────────────────────────────────────────
+
+/** A trilha: observou -> propôs -> você decidiu -> executou, em ordem. */
+export const trilha = ({ processo = null, dias = 45, limite = 120 } = {}) => {
+    const q = new URLSearchParams({ dias, limite })
+    if (processo) q.set('processo', processo)
+    return req(`/trilha?${q}`).then(r => r.data)
+}
+
+/** As ações automáticas, com a regra que as motivou. */
+export const acoes = ({ processo = null, limite = 100 } = {}) => {
+    const q = new URLSearchParams({ limite })
+    if (processo) q.set('processo', processo)
+    return req(`/acoes?${q}`).then(r => r.data)
+}
+
+export const saude = (semanas = 8) => req(`/saude?semanas=${semanas}`).then(r => r.data)
+
+/** A cadeia de uma regra: proposta, casos que a sustentaram e ações que moveu. */
+export const evidenciaDaRegra = (key, regraId) =>
+    req(`/processos/${encodeURIComponent(key)}/regras/${regraId}/evidencia`).then(r => r.data)
+
+/** Tira a regra do mapa. Exige motivo: é o que explica a decisão depois. */
+export const revogarRegra = (key, regraId, motivo) =>
+    req(`/processos/${encodeURIComponent(key)}/regras/${regraId}/revogar`,
+        { method: 'POST', body: JSON.stringify({ motivo }) })
+
+export const restaurarRegra = (key, regraId) =>
+    req(`/processos/${encodeURIComponent(key)}/regras/${regraId}/restaurar`, { method: 'POST' })
+
+export default {
+    carregar, salvarProcesso, trocarAutonomia, observacoesDe, fila, decidir, reverter,
+    salvarSettings, ensaiar, minerar,
+    trilha, acoes, saude, evidenciaDaRegra, revogarRegra, restaurarRegra,
+}
