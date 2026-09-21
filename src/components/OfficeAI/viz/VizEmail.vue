@@ -207,7 +207,9 @@ function voltar() { estado.value = 'idle'; erro.value = ''; nextTick(ajustarAltu
 
 const campoChip = 'flex flex-wrap items-center gap-1.5 min-h-10 px-2.5 py-1.5 rounded-lg border border-line bg-surface-raised focus-within:border-accent/60 transition-colors duration-120';
 const chip = 'inline-flex items-center gap-1 h-7 pl-2 pr-1 rounded-full text-xs bg-surface-sunken border border-line text-ink max-w-full';
-const inputChip = 'flex-1 min-w-[8rem] h-7 bg-transparent text-sm text-ink placeholder:text-ink-subtle outline-none';
+/* Flowbite dá borda, padding e anel de foco a todo input de texto: o de chip
+ * zera tudo, senão aparece uma caixa dentro da caixa do "Para". */
+const inputChip = 'flex-1 min-w-[8rem] h-7 p-0 border-0 bg-transparent shadow-none text-sm text-ink placeholder:text-ink-subtle outline-none focus:ring-0 focus:outline-none';
 const botaoTexto = 'h-9 px-3 rounded-lg text-xs font-medium text-ink-muted hover:text-ink hover:bg-surface-sunken transition-colors duration-120 focus-ring';
 </script>
 
@@ -282,11 +284,11 @@ const botaoTexto = 'h-9 px-3 rounded-lg text-xs font-medium text-ink-muted hover
         <!-- Assunto: em resposta fica fixo, é o que mantém a conversa no mesmo fio -->
         <p v-if="replyTo" class="h-10 px-2.5 flex items-center rounded-lg border border-line bg-surface-sunken/40 text-sm text-ink-muted truncate" :title="form.subject">{{ form.subject }}</p>
         <input v-else v-model="form.subject" type="text" placeholder="Assunto"
-          class="w-full h-10 px-2.5 rounded-lg border border-line bg-surface-raised text-sm text-ink placeholder:text-ink-subtle outline-none focus:border-accent/60 transition-colors duration-120" />
+          class="w-full h-10 px-2.5 py-0 rounded-lg border border-line bg-surface-raised text-sm text-ink placeholder:text-ink-subtle outline-none focus:ring-0 focus:border-accent/60 transition-colors duration-120" />
 
         <!-- Corpo -->
         <textarea ref="corpoRef" v-model="form.body" rows="4" placeholder="Escreva a mensagem"
-          class="w-full px-2.5 py-2 rounded-lg border border-line bg-surface-raised text-sm text-ink placeholder:text-ink-subtle outline-none focus:border-accent/60 transition-colors duration-120 resize-none leading-relaxed"
+          class="w-full px-2.5 py-2 rounded-lg border border-line bg-surface-raised text-sm text-ink placeholder:text-ink-subtle outline-none focus:ring-0 focus:border-accent/60 transition-colors duration-120 resize-none leading-relaxed"
           @input="ajustarAltura"></textarea>
 
         <!-- Sair da Menin fica visível ANTES de enviar -->
