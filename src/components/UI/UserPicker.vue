@@ -2,9 +2,11 @@
 /**
  * "Quem recebe o aviso": lista de pessoas escolhidas por id.
  *
- * Existe porque a tela Sienge tem DUAS listas de destinatário (a da carga do
- * espelho e a do vigia do ERP) e elas eram escritas duas vezes, cada uma com um
- * alvo de toque diferente. Aqui o chip e o seletor têm 40px, como manda o
+ * Nasceu na tela Sienge, que tem DUAS listas de destinatário (a da carga do
+ * espelho e a do vigia do ERP) escritas duas vezes, cada uma com um alvo de
+ * toque diferente. Virou componente de UI quando a terceira apareceu (o alerta
+ * de saúde do Validador): "quem recebe o aviso" é a mesma pergunta em toda
+ * automação que avisa alguém. Aqui o chip e o seletor têm 40px, como manda o
  * padrão móvel.
  */
 import { computed } from 'vue';

@@ -30,7 +30,7 @@ import Badge from '@/components/UI/Badge.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 
 import SecretField from '../components/SecretField.vue';
-import UserPicker from '../components/UserPicker.vue';
+import UserPicker from '@/components/UI/UserPicker.vue';
 
 const backup = useSiengeBackupStore();
 const envio = useEnvioSiengeStore();

@@ -1,17 +1,65 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAIStore } from '@/stores/Config/aiStore.js';
+import { useCan } from '@/composables/useCan';
+import { fetchEstado } from '@/utils/Validator/apiValidatorHealth';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Favorite from '@/components/config/Favorite.vue';
 import History from './components/History.vue';
+import SaudePanel from './components/SaudePanel.vue';
 
 const aiStore = useAIStore();
+const route = useRoute();
+const can = useCan('/validator');
+
+// ── Farol de saúde ──────────────────────────────────────────────────────────
+//
+// Vai para QUEM TEM A TELA, não só para admin: a pessoa que sobe os PDFs é a
+// primeira a esbarrar no problema, e ver "o validador está fora do ar" antes de
+// enviar poupa ela de interpretar um erro genérico e de reenviar três vezes.
+// É só cor e uma frase; o detalhe (modelos, erro do provedor, gatilho) mora na
+// aba Saúde, que é de admin.
+const estado = ref(null);
+
+const faroisRuins = { down: true, degraded: true };
+const mostrarFarol = computed(() => !!estado.value && faroisRuins[estado.value.status]);
+
+const farolClasse = computed(() => estado.value?.status === 'down'
+  ? 'border-data-neg/30 bg-data-neg/10 text-data-neg'
+  : 'border-data-warn/30 bg-data-warn/10 text-data-warn');
+
+// Abas: a de Saúde só existe para quem pode configurar.
+const podeConfigurar = computed(() => can('configure'));
+const abas = computed(() => [
+  { value: 'validar', label: 'Validar', icon: 'fas fa-file-shield' },
+  ...(podeConfigurar.value ? [{ value: 'saude', label: 'Saúde', icon: 'fas fa-heart-pulse' }] : []),
+]);
+const aba = ref('validar');
+
+// O link do aviso (/validator?tab=saude) abre direto na aba certa. Precisa de
+// watch e não de um if no onMounted: as permissões chegam do servidor DEPOIS da
+// montagem, e `can()` nega enquanto não chegam (fail-closed). Com o if, quem
+// clicasse na notificação caía na aba de validar e teria que achar a aba na mão.
+watch(podeConfigurar, (pode) => {
+  if (pode && route.query.tab === 'saude') aba.value = 'saude';
+}, { immediate: true });
+
+onMounted(async () => {
+  try {
+    estado.value = await fetchEstado();
+  } catch {
+    // Farol indisponível não pode atrapalhar quem só quer validar um contrato.
+    estado.value = null;
+  }
+});
 
 const contratoCaixa = ref(null);
 const confissaoDivida = ref(null);
@@ -94,7 +142,29 @@ function clearFile(target) {
         </template>
       </PageHeader>
 
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <!-- Farol: só aparece quando há o que avisar. Verde não precisa de espaço. -->
+      <div v-if="mostrarFarol"
+        class="mb-4 rounded-xl border p-3.5 flex items-start gap-3"
+        :class="farolClasse" role="status">
+        <i class="fas fa-triangle-exclamation mt-0.5 shrink-0"></i>
+        <div class="min-w-0 text-sm">
+          <p class="font-semibold">{{ estado.mensagem }}</p>
+          <p v-if="podeConfigurar" class="text-xs opacity-80 mt-0.5">
+            Abra a aba Saúde para ver a causa e ajustar.
+          </p>
+          <p v-else class="text-xs opacity-80 mt-0.5">
+            Um administrador já foi avisado. Se puder, aguarde antes de enviar.
+          </p>
+        </div>
+      </div>
+
+      <div v-if="abas.length > 1" class="mb-4">
+        <SegmentedControl v-model="aba" :options="abas" size="md" />
+      </div>
+
+      <SaudePanel v-if="aba === 'saude' && podeConfigurar" />
+
+      <div v-show="aba === 'validar'" class="grid grid-cols-1 lg:grid-cols-4 gap-4">
 
         <!-- Sidebar -->
         <aside class="lg:col-span-1 lg:order-2 space-y-3">
