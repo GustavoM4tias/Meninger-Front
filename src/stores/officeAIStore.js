@@ -64,6 +64,10 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
   // O que a Eme está fazendo agora: passos de tool (tool_start/tool_result do
   // SSE), início do turno (cronômetro) e sinal de conexão instável (watchdog).
   const agentSteps = ref([])        // [{ name, label, status:'running'|'done'|'error', ms? }]
+  // Fase do preparo no servidor ("Lendo o histórico…"). Efêmera: some no
+  // primeiro tool_start/chunk e NÃO vai para metadata.steps - é o que está
+  // acontecendo agora, não o que a Eme fez.
+  const agentPhase = ref(null)
   const streamStartedAt = ref(null) // Date.now() do envio — cronômetro na UI
   const streamStale = ref(false)    // true = sem bytes do servidor há tempo demais
   const carregandoMensagens = ref(false)   // abrindo uma conversa do histórico
@@ -254,6 +258,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     streamingText.value = ''
     pendingAction.value = null
     agentSteps.value = []
+    agentPhase.value = null
     streamStartedAt.value = Date.now()
     streamStale.value = false
     cancelReason = null
@@ -374,6 +379,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
       streamStartedAt.value = null
       streamStale.value = false
       agentSteps.value = []
+      agentPhase.value = null
       abortCtrl = null
     }
   }
@@ -389,6 +395,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     switch (evt.type) {
       case 'chunk':
         streamingText.value += evt.text
+        agentPhase.value = null
         break
 
       case 'clear':
@@ -427,8 +434,15 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
         })
         break
 
+      case 'phase':
+        // Etapa do preparo no servidor. `message: null` = o modelo entrou em
+        // cena; o rótulo volta ao "Pensando…" rotativo do EmeAgentStatus.
+        agentPhase.value = evt.message || null
+        break
+
       case 'tool_start':
         // A Eme começou uma consulta — vira o passo "rodando" da timeline.
+        agentPhase.value = null
         agentSteps.value.push({
           name: evt.name,
           label: evt.label || evt.name,
@@ -581,7 +595,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     mode, sessions, currentSessionId, messages, isStreaming, streamingText,
     pendingAction, storageUsage, historyOpen, composerDraft,
     settingsOpen, settings, memories, loadSettings, saveSettings, loadMemories, addMemory, updateMemory, removeMemory,
-    agentSteps, streamStartedAt, streamStale,
+    agentSteps, agentPhase, streamStartedAt, streamStale,
     isAtStorageLimit, hasSession,
     carregandoMensagens, erroMensagens,
     loadSessions, loadMessages, recarregarMensagens, perguntaEmVoo, retomarPerguntaInterrompida, newSession, favoriteSession, deleteSession,
