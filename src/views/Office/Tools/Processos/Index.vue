@@ -39,7 +39,7 @@ import { useCan } from '@/composables/useCan';
 import {
     carregar, trocarAutonomia, decidir, salvarSettings, observacoesDe, ensaiar, minerar,
     trilha as apiTrilha, acoes as apiAcoes, evidenciaDaRegra, revogarRegra, restaurarRegra,
-    reverter as apiReverter,
+    reverter as apiReverter, diagnostico as apiDiagnostico,
 } from '@/utils/Processos/apiProcessos';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -299,6 +299,34 @@ async function gravarCfg() {
         await recarregar();
     } catch (e) { erro.value = e.message; }
     finally { salvando.value = false; }
+}
+
+// ── Diagnóstico ──────────────────────────────────────────────────────────────
+//
+// Os coletores supõem o significado de colunas que o CV preenche. O
+// diagnóstico confere essas suposições contra o dado real e diz, em português,
+// qual está de pé.
+//
+// A checagem de ESCOPO é a que mais importa: se o empreendimento da linha não
+// casar com o registro, a observação nasce sem escopo e nunca vira evidência.
+// O sintoma é "a fila nunca tem nada", que é indistinguível de "ainda não há
+// padrão" - alguém esperaria meses achando que está aprendendo devagar.
+
+const diagnosticando = ref(false);
+const diag = ref(null);
+
+const TOM_VEREDITO = {
+    ok: { badge: 'success', icone: 'fas fa-circle-check', cor: 'text-data-pos' },
+    atencao: { badge: 'warning', icone: 'fas fa-triangle-exclamation', cor: 'text-data-warn' },
+    falha: { badge: 'danger', icone: 'fas fa-circle-xmark', cor: 'text-data-neg' },
+};
+
+async function rodarDiagnostico() {
+    diagnosticando.value = true;
+    erro.value = '';
+    try { diag.value = await apiDiagnostico(); }
+    catch (e) { erro.value = e.message; }
+    finally { diagnosticando.value = false; }
 }
 
 // ── Ensaio ───────────────────────────────────────────────────────────────────
@@ -577,6 +605,56 @@ onMounted(recarregar);
 
       <!-- ── MEMÓRIA ───────────────────────────────────────────────────────── -->
       <div v-else-if="aba === 'memoria'" class="space-y-4">
+
+        <!--
+          Diagnóstico: as premissas dos coletores batem com o dado real?
+          Vem antes de tudo porque, se o escopo não casar, a fila fica vazia
+          para sempre e isso parece normal.
+        -->
+        <Surface variant="raised" padding="md">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-ink">Os coletores estão lendo certo?</h3>
+              <p class="text-xs text-ink-muted mt-0.5 leading-relaxed max-w-2xl">
+                Eles supõem o significado de colunas que o CV preenche. Esta checagem confere essas
+                suposições contra o seu dado real. <strong class="text-ink">Rode isto antes de acreditar na fila.</strong>
+              </p>
+            </div>
+            <Button size="sm" variant="ghost" icon="fas fa-stethoscope"
+              :loading="diagnosticando" @click="rodarDiagnostico">Conferir agora</Button>
+          </div>
+
+          <div v-if="diag" class="mt-4 space-y-3">
+            <div class="rounded-lg border p-3"
+              :class="diag.resumo.veredito === 'ok' ? 'border-data-pos/30 bg-data-pos/5'
+                : diag.resumo.veredito === 'falha' ? 'border-data-neg/30 bg-data-neg/5'
+                : 'border-data-warn/30 bg-data-warn/5'">
+              <p class="text-sm leading-relaxed" :class="TOM_VEREDITO[diag.resumo.veredito].cor">
+                <i :class="[TOM_VEREDITO[diag.resumo.veredito].icone, 'mr-1.5']"></i>{{ diag.resumo.texto }}
+              </p>
+            </div>
+
+            <div v-for="g in diag.grupos" :key="g.titulo">
+              <p class="text-micro uppercase tracking-wider text-ink-subtle mb-1.5">{{ g.titulo }}</p>
+              <ul class="space-y-1.5">
+                <li v-for="c in g.checagens" :key="c.chave"
+                  class="rounded-md border border-line px-3 py-2">
+                  <div class="flex items-start gap-2">
+                    <i :class="[TOM_VEREDITO[c.veredito].icone, TOM_VEREDITO[c.veredito].cor, 'text-xs mt-0.5']"></i>
+                    <div class="min-w-0">
+                      <p class="text-xs text-ink leading-relaxed">
+                        <strong>{{ c.titulo }}:</strong> {{ c.texto }}
+                      </p>
+                      <p v-if="c.oque_fazer" class="text-xs text-ink-muted mt-1 leading-relaxed">
+                        {{ c.oque_fazer }}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Surface>
 
         <!-- Boletim: o número que decide se você deve mexer nos Ajustes -->
         <Surface v-if="saudeMotor" variant="raised" padding="md">

@@ -87,6 +87,15 @@ export const acoes = ({ processo = null, limite = 100 } = {}) => {
 
 export const saude = (semanas = 8) => req(`/saude?semanas=${semanas}`).then(r => r.data)
 
+/**
+ * Confere se as premissas dos coletores batem com o dado real do CV.
+ *
+ * É a primeira coisa a olhar antes de acreditar na fila: se o pareamento de
+ * empreendimento falhar, a observação nasce sem escopo, nunca vira evidência,
+ * e o sintoma é uma fila vazia que parece normal.
+ */
+export const diagnostico = (dias = 90) => req(`/diagnostico?dias=${dias}`).then(r => r.data)
+
 /** A cadeia de uma regra: proposta, casos que a sustentaram e ações que moveu. */
 export const evidenciaDaRegra = (key, regraId) =>
     req(`/processos/${encodeURIComponent(key)}/regras/${regraId}/evidencia`).then(r => r.data)
@@ -102,5 +111,5 @@ export const restaurarRegra = (key, regraId) =>
 export default {
     carregar, salvarProcesso, trocarAutonomia, observacoesDe, fila, decidir, reverter,
     salvarSettings, ensaiar, minerar,
-    trilha, acoes, saude, evidenciaDaRegra, revogarRegra, restaurarRegra,
+    trilha, acoes, saude, diagnostico, evidenciaDaRegra, revogarRegra, restaurarRegra,
 }
