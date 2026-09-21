@@ -6,7 +6,7 @@
  *            visual pedido pela tool, trocado pela pessoa ou escolhido pela
  *            régua (escolherVisual). Trocar não volta ao servidor.
  * kpis/cards/detail/timeline/map → VizFrame + componente.
- * text/nav/choice/confirm → componente direto (não pedem moldura).
+ * text/nav/choice/confirm/email → componente direto (não pedem moldura).
  * legacy   → o renderer antigo, até a tool dele passar a devolver blocks.
  *
  * Tudo assíncrono menos o texto: o ECharts e o ExcelJS só entram quando a
@@ -49,6 +49,7 @@ const VizCards = lazy(() => import('./VizCards.vue'));
 const VizDetail = lazy(() => import('./VizDetail.vue'));
 const VizChoice = lazy(() => import('./VizChoice.vue'));
 const VizConfirm = lazy(() => import('./VizConfirm.vue'));
+const VizEmail = lazy(() => import('./VizEmail.vue'));
 const VizNav = lazy(() => import('./VizNav.vue'));
 const VizTimeline = lazy(() => import('./VizTimeline.vue'));
 const VizMap = lazy(() => import('./VizMap.vue'));
@@ -173,6 +174,7 @@ function acao(a) {
   <VizNav v-else-if="b.kind === 'nav'" :nav="b.nav" />
   <div v-else-if="b.kind === 'choice'" class="mt-2"><VizChoice :choice="b.choice" :compact="compact" /></div>
   <VizConfirm v-else-if="b.kind === 'confirm'" :confirm="b.confirm" />
+  <VizEmail v-else-if="b.kind === 'email'" :block="b" :compact="compact" />
 
   <!-- Legado -->
   <component v-else-if="b.kind === 'legacy' && FAIXAS[b.legacyType]" :is="FAIXAS[b.legacyType]"

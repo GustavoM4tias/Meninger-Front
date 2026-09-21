@@ -279,6 +279,20 @@ export const useOutlookStore = defineStore('outlook', () => {
         }
     }
 
+    // ── Escrever a partir de fora da tela ─────────────────────────────────────
+    // O cartão de e-mail da Eme (VizEmail) vive no player flutuante, fora da
+    // árvore da tela de e-mail: não alcança o `olEscrever` que a tela fornece.
+    // Ele deixa o rascunho AQUI e navega; a tela consome ao montar (ou na hora,
+    // se já estiver aberta). Vai pelo store e não pela URL porque o corpo de um
+    // e-mail não cabe numa query string.
+    const composicaoPendente = ref(null);   // { to:[{email}], cc:[{email}], subject, body }
+    function pedirComposicao(draft) { composicaoPendente.value = draft || null; }
+    function consumirComposicao() {
+        const d = composicaoPendente.value;
+        composicaoPendente.value = null;
+        return d;
+    }
+
     async function init() {
         await Promise.all([fetchFolders(), fetchMessages(), fetchUnread()]);
         fetchCategories();
@@ -289,6 +303,7 @@ export const useOutlookStore = defineStore('outlook', () => {
         folders, messages, selected, categories, mailbox, unread,
         folder, search, filters, hasMore, currentFolder, hasFilters,
         loadingList, loadingMessage, sending, error,
+        composicaoPendente,
 
         init, fetchFolders, fetchMessages, fetchUnread, loadMore,
         openFolder, applySearch, applyFilters, clearFilters,
@@ -296,5 +311,6 @@ export const useOutlookStore = defineStore('outlook', () => {
         markRead, toggleFlag, setCategories, setImportance, moveMessage, deleteMessage,
         criarPasta, renomearPasta, excluirPasta,
         startReply, saveDraft, send,
+        pedirComposicao, consumirComposicao,
     };
 });

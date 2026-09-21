@@ -24,6 +24,8 @@ test('validarBlock: aceita o mínimo de cada kind e aponta o que falta', () => {
   assert.equal(validarBlock({ kind: 'nav', nav: { route: '/x' } }).ok, true);
   assert.equal(validarBlock({ kind: 'kpis', kpis: [] }).ok, true);
   assert.equal(validarBlock({ kind: 'confirm', confirm: {} }).ok, false);
+  assert.equal(validarBlock({ kind: 'email', email: { to: [{ email: 'a@menin.com.br' }], subject: 'x', body: 'y' } }).ok, true);
+  assert.equal(validarBlock({ kind: 'email', email: { subject: 'x' } }).ok, false);
 });
 
 test('normalizarBlock: id estável, visual string vira objeto, coluna sem tipo vira text', () => {

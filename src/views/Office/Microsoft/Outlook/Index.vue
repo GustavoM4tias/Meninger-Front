@@ -128,6 +128,19 @@ function escreverNovo() {
 }
 provide('olEscrever', (draft = null) => { rascunho.value = draft; compondo.value = true; });
 
+// "Editar no Outlook" do cartão de e-mail da Eme: o rascunho chega pelo store
+// (o cartão mora fora desta árvore). Se a tela já está aberta, abre na hora;
+// se a pessoa veio navegando, abre depois de montar. Sem alçada de envio o
+// modal nem existe, então o pedido é descartado em vez de abrir uma tela morta.
+function abrirComposicaoPendente() {
+  if (!store.composicaoPendente) return;
+  const d = store.consumirComposicao();
+  if (!d || !podeEnviar.value) return;
+  rascunho.value = d;
+  compondo.value = true;
+}
+watch(() => store.composicaoPendente, abrirComposicaoPendente);
+
 async function enviar(payload) {
   try {
     await store.send(payload);
@@ -162,6 +175,7 @@ onMounted(async () => {
   // A caixa e a configuração saem juntas, sem esperar uma pela outra.
   store.init();
   ai.carregarSettings();
+  abrirComposicaoPendente();
 
   // O trilho faz DUAS listagens no Graph (enviados + recebidos) e mora numa
   // coluna que nem existe abaixo de 1280px. Ele espera a tela pintar - senão

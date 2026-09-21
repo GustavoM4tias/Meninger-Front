@@ -56,7 +56,7 @@ Toda tool passa a devolver `result.blocks: EmeBlock[]` (ou um só), além do
 
 ```
 EmeBlock {
-  kind:      'dataset' | 'kpis' | 'cards' | 'detail' | 'text' | 'form' | 'choice' | 'confirm' | 'timeline' | 'map' | 'nav'
+  kind:      'dataset' | 'kpis' | 'cards' | 'detail' | 'text' | 'form' | 'choice' | 'confirm' | 'timeline' | 'map' | 'nav' | 'email'
   id:        string            // estável dentro da resposta
   title?, subtitle?, source?   // source = "Fichas Comerciais 09/2026 (Autorizada)"
   visual?:   VisualHint        // sugestão da tool; o modelo/pessoa podem trocar
@@ -70,6 +70,7 @@ EmeBlock {
   choice?:   { options: Option[], multiple?, submitPrompt }   // seletores / check
   timeline?: { events: Event[] }
   map?:      { points: Point[], center?, zoom? }
+  email?:    { to: Pessoa[], cc?, bcc?, subject, body (texto simples), note? }   // cartão editável; envia pela rota /outlook/send
 }
 Column { key, label, type: 'text'|'number'|'currency'|'percent'|'date'|'badge'|'link', align?, width?, sortable? }
 VisualHint { type: 'table'|'bar'|'column'|'line'|'area'|'pie'|'donut'|'heatmap'|'combo'|'comparison'|'funnel'|'rank'|'cards'|'kpis', x?, y?: string[], stack?, options? }
@@ -234,3 +235,17 @@ Apagar os 28 renderers antigos e o switch; `ChatMessage.vue` só conhece
   boletos, custos, empreendimentos, imobiliárias, pessoas, checklists,
   relatórios, academy, agenda. Depois: migrar alertas/relatórios para ler
   `blocks` e apagar o formato antigo (fase 5).
+
+**21/09/2026 - bloco `email` (VizEmail).** Cartão de e-mail dentro do chat, no
+molde do cartão do Gmail no Gemini: Para/Cc/Cco em chips editáveis, assunto,
+corpo que cresce até um teto e rola, "Editar no Outlook", Cancelar, Enviar.
+Nasce da tool `outlook_escrever_email` (back, `OutlookAiTools.js`), que só
+MONTA - o envio é o clique da pessoa, pela rota `/outlook/send` já existente
+(alçada `send`, kill-switch `outlook_send_enabled`). Endereço fora da Menin
+avisa no cartão e pede confirmação dizendo para quem vai. Funciona de dentro e
+de fora da tela: "Editar no Outlook" deixa o rascunho em
+`outlookStore.composicaoPendente` e a tela abre o `ComposeModal` preenchido ao
+montar (ou na hora, se já estiver aberta). "Já enviado" fica em localStorage por
+id do bloco, para conversa reaberta não oferecer o mesmo envio de novo. O
+resumo para o modelo (`summarizeForGemini`) diz "aguardando clique; NADA foi
+enviado" - ele nunca pode dizer que enviou.

@@ -13,7 +13,7 @@
 
 export const KINDS = [
   'dataset', 'kpis', 'cards', 'detail', 'text', 'form', 'choice', 'confirm',
-  'timeline', 'map', 'nav',
+  'timeline', 'map', 'nav', 'email',
   // Bloco de transição: embrulha uma action no formato antigo para o renderer
   // antigo. Some na fase 5 do plano.
   'legacy',
@@ -68,6 +68,7 @@ export function validarBlock(b) {
   if (b.kind === 'map' && !Array.isArray(b.map?.points)) erros.push('map precisa de map.points[]');
   if (b.kind === 'form' && !Array.isArray(b.form?.fields)) erros.push('form precisa de form.fields[]');
   if (b.kind === 'confirm' && !b.confirm?.title) erros.push('confirm precisa de confirm.title');
+  if (b.kind === 'email' && !Array.isArray(b.email?.to)) erros.push('email precisa de email.to[]');
 
   return { ok: erros.length === 0, erros };
 }
