@@ -55,4 +55,18 @@ export const reverter = (id, nota = '') =>
 export const salvarSettings = (body) =>
     req('/settings', { method: 'PUT', body: JSON.stringify(body) })
 
-export default { carregar, salvarProcesso, trocarAutonomia, observacoesDe, fila, decidir, reverter, salvarSettings }
+/**
+ * ENSAIO: roda a coleta e a mineração SEM GRAVAR e devolve o que faria.
+ *
+ * É o jeito de conferir se os coletores entenderam certo as tabelas do CV
+ * antes de deixá-los escrever. Demora alguns segundos - a redação das regras
+ * chama a IA de verdade.
+ */
+export const ensaiar = (processo_key = null) =>
+    req('/minerar/ensaio', { method: 'POST', body: JSON.stringify({ processo_key }) }).then(r => r.data)
+
+/** Roda a mineração de verdade agora, sem esperar a madrugada. */
+export const minerar = () =>
+    req('/minerar', { method: 'POST' }).then(r => r.data)
+
+export default { carregar, salvarProcesso, trocarAutonomia, observacoesDe, fila, decidir, reverter, salvarSettings, ensaiar, minerar }

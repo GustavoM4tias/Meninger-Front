@@ -37,7 +37,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useCan } from '@/composables/useCan';
 import {
-    carregar, trocarAutonomia, decidir, salvarSettings, observacoesDe,
+    carregar, trocarAutonomia, decidir, salvarSettings, observacoesDe, ensaiar, minerar,
 } from '@/utils/Processos/apiProcessos';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -198,6 +198,47 @@ async function gravarCfg() {
         await recarregar();
     } catch (e) { erro.value = e.message; }
     finally { salvando.value = false; }
+}
+
+// ── Ensaio ───────────────────────────────────────────────────────────────────
+//
+// Os coletores leem tabelas do CV cuja semântica ninguém confere sem olhar
+// dado real: `data_contrato_liberado` é MESMO quando o repasse travou? O
+// ensaio roda tudo sem gravar e mostra o que gravaria. É mais barato descobrir
+// aqui que o coletor entendeu errado do que depois de 400 observações escritas
+// com o sentido trocado.
+
+const ensaiando = ref(false);
+const minerando = ref(false);
+const resultadoEnsaio = ref(null);
+
+async function rodarEnsaio() {
+    ensaiando.value = true;
+    erro.value = '';
+    aviso.value = '';
+    resultadoEnsaio.value = null;
+    try {
+        const r = await ensaiar();
+        resultadoEnsaio.value = r.processos || [];
+        const total = resultadoEnsaio.value.reduce((s, p) => s + (p.propostas?.length || 0), 0);
+        aviso.value = total
+            ? `Ensaio concluído: ${total} regra(s) seriam propostas. Nada foi gravado.`
+            : 'Ensaio concluído: nenhuma regra sairia ainda. Nada foi gravado.';
+    } catch (e) { erro.value = e.message; }
+    finally { ensaiando.value = false; }
+}
+
+async function rodarMineracao() {
+    if (!window.confirm('Rodar a mineração de verdade? As observações serão gravadas e as propostas entram na fila.')) return;
+    minerando.value = true;
+    erro.value = '';
+    try {
+        await minerar();
+        aviso.value = 'Mineração concluída. Veja a aba Fila.';
+        resultadoEnsaio.value = null;
+        await recarregar();
+    } catch (e) { erro.value = e.message; }
+    finally { minerando.value = false; }
 }
 
 async function recarregar() {
@@ -457,6 +498,58 @@ onMounted(recarregar);
 
           <div class="mt-4 flex justify-end">
             <Button :loading="salvando" icon="fas fa-check" @click="gravarCfg">Salvar ajustes</Button>
+          </div>
+        </Surface>
+
+        <!-- Ensaio: ver antes de deixar escrever -->
+        <Surface variant="raised" padding="md">
+          <h3 class="text-sm font-semibold text-ink">Ensaio e mineração</h3>
+          <p class="text-xs text-ink-muted mt-0.5 mb-4 leading-relaxed max-w-3xl">
+            A mineração roda sozinha de madrugada. O <strong class="text-ink">ensaio</strong> faz a mesma coisa
+            SEM GRAVAR NADA e mostra o que ela proporia - use antes de confiar, porque os coletores leem tabelas
+            do CV cuja leitura só dá para conferir olhando dado real. O ensaio chama a IA de verdade, então
+            demora alguns segundos.
+          </p>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <Button variant="ghost" icon="fas fa-flask" :loading="ensaiando" @click="rodarEnsaio">
+              Rodar ensaio (não grava)
+            </Button>
+            <Button variant="ghost" icon="fas fa-play" :loading="minerando" @click="rodarMineracao">
+              Minerar agora (grava)
+            </Button>
+          </div>
+
+          <div v-if="resultadoEnsaio" class="mt-4 space-y-3">
+            <div v-for="p in resultadoEnsaio" :key="p.processo"
+              class="rounded-lg border border-line p-3">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-sm font-semibold text-ink">{{ p.processo }}</h4>
+                <Badge variant="neutral" size="sm">{{ p.coletadas }} episódio(s) lidos</Badge>
+                <Badge variant="neutral" size="sm">{{ p.novas }} novo(s)</Badge>
+                <Badge variant="neutral" size="sm">{{ p.grupos }} grupo(s)</Badge>
+              </div>
+
+              <p v-if="p.erro" class="text-xs text-data-neg mt-1.5 leading-relaxed">
+                <i class="fas fa-triangle-exclamation mr-1"></i>{{ p.erro }}
+              </p>
+
+              <p v-if="!p.propostas.length && !p.erro" class="text-xs text-ink-muted mt-1.5 leading-relaxed">
+                Nenhum padrão com evidência suficiente ainda. Isso é normal no começo: o motor precisa de
+                semanas de episódios fechados antes de ter o que dizer.
+              </p>
+
+              <ul v-else class="mt-2 space-y-2">
+                <li v-for="(r, i) in p.propostas" :key="i"
+                  class="rounded-md border border-line bg-surface-sunken px-3 py-2">
+                  <p class="text-xs text-ink leading-relaxed">{{ r.texto }}</p>
+                  <p class="text-micro font-mono text-ink-subtle mt-1">
+                    {{ r.casos }} casos · confiança {{ Math.round(r.confianca * 100) }}% ·
+                    redigida por {{ r.por === 'ia' ? 'IA' : 'template (IA fora do ar)' }}
+                  </p>
+                </li>
+              </ul>
+            </div>
           </div>
         </Surface>
       </div>
