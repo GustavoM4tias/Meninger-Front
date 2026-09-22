@@ -210,7 +210,8 @@ const gestorOptions = computed(() => {
 
 const filteredGroups = computed(() => {
   let r = monthGroups.value;
-  if (filterStatus.value) r = r.filter(g => g.shown?.status === filterStatus.value);
+  // "published" conta como "approved" nos indicadores — o recorte segue a mesma régua.
+  if (filterStatus.value) r = r.filter(g => statusKpi(g.shown?.status) === filterStatus.value);
   if (filterGestor.value) {
     r = filterGestor.value === '__sem__'
       ? r.filter(g => !gestoresDe(g).length)
@@ -250,6 +251,8 @@ const STATUS_MAP = {
 const statusVariant = (s) => STATUS_MAP[s]?.variant ?? 'neutral';
 const statusLabel = (s) => STATUS_MAP[s]?.label ?? s;
 const statusBarClass = (s) => STATUS_MAP[s]?.bar ?? 'bg-data-neutral';
+// Situação como os indicadores a enxergam: "published" e "approved" são o mesmo assunto.
+function statusKpi(s) { return s === 'published' ? 'approved' : s; }
 
 // ── Indicadores: contam as fichas DO MÊS, e cada um é um recorte ─────────────
 // Rascunho e Em autorização só aparecem para quem administra a ficha — para os
@@ -259,8 +262,7 @@ const KPI_SITUACOES = ['draft', 'pending_approval', 'approved', 'closed'];
 const kpis = computed(() => {
     const contagem = {};
     for (const g of monthGroups.value) {
-        const st = g.shown?.status === 'published' ? 'approved' : g.shown?.status;
-        contagem[st] = (contagem[st] ?? 0) + 1;
+        contagem[statusKpi(g.shown?.status)] = (contagem[statusKpi(g.shown?.status)] ?? 0) + 1;
     }
     const cartoes = [{
         key: '',
@@ -291,7 +293,9 @@ function pctDoMes(n) {
 }
 
 // Clicar no mesmo cartão solta o recorte; o cartão "Fichas no mês" é o "tudo".
-function alternarStatus(chave) {
+// O StatRow entrega o CARTÃO inteiro no @select, não só a chave.
+function alternarStatus(item) {
+    const chave = item?.key ?? '';
     filterStatus.value = (!chave || filterStatus.value === chave) ? '' : chave;
 }
 
