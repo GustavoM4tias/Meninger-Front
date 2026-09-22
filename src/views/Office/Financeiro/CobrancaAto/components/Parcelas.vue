@@ -116,7 +116,7 @@
         <template #cell-titular_nome="{ row }">
           <span class="block min-w-0">
             <span class="block text-ink truncate">{{ row.titular_nome || '-' }}</span>
-            <span class="block text-micro text-ink-subtle truncate">{{ row.empreendimento || '-' }}{{ row.unidade ? ` · ${row.unidade}` : '' }}</span>
+            <span class="block text-micro text-ink-subtle truncate">{{ catalogo.nome(row.idempreendimento_cv, row.empreendimento) || '-' }}{{ row.unidade ? ` · ${row.unidade}` : '' }}</span>
           </span>
         </template>
 
@@ -260,6 +260,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useParcelasStore } from '@/stores/Financeiro/CobrancaAto/parcelasStore';
 import { useCan } from '@/composables/useCan';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 import Badge from '@/components/UI/Badge.vue';
 import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
@@ -281,6 +282,10 @@ import { planoLabel, planoVariant, motivoLabel, formatCurrency, formatDate, form
 
 const store = useParcelasStore();
 const can = useCan('/financeiro/cobranca/ato');
+// Catálogo de empreendimentos do CV: o filtro guarda o ID, o rótulo é o nome
+// ATUAL. Uma carga por sessão (cache de módulo).
+const catalogo = useEnterpriseCatalog();
+catalogo.load().catch(() => {});
 
 const STATUS_OPCOES = [
   { value: 'ativo', label: 'Ativo' }, { value: 'pausado', label: 'Pausado' },
@@ -290,7 +295,9 @@ const statusLabels = computed({
   get: () => store.filtro.status.map(v => STATUS_OPCOES.find(o => o.value === v)?.label || v),
   set: (labels) => { store.filtro.status = labels.map(l => STATUS_OPCOES.find(o => o.label === l)?.value || l); },
 });
-const empreendimentoOptions = computed(() => (store.facets?.empreendimentos || []).map(e => e.name));
+// Facetas [{ id, nome }] viram { value: id, label: nome atual } ordenadas por
+// id; plano antigo sem id entra pelo próprio nome.
+const empreendimentoOptions = computed(() => catalogo.opcoes(store.facets?.empreendimentos || []));
 const activeFiltersCount = computed(() => {
   const f = store.filtro;
   return (f.status.length && !(f.status.length === 1 && f.status[0] === 'ativo') ? 1 : 0)

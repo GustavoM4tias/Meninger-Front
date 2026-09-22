@@ -14,6 +14,7 @@
 
 import { computed, onMounted, ref } from 'vue';
 import { useRealEstateStore } from '@/stores/Comercial/RealEstate/realEstateStore';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 import { whatsappUrl, mailtoUrl } from '@/utils/contactLinks';
 
 import Badge from '@/components/UI/Badge.vue';
@@ -95,11 +96,28 @@ const cidadeOptions = computed(() => {
         ...[...set].sort((a, b) => a.localeCompare(b)).map(c => ({ value: c, label: c }))];
 });
 
+// Empreendimento vinculado: a chave é o id do CV e o rótulo é o nome ATUAL do
+// catálogo (o vínculo guarda o nome da época e o CV renomeia). Vínculo antigo
+// sem id cai no nome gravado. Ids em ordem crescente, nomes sem id no fim.
+const catalogo = useEnterpriseCatalog();
+const empId = (e) => { const n = Number(e?.id ?? e?.idempreendimento); return Number.isFinite(n) && n > 0 ? n : null; };
+const empKey = (e) => (empId(e) ? String(empId(e)) : String(e?.nome || '').trim());
+const empNome = (e) => (empId(e) ? catalogo.nome(empId(e), e?.nome) : String(e?.nome || '').trim());
+
 const empreendimentoOptions = computed(() => {
-    const set = new Set();
-    for (const i of all.value) for (const e of (i.empreendimentos || [])) set.add(e.nome);
-    return [{ value: '', label: 'Todos os empreendimentos' },
-        ...[...set].sort((a, b) => a.localeCompare(b)).map(e => ({ value: e, label: e }))];
+    const m = new Map();
+    for (const i of all.value) for (const e of (i.empreendimentos || [])) {
+        const k = empKey(e);
+        if (k && !m.has(k)) m.set(k, empNome(e));
+    }
+    const lista = [...m.entries()].map(([value, label]) => ({ value, label }));
+    lista.sort((a, b) => {
+        const na = /^\d+$/.test(a.value), nb = /^\d+$/.test(b.value);
+        if (na && nb) return Number(a.value) - Number(b.value);
+        if (na !== nb) return na ? -1 : 1;
+        return a.label.localeCompare(b.label, 'pt-BR');
+    });
+    return [{ value: '', label: 'Todos os empreendimentos' }, ...lista];
 });
 
 const filtradas = computed(() => all.value.filter(i => {
@@ -108,7 +126,7 @@ const filtradas = computed(() => all.value.filter(i => {
     if (vinculo.value === 'com' && !nVinculos) return false;
     if (vinculo.value === 'sem' && nVinculos) return false;
     if (cidade.value && !(i.cidades || []).includes(cidade.value)) return false;
-    if (empreendimento.value && !(i.empreendimentos || []).some(e => e.nome === empreendimento.value)) return false;
+    if (empreendimento.value && !(i.empreendimentos || []).some(e => empKey(e) === empreendimento.value)) return false;
     if (q.value.trim()) {
         const alvo = norm(`${i.nome} ${i.razao_social} ${i.cnpj} ${i.gerente_nome || ''} ${i.email || ''}`);
         // Busca numérica (ex.: CNPJ vindo do deep-link da Eme) compara só
@@ -165,7 +183,10 @@ const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit',
 
 const cvUrl = (i) => `https://menin.cvcrm.com.br/gestor/cadastros/imobiliarias/${i.idimobiliaria}/editar`;
 
-onMounted(() => { if (!all.value.length) store.fetchReport(); });
+onMounted(() => {
+    catalogo.load().catch(() => {});
+    if (!all.value.length) store.fetchReport();
+});
 </script>
 
 <template>
@@ -348,11 +369,11 @@ onMounted(() => { if (!all.value.length) store.fetchReport(); });
                             <td class="px-4">
                                 <div v-if="(i.empreendimentos || []).length" class="flex items-center gap-1 min-w-0">
                                     <span class="truncate rounded-full bg-surface-sunken border border-line-subtle px-2 py-0.5 text-micro text-ink-muted">
-                                        {{ i.empreendimentos[0].nome }}
+                                        {{ empNome(i.empreendimentos[0]) }}
                                     </span>
                                     <span v-if="i.empreendimentos.length > 1"
                                         class="shrink-0 rounded-full bg-accent-soft text-accent px-1.5 py-0.5 text-micro font-medium"
-                                        v-tippy="i.empreendimentos.slice(1).map(e => e.nome).join(', ')">
+                                        v-tippy="i.empreendimentos.slice(1).map(empNome).join(', ')">
                                         +{{ i.empreendimentos.length - 1 }}
                                     </span>
                                 </div>

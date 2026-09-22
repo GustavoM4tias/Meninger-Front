@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import Badge from '@/components/UI/Badge.vue';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -8,6 +9,13 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['click']);
+
+// O nome do empreendimento é o ATUAL do catálogo (o evento guarda o nome da
+// época e o CV renomeia); o gravado só serve de fallback.
+const catalogo = useEnterpriseCatalog();
+const enterpriseLabel = computed(() =>
+  catalogo.nome(props.event?.enterprise_id, props.event?.enterprise_name) || props.event?.enterprise_name || ''
+);
 
 const formatDate = (s) => new Date(s).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 const formatTime = (s) => new Date(s).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -79,9 +87,9 @@ const creatorAvatar = computed(() => {
           <i class="fas fa-location-dot text-ink-subtle"></i>
           <span class="truncate">{{ event.address.city }}<span v-if="event.address.state">, {{ event.address.state }}</span></span>
         </span>
-        <span v-if="event.enterprise_name" class="inline-flex items-center gap-1.5 truncate">
+        <span v-if="enterpriseLabel" class="inline-flex items-center gap-1.5 truncate">
           <i class="fas fa-building text-ink-subtle"></i>
-          <span class="truncate">{{ event.enterprise_name }}</span>
+          <span class="truncate">{{ enterpriseLabel }}</span>
         </span>
       </div>
 

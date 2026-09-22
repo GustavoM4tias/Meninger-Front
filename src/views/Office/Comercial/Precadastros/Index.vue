@@ -19,6 +19,7 @@
 import { onMounted, ref, toRef, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePrecadastrosStore } from '@/stores/Comercial/Precadastros/precadastrosStore';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 import Favorite from '@/components/config/Favorite.vue';
 import Export from '@/components/config/Export.vue';
@@ -46,6 +47,14 @@ const store = usePrecadastrosStore();
 const route = useRoute();
 const router = useRouter();
 
+/* Empreendimento é ID. O filtro guarda `idempreendimento` do CV, a URL leva o
+   id, e o nome que aparece é o ATUAL do catálogo - a pasta guarda o nome da
+   época, e o CV renomeia. Link antigo com nome ainda entra: `normalizarFiltro`
+   resolve. */
+const catalogo = useEnterpriseCatalog();
+const empOptions = computed(() => catalogo.opcoes(store.facets.empreendimentos));
+const nomeEmp = (p) => catalogo.nome(p?.empreendimento?.idempreendimento, p?.empreendimento?.nome);
+
 const precadastros = toRef(store, 'precadastros');
 const periodo = toRef(store, 'periodo');
 const error = toRef(store, 'error');
@@ -67,6 +76,8 @@ function syncFiltersFromUrl() {
   for (const k of ARRAY_FIELDS) next[k] = q[k] ? String(q[k]).split(',').filter(Boolean) : [];
   for (const k of STR_FIELDS) next[k] = q[k] ? String(q[k]) : '';
   for (const k of BOOL_FIELDS) next[k] = String(q[k]) === 'true';
+  // ids viram número; nome conhecido (link antigo, Eme) vira id.
+  next.empreendimento = catalogo.normalizarFiltro(next.empreendimento);
   Object.assign(filtros.value, next);
 }
 
@@ -117,9 +128,15 @@ function aoClicarKpi(item) {
 
 const recorteAtivo = computed(() => RECORTES[recorte.value] || null);
 
+/* O nome do empreendimento que vai para a tabela, a ordenação, a exportação e
+   o detalhe é o ATUAL do catálogo; o gravado na pasta é só fallback. */
+const comNomeAtual = (p) => (p?.empreendimento
+  ? { ...p, empreendimento: { ...p.empreendimento, nome: nomeEmp(p) || p.empreendimento.nome || '' } }
+  : p);
+
 const lista = computed(() => (recorteAtivo.value
   ? precadastros.value.filter(recorteAtivo.value.teste)
-  : precadastros.value));
+  : precadastros.value).map(comNomeAtual));
 
 function limpar() {
   Object.assign(filtros.value, {
@@ -313,6 +330,9 @@ const periodoLabel = computed(() => {
    guia aplicava o filtro antigo com o endereço em branco, e o link copiado
    dali abria a tela sem filtro nenhum. */
 onMounted(async () => {
+  // O catálogo entra ANTES de ler a URL: é ele que traduz nome antigo em id.
+  await catalogo.load().catch(() => {});
+  store.fetchFacets();
   if (Object.keys(route.query).length) syncFiltersFromUrl();
   else syncUrlFromFilters();
   loading.value = true;
@@ -365,6 +385,7 @@ onMounted(async () => {
             'A cor da etapa é a mesma em toda a tela e na resposta da Eme: violeta é em análise, âmbar é documentação, verde é aprovado, turquesa é em reserva e vermelho é reprovado ou cancelado.',
             'A tabela carrega de 50 em 50 conforme você rola, então não há página para caçar.',
             'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
+            'O filtro de empreendimento usa o cadastro atual do CV: empreendimento renomeado aparece uma vez só, com o nome de hoje, e as pastas abertas com o nome antigo entram junto.',
           ]"
         />
       </div>
@@ -372,7 +393,7 @@ onMounted(async () => {
 
     <div class="mb-4">
       <FiltersBar v-model:filtros="filtros"
-        :enterprises-options="store.empreendimentosOptions"
+        :enterprises-options="empOptions"
         :situacoes-options="store.situacoesOptions"
         :imobiliarias-options="store.imobiliariasOptions"
         :corretores-options="store.corretoresOptions"

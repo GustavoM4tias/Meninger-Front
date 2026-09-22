@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { useReservaCancelStore } from '@/stores/Comercial/ReservaCancel/reservaCancelStore';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
@@ -11,6 +12,10 @@ import Badge from '@/components/UI/Badge.vue';
 const emit = defineEmits(['filter-changed']);
 
 const store = useReservaCancelStore();
+// Catálogo de empreendimentos do CV: o filtro guarda o ID, o rótulo é o nome
+// ATUAL. Uma carga por sessão (cache de módulo).
+const catalogo = useEnterpriseCatalog();
+catalogo.load().catch(() => {});
 
 // ── Opções ──────────────────────────────────────────────────────────────────
 // Mesmos valores/labels usados nos KPIs e badges da tela.
@@ -27,8 +32,10 @@ const statusLabels  = STATUS_OPTIONS.map(o => o.label);
 const labelToStatus = Object.fromEntries(STATUS_OPTIONS.map(o => [o.label, o.value]));
 const statusToLabel = Object.fromEntries(STATUS_OPTIONS.map(o => [o.value, o.label]));
 
-// Empreendimentos vêm de /history-facets (array de strings) — cached no store.
-const empreendimentosOptions = computed(() => store.facets?.empreendimentos || []);
+// Empreendimentos vêm de /history-facets como [{ id, nome }] (cached no store).
+// O catálogo devolve { value: id, label: nome atual } ordenado por id; faceta
+// sem id (linha antiga) vira opção pelo próprio nome.
+const empreendimentosOptions = computed(() => catalogo.opcoes(store.facets?.empreendimentos || []));
 
 // Etapas do CV (reserva e repasse) — o filtro guarda IDs, o seletor mostra os
 // nomes do workflow do CV, como no relatório do Boleto do Ato.

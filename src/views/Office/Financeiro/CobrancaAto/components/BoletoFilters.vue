@@ -2,6 +2,7 @@
 import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
@@ -15,6 +16,9 @@ const emit = defineEmits(['filter-changed']);
 const store = useBoletoStore();
 const route = useRoute();
 const router = useRouter();
+// Catálogo de empreendimentos do CV: o filtro e a URL guardam o ID; o rótulo
+// é o nome ATUAL. Uma carga por sessão (cache de módulo).
+const catalogo = useEnterpriseCatalog();
 
 // Estado local (espelho do store.historyFilter pra controlar v-model). Ao
 // aplicar (botão Filtrar ou input com debounce), copia pro store + emite.
@@ -53,10 +57,10 @@ const statusToLabel  = Object.fromEntries(STATUS_OPTIONS.map(o => [o.value, o.la
 const labelToPayment = Object.fromEntries(PAYMENT_OPTIONS.map(o => [o.label, o.value]));
 const paymentToLabel = Object.fromEntries(PAYMENT_OPTIONS.map(o => [o.value, o.label]));
 
-// Empreendimentos vem da rota /history-facets (cached pelo store)
-const empreendimentosOptions = computed(() =>
-  (store.facets?.empreendimentos || []).map(e => e.name)
-);
+// Empreendimentos vêm da rota /history-facets como [{ id, nome }] (cached
+// pelo store). O catálogo devolve { value: id, label: nome atual } ordenado
+// por id; faceta sem id (linha antiga) vira opção pelo próprio nome.
+const empreendimentosOptions = computed(() => catalogo.opcoes(store.facets?.empreendimentos || []));
 
 // ── Etapas CV (reserva + repasse) — opções vindas dos facets, filtro por id ──
 // MultiSelector trabalha com labels (nome da etapa); convertemos pra ids.
@@ -102,7 +106,9 @@ function syncFiltersFromUrl() {
   if (q.status) local.value.status = String(q.status).split(',').filter(Boolean);
   if (q.paymentStatus) local.value.paymentStatus = String(q.paymentStatus).split(',').filter(Boolean);
   if (q.forma) local.value.forma = String(q.forma).split(',').filter(Boolean);
-  if (q.empreendimento) local.value.empreendimento = String(q.empreendimento).split(',').filter(Boolean);
+  // A URL guarda ids. Link antigo com NOME continua abrindo: nome conhecido
+  // vira o id do catálogo; desconhecido segue como texto (o back ainda aceita).
+  if (q.empreendimento) local.value.empreendimento = catalogo.normalizarFiltro(String(q.empreendimento));
   if (q.idreserva) local.value.idreserva = String(q.idreserva);
   // Período: `dateField=paid_at` é o formato antigo da URL (um período só,
   // sobre a data de pagamento) - vira o período "pago".
@@ -187,7 +193,9 @@ function onEnterApply(e) {
 }
 
 onMounted(async () => {
-  await store.fetchFacets();
+  // O catálogo precisa estar carregado antes de ler a URL, senão um link
+  // antigo por nome não vira id.
+  await Promise.allSettled([store.fetchFacets(), catalogo.load()]);
   syncFiltersFromUrl();
   // SEMPRE aplica na primeira carga — temos default de 30 dias, então o
   // store precisa receber esses filtros pra que o /history e /history-stats

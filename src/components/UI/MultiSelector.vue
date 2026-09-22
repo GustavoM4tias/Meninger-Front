@@ -1,6 +1,10 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 
+// Opções: string simples (o texto é o valor) OU { value, label } - o valor é a
+// chave e o rótulo é só exibição. Empreendimento do CV usa a segunda forma:
+// value = idempreendimento, label = nome ATUAL do catálogo. O nome muda, o id
+// não; filtrar pelo texto duplicava "PARK ALAMEDA" e "PARK ALAMEDA - SARANDI".
 const props = defineProps({
     options: { type: Array, default: () => [] },
     modelValue: { type: Array, default: () => [] },
@@ -101,16 +105,29 @@ const semAcento = (v) => String(v ?? '')
     .normalize('NFD').replace(/\p{M}/gu, '')
     .toLowerCase();
 
-// cache normalizado
+// Normaliza cada opção para { value, label, raw }.
+const isObj = (o) => o !== null && typeof o === 'object';
+const norm = (o) => isObj(o)
+    ? { value: o.value, label: String(o.label ?? o.value ?? ''), raw: o }
+    : { value: o, label: String(o ?? ''), raw: o };
+
+// cache normalizado (valor → opção, e texto de busca)
+const optionsNorm = computed(() => (props.options || []).map(norm));
+const byValue = computed(() => {
+    const m = new Map();
+    for (const o of optionsNorm.value) m.set(o.value, o);
+    return m;
+});
 const optionsLc = computed(() =>
-    (props.options || []).map(o => [o, semAcento(o)])
+    optionsNorm.value.map(o => [o, semAcento(o.label)])
 );
+const labelOf = (value) => byValue.value.get(value)?.label ?? String(value ?? '');
 
 const filteredOptions = computed(() => {
     const s = semAcento(search.value).trim();
-    if (!s) return optionsLc.value.map(([orig]) => orig);
+    if (!s) return optionsLc.value.map(([o]) => o);
     const out = [];
-    for (const [orig, low] of optionsLc.value) if (low.includes(s)) out.push(orig);
+    for (const [o, low] of optionsLc.value) if (low.includes(s)) out.push(o);
     return out;
 });
 
@@ -133,7 +150,8 @@ function emitSelectedOnce() {
     });
 }
 
-function toggle(option) {
+function toggle(opt) {
+    const option = isObj(opt) && 'value' in opt ? opt.value : opt;
     if (props.single) {
         selectedSet.value = new Set([option]);
         emitSelectedOnce();
@@ -154,7 +172,7 @@ function clearAll() {
 
 // select-all (filtered)
 const filteredCount = computed(() => filteredOptions.value.length);
-const selectedInFiltered = computed(() => { let c = 0; for (const o of filteredOptions.value) if (selectedSet.value.has(o)) c++; return c; });
+const selectedInFiltered = computed(() => { let c = 0; for (const o of filteredOptions.value) if (selectedSet.value.has(o.value)) c++; return c; });
 const allFilteredSelected = computed(() => filteredCount.value > 0 && selectedInFiltered.value === filteredCount.value);
 const noneFilteredSelected = computed(() => selectedInFiltered.value === 0);
 
@@ -167,7 +185,7 @@ watch([selectedInFiltered, filteredCount], async () => {
 function toggleSelectAllFiltered(e) {
     const check = e?.target?.checked ?? !allFilteredSelected.value;
     const set = new Set(selectedSet.value);
-    for (const o of filteredOptions.value) check ? set.add(o) : set.delete(o);
+    for (const o of filteredOptions.value) check ? set.add(o.value) : set.delete(o.value);
     selectedSet.value = set;
     emitSelectedOnce();
 }
@@ -190,7 +208,7 @@ function toggleSelectAllFiltered(e) {
                    disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="truncate" :class="selected.length === 0 ? 'text-ink-subtle' : 'text-ink'">
                 <slot name="button" :selected="selected">
-                    <template v-if="selected.length === 1">{{ selected[0] }}</template>
+                    <template v-if="selected.length === 1">{{ labelOf(selected[0]) }}</template>
                     <template v-else-if="selected.length > 1">{{ selected.length }} selecionados</template>
                     <template v-else>{{ placeholder }}</template>
                 </slot>
@@ -233,17 +251,17 @@ function toggleSelectAllFiltered(e) {
 
                 <!-- Options list -->
                 <div class="max-h-56 overflow-y-auto" @scroll.passive="onScroll">
-                    <label v-for="opt in visibleOptions" :key="opt"
+                    <label v-for="opt in visibleOptions" :key="String(opt.value)"
                         class="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer text-ink
                                hover:bg-accent-soft/40 transition-colors duration-100"
-                        :class="{ 'bg-accent-soft/60': single && selectedSet.has(opt) }">
+                        :class="{ 'bg-accent-soft/60': single && selectedSet.has(opt.value) }">
                         <input v-if="!single" type="checkbox" class="cursor-pointer shrink-0"
-                            :checked="selectedSet.has(opt)" @change="toggle(opt)" />
+                            :checked="selectedSet.has(opt.value)" @change="toggle(opt.value)" />
                         <i v-else class="fas shrink-0 text-xs w-3"
-                            :class="selectedSet.has(opt) ? 'fa-circle-dot text-accent' : 'fa-circle text-ink-subtle/50'"
-                            @click.prevent="toggle(opt)"></i>
-                        <slot name="option" :option="opt" :checked="selectedSet.has(opt)">
-                            <span class="truncate" @click.prevent="toggle(opt)" :title="opt">{{ opt }}</span>
+                            :class="selectedSet.has(opt.value) ? 'fa-circle-dot text-accent' : 'fa-circle text-ink-subtle/50'"
+                            @click.prevent="toggle(opt.value)"></i>
+                        <slot name="option" :option="opt.raw" :label="opt.label" :checked="selectedSet.has(opt.value)">
+                            <span class="truncate" @click.prevent="toggle(opt.value)" :title="opt.label">{{ opt.label }}</span>
                         </slot>
                     </label>
 

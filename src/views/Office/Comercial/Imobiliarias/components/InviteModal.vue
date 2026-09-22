@@ -7,6 +7,7 @@
 import { computed, ref, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useRealEstateStore } from '@/stores/Comercial/RealEstate/realEstateStore';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 import Modal from '@/components/UI/Modal.vue';
 import Input from '@/components/UI/Input.vue';
@@ -23,9 +24,13 @@ const LP_BASE = import.meta.env.VITE_LP_URL || 'https://lp.menin.com.br';
 
 const store = useRealEstateStore();
 const toast = useToast();
+const catalogo = useEnterpriseCatalog();
 
 const label = ref('');
-const selectedNames = ref([]);
+// A escolha guarda o ID do empreendimento (o nome muda; o id não). O rótulo
+// é o nome atual do catálogo, com o nome vindo de /cv/empreendimentos de
+// fallback. Ordenado por id.
+const selectedIds = ref([]);
 const multiUse = ref(false);
 const startsAt = ref('');
 const endsAt = ref('');
@@ -34,26 +39,28 @@ const createdUrl = ref('');
 const createdMulti = ref(false);
 const error = ref('');
 
-const enterpriseNames = computed(() => store.enterprises.map(e => e.nome));
+const enterpriseOptions = computed(() => catalogo.opcoes(store.enterprises));
 const todayStr = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
 watch(() => props.open, (open) => {
     if (open) {
         label.value = '';
-        selectedNames.value = [];
+        selectedIds.value = [];
         multiUse.value = false;
         startsAt.value = todayStr();
         endsAt.value = '';
         createdUrl.value = '';
         createdMulti.value = false;
         error.value = '';
+        catalogo.load().catch(() => {});
         store.fetchEnterprises();
     }
 });
 
 async function create() {
     error.value = '';
-    const ents = store.enterprises.filter(e => selectedNames.value.includes(e.nome));
+    const ids = new Set(selectedIds.value.map(Number));
+    const ents = store.enterprises.filter(e => ids.has(Number(e.id)));
     if (!ents.length) {
         error.value = 'Selecione ao menos um empreendimento.';
         return;
@@ -111,8 +118,8 @@ const fmtDate = (d) => d ? new Date(`${d}T00:00:00`).toLocaleDateString('pt-BR')
                 hint="Só para você identificar o convite na lista."
             />
             <MultiSelector
-                v-model="selectedNames"
-                :options="enterpriseNames"
+                v-model="selectedIds"
+                :options="enterpriseOptions"
                 label="Empreendimentos"
                 placeholder="Selecione os empreendimentos"
                 overlay

@@ -13,7 +13,7 @@ use([PieChart, TooltipComponent, CanvasRenderer]);
 const t = useChartTheme();
 
 const props = defineProps({
-  data: { type: Array, default: () => [] },   // [{ name, count }] — leadsByEnterprise
+  data: { type: Array, default: () => [] },   // [{ key, id, name, count }] - leadsByEnterprise (key = idempreendimento)
   limit: { type: Number, default: 6 },        // fatias antes de agrupar em "Outros"
 });
 
@@ -28,11 +28,12 @@ const slices = computed(() => {
   // Duas cores por fatia: a que PREENCHE a rosca e a que marca a legenda.
   // O mesmo tom nos dois lugares erra um dos dois — o bloco fica pesado ou o
   // quadradinho de 10px some. "Outros" é sempre neutro, nunca ganha matiz.
+  // A chave da fatia é o id do empreendimento (o nome é rótulo, e muda).
   const list = top.map((d, i) => ({
-    name: d.name, value: d.count || 0,
+    key: d.key ?? d.name, name: d.name, value: d.count || 0,
     fatia: t.fillPalette.value[i % 8], marca: t.palette.value[i % 8],
   }));
-  if (restCount > 0) list.push({ name: 'Outros', value: restCount, fatia: t.neutralArea.value, marca: t.neutral.value });
+  if (restCount > 0) list.push({ key: '__outros', name: 'Outros', value: restCount, fatia: t.neutralArea.value, marca: t.neutral.value });
   return list;
 });
 
@@ -83,7 +84,7 @@ const intFmt = new Intl.NumberFormat('pt-BR');
 
       <!-- Legenda -->
       <ul class="flex-1 min-w-0 space-y-1.5">
-        <li v-for="s in legend" :key="s.name" class="flex items-center gap-2 text-xs">
+        <li v-for="s in legend" :key="s.key" class="flex items-center gap-2 text-xs">
           <span class="h-2.5 w-2.5 rounded-sm shrink-0" :style="{ backgroundColor: s.marca }"></span>
           <span class="flex-1 min-w-0 truncate text-ink-muted" :title="s.name">{{ s.name }}</span>
           <span class="font-semibold text-ink tabular-nums shrink-0">{{ s.pct }}%</span>

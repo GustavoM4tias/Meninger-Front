@@ -10,7 +10,10 @@ import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 export const useAditivosStore = defineStore('aditivos', () => {
     const unidades = ref([]);
     const resumo = ref(null);
+    // [{ id, nome }]: a chave é o id do CV, o nome é o rótulo de hoje (a tela
+    // rotula pelo catálogo). Aditivo antigo sem id vem com id null.
     const empreendimentos = ref([]);
+    // '' = todos; senão o id do empreendimento (a query manda `?empreendimento=<id>`).
     const empreendimento = ref('');
 
     const carregando = ref(false);
@@ -26,7 +29,13 @@ export const useAditivosStore = defineStore('aditivos', () => {
     function aplicar(dados) {
         unidades.value = dados.unidades ?? [];
         resumo.value = dados.resumo ?? null;
-        if (dados.empreendimentos) empreendimentos.value = dados.empreendimentos;
+        // Formato antigo (array de nomes) vira { id: null, nome } para a tela
+        // montar as opções do mesmo jeito.
+        if (Array.isArray(dados.empreendimentos)) {
+            empreendimentos.value = dados.empreendimentos.map(e => (e !== null && typeof e === 'object')
+                ? { ...e, id: e.id ?? null, nome: e.nome ?? e.name ?? '' }
+                : { id: null, nome: String(e ?? '') });
+        }
     }
 
     async function fetchPainel() {

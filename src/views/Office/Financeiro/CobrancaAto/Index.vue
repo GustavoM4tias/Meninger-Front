@@ -729,7 +729,7 @@
               </label>
               <div class="px-3 py-2 rounded-lg border border-line bg-surface-sunken text-sm text-ink">
                 <span class="font-mono tabular-nums text-accent">#{{ ruleModal.form.idempreendimento_cv }}</span>
-                <span class="ml-2">{{ ruleModal.form.empreendimento_nome || '—' }}</span>
+                <span class="ml-2">{{ catalogo.nome(ruleModal.form.idempreendimento_cv, ruleModal.form.empreendimento_nome) || '-' }}</span>
               </div>
               <p class="mt-1 text-xs text-ink-muted">O empreendimento não pode ser alterado em uma regra existente.</p>
             </div>
@@ -899,7 +899,7 @@
               </span>
               <span v-else class="block min-w-0">
                 <span class="block text-ink truncate">{{ row.titular_nome || '-' }}</span>
-                <span class="block text-micro text-ink-subtle truncate">{{ row.empreendimento || '-' }}</span>
+                <span class="block text-micro text-ink-subtle truncate">{{ catalogo.nome(row.idempreendimento_cv, row.empreendimento) || '-' }}</span>
               </span>
             </template>
 
@@ -993,6 +993,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useBoletoStore } from '@/stores/Financeiro/BoletoCaixa/boletoStore';
 import { useCan } from '@/composables/useCan';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 import UseredeSettings from './components/UseredeSettings.vue';
 import API_URL from '@/config/apiUrl';
 
@@ -1031,6 +1032,10 @@ const store = useBoletoStore();
 // Ações desta tela (lib/screenCapabilities.js no back): view/operate seguem a
 // alçada, configure é admin. Ver composables/useCan.js.
 const can = useCan('/financeiro/cobranca/ato');
+// Nome do empreendimento vem do catálogo pelo id (o mais recente); o nome
+// gravado na linha ou na regra é só o fallback de quem não tem id.
+const catalogo = useEnterpriseCatalog();
+catalogo.load().catch(() => {});
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 // Abre no Histórico. A aba "Configurações" só aparece para quem tem a ação
@@ -1565,8 +1570,9 @@ const modoHerdado = (rule) => {
    onde a célula é montada no slot e o valor cru não serve para comparar. */
 const COLUNAS_REGRAS = [
   { key: 'idempreendimento_cv', label: 'ID emp.', priority: 2, numeric: true, sortable: true, width: '88px' },
+  // Nome ATUAL pelo id do catálogo; o gravado na regra é só fallback.
   { key: 'empreendimento_nome', label: 'Empreendimento', priority: 1, sortable: true,
-    format: (v) => v || '-' },
+    format: (v, r) => catalogo.nome(r?.idempreendimento_cv, v) || '-' },
   { key: '_modo', label: 'Cálculo', priority: 1, sortable: true, width: '170px',
     sortValue: (r) => modoLabel(r) },
   { key: 'percentual_boleto', label: '% boleto', priority: 2, numeric: true, sortable: true, width: '104px',
@@ -1681,7 +1687,7 @@ async function saveRule() {
 
 async function confirmDeleteRule(rule) {
   if (!await pedirConfirmacao({
-    title: `Excluir a regra de ${rule.empreendimento_nome || rule.idempreendimento_cv}?`,
+    title: `Excluir a regra de ${catalogo.nome(rule.idempreendimento_cv, rule.empreendimento_nome) || rule.idempreendimento_cv}?`,
     consequence: 'As cobrancas ja emitidas continuam como estao. As proximas deste empreendimento passam a usar o calculo padrao da tela.',
     confirmLabel: 'Excluir regra',
   })) return;

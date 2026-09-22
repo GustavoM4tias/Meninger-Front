@@ -9,15 +9,26 @@ const props = defineProps({
 
 const aiStore = useOfficeAIStore()
 
+// Empreendimento vai por ID quando o contexto traz (`empreendimento_ids`): a
+// tela filtra pelo idempreendimento do CV, e o nome é rótulo que muda. Só
+// nome no contexto → manda o nome; a tela resolve pelo catálogo.
+function empParam(c) {
+  const bruto = Array.isArray(c.empreendimento_ids) ? c.empreendimento_ids : (c.idempreendimento ?? c.empreendimento_id ?? null)
+  const ids = (Array.isArray(bruto) ? bruto : [bruto]).map(Number).filter(n => Number.isFinite(n) && n > 0)
+  if (ids.length) return ids.join(',')
+  return c.empreendimento ? String(c.empreendimento) : ''
+}
+
 const buttons = computed(() => {
   const c = props.context || {}
   const list = []
 
   // ── Abrir relatório de pré-cadastros com filtros aplicados ───────────────
   const dashQuery = {}
+  const emp = empParam(c)
   if (c.data_inicio)            dashQuery.data_inicio            = c.data_inicio
   if (c.data_fim)               dashQuery.data_fim               = c.data_fim
-  if (c.empreendimento)         dashQuery.empreendimento         = c.empreendimento
+  if (emp)                      dashQuery.empreendimento         = emp
   if (c.empresa_correspondente) dashQuery.empresa_correspondente = c.empresa_correspondente
   if (c.correspondente)         dashQuery.correspondente         = c.correspondente
   if (c.imobiliaria)            dashQuery.imobiliaria            = c.imobiliaria

@@ -50,7 +50,7 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
 
     const historyFilter = ref({
         status: [],            // multi: processing/success/blocked/skipped/ignored/error
-        empreendimento: [],
+        empreendimento: [],    // ids do empreendimento no CV (o nome é rótulo; ver useEnterpriseCatalog)
         cvSituacao: [],        // ids de situação da RESERVA no CV
         cvRepasse: [],         // ids de situação do REPASSE no CV
         idreserva: '',
@@ -201,10 +201,20 @@ export const useReservaCancelStore = defineStore('reservaCancel', () => {
         }
     }
 
+    // `empreendimentos` chega como [{ id, nome }] (id null = linha antiga que o
+    // backfill não casou). Formato antigo (string ou { name }) vira { id: null,
+    // nome } para o catálogo montar as opções do mesmo jeito.
     const facets = ref({ empreendimentos: [], cvSituacoes: [], cvRepasses: [] });
     async function fetchFacets() {
         try {
-            facets.value = await requestWithAuth('/cancelamento-reservas/history-facets');
+            const data = await requestWithAuth('/cancelamento-reservas/history-facets');
+            const emps = Array.isArray(data?.empreendimentos) ? data.empreendimentos : [];
+            facets.value = {
+                ...data,
+                empreendimentos: emps.map(e => (e !== null && typeof e === 'object')
+                    ? { id: e.id ?? null, nome: e.nome ?? e.name ?? '' }
+                    : { id: null, nome: String(e ?? '') }),
+            };
         } catch (err) {
             console.warn('[reservaCancelStore] facets:', err.message);
         }

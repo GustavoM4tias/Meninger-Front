@@ -3,9 +3,12 @@ import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import { bucketOf, STAGE_GROUPS } from '@/views/Office/Comercial/Precadastros/stages.js';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
+// Empreendimento NÃO fica mais aqui: o filtro guarda o idempreendimento do CV e
+// as opções vêm das facetas do servidor + catálogo (useEnterpriseCatalog). Um
+// cache de nomes duplicava o empreendimento renomeado e escondia histórico.
 const LS = {
-    emp: 'pre_emp_options_v1',
     sit: 'pre_sit_options_v1',
     imo: 'pre_imo_options_v1',
     cor: 'pre_cor_options_v1',
@@ -18,6 +21,8 @@ const LS = {
 
 const loadLS = (k) => { try { const r = localStorage.getItem(k); const a = r ? JSON.parse(r) : []; return Array.isArray(a) ? a : []; } catch { return []; } };
 const saveLS = (k, a) => { try { localStorage.setItem(k, JSON.stringify(a)); } catch {} };
+// Cache antigo de nomes: some para não ressuscitar o filtro por nome.
+try { localStorage.removeItem('pre_emp_options_v1'); } catch {}
 
 export const usePrecadastrosStore = defineStore('precadastros', () => {
     const precadastros = ref([]);
@@ -25,9 +30,13 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
     const periodo = ref({ data_inicio: null, data_fim: null });
     const error = ref(null);
     const carregamento = useCarregamentoStore();
+    const catalogo = useEnterpriseCatalog();
+
+    // Facetas de empreendimento no escopo do usuário: [{ id, nome }]. `null`
+    // enquanto o servidor não respondeu (a tela cai no catálogo inteiro).
+    const facets = ref({ empreendimentos: null });
 
     // listas persistentes (alimentadas com o que vem do back)
-    const empreendimentosOptions = ref(loadLS(LS.emp));
     const situacoesOptions       = ref(loadLS(LS.sit));
     const imobiliariasOptions    = ref(loadLS(LS.imo));
     const corretoresOptions      = ref(loadLS(LS.cor));
@@ -67,8 +76,35 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
     // mergeOptions acumula opções a partir do que carrega no período.
     // ACUMULA — não remove. Persistido em localStorage, então com o tempo as listas
     // de empreendimento/situação/etc. ficam completas mesmo quando o período é curto.
+    // GET /cv/precadastros/facets → { empreendimentos: [{ id, nome }] }.
+    // Falha fica silenciosa: o filtro passa a oferecer o catálogo inteiro.
+    async function fetchFacets() {
+        try {
+            const resp = await fetch(`${API_URL}/cv/precadastros/facets`, { headers: authHeaders() });
+            if (!resp.ok) return;
+            const data = await resp.json().catch(() => ({}));
+            if (Array.isArray(data?.empreendimentos)) facets.value = { empreendimentos: data.empreendimentos };
+        } catch {}
+    }
+
+    // O que veio na busca e ainda não está nas facetas entra nelas: o filtro
+    // nunca esconde um empreendimento que está na própria lista.
+    function mergeFacetsFromRows(list) {
+        const atuais = Array.isArray(facets.value.empreendimentos) ? facets.value.empreendimentos : [];
+        const vistos = new Set(atuais.map(f => Number(f.id)));
+        const novos = [];
+        for (const p of (list || [])) {
+            const id = Number(p?.empreendimento?.idempreendimento);
+            if (!Number.isFinite(id) || id <= 0 || vistos.has(id)) continue;
+            vistos.add(id);
+            novos.push({ id, nome: p?.empreendimento?.nome || null });
+        }
+        if (novos.length) {
+            facets.value = { empreendimentos: [...atuais, ...novos].sort((a, b) => Number(a.id) - Number(b.id)) };
+        }
+    }
+
     function mergeOptions(list) {
-        const empSet = new Set(empreendimentosOptions.value);
         const sitSet = new Set(situacoesOptions.value);
         const imoSet = new Set(imobiliariasOptions.value);
         const corSet = new Set(corretoresOptions.value);
@@ -78,7 +114,6 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
         const lorSet = new Set(leadOrigensOptions.value);
 
         for (const p of list || []) {
-            const emp = p?.empreendimento?.nome?.trim();          if (emp) empSet.add(emp);
             if (p.situacao_nome) sitSet.add(String(p.situacao_nome).trim());
             const imo = p?.imobiliaria?.nome?.trim();             if (imo) imoSet.add(imo);
             const cor = p?.corretor?.nome?.trim();                if (cor) corSet.add(cor);
@@ -90,7 +125,6 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
             }
         }
         const sortPt = (a, b) => a.localeCompare(b, 'pt-BR');
-        empreendimentosOptions.value = Array.from(empSet).sort(sortPt);
         situacoesOptions.value       = Array.from(sitSet).sort(sortPt);
         imobiliariasOptions.value    = Array.from(imoSet).sort(sortPt);
         corretoresOptions.value      = Array.from(corSet).sort(sortPt);
@@ -99,7 +133,6 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
         intencoesOptions.value       = Array.from(intSet).sort(sortPt);
         leadOrigensOptions.value     = Array.from(lorSet).sort(sortPt);
 
-        saveLS(LS.emp, empreendimentosOptions.value);
         saveLS(LS.sit, situacoesOptions.value);
         saveLS(LS.imo, imobiliariasOptions.value);
         saveLS(LS.cor, corretoresOptions.value);
@@ -139,6 +172,7 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
             count.value = data.count ?? precadastros.value.length ?? 0;
             periodo.value = data.periodo ?? { data_inicio: null, data_fim: null };
             mergeOptions(precadastros.value);
+            mergeFacetsFromRows(precadastros.value);
         } catch (e) {
             if (e?.name === 'AbortError') return; // cancelada por uma busca mais nova
             error.value = e.message;
@@ -241,18 +275,23 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
         return denom ? aprov / denom : 0;
     });
 
-    // por empreendimento
+    // por empreendimento: a chave é o `idempreendimento` do CV (a linha antiga
+    // sem id agrupa pelo nome gravado) e o rótulo é o nome ATUAL do catálogo.
     const porEmpreendimento = computed(() => {
         const map = new Map();
         for (const p of precadastros.value) {
-            const name = p?.empreendimento?.nome?.trim() || 'Sem Empreendimento';
-            const e = map.get(name) || { name, count: 0, aprovados: 0, em_analise: 0, cancelados: 0, precadastros: [] };
+            const id = Number(p?.empreendimento?.idempreendimento);
+            const temId = Number.isFinite(id) && id > 0;
+            const nomeLinha = p?.empreendimento?.nome?.trim() || '';
+            const key = temId ? String(id) : (nomeLinha || 'Sem Empreendimento');
+            const name = temId ? catalogo.nome(id, nomeLinha) : (nomeLinha || 'Sem Empreendimento');
+            const e = map.get(key) || { key, id: temId ? id : null, name, count: 0, aprovados: 0, em_analise: 0, cancelados: 0, precadastros: [] };
             e.count++;
             if (isAprovado(p)) e.aprovados++;
             if (isEmAnalise(p)) e.em_analise++;
             if (isCancelado(p)) e.cancelados++;
             e.precadastros.push(p);
-            map.set(name, e);
+            map.set(key, e);
         }
         return Array.from(map.values()).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'pt-BR'));
     });
@@ -305,8 +344,10 @@ export const usePrecadastrosStore = defineStore('precadastros', () => {
     return {
         // state
         precadastros, count, periodo, error, filtros,
+        // facetas (empreendimento por id)
+        facets, fetchFacets,
         // options (alimentadas via mergeOptions do período)
-        empreendimentosOptions, situacoesOptions, imobiliariasOptions, corretoresOptions,
+        situacoesOptions, imobiliariasOptions, corretoresOptions,
         correspondentesOptions, empresasCorrespondentesOptions, intencoesOptions,
         leadOrigensOptions,
         // getters

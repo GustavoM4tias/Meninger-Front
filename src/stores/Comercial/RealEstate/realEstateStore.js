@@ -45,7 +45,8 @@ export const useRealEstateStore = defineStore('realEstate', () => {
             enterprises.value = (Array.isArray(data) ? data : [])
                 .map(e => ({ id: Number(e.idempreendimento), nome: e.nome }))
                 .filter(e => Number.isFinite(e.id) && e.nome)
-                .sort((a, b) => a.nome.localeCompare(b.nome));
+                // Por id, como toda lista de empreendimento: o nome é rótulo e muda.
+                .sort((a, b) => a.id - b.id);
         } finally {
             loadingEnterprises.value = false;
         }

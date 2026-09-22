@@ -13,6 +13,7 @@ import EmptyState from '@/components/UI/EmptyState.vue';
 
 import LeadDetailModal from './LeadDetailModal.vue';
 import { useChartTheme } from '@/composables/useChartTheme';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 import VChart from 'vue-echarts';
 import * as echarts from 'echarts/core';
 import { FunnelChart, PieChart, BarChart } from 'echarts/charts';
@@ -138,6 +139,37 @@ const brokerOf = (l) => {
   return raw ? String(raw).trim() : 'Não informado';
 };
 
+// ── Empreendimento: chave = idempreendimento do CV, rótulo = nome ATUAL ──
+// O lead guarda o nome da época e o CV renomeia; filtrar, agrupar e clicar
+// pelo texto duplicava o mesmo empreendimento. Lead antigo sem id cai no
+// nome gravado; lead sem interesse cai em "Sem Empreendimento".
+const catalogo = useEnterpriseCatalog();
+const SEM_EMP = 'Sem Empreendimento';
+const empIdOf = (e) => { const n = Number(e?.idempreendimento); return Number.isFinite(n) && n > 0 ? n : null; };
+const empKeyOf = (e) => (empIdOf(e) ? String(empIdOf(e)) : (e?.nome?.trim() || SEM_EMP));
+const empLabelOf = (e) => (empIdOf(e) ? catalogo.nome(empIdOf(e), e?.nome) : (e?.nome?.trim() || SEM_EMP));
+const empKeysOf = (l) => {
+  const arr = Array.isArray(l?.empreendimento) ? l.empreendimento : [];
+  return arr.length ? arr.map(empKeyOf) : [SEM_EMP];
+};
+// ids em ordem crescente, nomes sem id por último
+const ordemEmp = (a, b) => {
+  const na = /^\d+$/.test(a.key), nb = /^\d+$/.test(b.key);
+  if (na && nb) return Number(a.key) - Number(b.key);
+  if (na !== nb) return na ? -1 : 1;
+  return a.label.localeCompare(b.label, 'pt-BR');
+};
+// [{ key, label }] únicos a partir de uma lista de leads
+const empAxisFrom = (leads) => {
+  const m = new Map();
+  for (const l of leads || []) {
+    const arr = Array.isArray(l?.empreendimento) ? l.empreendimento : [];
+    if (!arr.length) { if (!m.has(SEM_EMP)) m.set(SEM_EMP, SEM_EMP); continue; }
+    for (const e of arr) { const k = empKeyOf(e); if (!m.has(k)) m.set(k, empLabelOf(e)); }
+  }
+  return [...m.entries()].map(([key, label]) => ({ key, label })).sort(ordemEmp);
+};
+
 // ── Filtros (aplicados + drafts) ─────────────────────
 const filtroStatus = ref(new Set());
 const filtroEnterprise = ref(new Set());
@@ -170,15 +202,14 @@ const statusOptions = computed(() => {
   const s = new Set((props.leads || []).map(l => (l.situacao_nome || 'Sem Situação')).map(normalizeOpt));
   return Array.from(s).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 });
-const enterpriseOptions = computed(() => {
-  const set = new Set();
-  for (const l of props.leads || []) {
-    const arr = Array.isArray(l.empreendimento) ? l.empreendimento : [];
-    if (arr.length) arr.forEach(e => e?.nome && set.add(normalizeOpt(e.nome)));
-    else set.add('Sem Empreendimento');
-  }
-  return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-});
+const enterpriseOptions = computed(() =>
+  empAxisFrom(props.leads).map(({ key, label }) => ({ value: key, label }))
+);
+const empLabelByKey = computed(() => new Map(enterpriseOptions.value.map(o => [o.value, o.label])));
+// Rótulos do filtro aplicado (para o cabeçalho da exportação).
+const filtroEnterpriseLabels = computed(() =>
+  Array.from(filtroEnterprise.value).map(k => empLabelByKey.value.get(k) || k)
+);
 const brokerOptions = computed(() => {
   const set = new Set();
   for (const l of props.leads || []) set.add(normalizeOpt(brokerOf(l)));
@@ -209,11 +240,7 @@ const clearAllFilters = () => {
 const leadsFiltrados = computed(() => {
   return (props.leads || []).filter(l => {
     if (filtroStatus.value.size && !filtroStatus.value.has(l.situacao_nome || 'Sem Situação')) return false;
-    if (filtroEnterprise.value.size) {
-      const arr = Array.isArray(l.empreendimento) ? l.empreendimento : [];
-      const names = arr.length ? arr.map(e => e?.nome?.trim() || 'Sem Empreendimento') : ['Sem Empreendimento'];
-      if (!names.some(n => filtroEnterprise.value.has(n))) return false;
-    }
+    if (filtroEnterprise.value.size && !empKeysOf(l).some(k => filtroEnterprise.value.has(k))) return false;
     if (filtroBroker.value.size && !filtroBroker.value.has(brokerOf(l))) return false;
     if (filtroAgent.value.size && !filtroAgent.value.has(l?.corretor?.nome || 'Sem Corretor')) return false;
     return true;
@@ -245,15 +272,12 @@ const allDatesSorted = computed(() => {
   return Array.from(set).sort();
 });
 
-const allEnterprisesSorted = computed(() => {
-  const set = new Set();
-  for (const l of leadsFiltrados.value) {
-    const arr = Array.isArray(l.empreendimento) ? l.empreendimento : [];
-    if (arr.length) arr.forEach(e => e?.nome && set.add(String(e.nome).trim()));
-    else set.add('Sem Empreendimento');
-  }
-  return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-});
+// Eixo/fatias por empreendimento: a chave é o id, o que o gráfico mostra é
+// o rótulo atual. O clique devolve o rótulo, e `labelToKey` volta para o id.
+const enterpriseAxis = computed(() => empAxisFrom(leadsFiltrados.value));
+const keyToLabel = computed(() => new Map(enterpriseAxis.value.map(e => [e.key, e.label])));
+const labelToKey = computed(() => new Map(enterpriseAxis.value.map(e => [e.label, e.key])));
+const empKeyFromChart = (label) => labelToKey.value.get(label) ?? label;
 
 const statusesSorted = computed(() => countsByStatus.value.map(([s]) => s));
 
@@ -276,7 +300,7 @@ const makeStackedSeries = (xKeys, xExtractor) => {
 };
 
 const pieLevel = computed(() => {
-  const enterprises = allEnterprisesSorted.value;
+  const enterprises = enterpriseAxis.value;
   if (enterprises.length > 1) return 'enterprise';
   const brokers = new Set(leadsFiltrados.value.map(brokerOf)).size;
   if (enterprises.length === 1 && brokers > 1) return 'broker';
@@ -287,10 +311,8 @@ const pieData = computed(() => {
   const m = new Map();
   if (pieLevel.value === 'enterprise') {
     for (const l of leadsFiltrados.value) {
-      const arr = Array.isArray(l.empreendimento) ? l.empreendimento : [];
-      const list = arr.length ? arr : [{ nome: 'Sem Empreendimento' }];
-      for (const e of list) {
-        const name = e?.nome?.trim() || 'Sem Empreendimento';
+      for (const k of empKeysOf(l)) {
+        const name = keyToLabel.value.get(k) || k;
         m.set(name, (m.get(name) || 0) + 1);
       }
     }
@@ -332,13 +354,9 @@ const chartOption = computed(() => {
 
   if (viewMode.value === 'stacked') {
     const isEnterprise = groupBy.value === 'enterprise';
-    const xKeys = isEnterprise ? allEnterprisesSorted.value : allDatesSorted.value;
+    const xKeys = isEnterprise ? enterpriseAxis.value.map(e => e.label) : allDatesSorted.value;
     const series = isEnterprise
-      ? makeStackedSeries(xKeys, l => {
-          const arr = Array.isArray(l.empreendimento) ? l.empreendimento : [];
-          const names = arr.length ? arr.map(e => e?.nome?.trim() || 'Sem Empreendimento') : ['Sem Empreendimento'];
-          return names[0];
-        })
+      ? makeStackedSeries(xKeys, l => { const k = empKeysOf(l)[0]; return keyToLabel.value.get(k) || k; })
       : makeStackedSeries(xKeys, l => dateKey(l.data_cad));
 
     return {
@@ -387,7 +405,8 @@ const onChartClick = (params) => {
   }
   if (viewMode.value === 'pie' && params.name) {
     if (pieLevel.value === 'enterprise') {
-      filtroEnterprise.value = new Set([params.name]); draftEnterprise.value = new Set([params.name]);
+      const k = empKeyFromChart(params.name);
+      filtroEnterprise.value = new Set([k]); draftEnterprise.value = new Set([k]);
     } else if (pieLevel.value === 'broker') {
       filtroBroker.value = new Set([params.name]); draftBroker.value = new Set([params.name]);
     } else {
@@ -396,7 +415,8 @@ const onChartClick = (params) => {
   }
   if (viewMode.value === 'stacked') {
     if (groupBy.value === 'enterprise' && params.axisValue) {
-      filtroEnterprise.value = new Set([params.axisValue]); draftEnterprise.value = new Set([params.axisValue]);
+      const k = empKeyFromChart(params.axisValue);
+      filtroEnterprise.value = new Set([k]); draftEnterprise.value = new Set([k]);
     } else if (groupBy.value === 'date' && params.seriesName) {
       filtroStatus.value = new Set([params.seriesName]); draftStatus.value = new Set([params.seriesName]);
     }
@@ -572,7 +592,7 @@ const onLimpar = () => {
                 </span>
                 <template v-if="Array.isArray(l.empreendimento) && l.empreendimento.length">
                   <Badge v-for="(emp, idx) in l.empreendimento" :key="idx" variant="accent" size="sm">
-                    {{ emp?.nome }}
+                    {{ empLabelOf(emp) }}
                   </Badge>
                 </template>
               </div>
@@ -605,7 +625,7 @@ const onLimpar = () => {
       initial-delimiter=";" initial-array-mode="join"
       :filters="{
         'Status': filtroStatus,
-        'Empreendimento': filtroEnterprise,
+        'Empreendimento': filtroEnterpriseLabels,
         'Imobiliária': filtroBroker,
         'Corretor': filtroAgent,
       }"

@@ -3,8 +3,32 @@
 // Sem CDN — abre offline, dá para encaminhar por e-mail e imprimir em PDF limpo.
 import dayjs from 'dayjs';
 import { dailySeries, seriesValues, KW, matchSituacao } from './series';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 const intFmt = new Intl.NumberFormat('pt-BR');
+
+// Empreendimento: agrupa pelo `idempreendimento` do CV e mostra o nome ATUAL
+// do catálogo (a tela já o carregou). O lead guarda o nome da época e o CV
+// renomeia; agrupar pelo texto separava o mesmo empreendimento em dois.
+const catalogo = useEnterpriseCatalog();
+const SEM_EMP = 'Sem empreendimento';
+function empOf(l) {
+  const e = l?.empreendimento?.[0];
+  const id = Number(e?.idempreendimento);
+  const nomeLinha = e?.nome ? String(e.nome).trim() : '';
+  if (Number.isFinite(id) && id > 0) return { key: String(id), name: catalogo.nome(id, nomeLinha) || nomeLinha };
+  return { key: nomeLinha || SEM_EMP, name: nomeLinha || SEM_EMP };
+}
+function groupCountEmp(leads) {
+  const map = new Map();
+  for (const l of leads) {
+    const { key, name } = empOf(l);
+    const cur = map.get(key) || { key, name, count: 0 };
+    cur.count += 1;
+    map.set(key, cur);
+  }
+  return Array.from(map.values()).sort((a, b) => b.count - a.count);
+}
 
 // Escapa tudo que vem de dado do usuário (nome, e-mail, empreendimento...).
 function esc(v) {
@@ -51,7 +75,7 @@ export function buildReportModel({ leads = [], from, to, geradoPor = null }) {
 
   const porSituacao = groupCount(leads, l => String(l?.situacao_nome || 'Sem situação').trim());
   const porOrigem = groupCount(leads, l => String(l?.origem || 'Sem origem').trim());
-  const porEmpreendimento = groupCount(leads, l => l?.empreendimento?.[0]?.nome?.trim() || 'Sem empreendimento');
+  const porEmpreendimento = groupCountEmp(leads);
   const porMidia = groupCount(leads, l => String(l?.midia_principal || 'Sem mídia').trim());
   const porImobiliaria = groupCount(leads, l => l?.imobiliaria?.nome?.trim() || 'Sem imobiliária');
 
@@ -105,7 +129,9 @@ export function buildReportModel({ leads = [], from, to, geradoPor = null }) {
       email: l?.email || '',
       telefone: l?.telefone || '',
       situacao: l?.situacao_nome || '',
-      empreendimento: l?.empreendimento?.[0]?.nome || '',
+      empreendimento: empOf(l).key === SEM_EMP ? '' : empOf(l).name,
+      // chave do filtro da tabela (id do CV); o texto da célula é só rótulo
+      empKey: empOf(l).key,
       imobiliaria: l?.imobiliaria?.nome || '',
       corretor: l?.corretor?.nome || '',
       midia: l?.midia_principal || '',
@@ -304,7 +330,7 @@ export function buildReportHtml(model) {
     `<p class="foot">${intFmt.format(descartados)} descartado(s) · ${intFmt.format(outros)} em outras situações</p>`;
 
   const rows = leads.map(l => `<tr>
-    <td>${esc(l.nome)}</td><td>${esc(l.situacao)}</td><td>${esc(l.empreendimento)}</td>
+    <td>${esc(l.nome)}</td><td>${esc(l.situacao)}</td><td data-emp="${esc(l.empKey)}">${esc(l.empreendimento)}</td>
     <td>${esc(l.origem)}</td><td>${esc(l.midia)}</td><td>${esc(l.imobiliaria)}</td>
     <td>${esc(l.corretor)}</td><td class="nowrap">${esc(l.data)}</td>
     <td>${esc(l.email)}</td><td class="nowrap">${esc(l.telefone)}</td></tr>`).join('');
@@ -465,7 +491,7 @@ footer{margin-top:26px;text-align:center;font-size:12px;color:#94a3b8}
     <select id="fsit"><option value="">Todas as situações</option>
       ${porSituacao.map(s => `<option>${esc(s.name)}</option>`).join('')}</select>
     <select id="femp"><option value="">Todos os empreendimentos</option>
-      ${porEmpreendimento.map(s => `<option>${esc(s.name)}</option>`).join('')}</select>
+      ${porEmpreendimento.map(s => `<option value="${esc(s.key)}">${esc(s.name)}</option>`).join('')}</select>
     <span class="count" id="cnt"></span>
   </div>
   <div class="tablebox"><table id="tb">
@@ -486,11 +512,12 @@ footer{margin-top:26px;text-align:center;font-size:12px;color:#94a3b8}
   var all=[].slice.call(body.rows);
   var q=document.getElementById('q'), fs=document.getElementById('fsit'), fe=document.getElementById('femp'), cnt=document.getElementById('cnt');
   function txt(r,i){return (r.cells[i].textContent||'').toLowerCase();}
+  function empKey(r){return r.cells[2].getAttribute('data-emp')||'';}
   function apply(){
-    var s=q.value.trim().toLowerCase(), sit=fs.value.toLowerCase(), emp=fe.value.toLowerCase(), n=0;
+    var s=q.value.trim().toLowerCase(), sit=fs.value.toLowerCase(), emp=fe.value, n=0;
     all.forEach(function(r){
       var ok=(!s||r.textContent.toLowerCase().indexOf(s)>-1)
-          && (!sit||txt(r,1)===sit) && (!emp||txt(r,2)===emp);
+          && (!sit||txt(r,1)===sit) && (!emp||empKey(r)===emp);
       r.style.display=ok?'':'none'; if(ok)n++;
     });
     cnt.textContent=n+' de '+all.length+' lead(s)';

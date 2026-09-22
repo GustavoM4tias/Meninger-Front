@@ -51,9 +51,11 @@ const showBuildingDetails = () => {
                     class="text-lg md:text-xl text-ink cursor-pointer duration-200 filter drop-shadow hover:text-ink -mt-1">
                     {{ building.cidade }}/{{ building.estado }}
                 </p>
+                <!-- Abre pelo ID (`?open=`): o nome é rótulo e muda; buscar
+                     por ele deixava de achar o empreendimento renomeado. -->
                 <RouterLink :to="{
                     path: '/crm/buildings',
-                    query: { search: building.nome, section: 'Geral' }
+                    query: { open: building.idempreendimento }
                 }" class="border rounded-md md:rounded-lg text-white text-md md:text-lg text-wrap hover:bg-surface-sunken hover:text-ink duration-300 py-1 px-2 md:py-2 md:px-4 ml-4">
                     Ver Mais
                 </RouterLink>

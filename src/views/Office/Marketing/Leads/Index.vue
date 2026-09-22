@@ -4,6 +4,7 @@ import { useCan } from '@/composables/useCan';
 import { useRoute, useRouter } from 'vue-router';
 import { useLeadsStore } from '@/stores/Marketing/Lead/leadsStore';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -36,6 +37,13 @@ const store = useLeadsStore();
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
+
+/* Empreendimento é ID. O filtro guarda `idempreendimento` do CV, a URL leva o
+   id, e o nome que aparece é o ATUAL do catálogo - o lead guarda o nome da
+   época, e o CV renomeia. Link antigo com nome ainda entra: `normalizarFiltro`
+   resolve. */
+const catalogo = useEnterpriseCatalog();
+const empOptions = computed(() => catalogo.opcoes(store.facets.empreendimentos));
 
 const leads = toRef(store, 'leads');
 const periodo = toRef(store, 'periodo');
@@ -81,6 +89,8 @@ function syncFiltersFromUrl() {
   for (const key of STRING_FIELDS) {
     next[key] = q[key] ? String(q[key]) : '';
   }
+  // ids viram número; nome conhecido (link antigo, Eme) vira id.
+  next.empreendimento = catalogo.normalizarFiltro(next.empreendimento);
   Object.assign(filtros.value, next);
   if (q.excluir_painel === '1') store.applyDefaultOrigens();
 }
@@ -244,6 +254,9 @@ function refreshRecent() { store.fetchRecentLeads(); }
 function onVisibility() { if (document.visibilityState === 'visible') refreshRecent(); }
 
 onMounted(async () => {
+  // O catálogo entra ANTES de ler a URL: é ele que traduz nome antigo em id.
+  await catalogo.load().catch(() => {});
+  store.fetchFacets();
   syncFiltersFromUrl();
   // A URL manda; sem datas nela, cai no default (mês atual).
   if (!filtros.value.data_inicio) filtros.value.data_inicio = defaultSince();
@@ -333,6 +346,7 @@ onUnmounted(() => {
               'As filas de atendimento ficam no botão ao lado de Exportar.',
               'Nas Filas, escolha qual fila atende cada empreendimento: é ela que recebe o lead que volta com interesse novo. Empreendimento sem fila aparece em destaque no topo da gaveta.',
               'Selecione vários empreendimentos na tabela para abri-los juntos.',
+              'O filtro de empreendimento usa o cadastro atual do CV: empreendimento renomeado aparece uma vez só, com o nome de hoje, e os leads captados com o nome antigo entram junto.',
             ]" />
           <Filas :filas="filas" :sem-vinculo="filasSemVinculo" :empreendimentos="filaEmpreendimentos" />
         </template>
@@ -342,7 +356,7 @@ onUnmounted(() => {
       <div class="mb-4">
         <FiltersBar
           v-model:filtros="filtros"
-          :empreendimentos-options="store.empreendimentosOptions"
+          :empreendimentos-options="empOptions"
           :origens-options="store.origensOptions"
           :situacoes-options="store.situacoesOptions"
           :midias-options="store.midiasOptions"

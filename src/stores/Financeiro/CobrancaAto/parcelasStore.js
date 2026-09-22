@@ -15,7 +15,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
     // ── Filtros ────────────────────────────────────────────────────────────────
     const filtro = ref({
         status: ['ativo'],       // ativo | pausado | encerrado | cancelado
-        empreendimento: [],
+        empreendimento: [],      // ids do empreendimento no CV (ver useEnterpriseCatalog)
         q: '',
         comAtraso: false,
         // emitido de/até e pago de/até, independentes, os mesmos campos da aba
@@ -36,7 +36,7 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
 
     const stats = ref(null);
     const statsLoading = ref(false);
-    const facets = ref({ empreendimentos: [] });
+    const facets = ref({ empreendimentos: [] });   // empreendimentos: [{ id, nome }]
     const status = ref(null);          // { ultima_rodada_em, cfg }
 
     function params(p = page.value) {
@@ -95,8 +95,20 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
         }
     }
 
+    // `empreendimentos` chega como [{ id, nome }] (id null = plano antigo sem
+    // id). Formato antigo ({ name } ou string) vira { id: null, nome } para o
+    // catálogo montar as opções do mesmo jeito.
     async function fetchFacets() {
-        try { facets.value = await requestWithAuth(`${BASE}/facets`); }
+        try {
+            const data = await requestWithAuth(`${BASE}/facets`);
+            const emps = Array.isArray(data?.empreendimentos) ? data.empreendimentos : [];
+            facets.value = {
+                ...data,
+                empreendimentos: emps.map(e => (e !== null && typeof e === 'object')
+                    ? { ...e, id: e.id ?? null, nome: e.nome ?? e.name ?? '' }
+                    : { id: null, nome: String(e ?? '') }),
+            };
+        }
         catch (e) { console.error('[parcelas] facets', e); }
     }
 
@@ -196,7 +208,8 @@ export const useParcelasStore = defineStore('atoParcelas', () => {
     }
 
     // ── Empreendimentos (para a lista de exclusao da cobranca) ─────────────────
-    const empreendimentos = ref([]);   // [{ nome, ativos, pausados }]
+    // Chave é o id do CV; `nome` é o rótulo de hoje (useEnterpriseCatalog.nome).
+    const empreendimentos = ref([]);   // [{ id, nome, ativos, pausados }]
     async function fetchEmpreendimentos() {
         try { empreendimentos.value = (await requestWithAuth(`${BASE}/empreendimentos`))?.empreendimentos || []; }
         catch (e) { console.error('[parcelas] empreendimentos', e); }

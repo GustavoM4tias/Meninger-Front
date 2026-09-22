@@ -106,7 +106,7 @@
 
           <template #cell-unidade="{ row }">
             <span class="text-ink">{{ row.unidade_nome || '-' }}</span>
-            <span class="block text-xs text-ink-muted">{{ row.empreendimento || '-' }}</span>
+            <span class="block text-xs text-ink-muted">{{ catalogo.nome(row.idempreendimento_cv, row.empreendimento) || '-' }}</span>
           </template>
 
           <template #cell-contrato="{ row }">
@@ -500,7 +500,7 @@
               <div class="flex justify-between gap-3"><span class="text-ink-muted">Documento</span><span class="text-ink font-mono text-xs">{{ formatDoc(detail.item.titular_documento) }}</span></div>
               <div class="flex justify-between gap-3"><span class="text-ink-muted">Reserva</span><span class="text-ink font-mono text-xs">{{ detail.item.idreserva }}</span></div>
               <div class="flex justify-between gap-3"><span class="text-ink-muted">Unidade</span><span class="text-ink text-right">{{ detail.item.unidade_nome || '-' }}</span></div>
-              <div class="flex justify-between gap-3"><span class="text-ink-muted">Empreendimento</span><span class="text-ink text-right">{{ detail.item.empreendimento || '-' }}</span></div>
+              <div class="flex justify-between gap-3"><span class="text-ink-muted">Empreendimento</span><span class="text-ink text-right">{{ catalogo.nome(detail.item.idempreendimento_cv, detail.item.empreendimento) || '-' }}</span></div>
               <div class="flex justify-between gap-3"><span class="text-ink-muted">Cancelada em</span><span class="text-ink">{{ formatDateBr(detail.item.data_cancelamento) }}</span></div>
               <div v-if="detail.item.motivo_cancelamento" class="flex justify-between gap-3"><span class="text-ink-muted">Motivo</span><span class="text-ink text-right">{{ detail.item.motivo_cancelamento }}</span></div>
               <!-- Etapa ATUAL no CV (reserva e repasse são workflows distintos) -->
@@ -656,6 +656,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useReservaCancelStore } from '@/stores/Comercial/ReservaCancel/reservaCancelStore';
 import { useCan } from '@/composables/useCan';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 import API_URL from '@/config/apiUrl';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -676,6 +677,10 @@ import { useIncrementalList } from '@/composables/useIncrementalList';
 import ReservaCancelFilters from './components/ReservaCancelFilters.vue';
 
 const store = useReservaCancelStore();
+// Nome do empreendimento vem do catálogo pelo id (o mais recente); o nome
+// gravado na linha é só o fallback de quem não tem id.
+const catalogo = useEnterpriseCatalog();
+catalogo.load().catch(() => {});
 // Ações desta tela (lib/screenCapabilities.js no back): view/operate seguem a
 // alçada, configure é admin. Ver composables/useCan.js.
 const can = useCan('/comercial/cancelamento-reservas');

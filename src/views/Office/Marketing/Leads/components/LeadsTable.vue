@@ -23,8 +23,12 @@ const viewOptions = [
   { value: 'pie',     label: 'Pizza',    icon: 'fas fa-chart-pie' },
 ];
 
+// A seleção guarda a CHAVE da linha (o idempreendimento do CV, vindo de
+// leadsByEnterprise), não o nome: o nome muda e dois nomes podem ser o
+// mesmo empreendimento. `e.key` cai no nome só para linha antiga sem id.
+const keyOf = (e) => e.key ?? e.name;
 const selectedNames = ref(new Set());
-const visibleNames = computed(() => props.data.map(e => e.name));
+const visibleNames = computed(() => props.data.map(keyOf));
 const allVisibleChecked = computed(() =>
   visibleNames.value.length > 0 && visibleNames.value.every(n => selectedNames.value.has(n))
 );
@@ -51,7 +55,7 @@ function openInView(mode) {
   if (!props.data?.length) return;
   lastView.value = mode;
   const namesSet = selectedNames.value.size ? new Set(selectedNames.value) : new Set(visibleNames.value);
-  const leads = props.data.filter(e => namesSet.has(e.name)).flatMap(e => e.leads);
+  const leads = props.data.filter(e => namesSet.has(keyOf(e))).flatMap(e => e.leads);
   emit('abrirModal', [leads, mode]);
 }
 
@@ -92,12 +96,12 @@ function openSingle(entry, mode = 'list') {
 
     <!-- Mobile: cards -->
     <div v-else class="md:hidden divide-y divide-line">
-      <div v-for="(e, idx) in sortedData" :key="e.name"
+      <div v-for="(e, idx) in sortedData" :key="keyOf(e)"
         class="flex items-start gap-3 p-3 hover:bg-surface-sunken/40 transition-colors cursor-pointer animate-fade-in [animation-fill-mode:backwards]"
         :style="{ animationDelay: Math.min(idx, 12) * 25 + 'ms' }"
         @click="openSingle(e)">
-        <input type="checkbox" :checked="selectedNames.has(e.name)"
-          @click.stop @change="toggleOne(e.name, $event)"
+        <input type="checkbox" :checked="selectedNames.has(keyOf(e))"
+          @click.stop @change="toggleOne(keyOf(e), $event)"
           class="mt-1 shrink-0" />
         <div :style="{ backgroundColor: getColor(idx) }"
           class="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0"></div>
@@ -132,12 +136,12 @@ function openSingle(entry, mode = 'list') {
           </tr>
         </thead>
         <tbody class="divide-y divide-line">
-          <tr v-for="(e, idx) in sortedData" :key="e.name"
+          <tr v-for="(e, idx) in sortedData" :key="keyOf(e)"
             class="hover:bg-surface-sunken/40 transition-colors animate-fade-in [animation-fill-mode:backwards]"
             :style="{ animationDelay: Math.min(idx, 12) * 25 + 'ms' }">
             <td class="px-4 py-3">
-              <input type="checkbox" :checked="selectedNames.has(e.name)"
-                @change="toggleOne(e.name, $event)" />
+              <input type="checkbox" :checked="selectedNames.has(keyOf(e))"
+                @change="toggleOne(keyOf(e), $event)" />
             </td>
             <td class="px-4 py-3">
               <div class="flex items-center gap-3 min-w-0">

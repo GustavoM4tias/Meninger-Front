@@ -23,6 +23,7 @@
 import { onMounted, ref, toRef, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useReservasStore } from '@/stores/Comercial/Reservas/reservasStore';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 import Favorite from '@/components/config/Favorite.vue';
 import Export from '@/components/config/Export.vue';
@@ -53,6 +54,13 @@ const store = useReservasStore();
 const route = useRoute();
 const router = useRouter();
 
+/* Empreendimento é ID. O filtro guarda `idempreendimento` do CV, a URL leva o
+   id, e o nome que aparece é o ATUAL do catálogo - a linha guarda o nome da
+   época da reserva, e o CV renomeia ("PARK ALAMEDA" virou "PARK ALAMEDA -
+   SARANDI"). Link antigo com nome ainda entra: `normalizarFiltro` resolve. */
+const catalogo = useEnterpriseCatalog();
+const empOptions = computed(() => catalogo.opcoes(store.facets.empreendimentos));
+
 const { isVendida, isCancelada, isEmRepasse } = store;
 
 const reservas = toRef(store, 'reservas');
@@ -78,6 +86,8 @@ function syncFiltersFromUrl() {
   for (const k of ARRAY_FIELDS) next[k] = q[k] ? String(q[k]).split(',').filter(Boolean) : [];
   for (const k of STR_FIELDS) next[k] = q[k] ? String(q[k]) : '';
   for (const k of BOOL_FIELDS) next[k] = String(q[k]) === 'true';
+  // ids viram número; nome conhecido (link antigo, Eme) vira id.
+  next.empreendimento = catalogo.normalizarFiltro(next.empreendimento);
   Object.assign(filtros.value, next);
 }
 
@@ -172,9 +182,17 @@ function aoClicarKpi(item) {
 
 const recorteAtivo = computed(() => RECORTES[recorte.value] || null);
 
+/* O nome do empreendimento que vai para a tabela, a ordenação, a exportação
+   e o detalhe é o ATUAL do catálogo; o gravado na linha só serve de fallback
+   para reserva antiga que o backfill não casou com id. */
+const comNomeAtual = (r) => ({
+  ...r,
+  empreendimento: catalogo.nome(r.idempreendimento_cv, r.empreendimento) || r.empreendimento || '',
+});
+
 const lista = computed(() => (recorteAtivo.value
   ? reservas.value.filter(recorteAtivo.value.teste)
-  : reservas.value));
+  : reservas.value).map(comNomeAtual));
 
 function limpar() {
   Object.assign(filtros.value, {
@@ -414,6 +432,9 @@ const periodoLabel = computed(() => {
    guia aplicava o filtro antigo com o endereço em branco, e o link copiado
    dali abria a tela sem filtro nenhum. */
 onMounted(async () => {
+  // O catálogo entra ANTES de ler a URL: é ele que traduz nome antigo em id.
+  await catalogo.load().catch(() => {});
+  store.fetchFacets();
   if (Object.keys(route.query).length) syncFiltersFromUrl();
   else syncUrlFromFilters();
   loading.value = true;
@@ -470,6 +491,7 @@ onMounted(async () => {
             'A cor da etapa é a mesma em toda a tela: âmbar é reservada ou em análise, violeta é em contrato, ciano é em repasse, verde é vendida e vermelho é cancelada ou distrato.',
             'A tabela carrega de 50 em 50 conforme você rola, então não há página para caçar.',
             'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
+            'O filtro de empreendimento usa o cadastro atual do CV: empreendimento renomeado aparece uma vez só, com o nome de hoje, e as reservas feitas com o nome antigo entram junto.',
           ]"
         />
       </div>
@@ -485,7 +507,7 @@ onMounted(async () => {
 
         <MultiSelector label="Empreendimento(s)" :model-value="filtros.empreendimento"
           @update:modelValue="v => filtros.empreendimento = Array.isArray(v) ? v : []"
-          :options="store.empreendimentosOptions" :page-size="200" />
+          :options="empOptions" :page-size="200" />
         <MultiSelector label="Situação" :model-value="filtros.situacao"
           @update:modelValue="v => filtros.situacao = Array.isArray(v) ? v : []"
           :options="store.situacoesOptions" />

@@ -14,6 +14,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useEnvioSiengeStore } from '@/stores/Sienge/envioSiengeStore';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -60,10 +61,34 @@ function filtrosVazios() {
 const filtros = reactive(filtrosVazios());
 const aplicados = reactive(filtrosVazios());
 
+/* Empreendimento: quando a linha traz o id do CV (`idempreendimento_cv`,
+   direto ou dentro de `unidade_json`), a chave do filtro é o id e o rótulo é
+   o nome ATUAL do catálogo. Sem id, fica pelo nome gravado na reserva - o
+   SELECT de services/sienge/envioSiengeWatchService.js hoje só devolve
+   `r.empreendimento`; quando passar a devolver o id, isto já agrupa certo. */
+const catalogo = useEnterpriseCatalog();
+const empIdDe = (i) => {
+    const n = Number(i?.idempreendimento_cv ?? i?.unidade_json?.idempreendimento_cv);
+    return Number.isFinite(n) && n > 0 ? n : null;
+};
+const empKeyDe = (i) => (empIdDe(i) ? String(empIdDe(i)) : String(i?.empreendimento || '').trim());
+const empNomeDe = (i) => (empIdDe(i) ? catalogo.nome(empIdDe(i), i?.empreendimento) : String(i?.empreendimento || '').trim());
+
 const empreendimentos = computed(() => {
-    const nomes = [...new Set(store.itens.map(i => i.empreendimento).filter(Boolean))];
-    nomes.sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    return [{ value: '', label: 'Todos' }, ...nomes.map(n => ({ value: n, label: n }))];
+    const m = new Map();
+    for (const i of store.itens) {
+        const k = empKeyDe(i);
+        if (k && !m.has(k)) m.set(k, empNomeDe(i));
+    }
+    const lista = [...m.entries()].map(([value, label]) => ({ value, label }));
+    // ids em ordem crescente, nomes sem id no fim
+    lista.sort((a, b) => {
+        const na = /^\d+$/.test(a.value), nb = /^\d+$/.test(b.value);
+        if (na && nb) return Number(a.value) - Number(b.value);
+        if (na !== nb) return na ? -1 : 1;
+        return a.label.localeCompare(b.label, 'pt-BR');
+    });
+    return [{ value: '', label: 'Todos' }, ...lista];
 });
 
 /* Conta DIMENSÕES preenchidas, não valores. */
@@ -134,10 +159,10 @@ const filtradas = computed(() => {
 
     return store.itens.filter((i) => {
         if (corte && !corte(i)) return false;
-        if (aplicados.empreendimento && i.empreendimento !== aplicados.empreendimento) return false;
+        if (aplicados.empreendimento && empKeyDe(i) !== aplicados.empreendimento) return false;
         if (desdeMin && (Number(i.minutos_esperando) || 0) < desdeMin) return false;
         if (q) {
-            const feno = [i.idreserva, i.empreendimento, i.unidade, i.titular_nome]
+            const feno = [i.idreserva, empNomeDe(i), i.empreendimento, i.unidade, i.titular_nome]
                 .filter(Boolean).join(' ').toLowerCase();
             if (!feno.includes(q)) return false;
         }
@@ -149,7 +174,7 @@ const ordem = reactive({ by: 'minutos_esperando', dir: 'desc' });
 
 const VALOR = {
     idreserva: (r) => Number(r.idreserva) || 0,
-    empreendimento: (r) => `${r.empreendimento || ''} ${r.unidade || ''}`,
+    empreendimento: (r) => `${empNomeDe(r)} ${r.unidade || ''}`,
     titular_nome: (r) => r.titular_nome || '',
     minutos_esperando: (r) => Number(r.minutos_esperando) || 0,
     ato_pago: (r) => (r.ato_pago ? 1 : 0),
@@ -221,7 +246,10 @@ async function verificar(notificar) {
 const ultimaRodada = computed(() =>
     store.lastRunAt ? new Date(store.lastRunAt).toLocaleString('pt-BR') : '');
 
-onMounted(() => { store.fetchAll().catch(() => {}); });
+onMounted(() => {
+    catalogo.load().catch(() => {});
+    store.fetchAll().catch(() => {});
+});
 </script>
 
 <template>
@@ -338,7 +366,7 @@ onMounted(() => { store.fetchAll().catch(() => {}); });
             </template>
 
             <template #cell-empreendimento="{ row }">
-              <span class="text-ink">{{ row.empreendimento }}</span>
+              <span class="text-ink">{{ empNomeDe(row) }}</span>
               <span class="block text-xs text-ink-subtle">{{ row.unidade }}</span>
             </template>
 

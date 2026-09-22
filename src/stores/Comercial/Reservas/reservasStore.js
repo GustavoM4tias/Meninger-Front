@@ -4,8 +4,11 @@ import { etapaDe } from '@/views/Office/Comercial/Reservas/stages.js';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 
+// Empreendimento NÃO fica mais aqui: o filtro guarda o idempreendimento do CV e
+// as opções vêm das facetas do servidor + catálogo (useEnterpriseCatalog). Um
+// cache de nomes duplicava "PARK ALAMEDA" e "PARK ALAMEDA - SARANDI" e filtrar
+// por um deles perdia metade do histórico.
 const LS = {
-    emp: 'res_emp_options_v1',
     sit: 'res_sit_options_v1',
     rep: 'res_rep_options_v1',
     imo: 'res_imo_options_v1',
@@ -17,6 +20,8 @@ const LS = {
 
 const loadLS = (k) => { try { const r = localStorage.getItem(k); const a = r ? JSON.parse(r) : []; return Array.isArray(a) ? a : []; } catch { return []; } };
 const saveLS = (k, a) => { try { localStorage.setItem(k, JSON.stringify(a)); } catch {} };
+// Cache antigo de nomes: some para não ressuscitar o filtro por nome.
+try { localStorage.removeItem('res_emp_options_v1'); } catch {}
 
 export const useReservasStore = defineStore('reservas', () => {
     const reservas = ref([]);
@@ -34,8 +39,11 @@ export const useReservasStore = defineStore('reservas', () => {
     const error = ref(null);
     const carregamento = useCarregamentoStore();
 
+    // Facetas de empreendimento no escopo do usuário: [{ id, nome }]. `null`
+    // enquanto o servidor não respondeu (a tela cai no catálogo inteiro).
+    const facets = ref({ empreendimentos: null });
+
     // listas persistentes
-    const empreendimentosOptions       = ref(loadLS(LS.emp));
     const situacoesOptions             = ref(loadLS(LS.sit));
     const statusRepasseOptions         = ref(loadLS(LS.rep));
     const imobiliariasOptions          = ref(loadLS(LS.imo));
@@ -78,8 +86,36 @@ export const useReservasStore = defineStore('reservas', () => {
         return { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' };
     };
 
+    // GET /cv/reservas/report/facets → { empreendimentos: [{ id, nome }] }.
+    // Falha fica silenciosa: o filtro passa a oferecer o catálogo inteiro.
+    async function fetchFacets() {
+        try {
+            const resp = await fetch(`${API_URL}/cv/reservas/report/facets`, { headers: authHeaders() });
+            if (!resp.ok) return;
+            const data = await resp.json().catch(() => ({}));
+            if (Array.isArray(data?.empreendimentos)) facets.value = { empreendimentos: data.empreendimentos };
+        } catch {}
+    }
+
+    // As linhas trazem `idempreendimento_cv`: o que veio na busca e ainda não
+    // está nas facetas entra nelas, para o filtro nunca esconder um
+    // empreendimento que está na própria lista.
+    function mergeFacetsFromRows(list) {
+        const atuais = Array.isArray(facets.value.empreendimentos) ? facets.value.empreendimentos : [];
+        const vistos = new Set(atuais.map(f => Number(f.id)));
+        const novos = [];
+        for (const r of (list || [])) {
+            const id = Number(r?.idempreendimento_cv);
+            if (!Number.isFinite(id) || id <= 0 || vistos.has(id)) continue;
+            vistos.add(id);
+            novos.push({ id, nome: r?.empreendimento || null });
+        }
+        if (novos.length) {
+            facets.value = { empreendimentos: [...atuais, ...novos].sort((a, b) => Number(a.id) - Number(b.id)) };
+        }
+    }
+
     function mergeOptions(list) {
-        const empSet = new Set(empreendimentosOptions.value);
         const sitSet = new Set(situacoesOptions.value);
         const repSet = new Set(statusRepasseOptions.value);
         const imoSet = new Set(imobiliariasOptions.value);
@@ -89,7 +125,6 @@ export const useReservasStore = defineStore('reservas', () => {
         const lorSet = new Set(leadOrigensOptions.value);
 
         for (const r of (list || [])) {
-            if (r?.empreendimento) empSet.add(String(r.empreendimento).trim());
             const sit = etapaDe(r).trim();                     if (sit) sitSet.add(sit);
             if (r?.status_repasse) repSet.add(String(r.status_repasse).trim());
             const imo = r?.imobiliaria?.nome?.trim();          if (imo) imoSet.add(imo);
@@ -101,7 +136,6 @@ export const useReservasStore = defineStore('reservas', () => {
             }
         }
         const sortPt = (a, b) => a.localeCompare(b, 'pt-BR');
-        empreendimentosOptions.value = Array.from(empSet).sort(sortPt);
         situacoesOptions.value       = Array.from(sitSet).sort(sortPt);
         statusRepasseOptions.value   = Array.from(repSet).sort(sortPt);
         imobiliariasOptions.value    = Array.from(imoSet).sort(sortPt);
@@ -110,7 +144,6 @@ export const useReservasStore = defineStore('reservas', () => {
         tipoVendaOptions.value       = Array.from(tvSet).sort(sortPt);
         leadOrigensOptions.value     = Array.from(lorSet).sort(sortPt);
 
-        saveLS(LS.emp, empreendimentosOptions.value);
         saveLS(LS.sit, situacoesOptions.value);
         saveLS(LS.rep, statusRepasseOptions.value);
         saveLS(LS.imo, imobiliariasOptions.value);
@@ -153,6 +186,7 @@ export const useReservasStore = defineStore('reservas', () => {
             periodo.value = data.periodo ?? { data_inicio: null, data_fim: null };
             canceladosExcluidos.value = data.cancelados_excluidos !== false;
             mergeOptions(reservas.value);
+            mergeFacetsFromRows(reservas.value);
         } catch (e) {
             if (e?.name === 'AbortError') return; // cancelada por uma busca mais nova
             error.value = e.message;
@@ -178,8 +212,10 @@ export const useReservasStore = defineStore('reservas', () => {
     return {
         // state
         reservas, count, periodo, periodoPadrao, error, filtros, canceladosExcluidos,
+        // facetas (empreendimento por id)
+        facets, fetchFacets,
         // options
-        empreendimentosOptions, situacoesOptions, statusRepasseOptions,
+        situacoesOptions, statusRepasseOptions,
         imobiliariasOptions, corretoresOptions, empresasCorrespondentesOptions,
         tipoVendaOptions, leadOrigensOptions,
         // helpers

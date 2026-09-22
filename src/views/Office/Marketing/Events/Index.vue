@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useEventStore } from '@/stores/Marketing/Event/eventStore';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 import EventCard from '@/views/Office/Marketing/Events/components/EventCard.vue';
 import EventModal from '@/views/Office/Marketing/Events/components/EventModal.vue';
@@ -64,22 +65,43 @@ const norm = (s) => String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLo
 
 // Filtro por empreendimento vinculado (opções derivadas dos eventos carregados;
 // o select só aparece quando algum evento tem vínculo).
+//
+// A chave é o `enterprise_id` (id do CV) e o rótulo é o nome ATUAL do
+// catálogo: o evento guarda o nome da época e o CV renomeia. Evento antigo
+// sem id cai no nome gravado. Ids em ordem crescente, nomes sem id no fim.
+const catalogo = useEnterpriseCatalog();
+catalogo.load().catch(() => {});
+const empIdOf = (e) => { const n = Number(e?.enterprise_id); return Number.isFinite(n) && n > 0 ? n : null; };
+const empKeyOf = (e) => (empIdOf(e) ? String(empIdOf(e)) : String(e?.enterprise_name || '').trim());
+const empLabelOf = (e) => (empIdOf(e) ? catalogo.nome(empIdOf(e), e?.enterprise_name) : String(e?.enterprise_name || '').trim());
+
 const enterpriseFilter = ref('');
 const enterpriseOptions = computed(() => {
-  const set = new Set(eventStore.events.map(e => e.enterprise_name).filter(Boolean));
-  return [{ value: '', label: 'Todos os empreendimentos' },
-    ...[...set].sort((a, b) => a.localeCompare(b)).map(n => ({ value: n, label: n }))];
+  const m = new Map();
+  for (const e of eventStore.events) {
+    const k = empKeyOf(e);
+    if (k && !m.has(k)) m.set(k, empLabelOf(e));
+  }
+  const lista = [...m.entries()].map(([value, label]) => ({ value, label }));
+  lista.sort((a, b) => {
+    const na = /^\d+$/.test(a.value), nb = /^\d+$/.test(b.value);
+    if (na && nb) return Number(a.value) - Number(b.value);
+    if (na !== nb) return na ? -1 : 1;
+    return a.label.localeCompare(b.label, 'pt-BR');
+  });
+  return [{ value: '', label: 'Todos os empreendimentos' }, ...lista];
 });
 const hasEnterpriseOptions = computed(() => enterpriseOptions.value.length > 1);
 
 const eventsFiltered = computed(() => {
   let list = eventStore.events;
-  if (enterpriseFilter.value) list = list.filter(e => e.enterprise_name === enterpriseFilter.value);
+  if (enterpriseFilter.value) list = list.filter(e => empKeyOf(e) === enterpriseFilter.value);
   if (!search.value) return list;
   const q = norm(search.value.trim());
   return list.filter(e =>
     norm(e.title).includes(q) ||
     norm(e.description).includes(q) ||
+    norm(empLabelOf(e)).includes(q) ||
     norm(e.enterprise_name).includes(q) ||
     e.tags?.some(t => norm(t).includes(q))
   );

@@ -2,9 +2,12 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
+// Empreendimento NÃO fica mais aqui: o filtro guarda o idempreendimento do CV e
+// as opções vêm das facetas do servidor + catálogo (useEnterpriseCatalog). Um
+// cache de nomes duplicava o empreendimento renomeado e escondia histórico.
 const LS = {
-    emp: 'leads_emp_options_v1',
     org: 'leads_org_options_v1',
     sit: 'leads_sit_options_v1',
     mid: 'leads_mid_options_v1',
@@ -26,6 +29,8 @@ function saveLS(key, arr) {
         localStorage.setItem(key, JSON.stringify(arr));
     } catch { }
 }
+// Cache antigo de nomes: some para não ressuscitar o filtro por nome.
+try { localStorage.removeItem('leads_emp_options_v1'); } catch { }
 
 export const useLeadsStore = defineStore('leads', () => {
     const leads = ref([])
@@ -40,9 +45,13 @@ export const useLeadsStore = defineStore('leads', () => {
     const filaEmpreendimentos = ref([])
     const error = ref(null)
     const carregamento = useCarregamentoStore();
+    const catalogo = useEnterpriseCatalog();
+
+    // Facetas de empreendimento no escopo do usuário: [{ id, nome }]. `null`
+    // enquanto o servidor não respondeu (a tela cai no catálogo inteiro).
+    const facets = ref({ empreendimentos: null })
 
     // listas persistentes
-    const empreendimentosOptions = ref(loadLS(LS.emp))
     const origensOptions = ref(loadLS(LS.org))
     const situacoesOptions = ref(loadLS(LS.sit))
     const midiasOptions = ref(loadLS(LS.mid))
@@ -99,8 +108,37 @@ export const useLeadsStore = defineStore('leads', () => {
         return { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' }
     }
 
+    // GET /cv/leads/facets → { empreendimentos: [{ id, nome }] }.
+    // Falha fica silenciosa: o filtro passa a oferecer o catálogo inteiro.
+    async function fetchFacets() {
+        try {
+            const resp = await fetch(`${API_URL}/cv/leads/facets`, { headers: authHeaders() });
+            if (!resp.ok) return;
+            const data = await resp.json().catch(() => ({}));
+            if (Array.isArray(data?.empreendimentos)) facets.value = { empreendimentos: data.empreendimentos };
+        } catch { }
+    }
+
+    // O que veio na busca e ainda não está nas facetas entra nelas: o filtro
+    // nunca esconde um empreendimento que está na própria lista.
+    function mergeFacetsFromRows(list) {
+        const atuais = Array.isArray(facets.value.empreendimentos) ? facets.value.empreendimentos : [];
+        const vistos = new Set(atuais.map(f => Number(f.id)));
+        const novos = [];
+        for (const l of (list || [])) {
+            for (const e of (Array.isArray(l?.empreendimento) ? l.empreendimento : [])) {
+                const id = Number(e?.idempreendimento);
+                if (!Number.isFinite(id) || id <= 0 || vistos.has(id)) continue;
+                vistos.add(id);
+                novos.push({ id, nome: e?.nome || null });
+            }
+        }
+        if (novos.length) {
+            facets.value = { empreendimentos: [...atuais, ...novos].sort((a, b) => Number(a.id) - Number(b.id)) };
+        }
+    }
+
     function mergeOptionsFromLeads(list) {
-        const empSet = new Set(empreendimentosOptions.value);
         const orgSet = new Set(origensOptions.value);
         const sitSet = new Set(situacoesOptions.value);
         const midSet = new Set(midiasOptions.value);
@@ -108,12 +146,6 @@ export const useLeadsStore = defineStore('leads', () => {
         const corSet = new Set(corretoresOptions.value);
 
         for (const l of list || []) {
-            // empreendimentos (array)
-            const arr = Array.isArray(l.empreendimento) ? l.empreendimento : [];
-            for (const e of arr) {
-                const nome = e?.nome?.trim();
-                if (nome) empSet.add(nome);
-            }
             // simples
             if (l.origem) orgSet.add(String(l.origem).trim());
             if (l.situacao_nome) sitSet.add(String(l.situacao_nome).trim());
@@ -128,14 +160,12 @@ export const useLeadsStore = defineStore('leads', () => {
 
         const sortPt = (a, b) => a.localeCompare(b, 'pt-BR');
 
-        empreendimentosOptions.value = Array.from(empSet).sort(sortPt);
         origensOptions.value = Array.from(orgSet).sort(sortPt);
         situacoesOptions.value = Array.from(sitSet).sort(sortPt);
         midiasOptions.value = Array.from(midSet).sort(sortPt);
         imobiliariasOptions.value = Array.from(imoSet).sort(sortPt);
         corretoresOptions.value = Array.from(corSet).sort(sortPt);
 
-        saveLS(LS.emp, empreendimentosOptions.value);
         saveLS(LS.org, origensOptions.value);
         saveLS(LS.sit, situacoesOptions.value);
         saveLS(LS.mid, midiasOptions.value);
@@ -172,6 +202,7 @@ export const useLeadsStore = defineStore('leads', () => {
 
             // alimente as listas persistentes (não reduz)
             mergeOptionsFromLeads(leads.value);
+            mergeFacetsFromRows(leads.value);
         } catch (e) {
             error.value = e.message;
         } finally {
@@ -343,21 +374,28 @@ export const useLeadsStore = defineStore('leads', () => {
 
 
     // ---------- Agregação por empreendimento ----------
-    const normalizeEnterpriseName = (l) => {
-        const n = l?.empreendimento?.[0]?.nome
-        return n ? String(n).trim() : 'Sem Empreendimento'
+    // A chave é o `idempreendimento` do CV (o primeiro interesse do lead); o
+    // rótulo é o nome ATUAL do catálogo. Lead antigo sem id agrupa pelo nome
+    // gravado, e lead sem empreendimento cai em "Sem Empreendimento".
+    const enterpriseKeyOf = (l) => {
+        const e = l?.empreendimento?.[0]
+        const id = Number(e?.idempreendimento)
+        const nomeLinha = e?.nome ? String(e.nome).trim() : ''
+        if (Number.isFinite(id) && id > 0) return { key: String(id), id, name: catalogo.nome(id, nomeLinha) }
+        const name = nomeLinha || 'Sem Empreendimento'
+        return { key: name, id: null, name }
     }
 
 
-    // Saída: [{ name, count, leads: Lead[] }]
+    // Saída: [{ key, id, name, count, leads: Lead[] }]
     const leadsByEnterprise = computed(() => {
         const map = new Map()
         for (const l of leads.value) {
-            const name = normalizeEnterpriseName(l)
-            const entry = map.get(name) || { name, count: 0, leads: [] }
+            const { key, id, name } = enterpriseKeyOf(l)
+            const entry = map.get(key) || { key, id, name, count: 0, leads: [] }
             entry.count += 1
             entry.leads.push(l)
-            map.set(name, entry)
+            map.set(key, entry)
         }
         return Array.from(map.values()).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'pt-BR'))
     })
@@ -366,8 +404,10 @@ export const useLeadsStore = defineStore('leads', () => {
     return {
         // state
         leads, count, periodo, filas, error, filtros, recentLeads,
+        // facetas (empreendimento por id)
+        facets, fetchFacets,
         // options
-        empreendimentosOptions, origensOptions, situacoesOptions, midiasOptions, imobiliariasOptions, corretoresOptions,
+        origensOptions, situacoesOptions, midiasOptions, imobiliariasOptions, corretoresOptions,
         // comparação
         prevCount, prevSituacoes, fetchComparison,
         // getters

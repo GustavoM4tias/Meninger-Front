@@ -76,7 +76,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         forma: [],
         status: ['success', 'error', 'processing', 'queued'], // multi: default sem 'skipped' (Sem série)
         paymentStatus: [],     // multi: pending/paid/cancelled/error
-        empreendimento: [],    // multi (nomes exatos)
+        empreendimento: [],    // multi: ids do empreendimento no CV (ver useEnterpriseCatalog)
         idreserva: '',
         // Emitido de/até e pago de/até, independentes (ver components/periodo.js)
         periodo: { emitidoDe: '', emitidoAte: '', pagoDe: '', pagoAte: '' },
@@ -220,13 +220,23 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
-    // Facets pra alimentar selects do filtro (empreendimentos distintos + contagens)
+    // Facets pra alimentar selects do filtro (empreendimentos distintos + contagens).
+    // `empreendimentos` chega como [{ id, nome }] (id null = linha antiga sem
+    // id). Formato antigo ({ name } ou string) vira { id: null, nome } para o
+    // catálogo montar as opções do mesmo jeito.
     const facets = ref({ empreendimentos: [], statusCounts: [], paymentCounts: [], cvSituacoes: [], cvRepasses: [] });
     const facetsLoading = ref(false);
     async function fetchFacets() {
         facetsLoading.value = true;
         try {
-            facets.value = await requestWithAuth('/cobranca-ato/history-facets');
+            const data = await requestWithAuth('/cobranca-ato/history-facets');
+            const emps = Array.isArray(data?.empreendimentos) ? data.empreendimentos : [];
+            facets.value = {
+                ...data,
+                empreendimentos: emps.map(e => (e !== null && typeof e === 'object')
+                    ? { ...e, id: e.id ?? null, nome: e.nome ?? e.name ?? '' }
+                    : { id: null, nome: String(e ?? '') }),
+            };
         } catch (err) {
             console.warn('[boletoStore] facets:', err.message);
         } finally {
@@ -446,10 +456,11 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         try {
             const data = await requestWithAuth('/cv/empreendimentos');
             const rows = Array.isArray(data) ? data : (data?.results ?? []);
+            // Ordenado por id, como toda lista de empreendimento do CV no Office.
             enterprises.value = rows
                 .map(r => ({ idempreendimento: Number(r.idempreendimento), nome: r.nome }))
                 .filter(r => Number.isFinite(r.idempreendimento))
-                .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+                .sort((a, b) => a.idempreendimento - b.idempreendimento);
         } catch (err) {
             console.warn('[boletoStore] fetchEnterprises:', err.message);
             enterprises.value = [];

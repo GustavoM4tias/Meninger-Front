@@ -125,7 +125,7 @@
           <div class="flex items-start justify-between gap-3">
             <div>
               <p class="font-mono text-sm font-medium text-ink">{{ u.unidade }}</p>
-              <p class="text-xs text-ink-muted">{{ u.empreendimento }}</p>
+              <p class="text-xs text-ink-muted">{{ catalogo.nome(u.idempreendimento_cv ?? u.idempreendimento, u.empreendimento) }}</p>
             </div>
             <Badge :variant="u.concluida ? 'success' : 'neutral'">
               {{ u.concluida ? 'Concluída' : `${assinadosDe(u)}/${u.signers.length}` }}
@@ -170,6 +170,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAditivosStore } from '@/stores/Comercial/Aditivos/aditivosStore';
 import { useCan } from '@/composables/useCan';
+import { useEnterpriseCatalog } from '@/composables/useEnterpriseCatalog';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
@@ -186,6 +187,10 @@ import Skeleton from '@/components/UI/Skeleton.vue';
 const store = useAditivosStore();
 // view/operate seguem a alçada da tela (lib/screenCapabilities.js no back).
 const can = useCan('/comercial/aditivos');
+// Catálogo de empreendimentos do CV: o filtro guarda o ID, o rótulo é o nome
+// ATUAL. Uma carga por sessão (cache de módulo).
+const catalogo = useEnterpriseCatalog();
+catalogo.load().catch(() => {});
 
 const TOM = {
   assinado: { rotulo: 'Assinou', cor: 'text-data-pos' },
@@ -208,9 +213,11 @@ const resumo = computed(() => store.resumo ?? {
   assinantes: 0, assinaram: 0, abriram: 0, parados: 0, recusaram: 0,
 });
 
+// Valor é o id do CV (rótulo pelo catálogo, ordenado por id); aditivo antigo
+// sem id entra pelo próprio nome, que o back ainda aceita.
 const opcoesEmpreendimento = computed(() => [
   { value: '', label: 'Todos os empreendimentos' },
-  ...store.empreendimentos.map((e) => ({ value: e, label: e })),
+  ...catalogo.opcoes(store.empreendimentos),
 ]);
 
 // O placar e o filtro falam da UNIDADE: `estado` vem pronto do back, para a
