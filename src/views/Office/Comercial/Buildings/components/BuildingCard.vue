@@ -36,7 +36,7 @@ const disponiveis = computed(() => {
 const dicaDisponiveis = computed(() => {
   const seg = Number(props.building.estoque_segurado) || 0;
   if (!seg) return undefined;
-  const livres = Number(props.building.unidades_disponiveis) || 0;
+  const livres = Number(props.building.unidades_livres ?? props.building.unidades_disponiveis) || 0;
   return `${livres} disponíveis no CV + ${seg} bloqueadas por estratégia comercial`;
 });
 const andamento = computed(() => {
