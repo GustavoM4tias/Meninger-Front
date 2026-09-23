@@ -87,7 +87,7 @@ const handleFilterChange = async () => {
               'O selo \'Lead\' no detalhe marca o cliente que entrou por captação nossa, ou seja, o lead NÃO foi cadastrado nos painéis de gestor, corretor ou imobiliária. Passe o mouse para ver origem, mídia e campanha; clique para abrir o lead na tela de Leads.',
               'Concentração top 3 e a contagem até 80% seguem o corte da tabela: com Empresa marcado eles falam de empresas, com Empreendimento falam de empreendimentos.',
               'Para ver o VGV repartido por imobiliária ou corretor, use as guias Imobiliárias e Corretores do Relatório Comercial: lá a barra de participação vem repartida por empreendimento.',
-              'Exportar gera uma planilha com exatamente o que está na tela.',
+              'Exportar gera uma planilha com exatamente o que está na tela. No detalhe do empreendimento a planilha ainda traz e-mail e telefone do cliente, puxados do CV (titular da reserva ou lead) só quando o nome lá bate com o do Sienge; quando não bate, a coluna Origem do contato avisa para conferir.',
             ]"
           />
         </template>

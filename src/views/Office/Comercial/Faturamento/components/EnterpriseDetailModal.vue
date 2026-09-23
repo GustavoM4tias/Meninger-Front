@@ -932,22 +932,74 @@ const selosOf = (sale) =>
     leadOf(sale) && 'Lead',
   ].filter(Boolean).join(', ');
 
+/* Contato do cliente, só na planilha. O nome vem do Sienge, mas e-mail e
+ * telefone só existem no CV (titular da reserva ou lead associado), e a reserva
+ * chega casada por UNIDADE: numa unidade distratada e revendida ela é do
+ * comprador NOVO (ver customerNameOf). Por isso o contato só entra quando o
+ * nome do CV bate com o do Sienge - senão a linha juntaria o nome de um
+ * cliente com o telefone de outro. Sem nome no Sienge, o nome da linha já é
+ * o do CV e o contato vale direto. */
+const normName = (s) =>
+  String(s || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toUpperCase().replace(/[^A-Z ]/g, ' ')
+    .split(' ').filter((t) => t.length > 2);
+
+// Mesmo primeiro e último nome: o Sienge às vezes abrevia ou corta o meio.
+const sameName = (a, b) => {
+  const x = normName(a);
+  const y = normName(b);
+  if (!x.length || !y.length) return false;
+  return x[0] === y[0] && x[x.length - 1] === y[y.length - 1];
+};
+
+const firstFilled = (...vals) =>
+  vals.map((v) => (v == null ? '' : String(v).trim())).find(Boolean) || '';
+
+const contactOf = (sale) => {
+  const siengeName = sale?.customer_name;
+  const titular = reservaOf(sale)?.titular;
+  const lead = leadOf(sale);
+  const fits = (nome) => !siengeName || sameName(nome, siengeName);
+
+  const candidates = [
+    titular && {
+      origem: 'Titular da reserva',
+      nome: titular.nome,
+      email: titular.email,
+      telefone: firstFilled(titular.celular, titular.telefone, titular.whatsapp),
+    },
+    lead && { origem: 'Lead', nome: lead.nome, email: lead.email, telefone: lead.telefone },
+  ].filter((c) => c && (firstFilled(c.email) || firstFilled(c.telefone)));
+
+  const hit = candidates.find((c) => fits(c.nome));
+  if (hit) return { email: firstFilled(hit.email), telefone: hit.telefone, origem: hit.origem };
+  if (candidates.length) {
+    return { email: '', telefone: '', origem: `Conferir: no CV está ${firstFilled(candidates[0].nome) || 'outro nome'}` };
+  }
+  return { email: '', telefone: '', origem: '' };
+};
+
 const exportRows = computed(() =>
   sortedSales.value.map((sale) => {
+    const contato = contactOf(sale);
     const row = {
       'Cliente': customerNameOf(sale),
       'Código do cliente': sale.customer_id ?? '',
+      'E-mail': contato.email,
+      'Telefone': contato.telefone,
+      'Origem do contato': contato.origem,
       'Unidade': sale.unit_name || reservaUnitOf(sale),
       // Só "Valor": o modo (VGV/Líquido) já vai no cabeçalho da planilha, e um
       // nome de coluna que muda com o modo derrubaria a coluna da seleção
       // salva do Export na próxima exportação em outro modo.
       'Valor': Number(getSaleValue(sale)) || 0,
       'Data': toIsoDate(sale.financial_institution_date || reservaDateOf(sale)) ?? '',
+      'Empreendimento': empreendimentoOf(sale) === '—' ? (props.enterprise?.name || '') : empreendimentoOf(sale),
     };
     if (hasRepasse.value) {
       row['Imobiliária'] = imobiliariaOf(sale);
       row['Repasse'] = repasseStatusOf(sale) || '-';
-      row['Empreendimento'] = empreendimentoOf(sale);
       row['Etapa'] = etapaOf(sale);
       row['Bloco'] = blocoOf(sale);
     }
