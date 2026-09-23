@@ -723,7 +723,7 @@ onMounted(async () => {
               <input type="checkbox" v-model="newForm.includeCustom" class="sr-only" />
               <span class="shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors"
                 :class="newForm.includeCustom ? 'border-ink-muted bg-ink-muted' : 'border-ink-subtle/40'">
-                <svg v-if="newForm.includeCustom" class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8" stroke="currentColor" stroke-width="2.5">
+                <svg v-if="newForm.includeCustom" class="w-2.5 h-2.5 text-surface" fill="none" viewBox="0 0 10 8" stroke="currentColor" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M1 4l2.5 2.5L9 1" />
                 </svg>
               </span>

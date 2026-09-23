@@ -50,7 +50,7 @@
                   'flex items-center gap-1.5 px-3 py-3 text-xs font-semibold border-b-2 transition whitespace-nowrap',
                   activeTab === tab.id
                     ? 'border-accent text-accent'
-                    : 'border-transparent text-ink-muted hover:text-ink dark:hover:text-ink'
+                    : 'border-transparent text-ink-muted hover:text-ink'
                 ]"
               >
                 <i :class="tab.icon" class="text-xs"></i>
@@ -177,7 +177,7 @@
                   <div class="flex items-center gap-2 flex-wrap">
                     <button
                       @click="resetSpSite"
-                      class="text-xs text-ink-subtle hover:text-ink-muted dark:hover:text-ink transition"
+                      class="text-xs text-ink-subtle hover:text-ink-muted transition"
                     >
                       <i class="fas fa-arrow-left mr-1"></i>Sites
                     </button>

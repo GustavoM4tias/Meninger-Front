@@ -111,7 +111,7 @@
                 <button @click="openTemplateEditor(camp)" class="px-3 py-1.5 text-xs font-semibold text-white bg-series-3 rounded-lg hover:bg-series-3/85 transition">
                   <i class="fas fa-pen text-micro mr-1"></i> Editar em todos
                 </button>
-                <button @click="unlinkCampaign(i)" class="px-3 py-1.5 text-xs font-semibold text-series-3 border border-series-3/25 rounded-lg hover:bg-series-3/10 dark:hover:bg-series-3/10 transition">
+                <button @click="unlinkCampaign(i)" class="px-3 py-1.5 text-xs font-semibold text-series-3 border border-series-3/25 rounded-lg hover:bg-series-3/10 transition">
                   <i class="fas fa-link-slash text-micro mr-1"></i> Editar só aqui
                 </button>
               </div>
@@ -192,7 +192,7 @@
                     class="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                     :class="camp.is_active === true
                       ? 'border-data-pos bg-data-pos/10  text-data-pos shadow-sm'
-                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
+                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line-strong'"
                   >
                     <input type="radio" :checked="camp.is_active === true" @change="patchCamp(i, 'is_active', true)" class="sr-only" />
                     <span
@@ -207,7 +207,7 @@
                     class="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                     :class="camp.is_active !== true
                       ? 'border-line bg-surface-sunken/60 text-ink-muted shadow-sm'
-                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
+                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line-strong'"
                   >
                     <input type="radio" :checked="camp.is_active !== true" @change="patchCamp(i, 'is_active', false)" class="sr-only" />
                     <span

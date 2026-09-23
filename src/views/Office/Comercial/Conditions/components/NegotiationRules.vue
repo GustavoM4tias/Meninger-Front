@@ -93,7 +93,7 @@
           </div>
           <button type="button" @click="set('has_state_subsidy', !form.has_state_subsidy)"
             :class="form.has_state_subsidy ? 'bg-accent' : 'bg-surface-sunken'"
-            class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+            class="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none focus:ring-offset-2 focus:ring-offset-surface"
             :disabled="readonly">
             <span :class="form.has_state_subsidy ? 'translate-x-5' : 'translate-x-1'"
               class="pointer-events-none inline-block h-4 w-4 mt-1 rounded-full bg-surface-raised shadow-md transition-transform duration-200" />
@@ -110,7 +110,7 @@
                   class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                   :class="form.state_subsidy_state === opt.value
                     ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                    : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'">
+                    : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line-strong'">
                   <input type="radio" :value="opt.value" :checked="form.state_subsidy_state === opt.value"
                     @change="set('state_subsidy_state', opt.value)" class="sr-only" />
                   <span

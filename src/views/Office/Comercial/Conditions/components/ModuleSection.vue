@@ -47,7 +47,7 @@
                 <div class="flex items-center gap-2">
                   <button type="button" @click="copyFrom.fields = copyFieldOptions.map(o => o.value)" class="text-xs text-accent hover:underline">Todos</button>
                   <span class="text-ink-subtle">·</span>
-                  <button type="button" @click="copyFrom.fields = []" class="text-xs text-ink-subtle hover:text-ink-muted dark:hover:text-ink-subtle hover:underline">Nenhum</button>
+                  <button type="button" @click="copyFrom.fields = []" class="text-xs text-ink-subtle hover:text-ink hover:underline">Nenhum</button>
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -58,7 +58,7 @@
                     'flex items-start gap-2.5 cursor-pointer select-none p-3 rounded-lg border transition',
                     copyFrom.fields.includes(opt.value)
                       ? 'border-accent bg-accent-soft'
-                      : 'border-line bg-surface-raised/40 hover:border-line'
+                      : 'border-line bg-surface-raised/40 hover:border-line-strong'
                   ]"
                 >
                   <input type="checkbox" :value="opt.value" v-model="copyFrom.fields" class="mt-0.5 w-4 h-4 rounded border-line text-accent focus:ring-accent" />
@@ -458,9 +458,7 @@
         <div>
           <div class="flex items-center justify-between mb-3">
             <p class="lbl-section"><i class="fas fa-file-invoice-dollar text-data-warn"></i> Tabelas Manuais</p>
-            <button v-if="!readonly" @click="addManualTable" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-data-warn text-white rounded-md hover:bg-data-warn/85 transition">
-              <i class="fas fa-plus text-xs"></i> Adicionar
-            </button>
+            <Button v-if="!readonly" variant="secondary" size="sm" icon="fas fa-plus" @click="addManualTable">Adicionar</Button>
           </div>
           <div class="space-y-4">
             <div
@@ -492,17 +490,16 @@
                   type="text" class="inp text-xs" :disabled="readonly" placeholder="Observação da tabela..." />
 
                 <!-- Quick fill de unidades -->
-                <div class="flex items-center gap-2 flex-wrap p-3 bg-accent/10  border border-accent/20/30 rounded-lg">
+                <div class="flex items-center gap-2 flex-wrap p-3 bg-accent-soft border border-accent/20 rounded-lg">
                   <i class="fas fa-bolt text-accent text-xs flex-shrink-0"></i>
                   <span class="text-xs text-ink-muted font-medium flex-shrink-0">Preenchimento rápido:</span>
 
                   <!-- Gerar unidades (a partir do total_units do módulo) -->
-                  <button v-if="!readonly" @click="generateUnits(mi)"
+                  <Button v-if="!readonly" size="sm" icon="fas fa-list" class="flex-shrink-0"
                     :disabled="!activeModule.total_units"
-                    class="flex items-center gap-1 p-3 text-xs font-semibold bg-accent text-white rounded-md hover:bg-accent-hover disabled:opacity-40 transition flex-shrink-0">
-                    <i class="fas fa-list text-micro"></i>
+                    @click="generateUnits(mi)">
                     Gerar {{ activeModule.total_units ?? 0 }} unidades
-                  </button>
+                  </Button>
 
                   <!-- Ticket médio -->
                   <div class="flex items-center gap-1 flex-shrink-0">
@@ -515,11 +512,11 @@
                         class="inp-pfx" :disabled="readonly" placeholder="0,00" />
                     </div>
 
-                    <button v-if="!readonly" @click="applyAvgTicket(mi)"
+                    <Button v-if="!readonly" variant="secondary" size="sm"
                       :disabled="!mt.avg_ticket || !(mt.units?.length)"
-                      class="flex items-center gap-1 p-3 text-xs font-semibold bg-ink-muted text-white rounded-md hover:bg-ink disabled:opacity-40 transition">
+                      @click="applyAvgTicket(mi)">
                       Aplicar
-                    </button>
+                    </Button>
                   </div>
 
                   <!-- Estatísticas das unidades preenchidas -->
@@ -640,35 +637,27 @@
       <div v-if="activeModule?.idetapa" id="modsec-units" class="p-5 scroll-mt-40 md:scroll-mt-4 border-t border-line">
         <h3 class="flex items-center gap-2 text-sm font-bold text-ink mb-3"><i class="fas fa-layer-group text-accent"></i> Unidades</h3>
 
-        <!-- Barra de snapshot -->
+        <!-- Barra de snapshot: alterna ao vivo x congelado; capturar congela agora -->
         <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
-          <div class="flex items-center gap-2">
-            <template v-if="activeModule.unit_snapshot?.capturedAt">
-              <button
-                @click="showingSnapshot = !showingSnapshot"
-                :class="['flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition',
-                  showingSnapshot
-                    ? 'bg-data-warn/20 border-data-warn/25 text-data-warn'
-                    : 'bg-accent-soft border-accent/30 text-accent']"
-              >
-                <i :class="showingSnapshot ? 'fas fa-snowflake' : 'fas fa-circle-dot'" class="text-micro"></i>
-                {{ showingSnapshot ? 'Snapshot: ' + formatSnapshotDate(activeModule.unit_snapshot.capturedAt) : 'Ao vivo' }}
-              </button>
-            </template>
-            <template v-else>
-              <span class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent-soft border border-accent/30 text-accent">
-                <i class="fas fa-circle-dot text-micro"></i> Ao vivo
-              </span>
-            </template>
-          </div>
-          <button
+          <SegmentedControl
+            v-if="activeModule.unit_snapshot?.capturedAt"
+            size="sm"
+            :model-value="showingSnapshot ? 'snap' : 'live'"
+            @update:model-value="v => showingSnapshot = v === 'snap'"
+            :options="[
+              { value: 'live', label: 'Ao vivo', icon: 'fas fa-circle-dot' },
+              { value: 'snap', label: 'Congelado em ' + formatSnapshotDate(activeModule.unit_snapshot.capturedAt), icon: 'fas fa-snowflake' },
+            ]"
+          />
+          <Badge v-else variant="accent" dot>Ao vivo</Badge>
+          <Button
             v-if="!readonly && unitsData.length"
-            @click="captureUnitSnapshot"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-ink-muted text-white rounded-lg hover:bg-ink transition"
+            variant="secondary"
+            size="sm"
+            icon="fas fa-snowflake"
             title="Congela o estado atual das unidades para referência histórica"
-          >
-            <i class="fas fa-snowflake text-micro"></i> Capturar estado
-          </button>
+            @click="captureUnitSnapshot"
+          >Capturar estado</Button>
         </div>
 
         <!-- Carregando -->
@@ -680,21 +669,12 @@
         <template v-else-if="displayUnits.length">
         <div v-if="selectedTablesWithPrices.length" class="flex items-center gap-2 mb-3 flex-wrap">
           <span class="text-xs text-ink-subtle font-medium flex-shrink-0">Preços de:</span>
-          <div class="flex items-center gap-1 flex-wrap">
-            <button
-              v-for="t in selectedTablesWithPrices"
-              :key="t.idtabela"
-              @click="selectedPriceTableForUnits = t.idtabela"
-              :class="[
-                'px-2.5 py-1 text-xs font-semibold rounded-lg border transition',
-                (selectedPriceTableForUnits ?? selectedTablesWithPrices[0]?.idtabela) === t.idtabela
-                  ? 'bg-accent border-accent text-white'
-                  : 'bg-surface-raised border-line text-ink-muted hover:border-accent'
-              ]"
-            >
-              {{ t.nome }}
-            </button>
-          </div>
+          <SegmentedControl
+            size="sm"
+            :model-value="selectedPriceTableForUnits ?? selectedTablesWithPrices[0]?.idtabela"
+            @update:model-value="v => selectedPriceTableForUnits = v"
+            :options="selectedTablesWithPrices.map(t => ({ value: t.idtabela, label: t.nome }))"
+          />
         </div>
 
         <!-- Blocos -->
@@ -704,7 +684,7 @@
             <div class="flex items-center justify-between mb-2 flex-wrap gap-1">
               <div class="flex items-center gap-2">
                 <i class="fas fa-building text-accent text-xs"></i>
-                <span class="text-sm font-bold text-ink dark:text-white">{{ bloco.nome }}</span>
+                <span class="text-sm font-bold text-ink">{{ bloco.nome }}</span>
                 <span class="text-xs text-ink-subtle">{{ bloco.unidades?.length ?? 0 }} un.</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-ink-muted">
@@ -806,6 +786,8 @@
 import Modal from '@/components/UI/Modal.vue';
 import ConfirmDialog from '@/components/UI/ConfirmDialog.vue';
 import Button from '@/components/UI/Button.vue';
+import Badge from '@/components/UI/Badge.vue';
+import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 import AttachmentPicker from './AttachmentPicker.vue';

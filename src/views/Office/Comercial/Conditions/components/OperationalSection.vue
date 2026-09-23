@@ -18,13 +18,13 @@
               <button type="button" @click="setManagerMode('sistema')" :disabled="readonly" :class="['px-3 py-1 text-xs font-semibold rounded-md transition',
                 managerMode === 'sistema'
                   ? 'bg-surface-sunken text-ink shadow-sm'
-                  : 'text-ink-muted hover:text-ink dark:hover:text-ink']">
+                  : 'text-ink-muted hover:text-ink']">
                 <i class="fas fa-users text-xs mr-1"></i>Sistema
               </button>
               <button type="button" @click="setManagerMode('manual')" :disabled="readonly" :class="['px-3 py-1 text-xs font-semibold rounded-md transition',
                 managerMode === 'manual'
                   ? 'bg-surface-sunken text-ink shadow-sm'
-                  : 'text-ink-muted hover:text-ink dark:hover:text-ink']">
+                  : 'text-ink-muted hover:text-ink']">
                 <i class="fas fa-pen text-xs mr-1"></i>Manual
               </button>
             </div>
@@ -103,7 +103,7 @@
               class="flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
               :class="form.contract_registration_by === opt.value
                 ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
+                : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line-strong'"
               :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
               <input type="radio" :value="opt.value" :checked="form.contract_registration_by === opt.value"
                 @change="set('contract_registration_by', opt.value)" class="sr-only" :disabled="readonly" />
@@ -123,13 +123,13 @@
             <button type="button" @click="setMeniMode('sistema')" :disabled="readonly" :class="['px-3 py-1.5 text-xs font-semibold rounded-md transition',
               meniMode === 'sistema'
                 ? 'bg-surface-sunken text-ink shadow-sm'
-                : 'text-ink-muted hover:text-ink dark:hover:text-ink']">
+                : 'text-ink-muted hover:text-ink']">
               <i class="fas fa-users text-xs mr-1"></i>Usuário do sistema
             </button>
             <button type="button" @click="setMeniMode('manual')" :disabled="readonly" :class="['px-3 py-1.5 text-xs font-semibold rounded-md transition',
               meniMode === 'manual'
                 ? 'bg-surface-sunken text-ink shadow-sm'
-                : 'text-ink-muted hover:text-ink dark:hover:text-ink']">
+                : 'text-ink-muted hover:text-ink']">
               <i class="fas fa-pen text-xs mr-1"></i>Informar manualmente
             </button>
           </div>
@@ -244,7 +244,7 @@
                 class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                 :class="(form.cca_paid_by || 'menin') === opt.value
                   ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
+                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line-strong'"
                 :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
                 <input type="radio" :value="opt.value" :checked="(form.cca_paid_by || 'menin') === opt.value"
                   @change="set('cca_paid_by', opt.value)" class="sr-only" :disabled="readonly" />
@@ -297,7 +297,7 @@
                 class="flex items-center gap-2 px-4 py-2.5 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                 :class="certProvider === opt.value
                   ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
+                  : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line-strong'"
                 :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
                 <input type="radio" :value="opt.value" :checked="certProvider === opt.value"
                   @change="setCertProvider(opt.value)" class="sr-only" :disabled="readonly" />
@@ -356,7 +356,7 @@
                     class="flex items-center gap-2 px-3.5 py-2 rounded-md border cursor-pointer transition-all text-sm font-medium select-none"
                     :class="(form.digital_cert_paid_by || 'menin') === opt.value
                       ? 'border-accent bg-accent-soft text-accent shadow-sm'
-                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line dark:hover:border-line'"
+                      : 'border-line text-ink-muted bg-surface-raised/60 hover:border-line-strong'"
                     :style="readonly ? 'pointer-events:none;opacity:.75' : ''">
                     <input type="radio" :value="opt.value" :checked="(form.digital_cert_paid_by || 'menin') === opt.value"
                       @change="set('digital_cert_paid_by', opt.value)" class="sr-only" :disabled="readonly" />

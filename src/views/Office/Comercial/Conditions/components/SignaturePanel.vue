@@ -44,7 +44,7 @@
             ({{ state.config?.routing === 'parallel' ? 'todos assinam juntos' : 'assinam em sequência' }} ·
             {{ state.config?.placement === 'livre' ? 'posicionamento livre' : 'assinatura ao final' }}{{ state.config?.require_initials ? ' + rubrica' : '' }}).
           </p>
-          <button v-if="canAuthorize" @click="send" :disabled="sending" class="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent disabled:opacity-50 transition">
+          <button v-if="canAuthorize" @click="send" :disabled="sending" class="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition">
             <i :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
             {{ sending ? 'Enviando...' : 'Enviar para assinatura' }}
           </button>
@@ -145,7 +145,7 @@
             {{ current.status === 'voided' ? 'Envio anulado' : 'Envio recusado/falhou' }} — o histórico e o motivo continuam registrados acima e na linha do tempo da ficha.
           </p>
           <button v-if="canAuthorize && detail.status === 'approved'" @click="send" :disabled="sending"
-            class="flex items-center gap-2 px-4 py-2 bg-accent text-white text-xs font-semibold rounded-xl hover:bg-accent disabled:opacity-50 transition">
+            class="flex items-center gap-2 px-4 py-2 bg-accent text-white text-xs font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition">
             <i :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
             {{ sending ? 'Enviando...' : 'Enviar novamente' }}
           </button>
@@ -171,7 +171,7 @@
             Ficha alterada e reautorizada depois desta assinatura? Envie uma nova rodada — o documento assinado acima fica preservado nos envelopes anteriores.
           </p>
           <button @click="send" :disabled="sending"
-            class="flex items-center gap-2 px-4 py-2 bg-accent text-white text-xs font-semibold rounded-xl hover:bg-accent disabled:opacity-50 transition">
+            class="flex items-center gap-2 px-4 py-2 bg-accent text-white text-xs font-semibold rounded-xl hover:bg-accent-hover disabled:opacity-50 transition">
             <i :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'" class="fas text-xs"></i>
             {{ sending ? 'Enviando...' : 'Enviar nova assinatura' }}
           </button>
