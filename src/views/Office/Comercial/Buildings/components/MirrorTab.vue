@@ -61,9 +61,15 @@ const STATUS = {
   reserva_ativa:  { key: 'reserva_ativa',  label: 'Reserva ativa',  icon: 'fas fa-hourglass-half',  variant: 'warning', bar: 'bg-data-warn/70',    cell: 'bg-data-warn/15 border-data-warn/40 hover:bg-data-warn/25' },
   vendida:        { key: 'vendida',        label: 'Vendida',        icon: 'fas fa-flag-checkered',  variant: 'danger',  bar: 'bg-data-neg/70',     cell: 'bg-data-neg/15 border-data-neg/40 hover:bg-data-neg/25' },
   bloqueada:      { key: 'bloqueada',      label: 'Bloqueada',      icon: 'fas fa-lock',            variant: 'neutral', bar: 'bg-data-neutral/70', cell: 'bg-surface-sunken border-line hover:bg-surface-hover' },
+  // Bloqueada no CV por decisao comercial: continua sendo estoque a vender, e a
+  // tela precisa mostrar isso. Verde tracejado = "e disponivel, mas segurada".
+  estoque:        { key: 'estoque',        label: 'Estoque segurado', icon: 'fas fa-hand-holding-dollar', variant: 'success', bar: 'bg-data-pos/40', cell: 'bg-data-pos/10 border-data-pos/40 border-dashed hover:bg-data-pos/20' },
   sem_status:     { key: 'sem_status',     label: 'Não informado',  icon: 'fas fa-circle-question', variant: 'neutral', bar: 'bg-data-neutral/40', cell: 'bg-surface-sunken border-line' },
 };
 const st = (k) => STATUS[k] || STATUS.sem_status;
+// A celula bloqueada que conta como estoque comercial e pintada como estoque:
+// o status cru continua 'bloqueada' (verdade do CV), a marca muda a leitura.
+const stCel = (c) => (c?.estoque_comercial ? STATUS.estoque : st(c?.status));
 
 // Sol: um glifo por face, igual no cabeçalho da prumada e na célula
 const SOL = {
@@ -124,12 +130,14 @@ const stages = computed(() => {
     { ...STATUS.disponivel, count: r.disponiveis },
     { key: 'reservada', label: 'Reservada', icon: 'fas fa-hourglass-half', bar: 'bg-data-warn/70', count: r.reservadas },
     { ...STATUS.vendida, count: r.vendidas },
-    { ...STATUS.bloqueada, count: r.bloqueadas },
+    { ...STATUS.estoque, count: r.estoque_comercial || 0 },
+    { ...STATUS.bloqueada, count: (r.bloqueadas || 0) - (r.estoque_comercial || 0) },
   ];
 });
 const celulaAtiva = (c) => {
   if (!filtroStatus.value.length) return true;
-  const k = (c.status === 'reserva_inicio' || c.status === 'reserva_ativa') ? 'reservada' : c.status;
+  let k = (c.status === 'reserva_inicio' || c.status === 'reserva_ativa') ? 'reservada' : c.status;
+  if (c.estoque_comercial) k = 'estoque';
   return filtroStatus.value.includes(k);
 };
 
@@ -140,7 +148,9 @@ const metricas = computed(() => {
     { key: 'd', label: 'Disponíveis', raw: r.disponiveis, tone: 'pos', hint: r.unidades ? `${Math.round((r.disponiveis / r.unidades) * 100)}%` : '' },
     { key: 'v', label: 'Vendidas', raw: r.vendidas, tone: 'neg', hint: r.unidades ? `${Math.round((r.vendidas / r.unidades) * 100)}%` : '' },
     { key: 'r', label: 'Reservadas', raw: r.reservadas, tone: 'warn' },
-    { key: 'b', label: 'Bloqueadas', raw: r.bloqueadas },
+    { key: 'b', label: 'Bloqueadas', raw: r.bloqueadas, hint: r.estoque_comercial ? `${r.estoque_comercial} seguradas` : '' },
+    { key: 'e', label: 'Estoque segurado', raw: r.estoque_comercial || 0, tone: 'pos', hint: 'bloqueadas que ainda vendem' },
+    { key: 'av', label: 'À venda', raw: r.a_venda ?? r.disponiveis, tone: 'pos', hint: 'disponíveis + seguradas' },
     { key: 'vgv', label: 'VGV disponível', raw: r.vgv_disponivel, format: fmtBRL, tone: 'accent' },
     { key: 'm2', label: 'R$/m² disponível', raw: r.valor_m2_disponivel, format: fmtBRL, hint: 'média ponderada' },
   ];
@@ -158,7 +168,8 @@ const textoCelula = (c) => {
   }
 };
 const dicaCelula = (c) => [
-  `${c.nome} · ${st(c.status).label}`,
+  `${c.nome} · ${stCel(c).label}`,
+  c.estoque_comercial && c.motivo_bloqueio ? `Segurada: ${c.motivo_bloqueio}${c.motivo_observacao ? ` (${c.motivo_observacao})` : ''}` : null,
   c.valor != null ? `${fmtBRL2(c.valor)}${c.valor_fonte === 'estimado' ? ' (estimado)' : c.valor_fonte === 'tabela' ? ' (tabela)' : ''}` : 'Sem preço',
   c.area != null ? `${fmtArea(c.area)}${c.valor_m2 ? ` · ${fmtBRL(c.valor_m2)}/m²` : ''}` : null,
   [c.tipologia, c.dorm != null ? `${c.dorm} dorm` : null, c.sol_label].filter(Boolean).join(' · ') || null,
@@ -345,7 +356,7 @@ watch(() => props.idempreendimento, carregar);
             <div v-if="horizontal" class="p-2 sm:p-3 flex flex-wrap gap-1.5">
               <button v-for="c in lotesDe(t)" :key="c.idunidade" type="button" @click="unidadeAberta = c" v-tippy="dicaCelula(c)"
                 class="w-[84px] min-h-[44px] rounded-md border px-1.5 py-1 text-left transition-all duration-150 focus-ring"
-                :class="[st(c.status).cell, celulaAtiva(c) ? 'opacity-100' : 'opacity-25']">
+                :class="[stCel(c).cell, celulaAtiva(c) ? 'opacity-100' : 'opacity-25']">
                 <div class="flex items-center justify-between gap-1">
                   <span class="font-semibold text-ink tabular-nums truncate" :title="c.nome">{{ c.final ? `Lote ${c.final}` : (c.numero || c.nome) }}</span>
                   <i v-if="c.sol" :class="[SOL[c.sol].icon, SOL[c.sol].cls]" class="text-[9px] shrink-0"></i>
@@ -379,7 +390,7 @@ watch(() => props.idempreendimento, carregar);
                       <template v-for="c in a.unidades.filter((u) => u.final === col.final)" :key="c.idunidade">
                         <button type="button" @click="unidadeAberta = c" v-tippy="dicaCelula(c)"
                           class="w-full min-h-[44px] rounded-md border px-1.5 py-1 text-left transition-all duration-150 focus-ring"
-                          :class="[st(c.status).cell, celulaAtiva(c) ? 'opacity-100' : 'opacity-25']">
+                          :class="[stCel(c).cell, celulaAtiva(c) ? 'opacity-100' : 'opacity-25']">
                           <div class="flex items-center justify-between gap-1">
                             <span class="font-semibold text-ink tabular-nums truncate">{{ c.numero || c.nome }}</span>
                             <i v-if="c.sol" :class="[SOL[c.sol].icon, SOL[c.sol].cls]" class="text-[9px] shrink-0"></i>

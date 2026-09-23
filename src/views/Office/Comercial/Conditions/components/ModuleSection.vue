@@ -1321,7 +1321,11 @@ function unitStatusClass(unit) {
     const st = classifyUnit(unit);
     if (st.isSold)     return 'bg-data-neg/20    border-data-neg/25    text-data-neg';
     if (st.isReserved) return 'bg-data-warn/20  border-data-warn/25  text-data-warn';
-    if (st.isBlocked)  return 'bg-surface-sunken      border-line   text-ink-subtle';
+    // Bloqueada por decisao comercial ainda e estoque a vender: verde tracejado,
+    // igual ao espelho. Quem le a ficha precisa ver que aquela unidade vende.
+    if (st.isBlocked)  return unit?.estoque_comercial
+        ? 'bg-data-pos/10 border-data-pos/40 border-dashed text-data-pos'
+        : 'bg-surface-sunken      border-line   text-ink-subtle';
     return                    'bg-data-pos/20  border-data-pos/25  text-data-pos';
 }
 
@@ -1329,10 +1333,12 @@ function countByStatus(units, kind) {
     if (!units?.length) return 0;
     return units.filter(u => {
         const st = classifyUnit(u);
-        if (kind === 'available') return !st.isSold && !st.isReserved && !st.isBlocked;
+        // Estoque comercial entra em "disponivel": a barra da ficha mostra o que
+        // se pode vender, nao o que o CV deixou travado.
+        if (kind === 'available') return (!st.isSold && !st.isReserved && !st.isBlocked) || (st.isBlocked && u?.estoque_comercial);
+        if (kind === 'blocked')   return st.isBlocked && !u?.estoque_comercial;
         if (kind === 'reserved')  return st.isReserved;
         if (kind === 'sold')      return st.isSold;
-        if (kind === 'blocked')   return st.isBlocked;
         return false;
     }).length;
 }

@@ -140,6 +140,9 @@ const stock = computed(() => {
     reserved: Number(s.reservedUnits || 0),
     blocked: Number(s.blockedUnits || 0),
     available: Number(s.availableUnits || 0),
+    // Bloqueadas que o CV diz serem estoque comercial (motivo lido do painel).
+    // Quando existe, ela MANDA: o campo abaixo vira leitura.
+    commercialStock: Number(s.commercialStockUnits || 0),
   };
 });
 const stockPct = (v) => (stock.value?.total ? Math.min(100, Math.round((v / stock.value.total) * 100)) : 0);
@@ -348,7 +351,21 @@ function pickLink(e) {
         <Input v-model.number="edit.defaultMarketingPct" type="number" label="Marketing (%)" />
         <Input v-model.number="edit.defaultCommissionPct" type="number" label="Comissão (%)" />
         <Input v-model.number="edit.custoLoja" type="number" label="Custo loja (R$)" />
-        <Input v-model.number="edit.blockedConsideredAvailable" type="number" label="Bloqueadas contadas como disponíveis" />
+        <!-- Estoque comercial bloqueado: quando o Office já leu o motivo no CV, o
+             número é dele e o campo fica só de leitura. Digitar aqui era o que
+             deixava o Ingá em 50 enquanto os bloqueios reais já eram 120. -->
+        <div v-if="stock && stock.commercialStock > 0" class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-ink-muted">Bloqueadas contadas como disponíveis</label>
+          <div class="flex items-center gap-2 h-9 px-3 rounded-lg bg-surface-sunken border border-line">
+            <i class="fas fa-hand-holding-dollar text-data-pos text-xs"></i>
+            <span class="font-mono font-bold text-ink tabular-nums">{{ stock.commercialStock }}</span>
+            <span class="text-micro text-ink-subtle">pelo motivo do bloqueio no CV</span>
+          </div>
+          <p class="text-micro text-ink-subtle">Muda em CV CRM &gt; Estoque bloqueado, escolhendo quais motivos contam.</p>
+        </div>
+        <Input v-else v-model.number="edit.blockedConsideredAvailable" type="number"
+          label="Bloqueadas contadas como disponíveis"
+          hint="Enquanto o Office não ler o motivo no CV, vale este número" />
       </div>
     </div>
 

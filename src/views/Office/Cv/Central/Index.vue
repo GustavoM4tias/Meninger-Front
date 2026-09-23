@@ -20,6 +20,7 @@ import Badge from '@/components/UI/Badge.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import CvCredentialCard from '@/components/Cv/CvCredentialCard.vue';
 import CvJobsCard from '@/components/Cv/CvJobsCard.vue';
+import CvBlockedStockCard from '@/components/Cv/CvBlockedStockCard.vue';
 
 const store = useRealEstateStore();
 const toast = useToast();
@@ -63,6 +64,7 @@ onMounted(() => {
                         { title: 'Quando o CV trocar a senha', text: 'O CV força troca de senha de tempos em tempos. Quando isso acontecer, quem estiver na lista de avisados recebe notificação e este painel mostra a falha - basta digitar a nova senha e salvar.' },
                         { title: 'Sincronização', text: 'O botão do cabeçalho força a leitura das imobiliárias na hora, depois de mexer em algo direto no CV. Os demais dados seguem o horário da lista abaixo.' },
                         { title: 'Sincronizações automáticas', text: 'Cada linha é um dado que o Office puxa do CV sozinho. O interruptor liga e desliga; o campo de horário usa formato cron e a tela traduz embaixo o que você digitou. Salvar reagenda na hora, sem reiniciar o sistema.' },
+                        { title: 'Estoque bloqueado', text: 'O CV bloqueia unidade por motivos diferentes: estratégia comercial (a diretoria segurou, mas ainda vende) e trava do ERP (fora do jogo). Aqui você escolhe quais motivos contam como estoque, e isso vale na hora para o espelho, a ficha comercial, a projeção e a viabilidade.' },
                         { title: 'Entrada em tempo real', text: 'Os webhooks - o CV avisando o Office na hora em que algo muda - ficam na tela Integrações, ao lado no menu, junto do histórico da integração.' },
                     ]"
                     :tips="[
@@ -123,6 +125,10 @@ onMounted(() => {
                     </p>
                 </div>
             </Panel>
+
+            <div class="lg:col-span-2">
+                <CvBlockedStockCard :pode-editar="true" />
+            </div>
 
             <div class="lg:col-span-2">
                 <CvJobsCard />
