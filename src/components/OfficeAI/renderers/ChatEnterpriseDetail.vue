@@ -27,10 +27,11 @@ const cvMapUrl = computed(() => `https://menin.cvcrm.com.br/gestor/comercial/map
 const crmUrl   = computed(() => props.action?.crm_url || null)
 
 const unitStats = computed(() => [
-  { label: 'Disponíveis', value: unidades.value.disponiveis ?? 0, color: 'emerald' },
+  // A venda inclui a bloqueada por estrategia comercial (nucleo do estoque no back)
+  { label: 'À venda',     value: unidades.value.a_venda ?? unidades.value.disponiveis ?? 0, color: 'emerald' },
   { label: 'Vendidas',    value: unidades.value.vendidas    ?? 0, color: 'red'     },
   { label: 'Reservadas',  value: unidades.value.reservadas  ?? 0, color: 'amber'   },
-  { label: 'Bloqueadas',  value: unidades.value.bloqueadas  ?? 0, color: 'slate'   },
+  { label: 'Bloqueadas',  value: unidades.value.bloqueadas_fora_de_venda ?? unidades.value.bloqueadas ?? 0, color: 'slate'   },
 ])
 
 const colorMap = {

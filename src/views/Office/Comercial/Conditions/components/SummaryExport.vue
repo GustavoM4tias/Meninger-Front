@@ -114,11 +114,13 @@
             </div>
             <!-- Disponibilidade (do snapshot) -->
             <div class="kpi-card">
-              <span class="kpi-label">Disponíveis</span>
+              <span class="kpi-label">À venda</span>
               <span class="kpi-value" :class="!mod.unit_snapshot?.data?.length ? 'kpi-empty' : ''">
                 {{ mod.unit_snapshot?.data?.length ? snapshotStats(mod).disp : '—' }}
               </span>
-              <span class="kpi-sub">unidades</span>
+              <span class="kpi-sub" :title="snapshotStats(mod).seg ? 'Bloqueadas por estratégia comercial seguem sendo estoque a vender' : undefined">
+                {{ snapshotStats(mod).seg ? `${snapshotStats(mod).disp - snapshotStats(mod).seg} livres + ${snapshotStats(mod).seg} seguradas` : 'unidades' }}
+              </span>
             </div>
             <div class="kpi-card">
               <span class="kpi-label">Vendidas</span>
@@ -144,7 +146,7 @@
             <div v-if="mod.unit_snapshot?.data?.length && snapshotStats(mod).bloq > 0" class="kpi-card">
               <span class="kpi-label">Bloqueadas</span>
               <span class="kpi-value">{{ snapshotStats(mod).bloq }}</span>
-              <span class="kpi-sub">unidades</span>
+              <span class="kpi-sub">{{ snapshotStats(mod).seg ? 'fora de venda' : 'unidades' }}</span>
             </div>
           </div>
 
@@ -711,7 +713,12 @@
               <div class="flex flex-wrap gap-3 mb-4 text-xs">
                 <span class="flex items-center gap-1.5">
                   <span class="w-2.5 h-2.5 rounded-full bg-data-pos inline-block"></span>
-                  <strong>{{ snapshotStats(mod).disp }}</strong> Disponíveis
+                  <strong>{{ snapshotStats(mod).disp - snapshotStats(mod).seg }}</strong> Disponíveis
+                </span>
+                <span v-if="snapshotStats(mod).seg > 0" class="flex items-center gap-1.5"
+                  title="Bloqueadas por estratégia comercial: seguem sendo estoque a vender">
+                  <span class="w-2.5 h-2.5 rounded-full border border-dashed border-data-pos bg-data-pos/20 inline-block"></span>
+                  <strong>{{ snapshotStats(mod).seg }}</strong> Estoque segurado
                 </span>
                 <span class="flex items-center gap-1.5">
                   <span class="w-2.5 h-2.5 rounded-full bg-data-warn inline-block"></span>
@@ -1111,12 +1118,16 @@ function classifySnapshotUnit(unit) {
         isReserved = false;
     }
 
-    return { isSold, isReserved, isBlocked };
+    // Bloqueada por estrategia comercial segue sendo estoque a vender: a marca
+    // vem do nucleo (back: services/cv/unitStockService.js), igual ao espelho.
+    const isStock = isBlocked && !!unit?.estoque_comercial;
+    return { isSold, isReserved, isBlocked: isBlocked && !isStock, isStock };
 }
 
+// `disp` e o que esta a venda (livres + seguradas); `seg` e a parte segurada.
 function snapshotStats(mod) {
     const blocos = snapshotBlocos(mod);
-    let disp = 0, res = 0, vend = 0, bloq = 0, total = 0;
+    let disp = 0, seg = 0, res = 0, vend = 0, bloq = 0, total = 0;
     for (const b of blocos) {
         for (const u of (b.unidades ?? [])) {
             total++;
@@ -1124,10 +1135,10 @@ function snapshotStats(mod) {
             if (st.isSold) vend++;
             else if (st.isReserved) res++;
             else if (st.isBlocked) bloq++;
-            else disp++;
+            else { disp++; if (st.isStock) seg++; }
         }
     }
-    return { disp, res, vend, bloq, total };
+    return { disp, seg, res, vend, bloq, total };
 }
 
 function unitStatusClass(unit) {
@@ -1135,6 +1146,7 @@ function unitStatusClass(unit) {
     if (st.isSold) return 'border-data-neg/25 bg-data-neg/10  ';
     if (st.isReserved) return 'border-data-warn/25 bg-data-warn/10  ';
     if (st.isBlocked) return 'border-line bg-surface-sunken/30 border-line';
+    if (st.isStock) return 'border-data-pos/40 border-dashed bg-data-pos/5';
     return 'border-data-pos/25 bg-data-pos/10  ';
 }
 
@@ -1354,7 +1366,8 @@ async function buildPrintHtml() {
             if (s.includes('bloq')) isBlocked = true;
         }
         if (unit?.data_bloqueio) { isBlocked = true; isSold = false; isReserved = false; }
-        return { isSold, isReserved, isBlocked };
+        const isStock = isBlocked && !!unit?.estoque_comercial;
+        return { isSold, isReserved, isBlocked: isBlocked && !isStock, isStock };
     };
 
     const enabledFaixasPrint = mod =>
@@ -1397,7 +1410,7 @@ async function buildPrintHtml() {
         const availStats = (() => {
             const blocos = mod?.unit_snapshot?.data ?? [];
             if (!blocos.length) return null;
-            let disp=0, res=0, vend=0, bloq=0, total=0;
+            let disp=0, seg=0, res=0, vend=0, bloq=0, total=0;
             for (const b of blocos) {
                 for (const u of (b.unidades ?? [])) {
                     total++;
@@ -1405,10 +1418,10 @@ async function buildPrintHtml() {
                     if (st.isSold) vend++;
                     else if (st.isReserved) res++;
                     else if (st.isBlocked) bloq++;
-                    else disp++;
+                    else { disp++; if (st.isStock) seg++; }
                 }
             }
-            return { disp, res, vend, bloq, total };
+            return { disp, seg, res, vend, bloq, total };
         })();
 
         const kpis = [
@@ -1416,11 +1429,12 @@ async function buildPrintHtml() {
                 'Unidades',
                 mod.total_units ?? '<span class="empty-kpi">—</span>', 
             ),
-            kpi('Disponíveis', availStats ? String(availStats.disp) : '<span class="empty-kpi">—</span>', 'unidades'),
+            kpi('À venda', availStats ? String(availStats.disp) : '<span class="empty-kpi">—</span>',
+                availStats?.seg ? `${availStats.disp - availStats.seg} livres + ${availStats.seg} seguradas` : 'unidades'),
             kpi('Vendidas', availStats ? String(availStats.vend) : '<span class="empty-kpi">—</span>', 'unidades'),
             kpi('% Vendido', availStats && availStats.total > 0 ? `${((availStats.vend / availStats.total) * 100).toFixed(1)}%` : '<span class="empty-kpi">—</span>', 'do total'),
             kpi('Reservadas', availStats ? String(availStats.res) : '<span class="empty-kpi">—</span>', 'unidades'),
-            ...(availStats && availStats.bloq > 0 ? [kpi('Bloqueadas', String(availStats.bloq), 'unidades')] : []),
+            ...(availStats && availStats.bloq > 0 ? [kpi('Bloqueadas', String(availStats.bloq), availStats.seg ? 'fora de venda' : 'unidades')] : []),
         ];
 
         const productStage = stageName(mod);
@@ -1725,7 +1739,7 @@ async function buildPrintHtml() {
 
         let unidadesHtml = '';
         if (blocos.length) {
-            let disp=0, res=0, vend=0, bloq=0, total=0;
+            let disp=0, seg=0, res=0, vend=0, bloq=0, total=0;
 
             for (const b of blocos) {
                 for (const u of (b.unidades ?? [])) {
@@ -1734,6 +1748,7 @@ async function buildPrintHtml() {
                     if (st.isSold) vend++;
                     else if (st.isReserved) res++;
                     else if (st.isBlocked) bloq++;
+                    else if (st.isStock) seg++;
                     else disp++;
                 }
             }
@@ -1748,6 +1763,7 @@ async function buildPrintHtml() {
                   <div class="card-body">
                     <div class="unit-summary">
                       <span><span class="dot green"></span><strong>${disp}</strong> Disponíveis</span>
+                      ${seg > 0 ? `<span><span class="dot green-dashed"></span><strong>${seg}</strong> Estoque segurado</span>` : ''}
                       <span><span class="dot yellow"></span><strong>${res}</strong> Reservadas</span>
                       <span><span class="dot red"></span><strong>${vend}</strong> Vendidas</span>
                       ${bloq > 0 ? `<span><span class="dot gray"></span><strong>${bloq}</strong> Bloqueadas</span>` : ''}
@@ -1764,7 +1780,7 @@ async function buildPrintHtml() {
                         <div class="unit-row-print">
                           ${(bloco.unidades??[]).map(u => {
                               const st = classifyUnitPrint(u);
-                              const statusClass = st.isSold ? 'unit-sold' : st.isReserved ? 'unit-reserved' : st.isBlocked ? 'unit-blocked' : 'unit-available';
+                              const statusClass = st.isSold ? 'unit-sold' : st.isReserved ? 'unit-reserved' : st.isBlocked ? 'unit-blocked' : st.isStock ? 'unit-stock' : 'unit-available';
                               return `<div class="unit-card-print ${statusClass}">
                                 <p>${escapeHtml(u.nome)}</p>
                                 ${u.valor_total != null ? `<span class="unit-price">${fmtShort(u.valor_total)}</span>` : ''}
@@ -2370,6 +2386,7 @@ async function buildPrintHtml() {
   .yellow { background: #facc15; }
   .red { background: #f87171; }
   .gray { background: #9ca3af; }
+  .green-dashed { background: #dcfce7; border: 1px dashed #22c55e; }
   .muted { color: #9ca3af; }
 
   .block-unit-group {
@@ -2453,6 +2470,12 @@ async function buildPrintHtml() {
   .unit-blocked {
     border-color: #e5e7eb;
     background: #f9fafb;
+  }
+
+  .unit-stock {
+    border-color: #86efac;
+    border-style: dashed;
+    background: #f7fef9;
   }
 
   .module-sep {

@@ -26,9 +26,18 @@ const stageMeta = computed(() => ({
   'Portal do Cliente': { variant: 'accent',  accent: 'bg-accent',    icon: 'fas fa-door-open' },
 }[stage.value] || { variant: 'neutral', accent: 'bg-data-neutral', icon: 'fas fa-building' }));
 
+// "A venda" = disponiveis no CV + bloqueadas por estrategia comercial (nucleo
+// do estoque, calculado no back). Mesmo numero do espelho e da ficha.
 const disponiveis = computed(() => {
-  const n = Number(props.building.unidades_disponiveis);
-  return Number.isFinite(n) && props.building.unidades_disponiveis != null ? n : null;
+  const v = props.building.unidades_a_venda ?? props.building.unidades_disponiveis;
+  const n = Number(v);
+  return Number.isFinite(n) && v != null ? n : null;
+});
+const dicaDisponiveis = computed(() => {
+  const seg = Number(props.building.estoque_segurado) || 0;
+  if (!seg) return undefined;
+  const livres = Number(props.building.unidades_disponiveis) || 0;
+  return `${livres} disponíveis no CV + ${seg} bloqueadas por estratégia comercial`;
 });
 const andamento = computed(() => {
   const n = Number(props.building.andamento);
@@ -78,8 +87,8 @@ const abrir = () => emit('click', props.building);
 
       <!-- O que o CV sabe: estoque, entrega, andamento -->
       <dl class="grid grid-cols-3 gap-2 text-center">
-        <div class="rounded-lg bg-surface-sunken border border-line-subtle px-1.5 py-1.5 min-w-0">
-          <dt class="text-micro text-ink-subtle truncate">Disponíveis</dt>
+        <div class="rounded-lg bg-surface-sunken border border-line-subtle px-1.5 py-1.5 min-w-0" :title="dicaDisponiveis">
+          <dt class="text-micro text-ink-subtle truncate">À venda</dt>
           <dd class="metric text-sm tabular-nums" :class="disponiveis ? 'text-data-pos' : 'text-ink-muted'">{{ disponiveis ?? '-' }}</dd>
         </div>
         <div class="rounded-lg bg-surface-sunken border border-line-subtle px-1.5 py-1.5 min-w-0">

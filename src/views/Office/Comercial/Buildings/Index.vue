@@ -159,11 +159,11 @@ const aoClicarKpi = (item) => {
 
 const kpiCards = computed(() => {
   const all = buildingsFiltered.value;
-  const disp = all.reduce((s, b) => s + (Number(b.unidades_disponiveis) || 0), 0);
+  const disp = all.reduce((s, b) => s + (Number(b.unidades_a_venda ?? b.unidades_disponiveis) || 0), 0);
   const cidades = new Set(all.map((b) => b.cidade).filter(Boolean)).size;
   return [
     { key: 'Geral', label: 'Empreendimentos', raw: all.length, icon: 'fas fa-grip', tone: 'accent',
-      hint: `${nf.format(disp)} un. disponíveis · ${cidades} cidade${cidades === 1 ? '' : 's'}`,
+      hint: `${nf.format(disp)} un. à venda · ${cidades} cidade${cidades === 1 ? '' : 's'}`,
       tooltip: 'Todo o portfólio dentro do filtro' },
     ...SECTIONS.map((s) => ({
       key: s.key, label: s.label, raw: groups.value[s.key].length, icon: s.icon, tone: s.tone,

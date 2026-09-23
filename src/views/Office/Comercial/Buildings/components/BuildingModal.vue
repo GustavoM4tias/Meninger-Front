@@ -89,7 +89,12 @@ const UNIT_STATUS = {
   4: { key: 'bloqueada',      label: 'Bloqueada',      icon: 'fas fa-lock',          variant: 'neutral', bar: 'bg-data-neutral/70', text: 'text-ink-muted' },
 };
 const UNKNOWN_STATUS = { key: 'sem_status', label: 'Não informado', icon: 'fas fa-circle-question', variant: 'neutral', bar: 'bg-data-neutral/40', text: 'text-ink-subtle' };
-const statusOf = (u) => UNIT_STATUS[u.situacao?.situacao_mapa_disponibilidade] || UNKNOWN_STATUS;
+// Bloqueada por estrategia comercial segue sendo estoque a vender: a marca vem
+// do nucleo no back (services/cv/unitStockService.js), igual ao espelho e a ficha.
+const STOCK_STATUS = { key: 'estoque', label: 'Estoque segurado', icon: 'fas fa-lock-open', variant: 'success', bar: 'bg-data-pos/35', text: 'text-data-pos' };
+const statusOf = (u) => (u.estoque_comercial && Number(u.situacao?.situacao_mapa_disponibilidade) === 4
+  ? STOCK_STATUS
+  : UNIT_STATUS[u.situacao?.situacao_mapa_disponibilidade] || UNKNOWN_STATUS);
 
 // ── Unidades achatadas (uma linha por unidade) ─────────────
 const units = computed(() => {
@@ -119,23 +124,28 @@ const totalBlocks = computed(() =>
 const statusStages = computed(() => {
   const count = {};
   for (const u of units.value) count[u.status.key] = (count[u.status.key] || 0) + 1;
-  const ordem = [UNIT_STATUS[1], UNIT_STATUS[2], UNIT_STATUS[5], UNIT_STATUS[3], UNIT_STATUS[4], UNKNOWN_STATUS];
+  const ordem = [UNIT_STATUS[1], STOCK_STATUS, UNIT_STATUS[2], UNIT_STATUS[5], UNIT_STATUS[3], UNIT_STATUS[4], UNKNOWN_STATUS];
   return ordem
     .map((s) => ({ ...s, count: count[s.key] || 0 }))
-    .filter((s) => s.count > 0 || s.key !== 'sem_status');
+    .filter((s) => s.count > 0 || (s.key !== 'sem_status' && s.key !== 'estoque'));
 });
 
 const materialsCount = computed(() =>
   (props.building.materiais_campanha?.length || 0) + (props.building.plantas_mapeadas?.length || 0));
 
 const kpiCards = computed(() => {
-  const disp = statusStages.value.find((s) => s.key === 'disponivel')?.count || 0;
+  const livres = statusStages.value.find((s) => s.key === 'disponivel')?.count || 0;
+  const seg = statusStages.value.find((s) => s.key === 'estoque')?.count || 0;
+  const disp = livres + seg;
   const vend = statusStages.value.find((s) => s.key === 'vendida')?.count || 0;
   return [
     { key: 'unidades', label: 'Unidades', raw: totalUnits.value, icon: 'fas fa-house', tone: 'accent',
       hint: `${totalBlocks.value} bloco(s) · ${props.building.etapas?.length || 0} etapa(s)` },
-    { key: 'disp', label: 'Disponíveis', raw: disp, icon: 'fas fa-circle-check', tone: 'pos',
-      hint: totalUnits.value ? `${((disp / totalUnits.value) * 100).toFixed(0)}% do estoque` : '' },
+    { key: 'disp', label: 'À venda', raw: disp, icon: 'fas fa-circle-check', tone: 'pos',
+      hint: seg
+        ? `${livres} livres + ${seg} seguradas`
+        : (totalUnits.value ? `${((disp / totalUnits.value) * 100).toFixed(0)}% do estoque` : ''),
+      tooltip: seg ? `${livres} disponíveis no CV e ${seg} bloqueadas por estratégia comercial, que seguem sendo estoque a vender` : undefined },
     { key: 'vend', label: 'Vendidas', raw: vend, icon: 'fas fa-flag-checkered', tone: 'neg',
       hint: totalUnits.value ? `${((vend / totalUnits.value) * 100).toFixed(0)}% do total` : '' },
     { key: 'mat', label: 'Materiais', raw: materialsCount.value, icon: 'fas fa-images', tone: 'warn',

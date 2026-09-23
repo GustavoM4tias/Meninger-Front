@@ -442,9 +442,9 @@
                         </Surface>
                     </div>
                     <div class="flex items-center gap-4 text-xs flex-wrap text-ink-muted mt-2">
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-data-pos"></span>Disponíveis <strong class="font-mono">{{ Number(detailItem.header?.availableUnits || 0) }}</strong></span>
+                        <span class="inline-flex items-center gap-1.5" :title="Number(detailItem.header?.blockedConsideredAvailable || 0) ? `${Number(detailItem.header?.availableUnits || 0)} disponíveis no CV + ${Number(detailItem.header?.blockedConsideredAvailable || 0)} bloqueadas que seguem à venda` : undefined"><span class="h-2 w-2 rounded-full bg-data-pos"></span>À venda <strong class="font-mono">{{ Number(detailItem.header?.availableUnits || 0) + Number(detailItem.header?.blockedConsideredAvailable || 0) }}</strong></span>
                         <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-accent"></span>Reservadas <strong class="font-mono">{{ Number(detailItem.header?.reservedUnits || 0) }}</strong></span>
-                        <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-ink-subtle/60"></span>Bloqueadas <strong class="font-mono">{{ Number(detailItem.header?.blockedUnits || 0) }}</strong></span>
+                        <span class="inline-flex items-center gap-1.5" title="Bloqueadas fora de venda (as seguradas por estratégia comercial já estão em À venda)"><span class="h-2 w-2 rounded-full bg-ink-subtle/60"></span>Bloqueadas <strong class="font-mono">{{ Math.max(0, Number(detailItem.header?.blockedUnits || 0) - Number(detailItem.header?.blockedConsideredAvailable || 0)) }}</strong></span>
                         <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-data-neg"></span>Vendidas (CV) <strong class="font-mono">{{ Number(detailItem.header?.soldUnitsStock ?? detailItem.header?.soldUnits ?? 0) }}</strong></span>
                     </div>
                 </div>
