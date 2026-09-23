@@ -212,7 +212,7 @@ async function saveBehavior() {
 // template faria o Vue tentar interpretar o próprio exemplo como interpolação.
 const EXEMPLO_REF = '{'.repeat(2) + 'ref:r3.vendas' + '}'.repeat(2)
 
-const anchoring = reactive({ enabled: true, modo: 'suave', min_taxa: 0.8, max_citacoes: 400, loaded: false })
+const anchoring = reactive({ enabled: true, modo: 'suave', min_taxa: 0.8, max_citacoes: 400, pular_detector_ancorada: false, loaded: false })
 
 async function loadAnchoring() {
   try {
@@ -226,6 +226,7 @@ async function saveAnchoring() {
     const { settings } = await api.saveAnchoring({
       enabled: anchoring.enabled, modo: anchoring.modo,
       min_taxa: Number(anchoring.min_taxa), max_citacoes: Number(anchoring.max_citacoes),
+      pular_detector_ancorada: anchoring.pular_detector_ancorada === true,
     })
     Object.assign(anchoring, settings)
     notify('Ancoragem salva. Vale no próximo turno, sem publicar.')
@@ -962,6 +963,9 @@ onMounted(load)
               label="Teto de itens citáveis"
               hint="Acima disso o contexto pesa mais que o ganho e o modelo começa a errar o id." />
           </div>
+
+          <Switch v-model="anchoring.pular_detector_ancorada" label="Pular a validação quando a resposta está toda ancorada"
+            description="Desligado, a validação de números e nomes roda em TODA resposta com dado, mesmo quando cada número veio por referência. Ligado, a resposta 100% ancorada não passa pela validação: a referência garante o número, mas não o nome que a Eme digitou. Só ligue depois de medir na aba Validação que a trava virou peso morto." />
 
           <div class="flex justify-end pt-3 border-t border-line">
             <Button size="sm" icon="fas fa-floppy-disk" :loading="busy" @click="saveAnchoring">Salvar ancoragem</Button>
