@@ -218,11 +218,13 @@ const filteredGroups = computed(() => {
       : r.filter(g => gestoresDe(g).some(x => x.nome === filterGestor.value));
   }
   if (search.value.trim()) {
-    const s = search.value.toLowerCase();
+    // Sem acento e sem caixa: "monaco" acha "JARDIM MÔNACO", "ipes" acha "IPÊS".
+    const fold = (t) => (t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const s = fold(search.value.trim());
     r = r.filter(g =>
-      g.enterprise?.nome?.toLowerCase().includes(s) ||
-      g.enterprise?.cidade?.toLowerCase().includes(s) ||
-      gestoresDe(g).some(x => x.nome.toLowerCase().includes(s))
+      fold(g.enterprise?.nome).includes(s) ||
+      fold(g.enterprise?.cidade).includes(s) ||
+      gestoresDe(g).some(x => fold(x.nome).includes(s))
     );
   }
   return r;
