@@ -1,0 +1,1227 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<title>Meeting Parque Norte</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta property="og:title" content="Meeting Residencial Parque Norte">
+<meta property="og:description" content="Apresentação de lançamento · Sinop/MT">
+<link rel="icon" href="a/icon_pn.png">
+
+<style>
+@font-face{font-family:'Sora';font-style:normal;font-weight:100 800;src:url(a/font_sora.woff2) format('woff2')}
+:root{
+  --verde:#005031; --verde-m:#0a7a46; --verde-cl:#7fdc9e;
+  --ouro:#f5b32f; --lar:#f09c00; --lar2:#f8c93b;
+  --navy:#002e4c; --bege:#f7f2ee;
+  --ink:#16261d; --muted:#4f6258; --line:rgba(0,80,49,.12);
+  --acc:#e08a00;
+  --body:'Sora','Segoe UI',Arial,sans-serif;
+  /* tamanho da prancha 16:9 na tela: painéis de fora da prancha usam isso para emendar sem costura */
+  --vw:min(1vw,calc(1dvh*16/9)); --W:min(100vw,calc(100dvh*16/9)); --H:calc(var(--W)*9/16); --T:calc(50dvh - var(--H)/2);
+}
+/* faixa horizontal que começa na altura --sy do book e vai até embaixo (ou até --ey) */
+.band{position:absolute;left:0;right:0;top:calc(var(--T) + var(--H)*var(--sy)/648);bottom:0;z-index:1;overflow:hidden}
+.band.top{top:0;bottom:auto;height:calc(var(--T) + var(--H)*var(--ey)/648)}
+.lpan{position:absolute;top:0;bottom:0;left:0;width:calc(50% + var(--W)*(var(--sx) - 576)/1152);z-index:1;overflow:hidden}
+.rpan{position:absolute;top:0;bottom:0;right:0;left:calc(50% + var(--W)*(var(--sx) - 576)/1152);z-index:1;overflow:hidden}
+/* prancha que cobre a tela toda (cenas de foto alinhada) */
+.board.cheia{width:max(100vw,calc(100dvh*16/9))}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:#e9e9e9;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-font-smoothing:antialiased}
+/* ============ PALCO ============ */
+#stage{position:fixed;inset:0;overflow:hidden}
+.scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  visibility:hidden;opacity:0;transition:opacity .7s ease, visibility 0s linear .7s;
+  background:radial-gradient(120% 120% at 50% 45%,#f8f8f8 0%,#ececec 55%,#dcdcdc 100%)}
+.scene.active{visibility:visible;opacity:1;transition:opacity .7s ease;z-index:2}
+.scene.leaving{z-index:1}
+.wrap{position:relative;z-index:2;width:min(1500px,90vw);max-height:100dvh;padding:clamp(16px,4vh,48px) 0}
+.bgimg{position:absolute;inset:-3%;background-size:cover;background-position:center;z-index:0}
+.scene.active .kb{animation:kb 22s ease-in-out both}
+@keyframes kb{from{transform:scale(1)}to{transform:scale(1.08) translate(-1%,.6%)}}
+.shade{position:absolute;inset:0;z-index:1}
+/* prancha 16:9 fiel ao book (coordenadas do book em 1152 x 648) */
+.board{position:relative;z-index:2;width:min(100vw,calc(100dvh*16/9));aspect-ratio:16/9;container-type:inline-size;
+  --u:calc(100cqw/1152)}
+.board>*{--u:calc(100cqw/1152)}
+.ab{position:absolute;left:calc(var(--x,0)*100%/1152);top:calc(var(--y,0)*100%/648)}
+.ab[style*="--w"]{width:calc(var(--w)*100%/1152)}
+.ab[style*="--h"]{height:calc(var(--h)*100%/648)}
+.fill{position:absolute;inset:0;width:100%;height:100%}
+.cover{object-fit:cover;display:block}
+/* ============ TIPOGRAFIA ============ */
+.eyebrow{font-weight:800;font-size:clamp(13px,calc(1.2*var(--vw)),18px);letter-spacing:.34em;text-transform:uppercase;color:var(--lar)}
+.eyebrow .tick{display:inline-block;width:34px;height:3px;border-radius:3px;background:var(--lar);vertical-align:middle;margin-right:14px}
+h1,h2,h3{font-weight:800;letter-spacing:-.025em;line-height:1.02;text-wrap:balance}
+.h-mega{font-size:clamp(56px,calc(9.4*var(--vw)),150px);letter-spacing:-.04em;line-height:.95}
+.h-big{font-size:clamp(40px,calc(5.4*var(--vw)),88px)}
+.h-med{font-size:clamp(32px,calc(4*var(--vw)),64px)}
+h2{color:var(--verde)}
+.lead{font-size:clamp(17px,calc(1.6*var(--vw)),24px);line-height:1.6;color:var(--muted);max-width:62ch}
+.lead b{color:var(--ink);font-weight:700}
+.gold{color:var(--acc)}.green{color:var(--verde-m)}
+.note{font-size:clamp(12.5px,calc(1.05*var(--vw)),15px);color:var(--muted);line-height:1.5}
+.ilus{position:absolute;right:calc(var(--u)*10);bottom:calc(var(--u)*40);writing-mode:vertical-rl;transform:rotate(180deg);
+  font-size:calc(var(--u)*8.5);letter-spacing:.08em;color:rgba(255,255,255,.9);font-weight:600;z-index:4;text-transform:uppercase}
+.ilus.dk{color:rgba(0,40,25,.55)}
+/* ============ ANIMAÇÕES DE ENTRADA ============ */
+.rv{opacity:0}
+.scene.active .rv{animation:up .8s cubic-bezier(.2,.7,.2,1) both}
+.scene.active .rv.pop{animation:pop .75s cubic-bezier(.2,.8,.3,1.25) both}
+.scene.active .rv.lf{animation:lf .8s cubic-bezier(.2,.7,.2,1) both}
+.scene.active .rv.rt{animation:rt .9s cubic-bezier(.2,.7,.2,1) both}
+.scene.active .rv.fd{animation:fd 1.1s ease both}
+@keyframes up{from{opacity:0;transform:translateY(34px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+@keyframes lf{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:none}}
+@keyframes rt{from{opacity:0;transform:translateX(80px)}to{opacity:1;transform:none}}
+@keyframes fd{from{opacity:0}to{opacity:1}}
+.scene.active .d1{animation-delay:.12s}.scene.active .d2{animation-delay:.26s}
+.scene.active .d3{animation-delay:.4s}.scene.active .d4{animation-delay:.54s}
+.scene.active .d5{animation-delay:.68s}.scene.active .d6{animation-delay:.82s}
+.scene.active .d7{animation-delay:.96s}.scene.active .d8{animation-delay:1.1s}
+.scene.active .d9{animation-delay:1.24s}.scene.active .d10{animation-delay:1.38s}
+.scene.active .d12{animation-delay:1.7s}.scene.active .d14{animation-delay:2s}
+/* linhas que se desenham */
+.draw{stroke-dasharray:1;stroke-dashoffset:1}
+.scene.active .draw{animation:draw 1.3s cubic-bezier(.5,0,.2,1) both}
+@keyframes draw{to{stroke-dashoffset:0}}
+/* ============ HUD ============ */
+#hud{position:fixed;left:0;right:0;bottom:0;z-index:50;pointer-events:none}
+#bar{height:4px;background:linear-gradient(90deg,var(--lar),var(--lar2));width:0;transition:width .5s ease}
+#dots{display:flex;gap:6px;justify-content:center;align-items:center;margin:0 auto 8px;padding:7px 12px;width:max-content;
+  pointer-events:auto;border-radius:99px;background:rgba(255,255,255,.5);backdrop-filter:blur(8px);opacity:0;transition:opacity .4s}
+body.ui #dots{opacity:.75}
+#dots:hover{opacity:1}
+#dots button{width:6px;height:6px;border-radius:50%;border:0;background:rgba(0,80,49,.35);cursor:pointer;padding:0;position:relative;transition:.25s}
+#dots button.on{background:var(--lar);transform:scale(1.6)}
+#dots button:hover::after{content:attr(data-t);position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+  background:var(--verde);color:#fff;font-size:11px;font-family:var(--body);padding:5px 10px;border-radius:6px;white-space:nowrap}
+#counter{position:fixed;right:18px;bottom:14px;z-index:50;font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--verde);
+  background:rgba(255,255,255,.55);backdrop-filter:blur(8px);padding:5px 11px;border-radius:99px;opacity:0;transition:opacity .4s}
+body.ui #counter{opacity:.75}
+#hint{position:fixed;left:18px;bottom:14px;z-index:50;font-size:11px;color:var(--verde);background:rgba(255,255,255,.55);
+  backdrop-filter:blur(8px);padding:5px 11px;border-radius:99px;opacity:0;transition:opacity .4s}
+body.ui #hint{opacity:.7}
+/* ============ COMPONENTES ============ */
+.grid{display:grid;gap:clamp(10px,calc(1.4*var(--vw)),20px)}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:clamp(16px,calc(2*var(--vw)),30px);
+  box-shadow:0 18px 44px rgba(0,60,30,.10)}
+.card .knum{font-weight:800;letter-spacing:-.03em;font-size:clamp(34px,calc(4.2*var(--vw)),68px);line-height:1;color:var(--verde)}
+.card .klab{font-size:clamp(14px,calc(1.3*var(--vw)),19px);color:var(--muted);margin-top:8px;line-height:1.45}
+.card.hl{border:2px solid var(--ouro);box-shadow:0 18px 44px rgba(240,156,0,.18)}
+.chip{display:inline-flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:999px;
+  padding:11px 20px;font-size:clamp(14px,calc(1.3*var(--vw)),19px);font-weight:600;color:var(--ink);box-shadow:0 6px 18px rgba(0,60,30,.07)}
+.chip .ico{width:9px;height:9px;border-radius:50%;background:var(--lar);flex:none}
+.row{display:flex;flex-wrap:wrap;gap:clamp(8px,calc(1*var(--vw)),14px)}
+.mt1{margin-top:clamp(10px,1.8vh,20px)}.mt2{margin-top:clamp(18px,3.2vh,36px)}.mt3{margin-top:clamp(26px,4.6vh,52px)}
+.split{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,calc(4*var(--vw)),70px);align-items:center}
+.photo{border-radius:22px;overflow:hidden;box-shadow:0 30px 70px rgba(0,50,25,.25);position:relative;background:#fff}
+.photo img{width:100%;display:block}
+/* check do book (círculo + ✓) */
+.ckb{display:flex;align-items:center;gap:.6em}
+.ckb svg{width:1.15em;height:1.15em;flex:none}
+.ck{display:flex;align-items:center;gap:16px;font-size:clamp(17px,calc(1.7*var(--vw)),24px);font-weight:600;
+  padding:clamp(9px,1.2vh,14px) 0;border-bottom:1px solid var(--line)}
+.ck:last-child{border-bottom:0}
+.ck .bx{width:32px;height:32px;flex:none;border-radius:50%;background:var(--verde);color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px}
+/* barra laranja (título em faixa) */
+.faixa{background:var(--ouro);color:#1d1406;font-weight:700;border-radius:4px;display:flex;align-items:center;justify-content:center;gap:.35em}
+/* ============ TEMA VERDE (cenas de dinheiro) ============ */
+.sc-verde{background:
+  radial-gradient(90% 70% at 85% 0%,rgba(40,160,90,.35) 0%,transparent 60%),
+  linear-gradient(155deg,#0b5a33 0%,#004225 42%,#00250f 100%)!important;color:#fff;--acc:var(--ouro);--line:rgba(255,255,255,.14)}
+.sc-verde::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(115deg,transparent 0 120px,rgba(255,255,255,.018) 120px 240px)}
+.sc-verde h2,.sc-verde h1{color:#fff}
+.sc-verde .lead,.sc-verde .note{color:rgba(225,245,232,.82)}
+.sc-verde .lead b{color:#fff}
+.sc-verde .green{color:var(--verde-cl)}
+.sc-verde .eyebrow{color:var(--ouro)}.sc-verde .eyebrow .tick{background:var(--ouro)}
+.sc-verde .card{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);box-shadow:none;backdrop-filter:blur(6px)}
+.sc-verde .card .knum{color:#fff}.sc-verde .card .klab{color:rgba(225,245,232,.8)}
+.sc-verde .chip{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:#fff;box-shadow:none}
+.sc-verde .chip .ico{background:var(--ouro)}
+.wm{position:absolute;z-index:1;opacity:.07;pointer-events:none}
+/* ============ 1 CAPA (book p.1) ============ */
+#s-capa .arc{fill:none;stroke:var(--lar);stroke-linecap:butt}
+#s-capa .logo{width:calc(var(--u)*585)}
+.scene.active#s-capa .blink{animation:blink 2.4s ease-in-out 2s infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:.9}}
+/* ============ 2 MENIN (p.2) ============ */
+#s-menin .fam{mask-image:linear-gradient(90deg,#000 78%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 78%,transparent)}
+#s-menin .stat{display:flex;flex-direction:column;align-items:center;color:var(--verde);line-height:1}
+#s-menin .stat .l1{display:flex;align-items:baseline;gap:calc(var(--u)*5);font-weight:600;font-size:calc(var(--u)*21)}
+#s-menin .stat .n{font-weight:800;font-size:calc(var(--u)*66);letter-spacing:-.03em}
+#s-menin .stat .l2{font-size:calc(var(--u)*17);font-weight:500;margin-top:calc(var(--u)*3)}
+/* ============ GALERIA (p.7-11) ============ */
+#s-galeria{background:#0d1a12}
+.gal-slide{position:absolute;inset:0;opacity:0;transition:opacity .9s ease;background-size:cover;background-position:center}
+.gal-slide.show{opacity:1;animation:kb 14s ease-in-out both}
+#gal-steps{position:absolute;top:22px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:4;width:min(720px,70vw)}
+#gal-steps i{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.35);box-shadow:0 1px 6px rgba(0,0,0,.25)}
+#gal-steps i.done,#gal-steps i.cur{background:var(--ouro)}
+.pill{display:flex;align-items:center;gap:calc(var(--u)*14);padding:0 calc(var(--u)*26) 0 calc(var(--u)*12);
+  background:linear-gradient(100deg,#ef9800 0%,#f5b020 55%,#f8c93b 100%);border-radius:calc(var(--u)*16);
+  color:#2a1a08;font-weight:800;font-size:calc(var(--u)*33);letter-spacing:-.01em;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.pill img{height:78%;opacity:.8}
+#gal-pill.go{animation:lf .7s cubic-bezier(.2,.7,.2,1) both}
+/* ============ TERRENO 240 (p.5) ============ */
+.painel-verde{background:
+  radial-gradient(80% 60% at 100% 0%,rgba(20,120,60,.55),transparent 70%),
+  linear-gradient(160deg,#004d2a 0%,#00391c 45%,#001e08 100%)}
+.painel-verde::after{content:'';position:absolute;inset:0;background:
+  radial-gradient(140% 50% at 30% 115%,rgba(60,170,90,.18),transparent 60%);pointer-events:none}
+.ck-lg{font-size:calc(var(--u)*33);font-weight:500;color:#fff;letter-spacing:.01em}
+.ck-lg b{color:var(--ouro);font-weight:800}
+/* ============ QUINTAL (p.13) ============ */
+.painel-lar{background:linear-gradient(200deg,#fbb000 0%,#f79200 60%,#f08a00 100%)}
+.ckw{color:#fff;line-height:1.1}
+.ckw b{display:block;font-weight:800;font-size:calc(var(--u)*25)}
+.ckw span{display:block;font-weight:400;font-size:calc(var(--u)*23)}
+/* ============ MATO GROSSO (p.3) ============ */
+#s-mt{background:var(--bege)}
+/* ============ PARCERIA (p.18) ============ */
+.painel-lim{background:linear-gradient(165deg,#c9c200 0%,#3dbb00 18%,#0aa31c 45%,#00862c 72%,#006d2e 100%)}
+/* ============ PLANTA / TERRENO (p.14) ============ */
+.ceu{background:
+  radial-gradient(30% 22% at 8% 20%,rgba(255,255,255,.9),transparent 70%),
+  radial-gradient(26% 16% at 20% 90%,rgba(255,255,255,.8),transparent 70%),
+  radial-gradient(34% 20% at 92% 88%,rgba(255,255,255,.85),transparent 70%),
+  radial-gradient(28% 16% at 70% 8%,rgba(255,255,255,.7),transparent 70%),
+  linear-gradient(180deg,#d3e4ea 0%,#e9f0f2 55%,#f1f3f3 100%)!important}
+/* ============ DECORADO ============ */
+.dec-wrap{position:relative;margin-top:clamp(14px,2.4vh,26px);height:min(60vh,620px)}
+.dec-page{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,calc(1.4*var(--vw)),22px);opacity:0;transition:opacity .6s ease;pointer-events:none}
+.dec-page.show{opacity:1}
+.dec-page .ph{border-radius:18px;overflow:hidden;box-shadow:0 22px 50px rgba(0,50,25,.2);background:#fff}
+.dec-page .ph img{width:100%;height:100%;object-fit:cover;display:block}
+#dec-steps{display:flex;gap:8px;justify-content:center;margin-top:14px}
+#dec-steps i{width:44px;height:4px;border-radius:4px;background:rgba(0,80,49,.18)}
+#dec-steps i.cur{background:var(--lar)}
+/* ============ ATO ============ */
+#s-ato .wrap{text-align:center}
+#s-ato .h-mega{background:linear-gradient(180deg,#fff 30%,#bfe8cf);-webkit-background-clip:text;background-clip:text;color:transparent}
+#s-ato .sub{margin-top:2.4vh;font-size:clamp(14px,calc(1.5*var(--vw)),20px);letter-spacing:.34em;color:var(--ouro);text-transform:uppercase;font-weight:700}
+/* ============ CONDIÇÃO / RECURSO ============ */
+#s-cond .grid{grid-template-columns:repeat(3,1fr)}
+.meter{height:14px;border-radius:99px;background:rgba(0,80,49,.1);overflow:hidden;margin-top:14px}
+.meter div{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--lar),var(--lar2));transition:width 1.6s cubic-bezier(.2,.7,.2,1) .9s}
+.scene.active .meter div{width:var(--w)}
+#simbar{display:flex;height:clamp(72px,12vh,120px);border-radius:18px;overflow:hidden;margin:clamp(18px,3vh,30px) 0;box-shadow:0 18px 40px rgba(0,60,30,.12)}
+#simbar .seg{width:0;display:flex;flex-direction:column;justify-content:center;padding:0 clamp(5px,calc(1*var(--vw)),20px);
+  transition:width 1.2s cubic-bezier(.2,.7,.2,1);overflow:hidden;white-space:nowrap}
+#simbar .seg small{font-size:clamp(10px,calc(1*var(--vw)),15px);font-weight:700;letter-spacing:.04em;opacity:.85;text-transform:uppercase}
+#simbar .seg b{font-weight:800;font-size:clamp(14px,calc(1.7*var(--vw)),28px);letter-spacing:-.02em;white-space:normal;line-height:1.05}
+.legend{display:flex;flex-wrap:wrap;gap:clamp(10px,calc(1.6*var(--vw)),26px)}
+.legend .lg{display:flex;gap:10px;align-items:flex-start;font-size:clamp(14px,calc(1.25*var(--vw)),18px);color:var(--muted)}
+.legend .lg b{color:var(--ink)}
+.legend .sw{width:14px;height:14px;border-radius:4px;margin-top:3px;flex:none}
+/* ============ TIMELINE ============ */
+.tl{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(10px,calc(1.4*var(--vw)),20px)}
+.tl .st .num{font-weight:800;font-size:clamp(30px,calc(3.2*var(--vw)),50px);color:var(--lar);letter-spacing:-.03em}
+.tl .st h3{font-size:clamp(17px,calc(1.6*var(--vw)),23px);margin:6px 0 8px;color:var(--verde);letter-spacing:-.01em}
+.tl .st p{font-size:clamp(13.5px,calc(1.2*var(--vw)),17px);color:var(--muted);line-height:1.55}
+.tl .st p b{color:var(--ink)}
+/* ============ DINHEIRO ============ */
+.big-money{font-weight:800;letter-spacing:-.04em;font-size:clamp(64px,calc(11*var(--vw)),184px);line-height:1;color:var(--ouro);
+  font-variant-numeric:tabular-nums;text-shadow:0 0 80px rgba(245,179,47,.3)}
+.mensal{font-weight:800;letter-spacing:-.05em;font-size:clamp(90px,calc(14*var(--vw)),230px);line-height:1;color:var(--ouro);text-shadow:0 0 80px rgba(245,179,47,.3)}
+.mensal small{font-size:.3em;color:#fff;letter-spacing:-.01em}
+.caps{font-weight:700;font-size:clamp(18px,calc(2.2*var(--vw)),34px);letter-spacing:.14em;text-transform:uppercase}
+.step2{opacity:0;transition:opacity .6s}
+.reveal2 .step2{opacity:1}
+.reveal2 .step1{opacity:.25;transform:scale(.86);transition:.6s}
+.step1{transition:.6s}
+/* ============ ROLETA ============ */
+.wheel-box{position:relative;width:min(56vh,30vw);margin:0 auto}
+.wheel-box .pin{position:absolute;left:50%;top:-8px;transform:translateX(-50%);z-index:3;border:16px solid transparent;
+  border-top:26px solid #fff;border-bottom:0;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+.wheel{width:100%;aspect-ratio:1;border-radius:50%;position:relative;z-index:2;border:clamp(8px,calc(.8*var(--vw)),14px) solid #fff;
+  box-shadow:0 0 0 6px rgba(245,179,47,.4),0 30px 80px rgba(0,0,0,.5),inset 0 0 40px rgba(0,0,0,.2)}
+.scene.active .wheel.idle{animation:wheelIdle 16s linear infinite}
+@keyframes wheelIdle{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.wheel i{position:absolute;inset:0;display:flex;justify-content:center;font-style:normal}
+.wheel i b{margin-top:8%;font-weight:800;font-size:clamp(13px,calc(1.15*var(--vw)),22px);letter-spacing:-.03em}
+.wheel .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:24%;aspect-ratio:1;border-radius:50%;
+  background:#fff;display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:2}
+.wheel .hub img{width:62%}
+/* ============ BRASIL (mapa hexagonal em HTML) ============ */
+#s-brasil .hx{transform-box:fill-box;transform-origin:center;opacity:0}
+.scene.active#s-brasil .hx{animation:hexIn .5s cubic-bezier(.2,.8,.3,1.3) both;animation-delay:var(--d)}
+.scene.active#s-brasil .hs{animation:hexIn .5s cubic-bezier(.2,.8,.3,1.3) var(--d) both, hsP 1.6s ease-in-out 2.4s infinite}
+@keyframes hexIn{from{opacity:0;transform:scale(.15)}to{opacity:1;transform:scale(1)}}
+@keyframes hsP{0%,100%{fill:#f5b32f}50%{fill:#ffe08a}}
+#s-brasil .ring{transform-box:fill-box;transform-origin:center;opacity:0}
+.scene.active#s-brasil .ring{animation:ring 2.4s ease-out 2.2s infinite}
+.scene.active#s-brasil .ring.r2{animation-delay:3.4s}
+@keyframes ring{0%{opacity:.95;transform:scale(1)}100%{opacity:0;transform:scale(3.6)}}
+.tag{display:flex;align-items:center;gap:calc(var(--u)*8);background:#fff;border-radius:calc(var(--u)*7);
+  padding:calc(var(--u)*5) calc(var(--u)*13) calc(var(--u)*5) calc(var(--u)*5);box-shadow:0 8px 22px rgba(0,20,10,.3);
+  font-weight:700;font-size:calc(var(--u)*10.5);color:#1b1c50;letter-spacing:.03em;white-space:nowrap;line-height:1.25;z-index:3}
+.tag::after{content:'';position:absolute;left:calc(var(--u)*18);bottom:calc(var(--u)*-7);border:calc(var(--u)*7) solid transparent;border-top-color:#fff;border-bottom:0}
+.tag .tm{width:calc(var(--u)*26);height:calc(var(--u)*26);border-radius:50%;background:#1b1c50;display:grid;place-items:center;flex:none}
+.tag .tm img{width:56%}
+.tag small{display:block;color:var(--lar);font-size:1em;font-weight:800;letter-spacing:.01em}
+/* balões no estilo da v3 (logo Menin + estado + cidade) */
+#s-brasil .tag{border-radius:calc(var(--u)*12);padding:calc(var(--u)*6) calc(var(--u)*16) calc(var(--u)*6) calc(var(--u)*6);
+  gap:calc(var(--u)*10);box-shadow:0 14px 36px rgba(0,0,0,.45);transform-origin:calc(var(--u)*25) 115%}
+#s-brasil .tag.pr{transform-origin:calc(100% - var(--u)*25) 115%}
+#s-brasil .tag::after{border-width:calc(var(--u)*8);bottom:calc(var(--u)*-8);left:calc(var(--u)*17)}
+#s-brasil .tag.pr::after{left:auto;right:calc(var(--u)*17)}
+#s-brasil .tag .tm{width:calc(var(--u)*34);height:calc(var(--u)*34);background:#11153f}
+#s-brasil .tag .st{display:block;color:#252936;font-weight:800;font-size:calc(var(--u)*11);letter-spacing:.08em;text-transform:uppercase;line-height:1.2}
+#s-brasil .tag .ct{display:block;color:#008c5a;font-weight:700;font-size:calc(var(--u)*13);letter-spacing:0}
+.scene.active#s-brasil .tt{animation:ttIn .6s cubic-bezier(.2,.8,.3,1.3) var(--td) both, bob 3.2s ease-in-out calc(var(--td) + 1s) infinite}
+@keyframes ttIn{from{opacity:0;transform:scale(.35)}to{opacity:1;transform:scale(1)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(calc(var(--u)*-4))}}
+#s-brasil .hc{transform-box:fill-box;transform-origin:center}
+.scene.active#s-brasil .hc{animation:hexIn .5s cubic-bezier(.2,.8,.3,1.3) var(--d) both, cityGlow 2.6s ease-in-out 2.6s infinite}
+@keyframes cityGlow{0%,100%{fill:#4a4a92}50%{fill:#7d7dd0}}
+/* cartões dos certificados (como na v3) */
+.selo-card{display:flex;align-items:center;gap:calc(var(--u)*10);padding:calc(var(--u)*8) calc(var(--u)*12) calc(var(--u)*8) calc(var(--u)*8);
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:calc(var(--u)*12);backdrop-filter:blur(6px);color:#fff}
+.selo-card img{height:calc(var(--u)*50);flex:none;display:block}
+.selo-card b{display:block;font-weight:800;font-size:calc(var(--u)*20);line-height:1;letter-spacing:-.02em;color:var(--ouro)}
+.selo-card span{display:block;font-size:calc(var(--u)*9.5);line-height:1.3;color:rgba(235,250,240,.88);margin-top:calc(var(--u)*3)}
+/* ============ ATO ZERO ============ */
+.az-box{position:relative;display:inline-block}
+.az-val{transition:color .5s,transform .5s}
+.az-strike{position:absolute;left:-4%;top:52%;width:108%;height:.13em;background:#ff5a4f;border-radius:99px;font-size:clamp(90px,calc(14*var(--vw)),230px);
+  transform:scaleX(0) rotate(-6deg);transform-origin:left center;transition:transform .55s cubic-bezier(.6,0,.3,1);box-shadow:0 4px 18px rgba(0,0,0,.35)}
+#s-atozero.cut .az-strike{transform:scaleX(1) rotate(-6deg)}
+#s-atozero.zero .az-strike{opacity:0;transition:opacity .4s}
+#s-atozero.zero .az-val{color:#fff;transform:scale(1.06)}
+.az-stamp{display:inline-flex;align-items:center;gap:.4em;margin-top:2.4vh;padding:.35em 1.1em;border-radius:14px;
+  background:linear-gradient(100deg,#ef9800,#f8c93b);color:#2a1a08;font-weight:800;font-size:clamp(26px,calc(3.6*var(--vw)),58px);letter-spacing:-.01em;
+  box-shadow:0 20px 50px rgba(0,0,0,.35);opacity:0;transform:scale(2.2) rotate(-10deg)}
+#s-atozero.zero .az-stamp{opacity:1;transform:scale(1) rotate(-3deg);transition:transform .55s cubic-bezier(.2,.9,.3,1.35),opacity .2s}
+.az-sub{opacity:0;transform:translateY(20px)}
+#s-atozero.zero .az-sub{opacity:1;transform:none;transition:.6s .35s}
+/* nota padrão das cenas de condição e campanha */
+.cc{position:absolute;left:clamp(16px,calc(4*var(--vw)),64px);bottom:clamp(14px,3.6dvh,36px);z-index:3;
+  font-size:clamp(12px,calc(1.05*var(--vw)),16px);font-weight:600;color:var(--muted);letter-spacing:.02em}
+.sc-verde .cc{color:rgba(225,245,232,.82)}
+/* ============ MODULAÇÃO ============ */
+.mod-map{position:relative;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 22px 50px rgba(0,50,25,.16);
+  margin-top:clamp(12px,2.4dvh,26px);border:1px solid var(--line)}
+.mod-map img{width:100%;display:block}
+#s-modulos .ly{opacity:0}
+.scene.active#s-modulos .l1{animation:modIn .9s ease 1.1s both, modPulse 3.2s ease-in-out 3.6s infinite}
+.scene.active#s-modulos .l2{animation:modIn .9s ease 2s both, modPulse 3.2s ease-in-out 4.2s infinite}
+@keyframes modIn{0%{opacity:0}60%{opacity:1;filter:brightness(1.25)}100%{opacity:1;filter:none}}
+@keyframes modPulse{0%,100%{opacity:1}50%{opacity:.72}}
+.mod-leg .chip{font-size:clamp(14px,calc(1.3*var(--vw)),20px)}
+.mod-leg .sw{width:18px;height:18px;border-radius:5px;flex:none;border:1px solid rgba(0,0,0,.12)}
+.mod-leg b{font-weight:800;color:var(--verde)}
+/* ============ FINAL ============ */
+#confetti{position:fixed;inset:0;z-index:40;pointer-events:none}
+@media (max-width:860px){
+  .split{grid-template-columns:1fr}
+  #s-cond .grid{grid-template-columns:1fr 1fr}
+  .tl{grid-template-columns:1fr 1fr!important}
+  #hint{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ck" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.2 12.4l3.1 3.1 6.6-6.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ckf" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#fff"/><path d="M6.8 12.4l3.4 3.4 7-7.2" fill="none" stroke="#1f8a3a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ckv" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.4" fill="none" stroke="#1f9a4a" stroke-width="2"/><path d="M7 12.4l3.2 3.2 6.8-7" fill="none" stroke="#1f9a4a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<div id="stage">
+
+<!-- 1 CAPA · book p.1 -->
+<section class="scene" id="s-capa" data-title="Abertura" style="overflow:hidden">
+  <div class="board">
+    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
+      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
+      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
+    </svg>
+    <div class="ab rv fd d1" style="--x:0;--y:92;--w:1152;text-align:center;font-weight:800;letter-spacing:.42em;font-size:calc(var(--u)*13);color:var(--lar)">MEETING DE LANÇAMENTO · SINOP/MT</div>
+    <img class="ab rv pop d2" style="--x:298;--y:158;--w:590" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
+    <img class="ab rv d6" style="--x:492;--y:505;--w:200" src="a/menin_preto.png" alt="Menin · Construindo seus melhores momentos">
+  </div>
+</section>
+
+<!-- 2 A MENIN · book p.2 -->
+<section class="scene" id="s-menin" data-title="A Menin" style="background:linear-gradient(90deg,#f4f4f4 0%,#f1f3f3 45%,#e3ebee 100%)">
+  <div class="bgimg" style="background-image:url(a/bk_aereo_canarinho.jpg);opacity:.1;filter:grayscale(1);left:35%"></div>
+  <div class="lpan fam rv fd" style="--sx:470"><img class="fill cover" src="a/bk_familia_menin.jpg" alt="Família" style="object-position:30% 0%"></div>
+  <div class="board">
+    <img class="ab rv d1" style="--x:378;--y:40;--w:36" src="a/selo_gptw.png" alt="Great Place to Work 2026">
+    <img class="ab rv d1" style="--x:430;--y:42;--w:148" src="a/menin_preto.png" alt="Menin">
+    <p class="ab rv d2" style="--x:540;--y:120;--w:512;text-align:justify;text-align-last:right;font-size:calc(var(--u)*21.5);line-height:1.5;color:#1d3a2b">
+      <b style="color:var(--verde)">Desde 1986</b>, destacamos no mercado da <b style="color:var(--verde)">construção civil</b>, entregando mais do que apenas obras: <b style="color:var(--verde)">entregamos sonhos.</b></p>
+    <div class="ab stat rv pop d3" style="--x:560;--y:262;--w:210"><div class="l1">+ de<span class="n" data-count="40"></span>anos</div><div class="l2">de experiência</div></div>
+    <div class="ab stat rv pop d4" style="--x:830;--y:262;--w:200"><div class="l1">+ de<span class="n" data-count="5"></span>estados</div><div class="l2">de atuação</div></div>
+    <div class="ab stat rv pop d5" style="--x:560;--y:385;--w:210"><div class="l1">+ de<span class="n" data-count="80"></span>mil</div><div class="l2">unidades entregues</div></div>
+    <div class="ab stat rv pop d6" style="--x:820;--y:385;--w:220"><div class="l1">+ de<span class="n" data-count="4"></span>milhões</div><div class="l2">de m² construídos</div></div>
+    <div class="ab rv up d8" style="--x:560;--y:505;--w:490;display:flex;align-items:center;gap:calc(var(--u)*16);color:var(--verde)">
+      <img src="a/selo_intec.png" alt="Ranking INTEC 2026" style="width:calc(var(--u)*74)">
+      <span style="font-weight:800;font-size:calc(var(--u)*58);letter-spacing:-.03em;line-height:1">13<sup style="font-size:.5em">ª</sup></span>
+      <span style="font-size:calc(var(--u)*21);font-weight:500">maior construtora do Brasil</span>
+    </div>
+  </div>
+</section>
+
+<!-- 3 BRASIL · book p.4 (mapa hexagonal em HTML) -->
+<section class="scene" id="s-brasil" data-title="Menin no Brasil" style="background:radial-gradient(60% 85% at 80% 45%,#0d8f58 0%,#00744a 45%,#00553a 100%)">
+  <div class="rpan" style="--sx:596;z-index:0;background:repeating-linear-gradient(118deg,transparent 0 140px,rgba(255,255,255,.025) 140px 280px)"></div>
+  <div class="lpan" style="--sx:596;background:#f4f4f4">
+    <img class="fill cover kb" src="a/r_fachada2.jpg" alt="Casa do Residencial Parque Norte" style="object-position:40% 72%">
+    <div class="fill" style="background:linear-gradient(180deg,rgba(244,244,244,.96) 0%,rgba(244,244,244,.82) 26%,rgba(244,244,244,0) 46%)"></div>
+  </div>
+  <div class="board">
+    <img class="ab rv pop d1" style="--x:76;--y:60;--w:42" src="a/icon_pn.png" alt="">
+    <h2 class="ab rv lf d2" style="--x:70;--y:125;--w:500;color:#161616;font-weight:700;font-size:calc(var(--u)*30);line-height:1.28;letter-spacing:-.01em">CONHEÇA NOSSO NOVO<br>EMPREENDIMENTO<br><b style="font-weight:800">EM SINOP</b></h2>
+    <svg class="ab" style="--x:625;--y:105;--w:491;--h:470" viewBox="20 25 690 660" aria-label="Estados de atuação da Menin"><polygon class="hx" points="61.69,221.70 54.85,233.56 41.15,233.56 34.31,221.70 41.15,209.85 54.85,209.85" fill="#e4e2ef" style="--d:1.05s"/><polygon class="hx" points="61.69,249.42 54.85,261.27 41.15,261.27 34.31,249.42 41.15,237.56 54.85,237.56" fill="#e4e2ef" style="--d:1.03s"/><polygon class="hx" points="61.69,277.13 54.85,288.98 41.15,288.98 34.31,277.13 41.15,265.27 54.85,265.27" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="85.69,207.85 78.85,219.70 65.15,219.70 58.31,207.85 65.15,195.99 78.85,195.99" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="85.69,235.56 78.85,247.42 65.15,247.42 58.31,235.56 65.15,223.70 78.85,223.70" fill="#e4e2ef" style="--d:1.00s"/><polygon class="hx" points="85.69,263.27 78.85,275.13 65.15,275.13 58.31,263.27 65.15,251.42 78.85,251.42" fill="#e4e2ef" style="--d:0.98s"/><polygon class="hx" points="109.69,110.85 102.85,122.71 89.15,122.71 82.31,110.85 89.15,98.99 102.85,98.99" fill="#e4e2ef" style="--d:1.08s"/><polygon class="hx" points="109.69,193.99 102.85,205.85 89.15,205.85 82.31,193.99 89.15,182.13 102.85,182.13" fill="#e4e2ef" style="--d:0.99s"/><polygon class="hx" points="109.69,221.70 102.85,233.56 89.15,233.56 82.31,221.70 89.15,209.85 102.85,209.85" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="109.69,249.42 102.85,261.27 89.15,261.27 82.31,249.42 89.15,237.56 102.85,237.56" fill="#e4e2ef" style="--d:0.95s"/><polygon class="hx" points="109.69,277.13 102.85,288.98 89.15,288.98 82.31,277.13 89.15,265.27 102.85,265.27" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="133.69,96.99 126.85,108.85 113.15,108.85 106.31,96.99 113.15,85.14 126.85,85.14" fill="#e4e2ef" style="--d:1.07s"/><polygon class="hx" points="133.69,124.71 126.85,136.56 113.15,136.56 106.31,124.71 113.15,112.85 126.85,112.85" fill="#e4e2ef" style="--d:1.03s"/><polygon class="hx" points="133.69,152.42 126.85,164.28 113.15,164.28 106.31,152.42 113.15,140.56 126.85,140.56" fill="#e4e2ef" style="--d:1.00s"/><polygon class="hx" points="133.69,180.13 126.85,191.99 113.15,191.99 106.31,180.13 113.15,168.28 126.85,168.28" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="133.69,207.85 126.85,219.70 113.15,219.70 106.31,207.85 113.15,195.99 126.85,195.99" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="133.69,235.56 126.85,247.42 113.15,247.42 106.31,235.56 113.15,223.70 126.85,223.70" fill="#e4e2ef" style="--d:0.92s"/><polygon class="hx" points="133.69,263.27 126.85,275.13 113.15,275.13 106.31,263.27 113.15,251.42 126.85,251.42" fill="#e4e2ef" style="--d:0.90s"/><polygon class="hx" points="133.69,290.98 126.85,302.84 113.15,302.84 106.31,290.98 113.15,279.13 126.85,279.13" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="157.69,110.85 150.85,122.71 137.15,122.71 130.31,110.85 137.15,98.99 150.85,98.99" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="157.69,138.56 150.85,150.42 137.15,150.42 130.31,138.56 137.15,126.71 150.85,126.71" fill="#e4e2ef" style="--d:0.98s"/><polygon class="hx" points="157.69,166.28 150.85,178.13 137.15,178.13 130.31,166.28 137.15,154.42 150.85,154.42" fill="#e4e2ef" style="--d:0.95s"/><polygon class="hx" points="157.69,193.99 150.85,205.85 137.15,205.85 130.31,193.99 137.15,182.13 150.85,182.13" fill="#e4e2ef" style="--d:0.92s"/><polygon class="hx" points="157.69,221.70 150.85,233.56 137.15,233.56 130.31,221.70 137.15,209.85 150.85,209.85" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="157.69,249.42 150.85,261.27 137.15,261.27 130.31,249.42 137.15,237.56 150.85,237.56" fill="#e4e2ef" style="--d:0.87s"/><polygon class="hx" points="157.69,277.13 150.85,288.98 137.15,288.98 130.31,277.13 137.15,265.27 150.85,265.27" fill="#e4e2ef" style="--d:0.85s"/><polygon class="hx" points="181.69,124.71 174.85,136.56 161.15,136.56 154.31,124.71 161.15,112.85 174.85,112.85" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="181.69,152.42 174.85,164.28 161.15,164.28 154.31,152.42 161.15,140.56 174.85,140.56" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="181.69,180.13 174.85,191.99 161.15,191.99 154.31,180.13 161.15,168.28 174.85,168.28" fill="#e4e2ef" style="--d:0.90s"/><polygon class="hx" points="181.69,207.85 174.85,219.70 161.15,219.70 154.31,207.85 161.15,195.99 174.85,195.99" fill="#e4e2ef" style="--d:0.87s"/><polygon class="hx" points="181.69,235.56 174.85,247.42 161.15,247.42 154.31,235.56 161.15,223.70 174.85,223.70" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="181.69,263.27 174.85,275.13 161.15,275.13 154.31,263.27 161.15,251.42 174.85,251.42" fill="#e4e2ef" style="--d:0.82s"/><polygon class="hx" points="205.69,110.85 198.85,122.71 185.15,122.71 178.31,110.85 185.15,98.99 198.85,98.99" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="205.69,138.56 198.85,150.42 185.15,150.42 178.31,138.56 185.15,126.71 198.85,126.71" fill="#e4e2ef" style="--d:0.93s"/><polygon class="hx" points="205.69,166.28 198.85,178.13 185.15,178.13 178.31,166.28 185.15,154.42 198.85,154.42" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="205.69,193.99 198.85,205.85 185.15,205.85 178.31,193.99 185.15,182.13 198.85,182.13" fill="#e4e2ef" style="--d:0.86s"/><polygon class="hx" points="205.69,221.70 198.85,233.56 185.15,233.56 178.31,221.70 185.15,209.85 198.85,209.85" fill="#e4e2ef" style="--d:0.82s"/><polygon class="hx" points="205.69,249.42 198.85,261.27 185.15,261.27 178.31,249.42 185.15,237.56 198.85,237.56" fill="#e4e2ef" style="--d:0.80s"/><polygon class="hx" points="205.69,277.13 198.85,288.98 185.15,288.98 178.31,277.13 185.15,265.27 198.85,265.27" fill="#e4e2ef" style="--d:0.77s"/><polygon class="hx" points="205.69,304.84 198.85,316.70 185.15,316.70 178.31,304.84 185.15,292.98 198.85,292.98" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="229.69,69.28 222.85,81.14 209.15,81.14 202.31,69.28 209.15,57.43 222.85,57.43" fill="#e4e2ef" style="--d:1.01s"/><polygon class="hx" points="229.69,96.99 222.85,108.85 209.15,108.85 202.31,96.99 209.15,85.14 222.85,85.14" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="229.69,124.71 222.85,136.56 209.15,136.56 202.31,124.71 209.15,112.85 222.85,112.85" fill="#e4e2ef" style="--d:0.93s"/><polygon class="hx" points="229.69,152.42 222.85,164.28 209.15,164.28 202.31,152.42 209.15,140.56 222.85,140.56" fill="#e4e2ef" style="--d:0.88s"/><polygon class="hx" points="229.69,180.13 222.85,191.99 209.15,191.99 202.31,180.13 209.15,168.28 222.85,168.28" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="229.69,207.85 222.85,219.70 209.15,219.70 202.31,207.85 209.15,195.99 222.85,195.99" fill="#e4e2ef" style="--d:0.81s"/><polygon class="hx" points="229.69,235.56 222.85,247.42 209.15,247.42 202.31,235.56 209.15,223.70 222.85,223.70" fill="#e4e2ef" style="--d:0.77s"/><polygon class="hx" points="229.69,263.27 222.85,275.13 209.15,275.13 202.31,263.27 209.15,251.42 222.85,251.42" fill="#e4e2ef" style="--d:0.75s"/><polygon class="hx" points="229.69,290.98 222.85,302.84 209.15,302.84 202.31,290.98 209.15,279.13 222.85,279.13" fill="#e4e2ef" style="--d:0.73s"/><polygon class="hx" points="229.69,318.70 222.85,330.55 209.15,330.55 202.31,318.70 209.15,306.84 222.85,306.84" fill="#e4e2ef" style="--d:0.71s"/><polygon class="hx" points="253.69,55.43 246.85,67.28 233.15,67.28 226.31,55.43 233.15,43.57 246.85,43.57" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="253.69,83.14 246.85,94.99 233.15,94.99 226.31,83.14 233.15,71.28 246.85,71.28" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="253.69,110.85 246.85,122.71 233.15,122.71 226.31,110.85 233.15,98.99 246.85,98.99" fill="#e4e2ef" style="--d:0.93s"/><polygon class="hx" points="253.69,138.56 246.85,150.42 233.15,150.42 226.31,138.56 233.15,126.71 246.85,126.71" fill="#e4e2ef" style="--d:0.88s"/><polygon class="hx" points="253.69,166.28 246.85,178.13 233.15,178.13 226.31,166.28 233.15,154.42 246.85,154.42" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="253.69,193.99 246.85,205.85 233.15,205.85 226.31,193.99 233.15,182.13 246.85,182.13" fill="#e4e2ef" style="--d:0.80s"/><polygon class="hx" points="253.69,221.70 246.85,233.56 233.15,233.56 226.31,221.70 233.15,209.85 246.85,209.85" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="253.69,249.42 246.85,261.27 233.15,261.27 226.31,249.42 233.15,237.56 246.85,237.56" fill="#e4e2ef" style="--d:0.73s"/><polygon class="hx" points="253.69,277.13 246.85,288.98 233.15,288.98 226.31,277.13 233.15,265.27 246.85,265.27" fill="#1b1c50" style="--d:0.35s"/><polygon class="hx" points="253.69,304.84 246.85,316.70 233.15,316.70 226.31,304.84 233.15,292.98 246.85,292.98" fill="#e4e2ef" style="--d:0.68s"/><polygon class="hx" points="253.69,332.55 246.85,344.41 233.15,344.41 226.31,332.55 233.15,320.70 246.85,320.70" fill="#e4e2ef" style="--d:0.67s"/><polygon class="hx" points="277.69,41.57 270.85,53.43 257.15,53.43 250.31,41.57 257.15,29.71 270.85,29.71" fill="#e4e2ef" style="--d:1.03s"/><polygon class="hx" points="277.69,69.28 270.85,81.14 257.15,81.14 250.31,69.28 257.15,57.43 270.85,57.43" fill="#e4e2ef" style="--d:0.99s"/><polygon class="hx" points="277.69,96.99 270.85,108.85 257.15,108.85 250.31,96.99 257.15,85.14 270.85,85.14" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="277.69,124.71 270.85,136.56 257.15,136.56 250.31,124.71 257.15,112.85 270.85,112.85" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="277.69,152.42 270.85,164.28 257.15,164.28 250.31,152.42 257.15,140.56 270.85,140.56" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="277.69,180.13 270.85,191.99 257.15,191.99 250.31,180.13 257.15,168.28 270.85,168.28" fill="#e4e2ef" style="--d:0.80s"/><polygon class="hx" points="277.69,207.85 270.85,219.70 257.15,219.70 250.31,207.85 257.15,195.99 270.85,195.99" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="277.69,235.56 270.85,247.42 257.15,247.42 250.31,235.56 257.15,223.70 270.85,223.70" fill="#e4e2ef" style="--d:0.71s"/><polygon class="hx" points="277.69,263.27 270.85,275.13 257.15,275.13 250.31,263.27 257.15,251.42 270.85,251.42" fill="#e4e2ef" style="--d:0.68s"/><polygon class="hx" points="277.69,290.98 270.85,302.84 257.15,302.84 250.31,290.98 257.15,279.13 270.85,279.13" fill="#1b1c50" style="--d:0.30s"/><polygon class="hx" points="277.69,318.70 270.85,330.55 257.15,330.55 250.31,318.70 257.15,306.84 270.85,306.84" fill="#1b1c50" style="--d:0.28s"/><polygon class="hx" points="277.69,346.41 270.85,358.27 257.15,358.27 250.31,346.41 257.15,334.55 270.85,334.55" fill="#1b1c50" style="--d:0.28s"/><polygon class="hx" points="277.69,374.12 270.85,385.98 257.15,385.98 250.31,374.12 257.15,362.27 270.85,362.27" fill="#1b1c50" style="--d:0.30s"/><polygon class="hx" points="301.69,110.85 294.85,122.71 281.15,122.71 274.31,110.85 281.15,98.99 294.85,98.99" fill="#e4e2ef" style="--d:0.90s"/><polygon class="hx" points="301.69,138.56 294.85,150.42 281.15,150.42 274.31,138.56 281.15,126.71 294.85,126.71" fill="#e4e2ef" style="--d:0.86s"/><polygon class="hx" points="301.69,166.28 294.85,178.13 281.15,178.13 274.31,166.28 281.15,154.42 294.85,154.42" fill="#e4e2ef" style="--d:0.81s"/><polygon class="hx" points="301.69,193.99 294.85,205.85 281.15,205.85 274.31,193.99 281.15,182.13 294.85,182.13" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="301.69,221.70 294.85,233.56 281.15,233.56 274.31,221.70 281.15,209.85 294.85,209.85" fill="#e4e2ef" style="--d:0.72s"/><polygon class="hx" points="301.69,249.42 294.85,261.27 281.15,261.27 274.31,249.42 281.15,237.56 294.85,237.56" fill="#e4e2ef" style="--d:0.67s"/><polygon class="hx" points="301.69,277.13 294.85,288.98 281.15,288.98 274.31,277.13 281.15,265.27 294.85,265.27" fill="#1b1c50" style="--d:0.28s"/><polygon class="hx" points="301.69,304.84 294.85,316.70 281.15,316.70 274.31,304.84 281.15,292.98 294.85,292.98" fill="#1b1c50" style="--d:0.25s"/><polygon class="hx" points="301.69,332.55 294.85,344.41 281.15,344.41 274.31,332.55 281.15,320.70 294.85,320.70" fill="#1b1c50" style="--d:0.24s"/><polygon class="hx" points="301.69,360.27 294.85,372.12 281.15,372.12 274.31,360.27 281.15,348.41 294.85,348.41" fill="#1b1c50" style="--d:0.25s"/><polygon class="hx" points="301.69,387.98 294.85,399.84 281.15,399.84 274.31,387.98 281.15,376.12 294.85,376.12" fill="#1b1c50" style="--d:0.28s"/><polygon class="hx" points="325.69,96.99 318.85,108.85 305.15,108.85 298.31,96.99 305.15,85.14 318.85,85.14" fill="#e4e2ef" style="--d:0.92s"/><polygon class="hx" points="325.69,124.71 318.85,136.56 305.15,136.56 298.31,124.71 305.15,112.85 318.85,112.85" fill="#e4e2ef" style="--d:0.87s"/><polygon class="hx" points="325.69,152.42 318.85,164.28 305.15,164.28 298.31,152.42 305.15,140.56 318.85,140.56" fill="#e4e2ef" style="--d:0.82s"/><polygon class="hx" points="325.69,180.13 318.85,191.99 305.15,191.99 298.31,180.13 305.15,168.28 318.85,168.28" fill="#e4e2ef" style="--d:0.77s"/><polygon class="hx" points="325.69,207.85 318.85,219.70 305.15,219.70 298.31,207.85 305.15,195.99 318.85,195.99" fill="#e4e2ef" style="--d:0.73s"/><polygon class="hx" points="325.69,235.56 318.85,247.42 305.15,247.42 298.31,235.56 305.15,223.70 318.85,223.70" fill="#e4e2ef" style="--d:0.68s"/><polygon class="hx" points="325.69,263.27 318.85,275.13 305.15,275.13 298.31,263.27 305.15,251.42 318.85,251.42" fill="#e4e2ef" style="--d:0.63s"/><polygon class="hx" points="325.69,290.98 318.85,302.84 305.15,302.84 298.31,290.98 305.15,279.13 318.85,279.13" fill="#1b1c50" style="--d:0.24s"/><polygon class="hx" points="325.69,318.70 318.85,330.55 305.15,330.55 298.31,318.70 305.15,306.84 318.85,306.84" fill="#1b1c50" style="--d:0.20s"/><polygon class="hx" points="325.69,346.41 318.85,358.27 305.15,358.27 298.31,346.41 305.15,334.55 318.85,334.55" fill="#1b1c50" style="--d:0.20s"/><polygon class="hx" points="325.69,374.12 318.85,385.98 305.15,385.98 298.31,374.12 305.15,362.27 318.85,362.27" fill="#1b1c50" style="--d:0.23s"/><polygon class="hx" points="325.69,401.84 318.85,413.69 305.15,413.69 298.31,401.84 305.15,389.98 318.85,389.98" fill="#1b1c50" style="--d:0.28s"/><polygon class="hx" points="325.69,429.55 318.85,441.41 305.15,441.41 298.31,429.55 305.15,417.69 318.85,417.69" fill="#1b1c50" style="--d:0.33s"/><polygon class="hx" points="325.69,457.26 318.85,469.12 305.15,469.12 298.31,457.26 305.15,445.41 318.85,445.41" fill="#1b1c50" style="--d:0.37s"/><polygon class="hx" points="325.69,484.97 318.85,496.83 305.15,496.83 298.31,484.97 305.15,473.12 318.85,473.12" fill="#1b1c50" style="--d:0.42s"/><polygon class="hx" points="349.69,83.14 342.85,94.99 329.15,94.99 322.31,83.14 329.15,71.28 342.85,71.28" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="349.69,110.85 342.85,122.71 329.15,122.71 322.31,110.85 329.15,98.99 342.85,98.99" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="349.69,138.56 342.85,150.42 329.15,150.42 322.31,138.56 329.15,126.71 342.85,126.71" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="349.69,166.28 342.85,178.13 329.15,178.13 322.31,166.28 329.15,154.42 342.85,154.42" fill="#e4e2ef" style="--d:0.80s"/><polygon class="hx" points="349.69,193.99 342.85,205.85 329.15,205.85 322.31,193.99 329.15,182.13 342.85,182.13" fill="#e4e2ef" style="--d:0.75s"/><polygon class="hx" points="349.69,221.70 342.85,233.56 329.15,233.56 322.31,221.70 329.15,209.85 342.85,209.85" fill="#e4e2ef" style="--d:0.70s"/><polygon class="hx" points="349.69,249.42 342.85,261.27 329.15,261.27 322.31,249.42 329.15,237.56 342.85,237.56" fill="#e4e2ef" style="--d:0.65s"/><polygon class="hx" points="349.69,277.13 342.85,288.98 329.15,288.98 322.31,277.13 329.15,265.27 342.85,265.27" fill="#e4e2ef" style="--d:0.60s"/><polygon class="hx" points="349.69,304.84 342.85,316.70 329.15,316.70 322.31,304.84 329.15,292.98 342.85,292.98" fill="#1b1c50" style="--d:0.20s"/><polygon class="hx hs" points="349.69,332.55 342.85,344.41 329.15,344.41 322.31,332.55 329.15,320.70 342.85,320.70" fill="#f5b32f" style="--d:0.15s"/><polygon class="hx" points="349.69,360.27 342.85,372.12 329.15,372.12 322.31,360.27 329.15,348.41 342.85,348.41" fill="#1b1c50" style="--d:0.20s"/><polygon class="hx hc" points="349.69,387.98 342.85,399.84 329.15,399.84 322.31,387.98 329.15,376.12 342.85,376.12" fill="#4a4a92" style="--d:0.25s"/><polygon class="hx" points="349.69,415.69 342.85,427.55 329.15,427.55 322.31,415.69 329.15,403.84 342.85,403.84" fill="#1b1c50" style="--d:0.30s"/><polygon class="hx" points="349.69,443.41 342.85,455.26 329.15,455.26 322.31,443.41 329.15,431.55 342.85,431.55" fill="#1b1c50" style="--d:0.35s"/><polygon class="hx" points="349.69,471.12 342.85,482.97 329.15,482.97 322.31,471.12 329.15,459.26 342.85,459.26" fill="#1b1c50" style="--d:0.40s"/><polygon class="hx" points="349.69,498.83 342.85,510.69 329.15,510.69 322.31,498.83 329.15,486.97 342.85,486.97" fill="#1b1c50" style="--d:0.44s"/><polygon class="hx" points="349.69,609.68 342.85,621.54 329.15,621.54 322.31,609.68 329.15,597.83 342.85,597.83" fill="#e4e2ef" style="--d:0.99s"/><polygon class="hx" points="349.69,637.39 342.85,649.25 329.15,649.25 322.31,637.39 329.15,625.54 342.85,625.54" fill="#e4e2ef" style="--d:1.04s"/><polygon class="hx" points="373.69,96.99 366.85,108.85 353.15,108.85 346.31,96.99 353.15,85.14 366.85,85.14" fill="#e4e2ef" style="--d:0.92s"/><polygon class="hx" points="373.69,124.71 366.85,136.56 353.15,136.56 346.31,124.71 353.15,112.85 366.85,112.85" fill="#e4e2ef" style="--d:0.87s"/><polygon class="hx" points="373.69,152.42 366.85,164.28 353.15,164.28 346.31,152.42 353.15,140.56 366.85,140.56" fill="#e4e2ef" style="--d:0.82s"/><polygon class="hx" points="373.69,180.13 366.85,191.99 353.15,191.99 346.31,180.13 353.15,168.28 366.85,168.28" fill="#e4e2ef" style="--d:0.77s"/><polygon class="hx" points="373.69,207.85 366.85,219.70 353.15,219.70 346.31,207.85 353.15,195.99 366.85,195.99" fill="#e4e2ef" style="--d:0.73s"/><polygon class="hx" points="373.69,235.56 366.85,247.42 353.15,247.42 346.31,235.56 353.15,223.70 366.85,223.70" fill="#e4e2ef" style="--d:0.68s"/><polygon class="hx" points="373.69,263.27 366.85,275.13 353.15,275.13 346.31,263.27 353.15,251.42 366.85,251.42" fill="#e4e2ef" style="--d:0.63s"/><polygon class="hx" points="373.69,290.98 366.85,302.84 353.15,302.84 346.31,290.98 353.15,279.13 366.85,279.13" fill="#1b1c50" style="--d:0.24s"/><polygon class="hx" points="373.69,318.70 366.85,330.55 353.15,330.55 346.31,318.70 353.15,306.84 366.85,306.84" fill="#1b1c50" style="--d:0.20s"/><polygon class="hx" points="373.69,346.41 366.85,358.27 353.15,358.27 346.31,346.41 353.15,334.55 366.85,334.55" fill="#1b1c50" style="--d:0.20s"/><polygon class="hx" points="373.69,374.12 366.85,385.98 353.15,385.98 346.31,374.12 353.15,362.27 366.85,362.27" fill="#1b1c50" style="--d:0.23s"/><polygon class="hx" points="373.69,401.84 366.85,413.69 353.15,413.69 346.31,401.84 353.15,389.98 366.85,389.98" fill="#1b1c50" style="--d:0.28s"/><polygon class="hx" points="373.69,429.55 366.85,441.41 353.15,441.41 346.31,429.55 353.15,417.69 366.85,417.69" fill="#1b1c50" style="--d:0.33s"/><polygon class="hx" points="373.69,457.26 366.85,469.12 353.15,469.12 346.31,457.26 353.15,445.41 366.85,445.41" fill="#1b1c50" style="--d:0.37s"/><polygon class="hx hc" points="373.69,484.97 366.85,496.83 353.15,496.83 346.31,484.97 353.15,473.12 366.85,473.12" fill="#4a4a92" style="--d:0.42s"/><polygon class="hx hc" points="373.69,512.69 366.85,524.54 353.15,524.54 346.31,512.69 353.15,500.83 366.85,500.83" fill="#4a4a92" style="--d:0.47s"/><polygon class="hx" points="373.69,595.83 366.85,607.68 353.15,607.68 346.31,595.83 353.15,583.97 366.85,583.97" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="373.69,623.54 366.85,635.39 353.15,635.39 346.31,623.54 353.15,611.68 366.85,611.68" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="373.69,651.25 366.85,663.11 353.15,663.11 346.31,651.25 353.15,639.39 366.85,639.39" fill="#e4e2ef" style="--d:1.07s"/><polygon class="hx" points="397.69,83.14 390.85,94.99 377.15,94.99 370.31,83.14 377.15,71.28 390.85,71.28" fill="#e4e2ef" style="--d:0.95s"/><polygon class="hx" points="397.69,110.85 390.85,122.71 377.15,122.71 370.31,110.85 377.15,98.99 390.85,98.99" fill="#e4e2ef" style="--d:0.90s"/><polygon class="hx" points="397.69,138.56 390.85,150.42 377.15,150.42 370.31,138.56 377.15,126.71 390.85,126.71" fill="#e4e2ef" style="--d:0.86s"/><polygon class="hx" points="397.69,166.28 390.85,178.13 377.15,178.13 370.31,166.28 377.15,154.42 390.85,154.42" fill="#e4e2ef" style="--d:0.81s"/><polygon class="hx" points="397.69,193.99 390.85,205.85 377.15,205.85 370.31,193.99 377.15,182.13 390.85,182.13" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="397.69,221.70 390.85,233.56 377.15,233.56 370.31,221.70 377.15,209.85 390.85,209.85" fill="#e4e2ef" style="--d:0.72s"/><polygon class="hx" points="397.69,249.42 390.85,261.27 377.15,261.27 370.31,249.42 377.15,237.56 390.85,237.56" fill="#e4e2ef" style="--d:0.67s"/><polygon class="hx" points="397.69,277.13 390.85,288.98 377.15,288.98 370.31,277.13 377.15,265.27 390.85,265.27" fill="#e4e2ef" style="--d:0.63s"/><polygon class="hx" points="397.69,304.84 390.85,316.70 377.15,316.70 370.31,304.84 377.15,292.98 390.85,292.98" fill="#1b1c50" style="--d:0.25s"/><polygon class="hx" points="397.69,332.55 390.85,344.41 377.15,344.41 370.31,332.55 377.15,320.70 390.85,320.70" fill="#1b1c50" style="--d:0.24s"/><polygon class="hx" points="397.69,360.27 390.85,372.12 377.15,372.12 370.31,360.27 377.15,348.41 390.85,348.41" fill="#1b1c50" style="--d:0.25s"/><polygon class="hx" points="397.69,387.98 390.85,399.84 377.15,399.84 370.31,387.98 377.15,376.12 390.85,376.12" fill="#1b1c50" style="--d:0.28s"/><polygon class="hx" points="397.69,415.69 390.85,427.55 377.15,427.55 370.31,415.69 377.15,403.84 390.85,403.84" fill="#e4e2ef" style="--d:0.67s"/><polygon class="hx" points="397.69,443.41 390.85,455.26 377.15,455.26 370.31,443.41 377.15,431.55 390.85,431.55" fill="#1b1c50" style="--d:0.36s"/><polygon class="hx" points="397.69,471.12 390.85,482.97 377.15,482.97 370.31,471.12 377.15,459.26 390.85,459.26" fill="#1b1c50" style="--d:0.41s"/><polygon class="hx" points="397.69,498.83 390.85,510.69 377.15,510.69 370.31,498.83 377.15,486.97 390.85,486.97" fill="#1b1c50" style="--d:0.46s"/><polygon class="hx" points="397.69,526.54 390.85,538.40 377.15,538.40 370.31,526.54 377.15,514.69 390.85,514.69" fill="#1b1c50" style="--d:0.50s"/><polygon class="hx" points="397.69,554.26 390.85,566.11 377.15,566.11 370.31,554.26 377.15,542.40 390.85,542.40" fill="#1b1c50" style="--d:0.55s"/><polygon class="hx" points="397.69,581.97 390.85,593.83 377.15,593.83 370.31,581.97 377.15,570.11 390.85,570.11" fill="#e4e2ef" style="--d:0.95s"/><polygon class="hx" points="397.69,609.68 390.85,621.54 377.15,621.54 370.31,609.68 377.15,597.83 390.85,597.83" fill="#e4e2ef" style="--d:1.00s"/><polygon class="hx" points="397.69,637.39 390.85,649.25 377.15,649.25 370.31,637.39 377.15,625.54 390.85,625.54" fill="#e4e2ef" style="--d:1.05s"/><polygon class="hx" points="397.69,665.11 390.85,676.96 377.15,676.96 370.31,665.11 377.15,653.25 390.85,653.25" fill="#e4e2ef" style="--d:1.10s"/><polygon class="hx" points="421.69,41.57 414.85,53.43 401.15,53.43 394.31,41.57 401.15,29.71 414.85,29.71" fill="#e4e2ef" style="--d:1.03s"/><polygon class="hx" points="421.69,69.28 414.85,81.14 401.15,81.14 394.31,69.28 401.15,57.43 414.85,57.43" fill="#e4e2ef" style="--d:0.99s"/><polygon class="hx" points="421.69,96.99 414.85,108.85 401.15,108.85 394.31,96.99 401.15,85.14 414.85,85.14" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="421.69,124.71 414.85,136.56 401.15,136.56 394.31,124.71 401.15,112.85 414.85,112.85" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="421.69,152.42 414.85,164.28 401.15,164.28 394.31,152.42 401.15,140.56 414.85,140.56" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="421.69,180.13 414.85,191.99 401.15,191.99 394.31,180.13 401.15,168.28 414.85,168.28" fill="#e4e2ef" style="--d:0.80s"/><polygon class="hx" points="421.69,207.85 414.85,219.70 401.15,219.70 394.31,207.85 401.15,195.99 414.85,195.99" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="421.69,235.56 414.85,247.42 401.15,247.42 394.31,235.56 401.15,223.70 414.85,223.70" fill="#e4e2ef" style="--d:0.71s"/><polygon class="hx" points="421.69,263.27 414.85,275.13 401.15,275.13 394.31,263.27 401.15,251.42 414.85,251.42" fill="#e4e2ef" style="--d:0.68s"/><polygon class="hx" points="421.69,290.98 414.85,302.84 401.15,302.84 394.31,290.98 401.15,279.13 414.85,279.13" fill="#1b1c50" style="--d:0.30s"/><polygon class="hx" points="421.69,318.70 414.85,330.55 401.15,330.55 394.31,318.70 401.15,306.84 414.85,306.84" fill="#1b1c50" style="--d:0.28s"/><polygon class="hx" points="421.69,346.41 414.85,358.27 401.15,358.27 394.31,346.41 401.15,334.55 414.85,334.55" fill="#1b1c50" style="--d:0.28s"/><polygon class="hx" points="421.69,374.12 414.85,385.98 401.15,385.98 394.31,374.12 401.15,362.27 414.85,362.27" fill="#1b1c50" style="--d:0.30s"/><polygon class="hx" points="421.69,401.84 414.85,413.69 401.15,413.69 394.31,401.84 401.15,389.98 414.85,389.98" fill="#e4e2ef" style="--d:0.68s"/><polygon class="hx" points="421.69,429.55 414.85,441.41 401.15,441.41 394.31,429.55 401.15,417.69 414.85,417.69" fill="#e4e2ef" style="--d:0.71s"/><polygon class="hx" points="421.69,457.26 414.85,469.12 401.15,469.12 394.31,457.26 401.15,445.41 414.85,445.41" fill="#1b1c50" style="--d:0.40s"/><polygon class="hx" points="421.69,484.97 414.85,496.83 401.15,496.83 394.31,484.97 401.15,473.12 414.85,473.12" fill="#1b1c50" style="--d:0.45s"/><polygon class="hx hc" points="421.69,512.69 414.85,524.54 401.15,524.54 394.31,512.69 401.15,500.83 414.85,500.83" fill="#4a4a92" style="--d:0.49s"/><polygon class="hx" points="421.69,540.40 414.85,552.26 401.15,552.26 394.31,540.40 401.15,528.54 414.85,528.54" fill="#1b1c50" style="--d:0.54s"/><polygon class="hx" points="421.69,568.11 414.85,579.97 401.15,579.97 394.31,568.11 401.15,556.26 414.85,556.26" fill="#1b1c50" style="--d:0.59s"/><polygon class="hx" points="421.69,595.83 414.85,607.68 401.15,607.68 394.31,595.83 401.15,583.97 414.85,583.97" fill="#e4e2ef" style="--d:0.98s"/><polygon class="hx" points="421.69,623.54 414.85,635.39 401.15,635.39 394.31,623.54 401.15,611.68 414.85,611.68" fill="#e4e2ef" style="--d:1.03s"/><polygon class="hx" points="445.69,110.85 438.85,122.71 425.15,122.71 418.31,110.85 425.15,98.99 438.85,98.99" fill="#e4e2ef" style="--d:0.93s"/><polygon class="hx" points="445.69,138.56 438.85,150.42 425.15,150.42 418.31,138.56 425.15,126.71 438.85,126.71" fill="#e4e2ef" style="--d:0.88s"/><polygon class="hx" points="445.69,166.28 438.85,178.13 425.15,178.13 418.31,166.28 425.15,154.42 438.85,154.42" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="445.69,193.99 438.85,205.85 425.15,205.85 418.31,193.99 425.15,182.13 438.85,182.13" fill="#e4e2ef" style="--d:0.80s"/><polygon class="hx" points="445.69,221.70 438.85,233.56 425.15,233.56 418.31,221.70 425.15,209.85 438.85,209.85" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="445.69,249.42 438.85,261.27 425.15,261.27 418.31,249.42 425.15,237.56 438.85,237.56" fill="#e4e2ef" style="--d:0.73s"/><polygon class="hx" points="445.69,277.13 438.85,288.98 425.15,288.98 418.31,277.13 425.15,265.27 438.85,265.27" fill="#e4e2ef" style="--d:0.70s"/><polygon class="hx" points="445.69,304.84 438.85,316.70 425.15,316.70 418.31,304.84 425.15,292.98 438.85,292.98" fill="#e4e2ef" style="--d:0.68s"/><polygon class="hx" points="445.69,332.55 438.85,344.41 425.15,344.41 418.31,332.55 425.15,320.70 438.85,320.70" fill="#e4e2ef" style="--d:0.67s"/><polygon class="hx" points="445.69,360.27 438.85,372.12 425.15,372.12 418.31,360.27 425.15,348.41 438.85,348.41" fill="#e4e2ef" style="--d:0.68s"/><polygon class="hx" points="445.69,387.98 438.85,399.84 425.15,399.84 418.31,387.98 425.15,376.12 438.85,376.12" fill="#e4e2ef" style="--d:0.70s"/><polygon class="hx" points="445.69,415.69 438.85,427.55 425.15,427.55 418.31,415.69 425.15,403.84 438.85,403.84" fill="#e4e2ef" style="--d:0.72s"/><polygon class="hx" points="445.69,443.41 438.85,455.26 425.15,455.26 418.31,443.41 425.15,431.55 438.85,431.55" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx hc" points="445.69,471.12 438.85,482.97 425.15,482.97 418.31,471.12 425.15,459.26 438.85,459.26" fill="#4a4a92" style="--d:0.45s"/><polygon class="hx hc" points="445.69,498.83 438.85,510.69 425.15,510.69 418.31,498.83 425.15,486.97 438.85,486.97" fill="#4a4a92" style="--d:0.49s"/><polygon class="hx hc" points="445.69,526.54 438.85,538.40 425.15,538.40 418.31,526.54 425.15,514.69 438.85,514.69" fill="#4a4a92" style="--d:0.53s"/><polygon class="hx" points="445.69,554.26 438.85,566.11 425.15,566.11 418.31,554.26 425.15,542.40 438.85,542.40" fill="#1b1c50" style="--d:0.58s"/><polygon class="hx" points="445.69,581.97 438.85,593.83 425.15,593.83 418.31,581.97 425.15,570.11 438.85,570.11" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="445.69,609.68 438.85,621.54 425.15,621.54 418.31,609.68 425.15,597.83 438.85,597.83" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="469.69,124.71 462.85,136.56 449.15,136.56 442.31,124.71 449.15,112.85 462.85,112.85" fill="#e4e2ef" style="--d:0.93s"/><polygon class="hx" points="469.69,152.42 462.85,164.28 449.15,164.28 442.31,152.42 449.15,140.56 462.85,140.56" fill="#e4e2ef" style="--d:0.88s"/><polygon class="hx" points="469.69,180.13 462.85,191.99 449.15,191.99 442.31,180.13 449.15,168.28 462.85,168.28" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="469.69,207.85 462.85,219.70 449.15,219.70 442.31,207.85 449.15,195.99 462.85,195.99" fill="#e4e2ef" style="--d:0.81s"/><polygon class="hx" points="469.69,235.56 462.85,247.42 449.15,247.42 442.31,235.56 449.15,223.70 462.85,223.70" fill="#e4e2ef" style="--d:0.77s"/><polygon class="hx" points="469.69,263.27 462.85,275.13 449.15,275.13 442.31,263.27 449.15,251.42 462.85,251.42" fill="#e4e2ef" style="--d:0.75s"/><polygon class="hx" points="469.69,290.98 462.85,302.84 449.15,302.84 442.31,290.98 449.15,279.13 462.85,279.13" fill="#e4e2ef" style="--d:0.73s"/><polygon class="hx" points="469.69,318.70 462.85,330.55 449.15,330.55 442.31,318.70 449.15,306.84 462.85,306.84" fill="#e4e2ef" style="--d:0.71s"/><polygon class="hx" points="469.69,346.41 462.85,358.27 449.15,358.27 442.31,346.41 449.15,334.55 462.85,334.55" fill="#e4e2ef" style="--d:0.71s"/><polygon class="hx" points="469.69,374.12 462.85,385.98 449.15,385.98 442.31,374.12 449.15,362.27 462.85,362.27" fill="#e4e2ef" style="--d:0.73s"/><polygon class="hx" points="469.69,401.84 462.85,413.69 449.15,413.69 442.31,401.84 449.15,389.98 462.85,389.98" fill="#e4e2ef" style="--d:0.75s"/><polygon class="hx" points="469.69,429.55 462.85,441.41 449.15,441.41 442.31,429.55 449.15,417.69 462.85,417.69" fill="#e4e2ef" style="--d:0.77s"/><polygon class="hx" points="469.69,457.26 462.85,469.12 449.15,469.12 442.31,457.26 449.15,445.41 462.85,445.41" fill="#e4e2ef" style="--d:0.81s"/><polygon class="hx hc" points="469.69,484.97 462.85,496.83 449.15,496.83 442.31,484.97 449.15,473.12 462.85,473.12" fill="#4a4a92" style="--d:0.49s"/><polygon class="hx hc" points="469.69,512.69 462.85,524.54 449.15,524.54 442.31,512.69 449.15,500.83 462.85,500.83" fill="#4a4a92" style="--d:0.53s"/><polygon class="hx" points="469.69,540.40 462.85,552.26 449.15,552.26 442.31,540.40 449.15,528.54 462.85,528.54" fill="#1b1c50" style="--d:0.58s"/><polygon class="hx" points="469.69,568.11 462.85,579.97 449.15,579.97 442.31,568.11 449.15,556.26 462.85,556.26" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="469.69,595.83 462.85,607.68 449.15,607.68 442.31,595.83 449.15,583.97 462.85,583.97" fill="#e4e2ef" style="--d:1.01s"/><polygon class="hx" points="493.69,138.56 486.85,150.42 473.15,150.42 466.31,138.56 473.15,126.71 486.85,126.71" fill="#e4e2ef" style="--d:0.93s"/><polygon class="hx" points="493.69,166.28 486.85,178.13 473.15,178.13 466.31,166.28 473.15,154.42 486.85,154.42" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="493.69,193.99 486.85,205.85 473.15,205.85 466.31,193.99 473.15,182.13 486.85,182.13" fill="#e4e2ef" style="--d:0.86s"/><polygon class="hx" points="493.69,221.70 486.85,233.56 473.15,233.56 466.31,221.70 473.15,209.85 486.85,209.85" fill="#e4e2ef" style="--d:0.82s"/><polygon class="hx" points="493.69,249.42 486.85,261.27 473.15,261.27 466.31,249.42 473.15,237.56 486.85,237.56" fill="#e4e2ef" style="--d:0.80s"/><polygon class="hx" points="493.69,277.13 486.85,288.98 473.15,288.98 466.31,277.13 473.15,265.27 486.85,265.27" fill="#e4e2ef" style="--d:0.77s"/><polygon class="hx" points="493.69,304.84 486.85,316.70 473.15,316.70 466.31,304.84 473.15,292.98 486.85,292.98" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="493.69,332.55 486.85,344.41 473.15,344.41 466.31,332.55 473.15,320.70 486.85,320.70" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="493.69,360.27 486.85,372.12 473.15,372.12 466.31,360.27 473.15,348.41 486.85,348.41" fill="#e4e2ef" style="--d:0.76s"/><polygon class="hx" points="493.69,387.98 486.85,399.84 473.15,399.84 466.31,387.98 473.15,376.12 486.85,376.12" fill="#e4e2ef" style="--d:0.77s"/><polygon class="hx" points="493.69,415.69 486.85,427.55 473.15,427.55 466.31,415.69 473.15,403.84 486.85,403.84" fill="#e4e2ef" style="--d:0.79s"/><polygon class="hx" points="493.69,443.41 486.85,455.26 473.15,455.26 466.31,443.41 473.15,431.55 486.85,431.55" fill="#e4e2ef" style="--d:0.82s"/><polygon class="hx hc" points="493.69,471.12 486.85,482.97 473.15,482.97 466.31,471.12 473.15,459.26 486.85,459.26" fill="#4a4a92" style="--d:0.50s"/><polygon class="hx" points="493.69,498.83 486.85,510.69 473.15,510.69 466.31,498.83 473.15,486.97 486.85,486.97" fill="#1b1c50" style="--d:0.54s"/><polygon class="hx" points="493.69,526.54 486.85,538.40 473.15,538.40 466.31,526.54 473.15,514.69 486.85,514.69" fill="#1b1c50" style="--d:0.58s"/><polygon class="hx" points="517.69,152.42 510.85,164.28 497.15,164.28 490.31,152.42 497.15,140.56 510.85,140.56" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="517.69,180.13 510.85,191.99 497.15,191.99 490.31,180.13 497.15,168.28 510.85,168.28" fill="#e4e2ef" style="--d:0.90s"/><polygon class="hx" points="517.69,207.85 510.85,219.70 497.15,219.70 490.31,207.85 497.15,195.99 510.85,195.99" fill="#e4e2ef" style="--d:0.87s"/><polygon class="hx" points="517.69,235.56 510.85,247.42 497.15,247.42 490.31,235.56 497.15,223.70 510.85,223.70" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="517.69,263.27 510.85,275.13 497.15,275.13 490.31,263.27 497.15,251.42 510.85,251.42" fill="#e4e2ef" style="--d:0.82s"/><polygon class="hx" points="517.69,290.98 510.85,302.84 497.15,302.84 490.31,290.98 497.15,279.13 510.85,279.13" fill="#e4e2ef" style="--d:0.81s"/><polygon class="hx" points="517.69,318.70 510.85,330.55 497.15,330.55 490.31,318.70 497.15,306.84 510.85,306.84" fill="#e4e2ef" style="--d:0.80s"/><polygon class="hx" points="517.69,346.41 510.85,358.27 497.15,358.27 490.31,346.41 497.15,334.55 510.85,334.55" fill="#e4e2ef" style="--d:0.80s"/><polygon class="hx" points="517.69,374.12 510.85,385.98 497.15,385.98 490.31,374.12 497.15,362.27 510.85,362.27" fill="#e4e2ef" style="--d:0.81s"/><polygon class="hx" points="517.69,401.84 510.85,413.69 497.15,413.69 490.31,401.84 497.15,389.98 510.85,389.98" fill="#e4e2ef" style="--d:0.82s"/><polygon class="hx" points="517.69,429.55 510.85,441.41 497.15,441.41 490.31,429.55 497.15,417.69 510.85,417.69" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="517.69,457.26 510.85,469.12 497.15,469.12 490.31,457.26 497.15,445.41 510.85,445.41" fill="#e4e2ef" style="--d:0.87s"/><polygon class="hx" points="517.69,484.97 510.85,496.83 497.15,496.83 490.31,484.97 497.15,473.12 510.85,473.12" fill="#e4e2ef" style="--d:0.90s"/><polygon class="hx hc" points="517.69,512.69 510.85,524.54 497.15,524.54 490.31,512.69 497.15,500.83 510.85,500.83" fill="#4a4a92" style="--d:0.59s"/><polygon class="hx" points="541.69,193.99 534.85,205.85 521.15,205.85 514.31,193.99 521.15,182.13 534.85,182.13" fill="#e4e2ef" style="--d:0.92s"/><polygon class="hx" points="541.69,221.70 534.85,233.56 521.15,233.56 514.31,221.70 521.15,209.85 534.85,209.85" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="541.69,249.42 534.85,261.27 521.15,261.27 514.31,249.42 521.15,237.56 534.85,237.56" fill="#e4e2ef" style="--d:0.87s"/><polygon class="hx" points="541.69,277.13 534.85,288.98 521.15,288.98 514.31,277.13 521.15,265.27 534.85,265.27" fill="#e4e2ef" style="--d:0.85s"/><polygon class="hx" points="541.69,304.84 534.85,316.70 521.15,316.70 514.31,304.84 521.15,292.98 534.85,292.98" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="541.69,332.55 534.85,344.41 521.15,344.41 514.31,332.55 521.15,320.70 534.85,320.70" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="541.69,360.27 534.85,372.12 521.15,372.12 514.31,360.27 521.15,348.41 534.85,348.41" fill="#e4e2ef" style="--d:0.84s"/><polygon class="hx" points="541.69,387.98 534.85,399.84 521.15,399.84 514.31,387.98 521.15,376.12 534.85,376.12" fill="#e4e2ef" style="--d:0.85s"/><polygon class="hx" points="541.69,415.69 534.85,427.55 521.15,427.55 514.31,415.69 521.15,403.84 534.85,403.84" fill="#e4e2ef" style="--d:0.87s"/><polygon class="hx" points="541.69,443.41 534.85,455.26 521.15,455.26 514.31,443.41 521.15,431.55 534.85,431.55" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="541.69,471.12 534.85,482.97 521.15,482.97 514.31,471.12 521.15,459.26 534.85,459.26" fill="#e4e2ef" style="--d:0.92s"/><polygon class="hx" points="541.69,498.83 534.85,510.69 521.15,510.69 514.31,498.83 521.15,486.97 534.85,486.97" fill="#e4e2ef" style="--d:0.95s"/><polygon class="hx" points="565.69,180.13 558.85,191.99 545.15,191.99 538.31,180.13 545.15,168.28 558.85,168.28" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="565.69,207.85 558.85,219.70 545.15,219.70 538.31,207.85 545.15,195.99 558.85,195.99" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="565.69,235.56 558.85,247.42 545.15,247.42 538.31,235.56 545.15,223.70 558.85,223.70" fill="#e4e2ef" style="--d:0.92s"/><polygon class="hx" points="565.69,263.27 558.85,275.13 545.15,275.13 538.31,263.27 545.15,251.42 558.85,251.42" fill="#e4e2ef" style="--d:0.90s"/><polygon class="hx" points="565.69,290.98 558.85,302.84 545.15,302.84 538.31,290.98 545.15,279.13 558.85,279.13" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="565.69,318.70 558.85,330.55 545.15,330.55 538.31,318.70 545.15,306.84 558.85,306.84" fill="#e4e2ef" style="--d:0.88s"/><polygon class="hx" points="565.69,346.41 558.85,358.27 545.15,358.27 538.31,346.41 545.15,334.55 558.85,334.55" fill="#e4e2ef" style="--d:0.88s"/><polygon class="hx" points="565.69,374.12 558.85,385.98 545.15,385.98 538.31,374.12 545.15,362.27 558.85,362.27" fill="#e4e2ef" style="--d:0.89s"/><polygon class="hx" points="565.69,401.84 558.85,413.69 545.15,413.69 538.31,401.84 545.15,389.98 558.85,389.98" fill="#e4e2ef" style="--d:0.90s"/><polygon class="hx" points="565.69,429.55 558.85,441.41 545.15,441.41 538.31,429.55 545.15,417.69 558.85,417.69" fill="#e4e2ef" style="--d:0.92s"/><polygon class="hx" points="565.69,457.26 558.85,469.12 545.15,469.12 538.31,457.26 545.15,445.41 558.85,445.41" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="565.69,484.97 558.85,496.83 545.15,496.83 538.31,484.97 545.15,473.12 558.85,473.12" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="589.69,166.28 582.85,178.13 569.15,178.13 562.31,166.28 569.15,154.42 582.85,154.42" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="589.69,193.99 582.85,205.85 569.15,205.85 562.31,193.99 569.15,182.13 582.85,182.13" fill="#e4e2ef" style="--d:0.99s"/><polygon class="hx" points="589.69,221.70 582.85,233.56 569.15,233.56 562.31,221.70 569.15,209.85 582.85,209.85" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="589.69,249.42 582.85,261.27 569.15,261.27 562.31,249.42 569.15,237.56 582.85,237.56" fill="#e4e2ef" style="--d:0.95s"/><polygon class="hx" points="589.69,277.13 582.85,288.98 569.15,288.98 562.31,277.13 569.15,265.27 582.85,265.27" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="589.69,304.84 582.85,316.70 569.15,316.70 562.31,304.84 569.15,292.98 582.85,292.98" fill="#e4e2ef" style="--d:0.93s"/><polygon class="hx" points="589.69,332.55 582.85,344.41 569.15,344.41 562.31,332.55 569.15,320.70 582.85,320.70" fill="#e4e2ef" style="--d:0.93s"/><polygon class="hx" points="589.69,360.27 582.85,372.12 569.15,372.12 562.31,360.27 569.15,348.41 582.85,348.41" fill="#e4e2ef" style="--d:0.93s"/><polygon class="hx" points="589.69,387.98 582.85,399.84 569.15,399.84 562.31,387.98 569.15,376.12 582.85,376.12" fill="#e4e2ef" style="--d:0.94s"/><polygon class="hx" points="589.69,415.69 582.85,427.55 569.15,427.55 562.31,415.69 569.15,403.84 582.85,403.84" fill="#e4e2ef" style="--d:0.95s"/><polygon class="hx" points="589.69,443.41 582.85,455.26 569.15,455.26 562.31,443.41 569.15,431.55 582.85,431.55" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="589.69,471.12 582.85,482.97 569.15,482.97 562.31,471.12 569.15,459.26 582.85,459.26" fill="#e4e2ef" style="--d:0.99s"/><polygon class="hx" points="589.69,498.83 582.85,510.69 569.15,510.69 562.31,498.83 569.15,486.97 582.85,486.97" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="613.69,180.13 606.85,191.99 593.15,191.99 586.31,180.13 593.15,168.28 606.85,168.28" fill="#e4e2ef" style="--d:1.04s"/><polygon class="hx" points="613.69,207.85 606.85,219.70 593.15,219.70 586.31,207.85 593.15,195.99 606.85,195.99" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="613.69,235.56 606.85,247.42 593.15,247.42 586.31,235.56 593.15,223.70 606.85,223.70" fill="#e4e2ef" style="--d:1.00s"/><polygon class="hx" points="613.69,263.27 606.85,275.13 593.15,275.13 586.31,263.27 593.15,251.42 606.85,251.42" fill="#e4e2ef" style="--d:0.98s"/><polygon class="hx" points="613.69,290.98 606.85,302.84 593.15,302.84 586.31,290.98 593.15,279.13 606.85,279.13" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="613.69,318.70 606.85,330.55 593.15,330.55 586.31,318.70 593.15,306.84 606.85,306.84" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="613.69,346.41 606.85,358.27 593.15,358.27 586.31,346.41 593.15,334.55 606.85,334.55" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="613.69,374.12 606.85,385.98 593.15,385.98 586.31,374.12 593.15,362.27 606.85,362.27" fill="#e4e2ef" style="--d:0.97s"/><polygon class="hx" points="613.69,401.84 606.85,413.69 593.15,413.69 586.31,401.84 593.15,389.98 606.85,389.98" fill="#e4e2ef" style="--d:0.98s"/><polygon class="hx" points="613.69,429.55 606.85,441.41 593.15,441.41 586.31,429.55 593.15,417.69 606.85,417.69" fill="#e4e2ef" style="--d:1.00s"/><polygon class="hx" points="613.69,457.26 606.85,469.12 593.15,469.12 586.31,457.26 593.15,445.41 606.85,445.41" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="637.69,193.99 630.85,205.85 617.15,205.85 610.31,193.99 617.15,182.13 630.85,182.13" fill="#e4e2ef" style="--d:1.07s"/><polygon class="hx" points="637.69,221.70 630.85,233.56 617.15,233.56 610.31,221.70 617.15,209.85 630.85,209.85" fill="#e4e2ef" style="--d:1.05s"/><polygon class="hx" points="637.69,249.42 630.85,261.27 617.15,261.27 610.31,249.42 617.15,237.56 630.85,237.56" fill="#e4e2ef" style="--d:1.03s"/><polygon class="hx" points="637.69,277.13 630.85,288.98 617.15,288.98 610.31,277.13 617.15,265.27 630.85,265.27" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="637.69,304.84 630.85,316.70 617.15,316.70 610.31,304.84 617.15,292.98 630.85,292.98" fill="#e4e2ef" style="--d:1.01s"/><polygon class="hx" points="637.69,332.55 630.85,344.41 617.15,344.41 610.31,332.55 617.15,320.70 630.85,320.70" fill="#e4e2ef" style="--d:1.01s"/><polygon class="hx" points="637.69,360.27 630.85,372.12 617.15,372.12 610.31,360.27 617.15,348.41 630.85,348.41" fill="#e4e2ef" style="--d:1.01s"/><polygon class="hx" points="637.69,387.98 630.85,399.84 617.15,399.84 610.31,387.98 617.15,376.12 630.85,376.12" fill="#e4e2ef" style="--d:1.02s"/><polygon class="hx" points="661.69,207.85 654.85,219.70 641.15,219.70 634.31,207.85 641.15,195.99 654.85,195.99" fill="#e4e2ef" style="--d:1.10s"/><polygon class="hx" points="661.69,235.56 654.85,247.42 641.15,247.42 634.31,235.56 641.15,223.70 654.85,223.70" fill="#e4e2ef" style="--d:1.08s"/><polygon class="hx" points="661.69,263.27 654.85,275.13 641.15,275.13 634.31,263.27 641.15,251.42 654.85,251.42" fill="#e4e2ef" style="--d:1.07s"/><polygon class="hx" points="661.69,290.98 654.85,302.84 641.15,302.84 634.31,290.98 641.15,279.13 654.85,279.13" fill="#e4e2ef" style="--d:1.06s"/><polygon class="hx" points="661.69,318.70 654.85,330.55 641.15,330.55 634.31,318.70 641.15,306.84 654.85,306.84" fill="#e4e2ef" style="--d:1.05s"/><polygon class="hx" points="685.69,221.70 678.85,233.56 665.15,233.56 658.31,221.70 665.15,209.85 678.85,209.85" fill="#e4e2ef" style="--d:1.13s"/><polygon class="hx" points="685.69,249.42 678.85,261.27 665.15,261.27 658.31,249.42 665.15,237.56 678.85,237.56" fill="#e4e2ef" style="--d:1.11s"/><polygon class="hx" points="685.69,277.13 678.85,288.98 665.15,288.98 658.31,277.13 665.15,265.27 678.85,265.27" fill="#e4e2ef" style="--d:1.10s"/><circle class="ring" cx="336" cy="333" r="14" fill="none" stroke="#f5b32f" stroke-width="3"/><circle class="ring r2" cx="336" cy="333" r="14" fill="none" stroke="#f5b32f" stroke-width="3"/></svg>
+    <div class="ab tag rv tt" style="--x:825;--y:265;--td:1.9s"><span class="tm"><img src="a/m_icon.png" alt=""></span><span><span class="st">Mato Grosso (MT)</span><span class="ct">Sinop · Parque Norte</span></span></div>
+    <div class="ab tag pr rv tt" style="--x:704;--y:352;--td:2.15s"><span class="tm"><img src="a/m_icon.png" alt=""></span><span class="st">Mato Grosso<br>do Sul (MS)</span></div>
+    <div class="ab tag rv tt" style="--x:927;--y:384;--td:2.3s"><span class="tm"><img src="a/m_icon.png" alt=""></span><span class="st">São Paulo (SP)</span></div>
+    <div class="ab tag pr rv tt" style="--x:780;--y:437;--td:2.45s"><span class="tm"><img src="a/m_icon.png" alt=""></span><span class="st">Paraná (PR)</span></div>
+    <div class="ab selo-card rv up d3" style="--x:612;--y:30;--w:196"><img src="a/selo_intec_g.png" alt="Ranking INTEC 2026"><div><b>13ª</b><span>maior construtora do Brasil · INTEC 2026</span></div></div>
+    <div class="ab selo-card rv up d4" style="--x:820;--y:30;--w:196"><img src="a/selo_gptw.png" alt="Great Place to Work 2026" style="height:calc(var(--u)*46)"><div><b>GPTW</b><span>certificada Great Place to Work</span></div></div>
+    <img class="ab rv fd d12" style="--x:958;--y:528;--w:160" src="a/menin_branco.png" alt="Menin">
+  </div>
+</section>
+
+<!-- 4 MATO GROSSO · book p.3 -->
+<section class="scene" id="s-mt" data-title="Menin no MT">
+  <div class="lpan" style="--sx:40;background:var(--navy);z-index:2"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;height:calc(100% - (50dvh + min(100vw,177.78dvh)*(515/1152 - .28125)));background:var(--navy);border-top:3px solid #d9a441;z-index:1"></div>
+  <div class="board">
+    <h2 class="ab rv lf d1" style="--x:102;--y:52;--w:520;color:var(--navy);font-size:calc(var(--u)*47);line-height:1.12;letter-spacing:-.02em">A MENIN JÁ FAZ<br>PARTE DO<br><span style="color:#d9a441">MATO GROSSO</span></h2>
+    <div class="ab rv lf d2" style="--x:103;--y:248;--w:126;height:2px;background:#d9a441"></div>
+    <p class="ab rv d3" style="--x:103;--y:270;--w:450;font-size:calc(var(--u)*13.5);line-height:1.45;color:#233">Desde <b>agosto de 2025</b> em Cuiabá, com o <b>Parque das Flores</b>, e em Sinop com o <b>Verona</b>. Agora a Menin amplia sua atuação no estado com o lançamento do <b style="color:var(--navy)">Parque Norte.</b></p>
+    <img class="ab rv up d5" style="--x:100;--y:350;--w:311;border-radius:calc(var(--u)*8);box-shadow:0 14px 34px rgba(0,30,50,.3)" src="a/bk_card_flores.jpg" alt="Parque das Flores · Cuiabá">
+    <img class="ab rv up d6" style="--x:453;--y:350;--w:311;border-radius:calc(var(--u)*8);box-shadow:0 14px 34px rgba(0,30,50,.3)" src="a/bk_card_verona.jpg" alt="Verona · Sinop">
+    <img class="ab rv up d4" style="--x:760;--y:340;--w:392;mask-image:linear-gradient(90deg,#000 88%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent)" src="a/bk_casa_mt.jpg" alt="Casa do Residencial Parque Norte">
+    <img class="ab rv pop d3" style="--x:700;--y:20;--w:410" src="a/bk_mapa_mt.jpg" alt="Mapa do Mato Grosso: Sinop e Cuiabá">
+    <img class="ab rv d8" style="--x:826;--y:547;--w:190" src="a/menin_branco.png" alt="Menin">
+  </div>
+</section>
+
+<!-- 5 PARCERIA · book p.18 -->
+<section class="scene" id="s-parceria" data-title="Parceria Canarinho 3" style="background:linear-gradient(180deg,#e4e4e4 0%,#f3f3f3 45%,#9aa5a0 100%)">
+  <div class="band rv fd d1" style="--sy:330;left:calc(50% + var(--W)*(334 - 576)/1152);z-index:0;mask-image:linear-gradient(180deg,transparent,#000 22%);-webkit-mask-image:linear-gradient(180deg,transparent,#000 22%)"><img class="fill cover" src="a/bk_aereo_canarinho.jpg" alt="Vista aérea do Canarinho 3" style="object-position:50% 0%"></div>
+  <div class="lpan painel-lim rv lf" style="--sx:334"></div>
+  <div class="board">
+    <img class="ab" src="a/icon_pn_branco.png" alt="" style="--x:184;--y:486;--w:184;opacity:.13">
+    <h2 class="ab rv lf d2" style="--x:50;--y:76;--w:270;color:#fff;font-size:calc(var(--u)*27);line-height:1.1">PARQUE NORTE<br>CANARINHO 3</h2>
+    <div class="ab rv lf d3" style="--x:48;--y:152;--w:240;color:#fff;font-size:calc(var(--u)*13.6);line-height:1.3">
+      <p>A Menin Engenharia chega ao Residencial Canarinho 3, empreendimento da Bussolaro Empreendimentos, com o Residencial Parque Norte, pensado para oferecer mais qualidade de vida e realizar o sonho da casa própria.</p>
+      <p style="margin-top:1.1em">Uma parceria que reúne a experiência de quem urbaniza com a confiança de quem constrói, criando um novo capítulo para as famílias de Sinop.</p>
+      <p style="margin-top:1.1em;font-size:.86em;opacity:.85">Loteamento registrado · matrícula nº 103.218 · 1º Ofício de Sinop/MT · acesso pela Estrada Lucila.</p>
+    </div>
+    <img class="ab rv pop d3" style="--x:456;--y:80;--w:278" src="a/menin_preto_g.png" alt="Menin">
+    <img class="ab rv pop d4" style="--x:822;--y:80;--w:222" src="a/logo_bussolaro.png" alt="Bussolaro Empreendimentos">
+    <img class="ab rv pop d5" style="--x:500;--y:228;--w:192" src="a/logo_pn.png" alt="Residencial Parque Norte">
+    <img class="ab rv pop d6" style="--x:845;--y:226;--w:176" src="a/logo_canarinho.png" alt="Residencial Canarinho 3">
+  </div>
+</section>
+
+<!-- 6 IMPLANTAÇÃO · book p.16 -->
+<section class="scene" id="s-implant" data-title="Implantação" style="background:#2c4a24">
+  <div class="band top" style="--ey:526"><img class="fill cover" src="a/bk_implantacao.jpg" alt="Implantação do Residencial Parque Norte" style="object-position:50% 0%"></div>
+  <div class="band" style="--sy:526;background:linear-gradient(180deg,#f0a200,#f9cd42)"></div>
+  <div class="board">
+    <div class="ab rv lf d3" style="--x:46;--y:556;color:#3a1f0a;line-height:1;font-size:calc(var(--u)*30);letter-spacing:-.02em">Escolha<br><span style="font-weight:400">sua</span> <b style="font-weight:800">Unidade:</b></div>
+    <div class="ab" style="--x:290;--y:566;--w:850;display:flex;flex-wrap:nowrap;gap:calc(var(--u)*9)">
+      <span class="chip rv up d5" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap"><span class="ico" style="background:var(--verde)"></span><span><b data-count="601"></b> casas no masterplan</span></span>
+      <span class="chip rv up d6" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap"><span class="ico" style="background:var(--verde)"></span><span>Módulo I · 486</span></span>
+      <span class="chip rv up d7" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap"><span class="ico" style="background:var(--verde)"></span><span>Módulo II · 115</span></span>
+      <span class="chip rv up d8" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap;background:var(--verde);color:#fff"><span class="ico"></span><span><b data-count="427"></b> neste lançamento</span></span>
+    </div>
+    <div class="ilus" style="bottom:calc(var(--u)*240)">Imagem meramente ilustrativa*</div>
+  </div>
+</section>
+
+<!-- MODULAÇÃO (implantação ilustrada + módulos coloridos) -->
+<section class="scene" id="s-modulos" data-title="Modulação" style="background:#2c4a24">
+  <div class="band top" style="--ey:526">
+    <img class="fill cover" src="a/bk_implantacao_limpa.jpg" alt="Implantação do Residencial Parque Norte com os módulos" style="object-position:50% 78%">
+    <img class="fill cover ly l1" src="a/modi_m1.png" alt="" style="object-position:50% 78%">
+    <img class="fill cover ly l2" src="a/modi_m2.png" alt="" style="object-position:50% 78%">
+  </div>
+  <div class="band" style="--sy:526;background:linear-gradient(180deg,#0b5a33,#003d20)"></div>
+  <div class="board">
+    <div class="ab rv lf d3" style="--x:46;--y:560;color:#fff;line-height:1;font-size:calc(var(--u)*30);letter-spacing:-.02em;font-weight:800">Modulação</div>
+    <div class="ab mod-leg" style="--x:300;--y:562;--w:830;display:flex;flex-wrap:nowrap;gap:calc(var(--u)*12)">
+      <span class="chip rv up d8" style="font-size:calc(var(--u)*16);padding:.55em 1.1em;white-space:nowrap"><span class="sw" style="background:#3ec478"></span><span>Módulo I · <b data-count="486"></b> casas</span></span>
+      <span class="chip rv up d10" style="font-size:calc(var(--u)*16);padding:.55em 1.1em;white-space:nowrap"><span class="sw" style="background:#f7b928"></span><span>Módulo II · <b data-count="115"></b> casas</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- 7 MAIS DO QUE UMA CASA · book p.5 -->
+<section class="scene painel-verde" id="s-240" data-title="Terreno de 240 m²">
+  <div class="lpan" style="--sx:596"><img class="fill cover kb" src="a/r_fachada.jpg" alt="Fachada" style="object-position:30% 70%">
+    <div class="fill" style="background:linear-gradient(180deg,rgba(10,60,120,.35),transparent 40%)"></div></div>
+  <div class="board">
+    <img class="ab rv pop d1" style="--x:62;--y:62;--w:46" src="a/icon_pn.png" alt="">
+    <div class="ab rv lf d2" style="--x:58;--y:124;--w:520;color:#fff;font-weight:700;font-size:calc(var(--u)*27);line-height:1.35;text-shadow:0 2px 18px rgba(0,40,90,.45)">Mais do que uma casa<br>Mais um lançamento MENIN.</div>
+    <div class="ab faixa rv rt d3" style="--x:553;--y:113;--w:573;--h:84;font-size:calc(var(--u)*33);font-weight:600">TERRENO DE <b style="font-size:1.45em;font-weight:800;letter-spacing:-.02em"><span data-count="240"></span>m²</b></div>
+    <div class="ab" style="--x:678;--y:280;display:flex;flex-direction:column;gap:calc(var(--u)*26)">
+      <div class="ckb ck-lg rv rt d5"><svg style="color:#fff"><use href="#ck"/></svg><span><b>MAIS</b> ESPAÇO</span></div>
+      <div class="ckb ck-lg rv rt d6"><svg style="color:#fff"><use href="#ck"/></svg><span><b>MAIS</b> LIBERDADE</span></div>
+      <div class="ckb ck-lg rv rt d7"><svg style="color:#fff"><use href="#ck"/></svg><span><b>MAIS</b> TERRENO</span></div>
+    </div>
+    <div class="ab rv fd d9" style="--x:678;--y:470;--w:430;color:rgba(230,245,235,.85);font-size:calc(var(--u)*14.5);line-height:1.5">
+      Casas térreas de <b style="color:#fff">2 dormitórios</b> · <b style="color:#fff">427 unidades</b> neste lançamento · entrega em 24 meses após o contrato Caixa.</div>
+    <img class="ab rv fd d8" style="--x:963;--y:533;--w:165" src="a/menin_branco.png" alt="Menin">
+  </div>
+</section>
+
+<!-- 8 LOTE MEDIDO · book p.6 -->
+<section class="scene" id="s-lote" data-title="10 × 24 m" style="background:#6d8a4a">
+  <div class="board cheia">
+    <svg class="fill" viewBox="0 0 1152 648">
+      <image href="a/al_lote.jpg" width="1152" height="648" preserveAspectRatio="xMidYMid slice"/>
+      <linearGradient id="gL" x1="0" y1="0" x2="0" y2="1"><stop offset=".62" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></linearGradient>
+      <rect width="1152" height="648" fill="url(#gL)"/>
+      <g fill="none" stroke="#22b33d" stroke-width="5" stroke-linecap="square" style="filter:drop-shadow(0 0 6px rgba(40,200,70,.6))">
+        <path class="draw d3" pathLength="1" d="M62 423 L768 585"/>
+        <path class="draw d10" pathLength="1" d="M768 585 L1022 272"/>
+      </g>
+      <g font-family="Sora,Arial" font-weight="800" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.18);stroke-width:1">
+        <text class="rv fd d6" transform="translate(385 470) rotate(12.9)" text-anchor="middle" font-size="37">10m de FRENTE</text>
+        <text class="rv fd d14" transform="translate(846 424) rotate(-50.9)" text-anchor="middle"><tspan font-size="60">24m</tspan><tspan font-size="36" dx="8">de LATERAL</tspan></text>
+      </g>
+    </svg>
+    <div class="ab rv lf d8" style="--x:70;--y:508;font-weight:700;font-size:calc(var(--u)*21);line-height:1.3;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.5)">
+      <span style="color:var(--ouro)">MAIS ESPAÇO DE TERRENO</span><br>PARA VOCÊ VIVER BEM!</div>
+    <div class="ilus">Imagem meramente ilustrativa*</div>
+  </div>
+</section>
+
+<!-- 9 QUINTAL · book p.13 -->
+<section class="scene" id="s-quintal" data-title="Mais quintal" style="background:#5a3f28">
+  <div class="board cheia">
+    <svg class="ab" style="--x:0;--y:0;--w:752;--h:648" viewBox="0 0 752 648" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <mask id="mV"><path class="draw d4" pathLength="1" d="M337 98 L347 482" stroke="#fff" stroke-width="12" fill="none"/></mask>
+        <mask id="mH"><path class="draw d8" pathLength="1" d="M347 482 L703 486" stroke="#fff" stroke-width="12" fill="none"/></mask>
+      </defs>
+      <image href="a/al_quintal.jpg" width="752" height="648" preserveAspectRatio="xMidYMid slice"/>
+      <g stroke="#fff" stroke-width="2.4" stroke-dasharray="1 5" stroke-linecap="round" fill="none">
+        <path d="M337 98 L347 482" mask="url(#mV)"/><path d="M347 482 L703 486" mask="url(#mH)"/>
+      </g>
+      <g fill="#1fb53a" stroke="#fff" stroke-width="2">
+        <circle class="rv pop d3" cx="337" cy="98" r="10" style="transform-origin:337px 98px"/>
+        <circle class="rv pop d7" cx="347" cy="482" r="10" style="transform-origin:347px 482px"/>
+        <circle class="rv pop d10" cx="703" cy="486" r="10" style="transform-origin:703px 486px"/>
+      </g>
+      <g font-family="Sora,Arial" font-weight="600" fill="#fff" font-size="19" style="filter:drop-shadow(0 1px 4px rgba(0,0,0,.6))">
+        <text class="rv fd d7" x="350" y="378">24 metros</text>
+        <text class="rv fd d12" x="530" y="470" text-anchor="middle">10 metros</text>
+      </g>
+    </svg>
+    <div class="ab rv up d12" style="--x:60;--y:508;--w:660;--h:64;border:1.5px solid rgba(255,255,255,.75);border-radius:calc(var(--u)*10);background:rgba(20,10,0,.5);backdrop-filter:blur(3px);color:#fff;font-size:calc(var(--u)*14.5);line-height:1.4;padding:calc(var(--u)*8) calc(var(--u)*22);display:flex;align-items:center">
+      <span><b>Espaço para reunir a família,</b> deixar as crianças brincarem, criar uma área gourmet e aproveitar cada momento no conforto da sua casa.</span></div>
+    <div class="ab painel-lar" style="--x:752;--y:0;--w:600;--h:648;overflow:hidden">
+      <img src="a/r_fachada3.jpg" alt="" style="position:absolute;left:0;bottom:0;width:66.7%;height:45%;object-fit:cover;object-position:50% 60%;mix-blend-mode:multiply;opacity:.55;mask-image:linear-gradient(180deg,transparent,#000 60%);-webkit-mask-image:linear-gradient(180deg,transparent,#000 60%)">
+    </div>
+    <img class="ab rv pop d2" style="--x:790;--y:84;--w:190" src="a/logo_pn_mono.png" alt="Residencial Parque Norte">
+    <div class="ab" style="--x:780;--y:222;display:flex;flex-direction:column;gap:calc(var(--u)*20)">
+      <div class="ckb ckw rv rt d4" style="gap:calc(var(--u)*12)"><svg style="width:calc(var(--u)*34);height:calc(var(--u)*34)"><use href="#ckf"/></svg><div><b>MAIS Quintal</b><span>para viver do seu jeito</span></div></div>
+      <div class="ckb ckw rv rt d6" style="gap:calc(var(--u)*12)"><svg style="width:calc(var(--u)*34);height:calc(var(--u)*34)"><use href="#ckf"/></svg><div><b>MAIS Liberdade</b><span>para sua família</span></div></div>
+      <div class="ckb ckw rv rt d8" style="gap:calc(var(--u)*12)"><svg style="width:calc(var(--u)*34);height:calc(var(--u)*34)"><use href="#ckf"/></svg><div><b>MAIS Possibilidades</b><span>para seu espaço gourmet</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 GALERIA · book p.7-11 -->
+<section class="scene" id="s-galeria" data-title="Galeria" data-gallery>
+  <div class="gal-slide" data-label="Fachada" style="background-image:url(a/r_fachada.jpg)"></div>
+  <div class="gal-slide" data-label="Sala de Estar" style="background-image:url(a/r_sala.jpg)"></div>
+  <div class="gal-slide" data-label="Cozinha" style="background-image:url(a/r_cozinha.jpg)"></div>
+  <div class="gal-slide" data-label="Dormitório 1" style="background-image:url(a/r_dorm1.jpg)"></div>
+  <div class="gal-slide" data-label="Dormitório 2" style="background-image:url(a/r_dorm2.jpg)"></div>
+  <div class="gal-slide" data-label="Quintal" style="background-image:url(a/r_quintal.jpg)"></div>
+  <div class="gal-slide" data-label="Sua rua" style="background-image:url(a/r_fachada2.jpg)"></div>
+  <div class="gal-slide" data-label="A área hoje" data-real="1" style="background-image:url(a/o_area_hoje.jpg)"></div>
+  <div class="shade" style="background:linear-gradient(180deg,rgba(0,0,0,.28),transparent 18%)"></div>
+  <div id="gal-steps"></div>
+  <div class="board" style="position:absolute;z-index:3;pointer-events:none">
+    <div class="ab pill" id="gal-pill" style="--x:95;--y:525;--h:65;min-width:calc(var(--u)*370)"><img src="a/icon_pn_branco.png" alt=""><span id="gal-name"></span></div>
+    <div class="ilus" id="gal-ilus">Imagem meramente ilustrativa*</div>
+  </div>
+</section>
+
+<!-- 11 A CASA (planta humanizada) -->
+<section class="scene" id="s-planta" data-title="A casa">
+  <div class="wrap split" style="grid-template-columns:.95fr 1.05fr">
+    <div>
+      <div class="eyebrow rv"><span class="tick"></span>Conheça a planta do seu novo lar</div>
+      <h2 class="h-big rv d1">Feita para<br><span class="green">viver bem</span></h2>
+      <div class="mt2">
+        <div class="ck rv d2"><span class="bx">2</span>Dormitórios<small style="margin-left:auto;color:var(--muted);font-size:.8em">44,03 m² construídos</small></div>
+        <div class="ck rv d3"><span class="bx">✓</span>Sala e cozinha integradas</div>
+        <div class="ck rv d4"><span class="bx">✓</span>Banheiro e área de serviço</div>
+        <div class="ck rv d5"><span class="bx">✓</span>Quintal no lote de 240 m²</div>
+      </div>
+      <div class="row mt2">
+        <span class="chip rv d6"><span class="ico"></span>Piso cerâmico tipo A</span>
+        <span class="chip rv d7"><span class="ico"></span>Esquadrias de aço</span>
+        <span class="chip rv d8"><span class="ico"></span>Caixa d'água de 500 L</span>
+        <span class="chip rv d9"><span class="ico"></span>Adaptáveis PNE</span>
+      </div>
+    </div>
+    <div class="photo rv pop d2" style="padding:clamp(10px,calc(1.2*var(--vw)),18px)"><img src="a/o_planta.jpg" alt="Planta humanizada da casa" style="border-radius:12px"></div>
+  </div>
+</section>
+
+<!-- 12 MAIS TERRENO MAIS LIBERDADE · book p.14 -->
+<section class="scene ceu" id="s-terreno" data-title="Espaço para ampliar">
+  <div class="board">
+    <img class="ab rv fd d1" style="--x:90;--y:36;--w:116" src="a/logo_pn.png" alt="Parque Norte">
+    <div class="ab rv fd d1" style="--x:940;--y:50;display:flex;align-items:center;gap:calc(var(--u)*8)">
+      <img src="a/logo_caixa.png" alt="Caixa" style="width:calc(var(--u)*62)"><img src="a/menin_preto.png" alt="Menin" style="width:calc(var(--u)*72)"></div>
+    <h2 class="ab rv up d2" style="--x:0;--y:92;--w:1152;text-align:center;font-size:calc(var(--u)*50);color:var(--verde);letter-spacing:-.01em">MAIS TERRENO <span style="font-weight:500">MAIS LIBERDADE</span></h2>
+    <img class="ab rv pop d3" style="--x:166;--y:222;--w:820;border-radius:calc(var(--u)*6);box-shadow:0 22px 50px rgba(0,40,20,.28)" src="a/bk_lote_planta.jpg" alt="Planta da casa no terreno de 240 m²">
+    <svg class="fill" viewBox="0 0 1152 648" style="pointer-events:none">
+      <g fill="none" stroke="#ec3b3b" stroke-width="2.8">
+        <path class="rv fd d6" d="M166 204 L889 204" stroke-dasharray="8 6"/>
+        <path class="rv fd d6" d="M166 196 L166 212 M889 196 L889 212"/>
+        <path class="rv fd d7" d="M144 222 L144 526" stroke-dasharray="8 6"/>
+        <path class="rv fd d7" d="M136 222 L152 222 M136 526 L152 526"/>
+      </g>
+      <g font-family="Sora,Arial" font-weight="800" fill="#153a28" font-size="24">
+        <text class="rv fd d6" x="527" y="192" text-anchor="middle">24 m</text>
+        <text class="rv fd d7" x="132" y="382" text-anchor="end">10 m</text>
+      </g>
+    </svg>
+    <div class="ab rv up d5" style="--x:0;--y:542;--w:1152;text-align:center;font-weight:800;font-size:calc(var(--u)*19);color:var(--verde);letter-spacing:.02em">TERRENO PADRÃO DE 240 m²</div>
+    <div class="ab" style="--x:0;--y:584;--w:1152;display:flex;justify-content:center;align-items:center;gap:calc(var(--u)*22);white-space:nowrap;font-size:calc(var(--u)*16);color:#1d4a33">
+      <b class="rv up d6" style="color:var(--verde);font-weight:800">Espaço para ampliação:</b>
+      <span class="ckb rv up d7"><svg><use href="#ckv"/></svg>Jardim</span>
+      <span class="ckb rv up d8"><svg><use href="#ckv"/></svg>Viver melhor</span>
+      <span class="ckb rv up d9"><svg><use href="#ckv"/></svg>Área gourmet</span>
+      <span class="ckb rv up d10"><svg><use href="#ckv"/></svg>Veículo</span>
+    </div>
+    <div class="ilus dk">Imagem meramente ilustrativa*</div>
+  </div>
+</section>
+
+<!-- 13 DECORADO -->
+<section class="scene" id="s-decorado" data-title="Decorado" data-steps="2">
+  <div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap">
+      <div>
+        <div class="eyebrow rv"><span class="tick"></span>Fotos reais</div>
+        <h2 class="h-med rv d1">O decorado já está <span class="gold">pronto</span></h2>
+      </div>
+      <span class="chip rv d2"><span class="ico"></span>Visite no stand de vendas, em Sinop</span>
+    </div>
+    <div class="dec-wrap rv d3">
+      <div class="dec-page show">
+        <div class="ph"><img src="a/o_dec21.jpg" alt="Sala do decorado"></div>
+        <div class="ph"><img src="a/o_dec22.jpg" alt="Cozinha do decorado"></div>
+        <div class="ph"><img src="a/o_dec23.jpg" alt="Quarto do decorado"></div>
+      </div>
+      <div class="dec-page">
+        <div class="ph"><img src="a/o_dec24.jpg" alt="Sala de jantar do decorado"></div>
+        <div class="ph"><img src="a/o_dec25.jpg" alt="Banheiro do decorado"></div>
+        <div class="ph"><img src="a/o_dec26.jpg" alt="Área de serviço do decorado"></div>
+      </div>
+    </div>
+    <div id="dec-steps"><i class="cur"></i><i></i></div>
+  </div>
+</section>
+
+<!-- 14 STAND -->
+<section class="scene" id="s-stand" data-title="Stand de vendas">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow rv"><span class="tick"></span>Stand de vendas</div>
+      <h2 class="h-big rv d1">Leve o cliente para<br><span class="green">sentir a casa</span></h2>
+      <p class="lead mt1 rv d2">O <b>decorado completo</b> está montado no stand de vendas do Parque Norte, em Sinop. Cliente que visita, <b>se imagina morando</b>.</p>
+      <div class="card hl mt2 rv d3">
+        <div class="klab" style="margin:0 0 6px">Agende visitas e tire dúvidas pelo WhatsApp do produto</div>
+        <div class="knum" style="font-size:clamp(38px,calc(4.4*var(--vw)),74px)">66 99927-9467</div>
+      </div>
+      <div class="row mt2">
+        <span class="chip rv d5"><span class="ico"></span>www.menin.com.br</span>
+        <span class="chip rv d6"><span class="ico"></span>Instagram: @meninengenharia</span>
+      </div>
+    </div>
+    <div class="photo rv pop d3" style="max-width:min(40vh,86%);justify-self:center"><img src="a/o_dec27.jpg" alt="Decorado no stand de vendas"></div>
+  </div>
+</section>
+
+<!-- 15 LOCALIZAÇÃO · book p.15 -->
+<section class="scene" id="s-local" data-title="Localização" style="background:#6d8fb8">
+  <div class="band top" style="--ey:502"><img class="fill cover" src="a/bk_localizacao.jpg" alt="Localização: centro, BR/MT-140, shopping, saúde e comércio" style="object-position:50% 0%"></div>
+  <div class="band" style="--sy:502;background:linear-gradient(180deg,#e9b32f,#f3c54a)"></div>
+  <div class="board">
+    <img class="ab" src="a/icon_pn_branco.png" alt="" style="--x:930;--y:410;--w:230;opacity:.18">
+    <div class="ab rv lf d3" style="--x:77;--y:502;--w:393;--h:95;background:#0d0d0d;border-radius:calc(var(--u)*10);color:#fff;font-size:calc(var(--u)*25);line-height:1.2;display:flex;align-items:center;padding-left:calc(var(--u)*20);box-shadow:0 14px 34px rgba(0,0,0,.35)">
+      <span>Com acesso rápido<br>aos <b>Centros Comerciais</b></span></div>
+    <div class="ab" style="--x:492;--y:552;--w:650;display:flex;flex-wrap:nowrap;gap:calc(var(--u)*8)">
+      <span class="chip rv up d5" style="font-size:calc(var(--u)*13);padding:.6em 1em"><span class="ico" style="background:var(--verde)"></span><span>Estrada Lucila</span></span>
+      <span class="chip rv up d6" style="font-size:calc(var(--u)*13);padding:.6em 1em"><span class="ico" style="background:var(--verde)"></span>7 min do shopping</span>
+      <span class="chip rv up d7" style="font-size:calc(var(--u)*13);padding:.6em 1em"><span class="ico" style="background:var(--verde)"></span>MT-140 em duplicação</span>
+    </div>
+  </div>
+</section>
+
+<!-- 16 GOOGLE MAPS · book p.19 -->
+<section class="scene" id="s-maps" data-title="Como chegar" style="background:#3f5a2e">
+  <div class="bgimg" style="background-image:url(a/bk_maps.jpg);filter:blur(30px) brightness(.55) saturate(.8);inset:-10%"></div>
+  <div class="board">
+    <img class="fill cover rv fd" src="a/bk_maps.jpg" alt="Clique aqui: veja a localização no Google Maps">
+    <a class="ab" id="maps-link" href="https://maps.app.goo.gl/QbM6jnz7defCQRdi7" target="_blank" rel="noopener" style="--x:240;--y:118;--w:600;--h:122" aria-label="Abrir no Google Maps"></a>
+    <div class="ab rv pop d4" style="--x:905;--y:90;--w:180;background:#fff;border-radius:calc(var(--u)*14);padding:calc(var(--u)*12);text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4)">
+      <img src="a/qr_maps.png" alt="QR code do Google Maps" style="width:100%;display:block">
+      <div style="font-weight:800;color:var(--verde);font-size:calc(var(--u)*12.5);margin-top:calc(var(--u)*8);letter-spacing:.06em">APONTE A CÂMERA</div>
+      <div style="color:var(--muted);font-size:calc(var(--u)*10)">e abra a rota no celular</div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 ESTRATÉGIA COMERCIAL -->
+<section class="scene sc-verde" id="s-ato" data-title="Estratégia comercial">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;bottom:-12vh;width:46vw">
+  <div class="wrap">
+    <div class="eyebrow rv d1">Agora, o que interessa</div>
+    <h2 class="h-mega rv pop d2" style="margin-top:2vh">ESTRATÉGIA<br>COMERCIAL</h2>
+    <div class="sub rv d4">números &middot; condições &middot; campanhas &middot; comissão</div>
+  </div>
+</section>
+
+<!-- 18 MCMV · book p.17 -->
+<section class="scene" id="s-programas" data-title="MCMV + MT PAR" style="background:linear-gradient(90deg,#efefef 0%,#f6f6f6 55%,#e8e8e8 100%)">
+  <div class="rpan" style="--sx:835;bottom:auto;height:calc(50% - var(--H)/2 + var(--H)*95/648);background:#006f4f"></div>
+  <div class="rpan" style="--sx:835;top:calc(50% - var(--H)/2 + var(--H)*496/648);background:#006f4f"></div>
+  <div class="board">
+    <img class="ab cover rv rt d1" style="--x:565;--y:95;--w:563;--h:401" src="a/bk_familia_mcmv.jpg" alt="Família">
+    <img class="ab rv pop d4" style="--x:418;--y:398;--w:296" src="a/icon_pn.png" alt="">
+    <h2 class="ab rv lf d1" style="--x:78;--y:92;--w:470;font-size:calc(var(--u)*27);line-height:1.08;color:var(--verde)">VANTAGENS DO PROGRAMA<br><span style="font-size:.76em;color:#0a7a46">MINHA CASA MINHA VIDA</span></h2>
+    <div class="ab" style="--x:78;--y:172;--w:480;display:flex;flex-direction:column;gap:calc(var(--u)*11);font-size:calc(var(--u)*17);font-weight:600;color:var(--verde);text-transform:uppercase;letter-spacing:.01em;line-height:1.2">
+      <div class="rv lf d2" style="display:flex;gap:.55em"><i style="width:.62em;height:.62em;background:#1fb53a;border-radius:2px;flex:none;margin-top:.25em"></i>Financiamento pela Caixa</div>
+      <div class="rv lf d3" style="display:flex;gap:.55em"><i style="width:.62em;height:.62em;background:#1fb53a;border-radius:2px;flex:none;margin-top:.25em"></i><span>Subsídio do MCMV Faixa 2</span></div>
+      <div class="rv lf d4" style="display:flex;gap:.55em"><i style="width:.62em;height:.62em;background:#f5b32f;border-radius:2px;flex:none;margin-top:.25em"></i><span>MT PAR · Ser Família Habitação*</span></div>
+      <div class="rv lf d5" style="display:flex;gap:.55em"><i style="width:.62em;height:.62em;background:#1fb53a;border-radius:2px;flex:none;margin-top:.25em"></i>Possibilidade de uso do FGTS</div>
+      <div class="rv lf d6" style="display:flex;gap:.55em"><i style="width:.62em;height:.62em;background:#1fb53a;border-radius:2px;flex:none;margin-top:.25em"></i>Taxas de juros reduzidas</div>
+      <div class="rv lf d7" style="display:flex;gap:.55em"><i style="width:.62em;height:.62em;background:#1fb53a;border-radius:2px;flex:none;margin-top:.25em"></i>Financiamento em até 420 meses</div>
+    </div>
+    <img class="ab rv up d8" style="--x:78;--y:515;--w:172" src="a/logo_caixa.png" alt="Caixa">
+    <div class="ab rv fd d9" style="--x:78;--y:592;--w:330;font-size:calc(var(--u)*10);color:var(--muted)">*Consulte condições.</div>
+    <div class="ilus">Imagem meramente ilustrativa*</div>
+  </div>
+</section>
+
+<!-- 19 CONDIÇÃO -->
+<section class="scene" id="s-cond" data-title="Condição comercial">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="tick"></span>Condição comercial</div>
+    <h2 class="h-med rv d1">Feita para <span class="gold">aprovar</span></h2>
+    <div class="grid mt2">
+      <div class="card rv d2"><div class="knum">R$ <span data-count="235000"></span></div><div class="klab">valor de venda</div></div>
+      <div class="card rv d3"><div class="knum" style="color:var(--acc)">&minus; R$ <span data-count="25000"></span></div><div class="klab"><b style="color:var(--ink)">desconto construtora</b></div></div>
+      <div class="card hl rv d4"><div class="knum">R$ <span data-count="210000"></span></div><div class="klab"><b style="color:var(--ink)">sai por</b> · com o desconto construtora</div></div>
+    </div>
+    <div class="card mt1 rv d5">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap">
+        <div class="klab" style="margin:0">Demanda mínima · assinatura fracionada</div>
+        <div class="knum" style="font-size:clamp(26px,calc(2.8*var(--vw)),44px)"><span data-count="86"></span> de 427 unidades</div>
+      </div>
+      <div class="meter"><div style="--w:20.1%"></div></div>
+    </div>
+    <div class="row mt2">
+      <span class="chip rv d6"><span class="ico"></span><span>Ato de R$ 1.000 &middot; <b>ZERO</b> nas primeiras 100 vendas</span></span>
+      <span class="chip rv d7"><span class="ico"></span>Entrada em até 60&times; direto com a construtora</span>
+      <span class="chip rv d8"><span class="ico"></span>Parcela ≤ 30% da renda &middot; fiador aceito</span>
+      <span class="chip rv d9"><span class="ico"></span>INCC até o habite-se &middot; IPCA + 1% a.m. após</span>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- ATO ZERO -->
+<section class="scene sc-verde" id="s-atozero" data-title="Ato Zero">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;top:-10vh;width:38vw">
+  <div class="wrap" style="text-align:center">
+    <div class="eyebrow rv d1">Ato de reserva</div>
+    <div class="az-box rv pop d2" style="margin-top:1.5vh"><div class="mensal az-val">R$ <span id="az-num">1.000</span></div><div class="az-strike"></div></div>
+    <div><div class="az-stamp">CAMPANHA ATO ZERO*</div></div>
+    <div class="az-sub">
+      <div class="caps mt2">nas primeiras <span style="color:var(--ouro)">100 vendas</span></div>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 20 RECURSO -->
+<section class="scene" id="s-recurso" data-title="Quem paga o quê">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="tick"></span>Recurso, na prática</div>
+    <h2 class="h-med rv d1">Como o cliente paga <span class="gold">R$ 210 mil</span></h2>
+    <div id="simbar" class="rv d2">
+      <div class="seg" data-w="9" style="background:#f1ede4;color:#1d1406"><small>Ato</small><b>Zero*</b></div>
+      <div class="seg" data-w="16" style="background:#bfe6cf;color:#0d2b1b"><small>Entrada · até 60&times;</small><b>com a Menin</b></div>
+      <div class="seg" data-w="17" style="background:linear-gradient(160deg,#f8c93b,#f09c00);color:#1d1406"><small>Subsídios</small><b>MCMV + MT PAR*</b></div>
+      <div class="seg" data-w="58" style="background:linear-gradient(160deg,#0a7a46,#005031);color:#fff"><small>A pagar · Financiamento Caixa</small><b>até 80%</b></div>
+    </div>
+    <div class="legend rv d3">
+      <div class="lg"><span class="sw" style="background:#e6e0d2"></span><span><b>Ato de reserva: R$ 1.000</b><br>zero nas primeiras 100 vendas (Ato Zero)</span></div>
+      <div class="lg"><span class="sw" style="background:#bfe6cf"></span><span><b>Entrada parcelada</b><br>em até 60&times; direto com a construtora</span></div>
+      <div class="lg"><span class="sw" style="background:#f5b32f"></span><span><b>Subsídios MCMV Faixa 2 + MT PAR</b><br>abatem direto a entrada*</span></div>
+      <div class="lg"><span class="sw" style="background:#0a7a46"></span><span><b>Saldo a pagar</b><br>financiado pela Caixa, em até 80%</span></div>
+    </div>
+    <div class="card hl mt2 rv d5">
+      <div style="font-size:clamp(15px,calc(1.5*var(--vw)),22px);font-weight:700;color:var(--verde)">Quanto <span class="gold">maior o subsídio</span>, menor a entrada, <span class="green">sem contar o FGTS</span> e os <span class="gold">R$ 25 mil de desconto construtora</span>.</div>
+    </div>
+    <p class="note mt1 rv d6">*Consulte condições.</p>
+  </div>
+</section>
+
+<!-- 21 FLUXO -->
+<section class="scene" id="s-fluxo" data-title="Fluxo do cliente">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="tick"></span>Simulação de fluxo</div>
+    <h2 class="h-med rv d1">O caminho de um <span class="green">cliente bom</span></h2>
+    <div class="tl mt2" style="grid-template-columns:repeat(5,1fr)">
+      <div class="card st rv d2"><div class="num">01</div><h3>Análise Caixa</h3><p>Pré-cadastro aprovado com o correspondente</p></div>
+      <div class="card st rv d3"><div class="num">02</div><h3>Reserva</h3><p>Ato de <b>R$ 1.000</b>, <b>zero</b> nas primeiras 100 vendas: a unidade sai do espelho</p></div>
+      <div class="card st rv d4"><div class="num">03</div><h3>Subsídios</h3><p>MCMV Faixa 2 + MT PAR + FGTS abatem a entrada</p></div>
+      <div class="card st rv d5"><div class="num">04</div><h3>Entrada leve</h3><p>Saldo da entrada em até <b>60&times;</b> direto com a Menin, a partir de R$ 500</p></div>
+      <div class="card st rv d6"><div class="num">05</div><h3>Contrato Caixa</h3><p>Contrato com <b>R$ 25 mil</b> de desconto construtora · entrega em 24 meses</p></div>
+    </div>
+    <p class="note mt2 rv d7">Fluxo ilustrativo · cada cliente é analisado individualmente pela Caixa.</p>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 22 PARCELA -->
+<section class="scene sc-verde" id="s-parcela" data-title="Parcela que cabe">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="left:-8vw;top:-10vh;width:40vw">
+  <div class="wrap" style="text-align:center">
+    <div class="eyebrow rv d1">A conta que fecha</div>
+    <div class="mensal rv pop d2" style="margin-top:1.5vh">R$ <span data-count="500"></span><small>/mês*</small></div>
+    <div class="caps mt1 rv d4">Mensais a partir de &middot; entrada em até 60&times;</div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 23 DOCUMENTAÇÃO -->
+<section class="scene" id="s-doc" data-title="Documentação grátis">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow rv"><span class="tick"></span>Campanha</div>
+      <h2 class="h-big rv d1">Documentação<br><span class="gold">grátis</span></h2>
+      <div class="card hl mt2 rv d2">
+        <div class="knum">+ R$ <span data-count="3632"></span></div>
+        <div class="klab">em custos de documentação por conta da Menin &middot; <b style="color:var(--ink)">o cliente paga R$&nbsp;0</b></div>
+      </div>
+    </div>
+    <div class="card mt1 rv d3" style="padding-top:8px;padding-bottom:8px">
+      <div class="ck rv d3"><span class="bx">✓</span>Produto Caixa Econômica</div>
+      <div class="ck rv d4"><span class="bx">✓</span>ITBI isento</div>
+      <div class="ck rv d5"><span class="bx">✓</span>Registro e prenotação em cartório</div>
+      <div class="ck rv d6"><span class="bx">✓</span>Certificação digital</div>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 24 COMISSÃO -->
+<section class="scene sc-verde" id="s-comissao" data-title="Comissão" data-steps="2">
+  <div class="wrap" style="text-align:center">
+    <div class="step1">
+      <div class="eyebrow rv">Comissão</div>
+      <h2 class="h-mega rv pop d1" style="margin-top:1.5vh"><span style="color:var(--ouro)">3%</span> <span style="font-size:.36em;letter-spacing:-.01em">sobre R$ 210 mil</span></h2>
+      <p class="lead rv d3" style="margin:1.5vh auto 0;max-width:none;font-weight:700;color:#fff">R$ 6.300 por venda</p>
+    </div>
+    <div class="step2 mt2">
+      <div class="eyebrow">O Módulo 1 (486 casas) soma</div>
+      <div class="big-money">R$ <span id="comi-total">0</span></div>
+      <div class="caps mt1">em comissões</div>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 25 ROLETA -->
+<section class="scene sc-verde" id="s-roleta" data-title="Roleta da sorte" data-steps="2">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow rv"><span class="tick"></span>Campanha de venda</div>
+      <h2 class="h-big rv d1">Roleta da<br><span style="color:var(--ouro)">sorte!</span></h2>
+      <p class="lead mt1 rv d2">A cada venda dentro da <b>demanda mínima</b>, o corretor gira a roleta <b>na hora</b> e leva o prêmio junto com a comissão.</p>
+      <div class="row mt2">
+        <span class="chip rv d3"><span class="ico"></span>Prêmios de R$ 1.000, R$ 1.250 e R$ 1.500</span>
+        <span class="chip rv d4"><span class="ico"></span>Pago após assinatura do contrato Caixa</span>
+      </div>
+      <p class="note mt2 rv d5">Aperte &rarr; para girar a roleta.</p>
+    </div>
+    <div class="wheel-box rv pop d3">
+      <div class="pin"></div>
+      <div class="wheel idle" id="wheel" style="background:conic-gradient(#f5b32f 0 45deg,#0a7a46 45deg 90deg,#fff 90deg 135deg,#f5b32f 135deg 180deg,#0a7a46 180deg 225deg,#fff 225deg 270deg,#f5b32f 270deg 315deg,#0a7a46 315deg 360deg)">
+        <i style="transform:rotate(22.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
+        <i style="transform:rotate(67.5deg)"><b style="color:#fff">R$ 1.250</b></i>
+        <i style="transform:rotate(112.5deg)"><b style="color:#005031">R$ 1.000</b></i>
+        <i style="transform:rotate(157.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
+        <i style="transform:rotate(202.5deg)"><b style="color:#fff">R$ 1.250</b></i>
+        <i style="transform:rotate(247.5deg)"><b style="color:#005031">R$ 1.000</b></i>
+        <i style="transform:rotate(292.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
+        <i style="transform:rotate(337.5deg)"><b style="color:#fff">R$ 1.250</b></i>
+        <span class="hub"><img src="a/icon_pn.png" alt=""></span>
+      </div>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 26 GANHOS -->
+<section class="scene sc-verde" id="s-ganhos" data-title="Ganho por venda">
+  <div class="wrap" style="text-align:center">
+    <div class="eyebrow rv d1">Somando tudo, cada venda vale</div>
+    <div class="big-money rv pop d2" style="margin-top:1.5vh">até R$ <span data-count="7800" data-dur="2200"></span></div>
+    <div class="caps mt1 rv d3">para o corretor</div>
+    <div class="row mt2 rv d5" style="justify-content:center">
+      <span class="chip"><span class="ico"></span>R$ 6.300 de comissão (3% sobre a venda)</span>
+      <span class="chip"><span class="ico"></span>+ até R$ 1.500 na roleta da sorte</span>
+    </div>
+    <p class="lead mt2 rv d6" style="margin-left:auto;margin-right:auto">E o Módulo 1 soma <b>mais de R$ 3 milhões</b> em comissões.</p>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 27 ESTRUTURA -->
+<section class="scene" id="s-estrutura" data-title="Estrutura comercial">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="tick"></span>Estrutura comercial</div>
+    <h2 class="h-med rv d1">Tudo pronto para <span class="green">vender</span></h2>
+    <div class="grid mt2" style="grid-template-columns:repeat(3,1fr)">
+      <div class="card rv d2"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Valor de venda</h3><div class="klab">R$ 235.000 &middot; com R$ 25 mil de desconto construtora, sai por R$ 210.000</div></div>
+      <div class="card rv d3"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Financiamento</h3><div class="klab">Caixa Econômica &middot; MCMV Faixa 2</div></div>
+      <div class="card rv d4"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Decorado pronto</h3><div class="klab">casa decorada no stand, em Sinop</div></div>
+      <div class="card rv d5"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Demanda mínima</h3><div class="klab">86 unidades &middot; assinatura fracionada</div></div>
+      <div class="card rv d6"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Entrega</h3><div class="klab">24 meses após assinatura do contrato Caixa</div></div>
+      <div class="card hl rv d7"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">WhatsApp do produto</h3><div class="klab">66 99927-9467</div></div>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 28 SISTEMA -->
+<section class="scene" id="s-sistema" data-title="Sistema de vendas">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="tick"></span>Sistema de vendas · CV CRM</div>
+    <h2 class="h-med rv d1">Da captação ao <span class="green">repasse</span></h2>
+    <div class="tl mt2">
+      <div class="card st rv d2"><div class="num">01</div><h3>Leads</h3><p>Distribuição e cadastro no CV CRM</p></div>
+      <div class="card st rv d3"><div class="num">02</div><h3>Pré-cadastro</h3><p>Análise bancária com o correspondente</p></div>
+      <div class="card st rv d4"><div class="num">03</div><h3>Reserva</h3><p>Espelho de disponibilidade, proposta financeira e assinatura dos documentos Menin</p></div>
+      <div class="card st rv d5"><div class="num">04</div><h3>Repasse</h3><p>Contratação com a Caixa e registro do contrato</p></div>
+    </div>
+    <div class="row mt2"><span class="chip rv d6"><span class="ico"></span>Acessos e treinamentos: fale com o gestor do produto</span></div>
+  </div>
+</section>
+
+<!-- 29 MARKETING -->
+<section class="scene" id="s-marketing" data-title="Material de marketing">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow rv"><span class="tick"></span>Marketing</div>
+      <h2 class="h-big rv d1">Material pronto,<br><span class="green">na palma da mão</span></h2>
+      <div class="mt2">
+        <div class="ck rv d2"><span class="bx">✓</span>Book digital do produto</div>
+        <div class="ck rv d3"><span class="bx">✓</span>Ficha técnica e plantas</div>
+        <div class="ck rv d4"><span class="bx">✓</span>Imagens ilustrativas e fotos do decorado</div>
+        <div class="ck rv d5"><span class="bx">✓</span>Criativos para tráfego e redes sociais</div>
+        <div class="ck rv d6"><span class="bx">✓</span>Atualização constante de mídias</div>
+      </div>
+    </div>
+    <div class="rv pop d3" style="text-align:center;justify-self:center">
+      <div style="background:#fff;border-radius:24px;padding:clamp(14px,calc(1.6*var(--vw)),26px);display:inline-block;box-shadow:0 30px 70px rgba(0,50,25,.2);border:3px solid var(--ouro)">
+        <img src="a/o_qr_mkt.png" alt="QR code do drive de marketing" style="width:min(34vh,24vw);display:block">
+      </div>
+      <div class="mt1" style="font-weight:800;font-size:clamp(18px,calc(1.8*var(--vw)),28px);letter-spacing:.08em;color:var(--verde)">APONTE A CÂMERA</div>
+      <p class="note">Acesse o drive completo do Parque Norte.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 30 BOAS VENDAS -->
+<section class="scene sc-verde" id="s-final" data-title="Boas vendas!">
+  <div class="bgimg kb" style="background-image:url(a/r_fachada3.jpg);opacity:.22;mix-blend-mode:luminosity"></div>
+  <div class="wrap" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:2.2vh">
+    <img class="rv pop d1" src="a/logo_pn_branco.png" alt="Parque Norte" style="width:min(300px,24vw)">
+    <h2 class="h-mega rv pop d2">BOAS <span style="color:var(--ouro)">VENDAS!</span></h2>
+    <div class="caps rv d4" style="color:var(--ouro)">+1 lançamento Menin · agora em Sinop</div>
+    <img class="rv d5" src="a/menin_branco.png" alt="Menin" style="height:clamp(34px,calc(4.4*var(--vw)),62px);margin-top:1vh">
+  </div>
+</section>
+
+<!-- 31 ENCERRAMENTO · book p.20 -->
+<section class="scene" id="s-fim" data-title="menin.com.br" style="background:linear-gradient(90deg,#021466 0%,#010a4a 50%,#131b62 100%)">
+  <div class="lpan" style="--sx:0;background:linear-gradient(180deg,#031669,#011a75 25%,#010050 50%,#000132 75%,#000114)"></div>
+  <div class="rpan" style="--sx:1152;background:linear-gradient(180deg,#13256f,#132973 25%,#13155c 50%,#141357 75%,#141456)"></div>
+  <div class="board"><img class="fill cover rv fd" src="a/bk_final.jpg" alt="menin.com.br"></div>
+</section>
+
+</div>
+
+<canvas id="confetti"></canvas>
+<div id="hud"><div id="dots"></div><div id="bar"></div></div>
+<div id="counter">1 / 31</div>
+<div id="hint">&larr; &rarr; navegar &middot; F tela cheia</div>
+
+<script>
+(function(){
+"use strict";
+var scenes = Array.prototype.slice.call(document.querySelectorAll('.scene'));
+var cur = 0, N = scenes.length;
+var bar = document.getElementById('bar'), counter = document.getElementById('counter');
+var dots = document.getElementById('dots');
+var fmt = new Intl.NumberFormat('pt-BR');
+/* ?qa = conferência: sem animação, tudo no estado final */
+var QA = /[?&]qa/.test(location.search);
+if(QA){ var st=document.createElement('style'); st.textContent='*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition:none!important}'; document.head.appendChild(st); }
+
+scenes.forEach(function(s,i){
+  var b = document.createElement('button');
+  b.setAttribute('data-t', (i+1)+' · '+s.getAttribute('data-title'));
+  b.addEventListener('click', function(e){ e.stopPropagation(); go(i); });
+  dots.appendChild(b);
+});
+
+/* ---- galeria ---- */
+var gal = document.getElementById('s-galeria');
+var galSlides = Array.prototype.slice.call(gal.querySelectorAll('.gal-slide'));
+var galSteps = document.getElementById('gal-steps');
+var galName = document.getElementById('gal-name');
+var galPill = document.getElementById('gal-pill');
+var galIlus = document.getElementById('gal-ilus');
+var galIdx = 0;
+galSlides.forEach(function(){ galSteps.appendChild(document.createElement('i')); });
+function galShow(i){
+  galIdx = i;
+  galSlides.forEach(function(s,k){ s.classList.toggle('show', k===i); });
+  Array.prototype.forEach.call(galSteps.children, function(el,k){ el.className = k<i ? 'done' : (k===i ? 'cur' : ''); });
+  galName.textContent = galSlides[i].getAttribute('data-label');
+  galIlus.textContent = galSlides[i].getAttribute('data-real') ? 'Foto real · ago/2026' : 'Imagem meramente ilustrativa*';
+  galPill.classList.remove('go'); void galPill.offsetWidth; galPill.classList.add('go');
+}
+
+/* ---- comissão ---- */
+var comScene = document.getElementById('s-comissao');
+var comStep = 0;
+function comReveal(){
+  comScene.classList.add('reveal2');
+  countTo(document.getElementById('comi-total'), 3061800, 2600, function(){ burst(140); });
+}
+
+/* ---- decorado ---- */
+var decScene = document.getElementById('s-decorado');
+var decPages = decScene.querySelectorAll('.dec-page');
+var decDots = document.getElementById('dec-steps').children;
+var decIdx = 0;
+function decShow(i){
+  decIdx = i;
+  Array.prototype.forEach.call(decPages, function(p,k){ p.classList.toggle('show', k===i); });
+  Array.prototype.forEach.call(decDots, function(d,k){ d.className = k===i ? 'cur' : ''; });
+}
+
+/* ---- roleta (o giro SEMPRE pousa numa fatia de R$ 1.500) ---- */
+var rolScene = document.getElementById('s-roleta');
+var wheel = document.getElementById('wheel');
+var rolStep = 0, wheelDeg = 0;
+function spinWheel(){
+  wheel.classList.remove('idle');
+  if(!wheelDeg){
+    var cs = getComputedStyle(wheel).transform;
+    if(cs && cs !== 'none'){
+      var m = cs.match(/matrix\(([-\d.]+),\s*([-\d.]+)/);
+      if(m) wheelDeg = Math.round(Math.atan2(+m[2], +m[1]) * 180/Math.PI);
+    }
+    wheel.style.transition = 'none';
+    wheel.style.transform = 'rotate('+wheelDeg+'deg)';
+    void wheel.offsetWidth;
+  }
+  var alvo = [22.5, 157.5, 292.5][Math.floor(Math.random()*3)];
+  var jitter = (Math.random()-.5) * 18;
+  var destino = (360 - alvo + jitter + 360) % 360;
+  var atual = ((wheelDeg % 360) + 360) % 360;
+  wheelDeg += 1440 + ((destino - atual + 360) % 360);
+  wheel.style.transition = 'transform 4.2s cubic-bezier(.12,.8,.16,1)';
+  wheel.style.transform = 'rotate('+wheelDeg+'deg)';
+  setTimeout(function(){ burst(70); }, 4200);
+}
+wheel.addEventListener('click', function(e){ e.stopPropagation(); spinWheel(); });
+document.getElementById('maps-link').addEventListener('click', function(e){ e.stopPropagation(); });
+
+/* ---- ato zero: R$ 1.000 é riscado e desce até zero ---- */
+var azScene = document.getElementById('s-atozero'), azNum = document.getElementById('az-num'), azT = [];
+function azRun(){
+  azT.forEach(clearTimeout); azT = [];
+  azScene.classList.remove('cut','zero'); azNum.textContent = '1.000';
+  if(QA){ azScene.classList.add('cut','zero'); azNum.textContent = '0'; return; }
+  azT.push(setTimeout(function(){ azScene.classList.add('cut'); }, 1700));
+  azT.push(setTimeout(function(){
+    countDown(azNum, 1000, 0, 1100, function(){ azScene.classList.add('zero'); burst(130); });
+  }, 2400));
+}
+function countDown(el, from, to, dur, done){
+  var t0 = null;
+  function frame(ts){
+    if(!t0) t0 = ts;
+    var p = Math.min((ts-t0)/dur, 1), e = 1 - Math.pow(1-p, 3);
+    el.textContent = fmt.format(Math.round(from + (to-from)*e));
+    if(p<1) requestAnimationFrame(frame); else if(done) done();
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---- barra de recurso ---- */
+function runSim(scene){
+  Array.prototype.forEach.call(scene.querySelectorAll('#simbar .seg'), function(s,i){
+    s.style.width = '0';
+    setTimeout(function(){ s.style.width = s.getAttribute('data-w')+'%'; }, 600 + i*450);
+  });
+}
+
+/* ---- contadores ---- */
+function countTo(el, target, dur, done){
+  var t0 = null;
+  if(QA){ el.textContent = fmt.format(target); if(done) done(); return; }
+  function frame(ts){
+    if(!t0) t0 = ts;
+    var p = Math.min((ts-t0)/dur, 1);
+    var e = 1 - Math.pow(1-p, 3);
+    el.textContent = fmt.format(Math.round(target*e));
+    if(p<1) requestAnimationFrame(frame); else if(done) done();
+  }
+  requestAnimationFrame(frame);
+}
+function runCounters(scene){
+  Array.prototype.forEach.call(scene.querySelectorAll('[data-count]'), function(el){
+    countTo(el, parseInt(el.getAttribute('data-count'),10), parseInt(el.getAttribute('data-dur')||'1800',10));
+  });
+}
+
+/* ---- troca de cena ---- */
+function go(n){
+  n = Math.max(0, Math.min(N-1, n));
+  var old = scenes[cur];
+  old.classList.remove('active'); old.classList.add('leaving');
+  setTimeout(function(){ old.classList.remove('leaving'); }, 750);
+  cur = n;
+  var sc = scenes[cur];
+  sc.classList.remove('active');
+  void sc.offsetWidth;
+  sc.classList.add('active');
+  bar.style.width = (cur/(N-1)*100)+'%';
+  counter.textContent = (cur+1)+' / '+N;
+  Array.prototype.forEach.call(dots.children, function(d,i){ d.classList.toggle('on', i===cur); });
+  if(sc===gal) galShow(0);
+  if(sc===decScene) decShow(0);
+  if(sc===rolScene){ rolStep = 0; wheelDeg = 0; wheel.style.transition='none'; wheel.style.transform='none'; wheel.classList.add('idle'); }
+  if(sc===comScene){ comStep = 0; comScene.classList.remove('reveal2'); document.getElementById('comi-total').textContent='0'; }
+  runCounters(sc);
+  if(sc.id==='s-recurso') runSim(sc);
+  if(sc===azScene) azRun(); else { azT.forEach(clearTimeout); azT = []; }
+  if(sc.id==='s-final') gentleConfetti(); else { stopGentle(); parts.length = 0; }
+}
+function next(){
+  var sc = scenes[cur];
+  if(sc===gal && galIdx < galSlides.length-1){ galShow(galIdx+1); return; }
+  if(sc===decScene && decIdx < decPages.length-1){ decShow(decIdx+1); return; }
+  if(sc===rolScene && rolStep===0){ rolStep=1; spinWheel(); return; }
+  if(sc===comScene && comStep===0){ comStep=1; comReveal(); return; }
+  go(cur+1);
+}
+function prev(){
+  var sc = scenes[cur];
+  if(sc===gal && galIdx>0){ galShow(galIdx-1); return; }
+  if(sc===decScene && decIdx>0){ decShow(decIdx-1); return; }
+  if(sc===comScene && comStep===1){ comStep=0; sc.classList.remove('reveal2'); return; }
+  go(cur-1);
+}
+
+/* ---- entrada (teclado, passador, clique, swipe) ---- */
+document.addEventListener('keydown', function(e){
+  switch(e.key){
+    case 'ArrowRight': case 'Right': case 'ArrowDown': case ' ': case 'PageDown': case 'Enter': e.preventDefault(); next(); break;
+    case 'ArrowLeft': case 'Left': case 'ArrowUp': case 'PageUp': case 'Backspace': e.preventDefault(); prev(); break;
+    case 'Home': go(0); break;
+    case 'End': go(N-1); break;
+    case 'f': case 'F':
+      if(document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+      break;
+  }
+});
+document.getElementById('stage').addEventListener('click', function(e){
+  if(e.clientX < window.innerWidth*0.18) prev(); else next();
+});
+var tx=null;
+document.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, {passive:true});
+document.addEventListener('touchend', function(e){
+  if(tx===null) return;
+  var dx = e.changedTouches[0].clientX - tx;
+  if(Math.abs(dx)>50){ dx<0 ? next() : prev(); }
+  tx=null;
+}, {passive:true});
+
+/* ---- confete ---- */
+var cv = document.getElementById('confetti'), cx = cv.getContext('2d');
+var parts = [], raf = null, gentleOn = false;
+var COLORS = ['#f5b32f','#f09c00','#f8c93b','#0a7a46','#7fdc9e','#ffffff'];
+function resize(){ cv.width = innerWidth; cv.height = innerHeight; }
+addEventListener('resize', resize); resize();
+function mk(burstY){
+  return { x: Math.random()*cv.width, y: burstY!==undefined ? burstY : -20,
+    vx:(Math.random()-.5)*(burstY!==undefined?14:2), vy: burstY!==undefined ? -(4+Math.random()*10) : 1+Math.random()*2.5,
+    g: .25, w: 6+Math.random()*7, h: 3+Math.random()*5, r: Math.random()*Math.PI, vr:(Math.random()-.5)*.3,
+    c: COLORS[Math.floor(Math.random()*COLORS.length)], life: 0, max: 240+Math.random()*120 };
+}
+function burst(n){
+  for(var i=0;i<n;i++){ var p = mk(cv.height*0.65); p.x = cv.width*(0.3+Math.random()*0.4); parts.push(p); }
+  loop();
+}
+function gentleConfetti(){ gentleOn = true; loop(); }
+function stopGentle(){ gentleOn = false; }
+function loop(){
+  if(raf) return;
+  function step(){
+    cx.clearRect(0,0,cv.width,cv.height);
+    if(gentleOn && parts.length<120 && Math.random()<.35) parts.push(mk());
+    parts.forEach(function(p){
+      p.vy += p.g*(p.vy<0?1:.06); p.x += p.vx; p.y += p.vy; p.vx *= .992; p.r += p.vr; p.life++;
+      cx.save(); cx.translate(p.x,p.y); cx.rotate(p.r);
+      cx.globalAlpha = Math.max(0, 1 - p.life/p.max);
+      cx.fillStyle = p.c; cx.fillRect(-p.w/2,-p.h/2,p.w,p.h); cx.restore();
+    });
+    parts = parts.filter(function(p){ return p.y < cv.height+30 && p.life < p.max; });
+    if(parts.length || gentleOn){ raf = requestAnimationFrame(step); }
+    else { raf = null; cx.clearRect(0,0,cv.width,cv.height); }
+  }
+  raf = requestAnimationFrame(step);
+}
+
+/* HUD aparece ao mexer o mouse e some em 2,5 s */
+var uiT = null;
+function showUi(){ document.body.classList.add('ui'); clearTimeout(uiT); uiT = setTimeout(function(){ document.body.classList.remove('ui'); }, 2500); }
+addEventListener('mousemove', showUi); showUi();
+
+/* início */
+scenes[0].classList.add('active');
+counter.textContent = '1 / '+N;
+Array.prototype.forEach.call(dots.children, function(d,i){ d.classList.toggle('on', i===0); });
+runCounters(scenes[0]);
+/* #12 no endereço abre direto na cena 12 */
+function fromHash(){ var h = parseInt(location.hash.slice(1),10); if(h>0 && h-1!==cur) go(h-1); }
+addEventListener('hashchange', fromHash); fromHash();
+})();
+</script>
+</html>
