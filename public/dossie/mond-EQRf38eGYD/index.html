@@ -616,7 +616,7 @@ body.lock{overflow:hidden}
 <section class="sec" id="investidor"><div class="wrap">
   <div class="eyebrow rv">Para o investidor</div>
   <h2 class="rv" style="--i:1">O que está à venda, quanto vale e em que ponto está</h2>
-  <p class="lead rv" style="--i:2">O Menin Mond foi entregue em maio de 2026 e já tem 68% das unidades vendidas. Restam 40 apartamentos, distribuídos pelas duas torres e por todos os andares, prontos para escritura e financiamento bancário imediato.</p>
+  <p class="lead rv" style="--i:2">O Menin Mond foi entregue em maio de 2026 e já tem <span data-k="vend-pct-lead">68%</span> das unidades vendidas. Restam <span data-k="disp">31</span> apartamentos à venda, distribuídos pelas duas torres e por todos os andares, prontos para escritura e financiamento bancário imediato.</p>
   <div class="tiles">
     <div class="tile rv"><b class="num" data-k="disp">40</b><span>unidades disponíveis</span><em>nas duas torres, do Giardino ao 7º</em></div>
     <div class="tile rv" style="--i:1"><b class="num" data-k="vgv">R$ 27,1 mi</b><span>VGV total do estoque</span><em>valor de tabela vigente</em></div>
@@ -630,7 +630,7 @@ body.lock{overflow:hidden}
       <div class="stack" id="stack-tipo"></div>
       <h3 style="margin-top:26px">Estoque por torre</h3>
       <div class="stack" id="stack-torre"></div>
-      <div class="legenda"><span><i style="background:var(--verde-2)"></i>Disponível</span><span><i style="background:var(--vend)"></i>Vendida</span></div>
+      <div class="legenda"><span><i style="background:var(--verde-2)"></i>À venda</span><span><i style="background:var(--vend)"></i>Vendida ou indisponível</span></div>
     </div>
     <div class="card rv" style="--i:1">
       <h3>Situação</h3>
@@ -638,7 +638,8 @@ body.lock{overflow:hidden}
         <dt>Obra</dt><dd>100% concluída (medição de maio/2026). Entregue.</dd>
         <dt>Ocupação</dt><dd>Pronto para morar; condomínio em funcionamento.</dd>
         <dt>Venda</dt><dd>Escritura direta com financiamento bancário imediato.</dd>
-        <dt>Tabela</dt><dd>Valores vigentes de setembro/2026, válidos até 30/09/2026.</dd>
+        <dt>Tabela</dt><dd>Tabela Mond SET.26, vigente de 01/09 a 30/09/2026.</dd>
+        <dt>Condição</dt><dd>30% em 100 parcelas mensais direto com a incorporadora e 70% nas chaves.</dd>
         <dt>Mix restante</dt><dd data-k="mix">24 aptos de 3 dormitórios e 16 de 2 dormitórios; 4 gardens no térreo.</dd>
         <dt>Andares</dt><dd data-k="andares">Do Giardino ao 7º andar, com 9 unidades no último andar.</dd>
       </dl>
@@ -652,7 +653,7 @@ body.lock{overflow:hidden}
   <div class="eyebrow rv">Estoque completo</div>
   <h2 class="rv" style="--i:1">Espelho de vendas: torre por torre, andar por andar</h2>
   <p class="lead rv" style="--i:2">Cada célula é um apartamento. As unidades disponíveis mostram o valor de tabela; as vendidas aparecem em cinza. Clique em qualquer unidade para abrir a ficha completa com planta, área, orientação e valor.</p>
-  <div class="legenda rv" style="--i:3"><span><i style="background:var(--verde-4);border:1px solid #bcd3c4"></i>Disponível</span><span><i style="background:var(--vend)"></i>Vendida</span></div>
+  <div class="legenda rv" style="--i:3"><span><i style="background:var(--verde-4);border:1px solid #bcd3c4"></i>Disponível</span><span><i style="background:var(--vend)"></i>Vendida ou indisponível</span></div>
   <div class="esp-wrap rv" id="espelho"></div>
 
   <div class="esp-title rv"><h3>Unidades disponíveis</h3><span id="tb-count"></span></div>
@@ -677,24 +678,24 @@ body.lock{overflow:hidden}
 <section class="sec" id="valores"><div class="wrap">
   <div class="eyebrow rv">Valores</div>
   <h2 class="rv" style="--i:1">Como o preço se forma</h2>
-  <p class="lead rv" style="--i:2">O valor por metro quadrado é o mesmo para todos os finais de um mesmo andar e sobe a cada pavimento. Assim, dois apartamentos de mesma área no mesmo andar têm o mesmo preço, seja qual for a torre ou a orientação.</p>
+  <p class="lead rv" style="--i:2">Os valores seguem a tabela vigente de setembro/2026, com preço por tipologia. O metro quadrado sobe com o andar, e os gardens do térreo têm a menor relação de valor por m² do empreendimento.</p>
   <div class="grid3" style="margin-top:22px;gap:28px">
     <div class="rv">
-      <h3>R$/m² por andar</h3>
+      <h3>R$/m² médio por andar</h3>
       <div class="chart" id="chart-m2"></div>
-      <p style="font-size:12px;color:var(--mudo)">No Giardino o valor varia por unidade: R$ 7.009/m² no garden de 78,45 m² e de R$ 6.368 a R$ 8.415/m² nos gardens de 106,95 m².</p>
+      <p style="font-size:12px;color:var(--mudo)">Média das unidades à venda em cada andar. No Giardino, faixa entre os gardens disponíveis.</p>
     </div>
     <div class="rv" style="--i:1">
-      <h3>Valor por tipologia em cada andar</h3>
+      <h3>Valor por tipologia</h3>
       <table class="pt" id="pt"></table>
-      <p style="font-size:12px;color:var(--mudo);margin-top:10px">Valores em R$, calculados pelo R$/m² do andar. Tipo 2 tem 78,20 m²; Tipo 1, 60,80 m²; Tipo 3, 60,92 m².</p>
+      <p style="font-size:12px;color:var(--mudo);margin-top:10px">Faixa de valor das unidades à venda de cada tipologia, em R$.</p>
     </div>
     <div class="card rv" style="--i:2">
       <h3>Condições de referência</h3>
       <div class="cond">
-        <div><b>30%</b><p>Entrada parcelada direto com a incorporadora: 10 parcelas maiores seguidas de 90 parcelas mensais, corrigidas por IPCA + 1% ao mês.</p></div>
+        <div><b>30%</b><p>Parcelado direto com a incorporadora em 100 parcelas mensais. Na tipologia de 78,20 m², parcela de R$ 2.236,80; na de 60 m², R$ 1.774,09.</p></div>
         <div><b>70%</b><p>Saldo nas chaves, por financiamento bancário imediato: o empreendimento está pronto e averbado para escritura.</p></div>
-        <div><b>set</b><p>Tabela válida até 30/09/2026 e sujeita a alteração sem aviso prévio. Valores de tabela vigente; condições de compra em lote a negociar.</p></div>
+        <div><b>set</b><p>Tabela Mond SET.26, válida de 01/09 a 30/09/2026 e sujeita a alteração sem aviso prévio. Condições de compra em lote a negociar.</p></div>
       </div>
     </div>
   </div>
@@ -722,7 +723,7 @@ body.lock{overflow:hidden}
   </div>
   <ul class="notas rv" style="margin-top:34px;padding-left:18px;color:rgba(255,255,255,.7)">
     <li>Imagens de perspectiva são meramente ilustrativas. Móveis, objetos de decoração e paisagismo são sugestões e não fazem parte do contrato. O empreendimento foi entregue conforme o memorial descritivo.</li>
-    <li>Situação das unidades e valores conforme o Office Menin em 17/09/2026. Tabela sujeita a alteração sem aviso prévio; valores confirmados na proposta.</li>
+    <li>Situação das unidades conforme o Office Menin em 23/09/2026. Valores da tabela Mond SET.26; unidades à venda que não constam da tabela trazem valor de referência pelo R$/m² do andar. Tabela sujeita a alteração sem aviso prévio; valores confirmados na proposta.</li>
     <li>Orientação solar derivada da implantação do projeto (norte voltado para a Rua Pastor Natal Bavaroti).</li>
   </ul>
 </div></section>
@@ -735,37 +736,37 @@ body.lock{overflow:hidden}
 <script id="dados" type="application/json">
 [
 {"n": 102, "torre": 1, "andar": 0, "final": 2, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
-{"n": 103, "torre": 1, "andar": 0, "final": 3, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 681057.0, "fonte": "calc_ref_207", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 103, "torre": 1, "andar": 0, "final": 3, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "indisponivel", "preco": null, "fonte": "indisponivel", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 104, "torre": 1, "andar": 0, "final": 4, "tipo": "Tipo 4", "area": 78.45, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 105, "torre": 1, "andar": 0, "final": 5, "tipo": "Tipo 4", "area": 78.45, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 106, "torre": 1, "andar": 0, "final": 6, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 900000.0, "fonte": "vigente", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 106, "torre": 1, "andar": 0, "final": 6, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 672887.69, "fonte": "referencia", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 107, "torre": 1, "andar": 0, "final": 7, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 111, "torre": 1, "andar": 1, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 513500.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 111, "torre": 1, "andar": 1, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 506062.72, "fonte": "referencia", "ponta": null, "varanda": "grill"},
 {"n": 112, "torre": 1, "andar": 1, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 113, "torre": 1, "andar": 1, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
-{"n": 114, "torre": 1, "andar": 1, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 514513, "fonte": "calc_andar", "ponta": null, "varanda": "grill"},
+{"n": 114, "torre": 1, "andar": 1, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "indisponivel", "preco": null, "fonte": "indisponivel", "ponta": null, "varanda": "grill"},
 {"n": 115, "torre": 1, "andar": 1, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 116, "torre": 1, "andar": 1, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 660455.0, "fonte": "vigente", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 116, "torre": 1, "andar": 1, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 650889.88, "fonte": "referencia", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 117, "torre": 1, "andar": 1, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 118, "torre": 1, "andar": 1, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 121, "torre": 1, "andar": 2, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 522277.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 121, "torre": 1, "andar": 2, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 524445.6, "fonte": "referencia", "ponta": null, "varanda": "grill"},
 {"n": 122, "torre": 1, "andar": 2, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 123, "torre": 1, "andar": 2, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 124, "torre": 1, "andar": 2, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 125, "torre": 1, "andar": 2, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 523308, "fonte": "calc_andar", "ponta": null, "varanda": "grill"},
+{"n": 125, "torre": 1, "andar": 2, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "indisponivel", "preco": null, "fonte": "indisponivel", "ponta": null, "varanda": "grill"},
 {"n": 126, "torre": 1, "andar": 2, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 127, "torre": 1, "andar": 2, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 128, "torre": 1, "andar": 2, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 131, "torre": 1, "andar": 3, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 132, "torre": 1, "andar": 3, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 708437.0, "fonte": "vigente", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
-{"n": 133, "torre": 1, "andar": 3, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 708437, "fonte": "calc_andar", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 132, "torre": 1, "andar": 3, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 698176.64, "fonte": "referencia", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 133, "torre": 1, "andar": 3, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "indisponivel", "preco": null, "fonte": "indisponivel", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 134, "torre": 1, "andar": 3, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 135, "torre": 1, "andar": 3, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 136, "torre": 1, "andar": 3, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 137, "torre": 1, "andar": 3, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 138, "torre": 1, "andar": 3, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 141, "torre": 1, "andar": 4, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 142, "torre": 1, "andar": 4, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 739484.0, "fonte": "vigente", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 142, "torre": 1, "andar": 4, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 728773.95, "fonte": "referencia", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 143, "torre": 1, "andar": 4, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 144, "torre": 1, "andar": 4, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 145, "torre": 1, "andar": 4, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
@@ -773,36 +774,36 @@ body.lock{overflow:hidden}
 {"n": 147, "torre": 1, "andar": 4, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 148, "torre": 1, "andar": 4, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 151, "torre": 1, "andar": 5, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 152, "torre": 1, "andar": 5, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 762064.0, "fonte": "vigente", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 152, "torre": 1, "andar": 5, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 745599.94, "fonte": "tabela", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 153, "torre": 1, "andar": 5, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
-{"n": 154, "torre": 1, "andar": 5, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 593526.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 154, "torre": 1, "andar": 5, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 591364.83, "fonte": "tabela", "ponta": null, "varanda": "grill"},
 {"n": 155, "torre": 1, "andar": 5, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 156, "torre": 1, "andar": 5, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 157, "torre": 1, "andar": 5, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 158, "torre": 1, "andar": 5, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 161, "torre": 1, "andar": 6, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 162, "torre": 1, "andar": 6, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
-{"n": 163, "torre": 1, "andar": 6, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 778998.0, "fonte": "vigente", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 163, "torre": 1, "andar": 6, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 767716.77, "fonte": "referencia", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 164, "torre": 1, "andar": 6, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 165, "torre": 1, "andar": 6, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 166, "torre": 1, "andar": 6, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 167, "torre": 1, "andar": 6, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 778811.0, "fonte": "vigente", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 167, "torre": 1, "andar": 6, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 745599.94, "fonte": "tabela", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 168, "torre": 1, "andar": 6, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 171, "torre": 1, "andar": 7, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 631847.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 171, "torre": 1, "andar": 7, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 591364.83, "fonte": "tabela", "ponta": null, "varanda": "grill"},
 {"n": 172, "torre": 1, "andar": 7, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 173, "torre": 1, "andar": 7, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 174, "torre": 1, "andar": 7, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 175, "torre": 1, "andar": 7, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 633095.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 175, "torre": 1, "andar": 7, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "tarde", "face": "divisa oeste", "status": "disponivel", "preco": 591364.83, "fonte": "tabela", "ponta": null, "varanda": "grill"},
 {"n": 176, "torre": 1, "andar": 7, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "divisa oeste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 177, "torre": 1, "andar": 7, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "disponivel", "preco": 812700, "fonte": "calc_andar", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 177, "torre": 1, "andar": 7, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "praça central", "status": "indisponivel", "preco": null, "fonte": "indisponivel", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 178, "torre": 1, "andar": 7, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "manhã", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 202, "torre": 2, "andar": 0, "final": 2, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 203, "torre": 2, "andar": 0, "final": 3, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 204, "torre": 2, "andar": 0, "final": 4, "tipo": "Tipo 4", "area": 78.45, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 205, "torre": 2, "andar": 0, "final": 5, "tipo": "Tipo 4", "area": 78.45, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 549865.64, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 205, "torre": 2, "andar": 0, "final": 5, "tipo": "Tipo 4", "area": 78.45, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 542302.1, "fonte": "referencia", "ponta": null, "varanda": "grill"},
 {"n": 206, "torre": 2, "andar": 0, "final": 6, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 207, "torre": 2, "andar": 0, "final": 7, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 681057.0, "fonte": "vigente", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 211, "torre": 2, "andar": 1, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 513500.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 207, "torre": 2, "andar": 0, "final": 7, "tipo": "Tipo 5", "area": 106.95, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 672887.69, "fonte": "referencia", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 211, "torre": 2, "andar": 1, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 506062.72, "fonte": "referencia", "ponta": null, "varanda": "grill"},
 {"n": 212, "torre": 2, "andar": 1, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 213, "torre": 2, "andar": 1, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 214, "torre": 2, "andar": 1, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
@@ -811,53 +812,53 @@ body.lock{overflow:hidden}
 {"n": 217, "torre": 2, "andar": 1, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 218, "torre": 2, "andar": 1, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 221, "torre": 2, "andar": 2, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 222, "torre": 2, "andar": 2, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 671745.0, "fonte": "vigente", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 222, "torre": 2, "andar": 2, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 674533.65, "fonte": "referencia", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 223, "torre": 2, "andar": 2, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 224, "torre": 2, "andar": 2, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 225, "torre": 2, "andar": 2, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 226, "torre": 2, "andar": 2, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 227, "torre": 2, "andar": 2, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 671745.0, "fonte": "vigente", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 227, "torre": 2, "andar": 2, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 674533.65, "fonte": "referencia", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 228, "torre": 2, "andar": 2, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 231, "torre": 2, "andar": 3, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 232, "torre": 2, "andar": 3, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 708437.0, "fonte": "vigente", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
-{"n": 233, "torre": 2, "andar": 3, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 708437.0, "fonte": "vigente", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 232, "torre": 2, "andar": 3, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 698176.64, "fonte": "referencia", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 233, "torre": 2, "andar": 3, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 698176.64, "fonte": "referencia", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 234, "torre": 2, "andar": 3, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 235, "torre": 2, "andar": 3, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 236, "torre": 2, "andar": 3, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 237, "torre": 2, "andar": 3, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 708437.0, "fonte": "vigente", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 237, "torre": 2, "andar": 3, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 698176.64, "fonte": "referencia", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 238, "torre": 2, "andar": 3, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 241, "torre": 2, "andar": 4, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 242, "torre": 2, "andar": 4, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 243, "torre": 2, "andar": 4, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
-{"n": 244, "torre": 2, "andar": 4, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 576079, "fonte": "calc_andar", "ponta": null, "varanda": "grill"},
+{"n": 244, "torre": 2, "andar": 4, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "indisponivel", "preco": null, "fonte": "indisponivel", "ponta": null, "varanda": "grill"},
 {"n": 245, "torre": 2, "andar": 4, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 246, "torre": 2, "andar": 4, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 247, "torre": 2, "andar": 4, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 248, "torre": 2, "andar": 4, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
 {"n": 251, "torre": 2, "andar": 5, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 252, "torre": 2, "andar": 5, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 761881.0, "fonte": "vigente", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 252, "torre": 2, "andar": 5, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 745599.94, "fonte": "tabela", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 253, "torre": 2, "andar": 5, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 254, "torre": 2, "andar": 5, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 255, "torre": 2, "andar": 5, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 593669.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
-{"n": 256, "torre": 2, "andar": 5, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 761954, "fonte": "calc_andar", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 255, "torre": 2, "andar": 5, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 585071.42, "fonte": "referencia", "ponta": null, "varanda": "grill"},
+{"n": 256, "torre": 2, "andar": 5, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "indisponivel", "preco": null, "fonte": "indisponivel", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
 {"n": 257, "torre": 2, "andar": 5, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 258, "torre": 2, "andar": 5, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 592357.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 258, "torre": 2, "andar": 5, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 591364.83, "fonte": "tabela", "ponta": null, "varanda": "grill"},
 {"n": 261, "torre": 2, "andar": 6, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 262, "torre": 2, "andar": 6, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 778998.0, "fonte": "vigente", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 262, "torre": 2, "andar": 6, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 767716.77, "fonte": "referencia", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 263, "torre": 2, "andar": 6, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
 {"n": 264, "torre": 2, "andar": 6, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 265, "torre": 2, "andar": 6, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 606832, "fonte": "calc_andar", "ponta": null, "varanda": "grill"},
+{"n": 265, "torre": 2, "andar": 6, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "indisponivel", "preco": null, "fonte": "indisponivel", "ponta": null, "varanda": "grill"},
 {"n": 266, "torre": 2, "andar": 6, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 267, "torre": 2, "andar": 6, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 778998.0, "fonte": "vigente", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 268, "torre": 2, "andar": 6, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 605666.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
-{"n": 271, "torre": 2, "andar": 7, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 631847.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 267, "torre": 2, "andar": 6, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 745599.94, "fonte": "tabela", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 268, "torre": 2, "andar": 6, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 596894.88, "fonte": "referencia", "ponta": null, "varanda": "grill"},
+{"n": 271, "torre": 2, "andar": 7, "final": 1, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 622846.75, "fonte": "referencia", "ponta": null, "varanda": "grill"},
 {"n": 272, "torre": 2, "andar": 7, "final": 2, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
-{"n": 273, "torre": 2, "andar": 7, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 812700, "fonte": "calc_andar", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
-{"n": 274, "torre": 2, "andar": 7, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 633247.0, "fonte": "vigente", "ponta": null, "varanda": "grill"},
+{"n": 273, "torre": 2, "andar": 7, "final": 3, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "indisponivel", "preco": null, "fonte": "indisponivel", "ponta": "sul", "varanda": "gourmet com churrasqueira"},
+{"n": 274, "torre": 2, "andar": 7, "final": 4, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 624076.05, "fonte": "referencia", "ponta": null, "varanda": "grill"},
 {"n": 275, "torre": 2, "andar": 7, "final": 5, "tipo": "Tipo 3", "area": 60.92, "dorm": 2, "sol": "manhã", "face": "divisa leste", "status": "vendida", "preco": null, "fonte": "vendida", "ponta": null, "varanda": "grill"},
-{"n": 276, "torre": 2, "andar": 7, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 812672.0, "fonte": "vigente", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 277, "torre": 2, "andar": 7, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 812672.0, "fonte": "vigente", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
-{"n": 278, "torre": 2, "andar": 7, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 631847.0, "fonte": "vigente", "ponta": null, "varanda": "grill"}
+{"n": 276, "torre": 2, "andar": 7, "final": 6, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "manhã", "face": "divisa leste", "status": "disponivel", "preco": 801095.66, "fonte": "referencia", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 277, "torre": 2, "andar": 7, "final": 7, "tipo": "Tipo 2", "area": 78.2, "dorm": 3, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 777958.98, "fonte": "tabela", "ponta": "norte", "varanda": "gourmet com churrasqueira"},
+{"n": 278, "torre": 2, "andar": 7, "final": 8, "tipo": "Tipo 1", "area": 60.8, "dorm": 2, "sol": "tarde", "face": "praça central", "status": "disponivel", "preco": 591364.83, "fonte": "tabela", "ponta": null, "varanda": "grill"}
 ]
 </script>
 <script>
@@ -876,13 +877,15 @@ body.lock{overflow:hidden}
     'Tipo 4':{area:78.45,dorm:2,finais:'finais 4 e 5 · térreo',andares:'Giardino',varanda:'Sacada com ponto para churrasqueira grill',img:'/dossie/mond-EQRf38eGYD/img/mond-plantas-04-tipo-4-78-45m2-garden-final-4-e-5-2-dormit.jpg',dif:['Garden com quintal privativo','1 suíte + 1 dormitório','Sacada com ponto para churrasqueira grill','Apenas 4 unidades no empreendimento']},
     'Tipo 5':{area:106.95,dorm:3,finais:'finais 2, 3, 6 e 7 · térreo',andares:'Giardino',varanda:'Varanda gourmet com churrasqueira',img:'/dossie/mond-EQRf38eGYD/img/mond-plantas-05-tipo-5-106-95m2-garden-final-2-e-3-6-e-7-3.jpg',dif:['Maior planta: garden de 106,95 m² com quintal privativo','1 suíte + 2 dormitórios','Varanda gourmet com churrasqueira','Apenas 8 unidades no empreendimento']},
   };
-  const disp = U.filter(u=>u.status!=='vendida');
+  const disp = U.filter(u=>u.status==='disponivel');
   const vend = U.filter(u=>u.status==='vendida');
+  const indisp = U.filter(u=>u.status==='indisponivel');
   const soma = a => a.reduce((s,u)=>s+u.preco,0);
   const vgv = soma(disp);
   const setK=(k,v)=>document.querySelectorAll('[data-k="'+k+'"]').forEach(e=>e.textContent=v);
   setK('disp',disp.length); setK('vgv',mil(vgv)); setK('vend',vend.length);
   setK('vend-pct',Math.round(vend.length/U.length*100)+'% do empreendimento');
+  setK('vend-pct-lead',Math.round(vend.length/U.length*100)+'%');
   setK('ticket',mil(vgv/disp.length));
   const pmin=Math.min(...disp.map(u=>u.preco)), pmax=Math.max(...disp.map(u=>u.preco));
   setK('faixa','de '+mil(pmin)+' a '+mil(pmax));
@@ -895,7 +898,7 @@ body.lock{overflow:hidden}
   // barras
   function stack(el, groups){
     el.innerHTML = groups.map(g=>{
-      const t=g.items.length, d=g.items.filter(u=>u.status!=='vendida').length, v=t-d;
+      const t=g.items.length, d=g.items.filter(u=>u.status==='disponivel').length, v=t-d;
       const w=n=>(n/t*100).toFixed(2)+'%';
       return `<div class="row"><span>${g.nome}</span><div class="bar" title="${d} disponíveis de ${t}"><i class="d" data-w="${w(d)}"></i><i class="v" data-w="${w(v)}"></i></div><span class="t num">${d} / ${t}</span></div>`;
     }).join('');
@@ -905,7 +908,7 @@ body.lock{overflow:hidden}
 
   // plantas
   document.getElementById('plantas-grid').innerHTML = Object.keys(TIPOS).map((t,i)=>{
-    const T=TIPOS[t], all=U.filter(u=>u.tipo===t), d=all.filter(u=>u.status!=='vendida');
+    const T=TIPOS[t], all=U.filter(u=>u.tipo===t), d=all.filter(u=>u.status==='disponivel');
     const ps=d.map(u=>u.preco);
     const faixa = d.length ? (Math.min(...ps)===Math.max(...ps) ? brl.format(ps[0]) : brl.format(Math.min(...ps))+' a '+brl.format(Math.max(...ps))) : 'esgotado';
     return `<article class="pl rv" style="--i:${i}"><div class="im" data-lb="Planta ${t} · ${T.area.toLocaleString('pt-BR',{minimumFractionDigits:2})} m² · ${T.finais}"><img src="${T.img}" alt="Planta ${t}"></div><div class="tx">
@@ -920,14 +923,14 @@ body.lock{overflow:hidden}
   // espelho
   const esp=document.getElementById('espelho');
   esp.innerHTML=[1,2].map(b=>{
-    let h=`<div class="esp-title"><h3>Torre ${b}</h3><span class="num">${U.filter(u=>u.torre===b&&u.status!=='vendida').length} disponíveis de 62 · ${mil(soma(U.filter(u=>u.torre===b&&u.status!=='vendida')))}</span></div><div class="esp"><div class="h"></div>`+[1,2,3,4,5,6,7,8].map(f=>`<div class="h">final ${f}</div>`).join('');
+    let h=`<div class="esp-title"><h3>Torre ${b}</h3><span class="num">${U.filter(u=>u.torre===b&&u.status==='disponivel').length} disponíveis de 62 · ${mil(soma(U.filter(u=>u.torre===b&&u.status==='disponivel')))}</span></div><div class="esp"><div class="h"></div>`+[1,2,3,4,5,6,7,8].map(f=>`<div class="h">final ${f}</div>`).join('');
     for(let a=7;a>=0;a--){
       h+=`<div class="a">${andarNome(a)}</div>`;
       for(let f=1;f<=8;f++){
         const u=U.find(x=>x.torre===b&&x.andar===a&&x.final===f);
         if(!u){h+='<div class="u x"></div>';continue;}
-        const cls=u.status==='vendida'?'v':'d';
-        h+=`<div class="u ${cls}" data-u="${u.n}" tabindex="0" role="button"><b>${u.n}</b>${u.status==='vendida'?'vendida':mil(u.preco)}</div>`;
+        const cls=u.status==='disponivel'?'d':'v';
+        h+=`<div class="u ${cls}" data-u="${u.n}" tabindex="0" role="button"><b>${u.n}</b>${u.status==='disponivel'?mil(u.preco):(u.status==='vendida'?'vendida':'indisponível')}</div>`;
       }
     }
     return h+'</div>';
@@ -961,17 +964,16 @@ body.lock{overflow:hidden}
 
   // R$/m² por andar
   const m2Andar={};
-  for(let a=1;a<=7;a++){const v=disp.filter(u=>u.andar===a).map(u=>u.preco/u.area).sort((x,y)=>x-y);m2Andar[a]=v.length?v[Math.floor(v.length/2)]:null;}
+  for(let a=1;a<=7;a++){const v=disp.filter(u=>u.andar===a).map(u=>u.preco/u.area).sort((x,y)=>x-y);m2Andar[a]=v.length?v.reduce((x,y)=>x+y,0)/v.length:null;}
   const gard=disp.filter(u=>u.andar===0).map(u=>u.preco/u.area);
   const maxM2=Math.max(...Object.values(m2Andar).filter(Boolean));
   let ch='';
-  for(let a=7;a>=1;a--){const v=m2Andar[a];ch+=`<div class="row"><span class="k">${a}º andar</span><i data-w="${(v/maxM2*100).toFixed(1)}%"></i><span class="v num">${brl.format(v)}</span></div>`;}
+  for(let a=7;a>=1;a--){const v=m2Andar[a]; if(!v) continue; ch+=`<div class="row"><span class="k">${a}º andar</span><i data-w="${(v/maxM2*100).toFixed(1)}%"></i><span class="v num">${brl.format(v)}</span></div>`;}
   ch+=`<div class="row g"><span class="k">Giardino</span><i data-w="${(Math.max(...gard)/maxM2*100).toFixed(1)}%"></i><span class="v num">${brl.format(Math.min(...gard))} a ${brl.format(Math.max(...gard))}</span></div>`;
   document.getElementById('chart-m2').innerHTML=ch;
-  let pt='<thead><tr><th>Andar</th><th>Tipo 1<br>60,80 m²</th><th>Tipo 3<br>60,92 m²</th><th>Tipo 2<br>78,20 m²</th></tr></thead><tbody>';
-  for(let a=7;a>=1;a--){const v=m2Andar[a];pt+=`<tr><td>${a}º</td><td class="num">${nf.format(v*60.80)}</td><td class="num">${nf.format(v*60.92)}</td><td class="num">${nf.format(v*78.20)}</td></tr>`;}
-  const g4=disp.find(u=>u.tipo==='Tipo 4'), g5=disp.filter(u=>u.tipo==='Tipo 5');
-  pt+=`<tr><td>Giardino</td><td colspan="3" class="num" style="text-align:left">Tipo 4 · 78,45 m²: ${g4?nf.format(g4.preco):'-'} &nbsp;·&nbsp; Tipo 5 · 106,95 m²: ${g5.length?nf.format(Math.min(...g5.map(u=>u.preco)))+' a '+nf.format(Math.max(...g5.map(u=>u.preco))):'-'}</td></tr></tbody>`;
+  let pt='<thead><tr><th>Tipologia</th><th>À venda</th><th>De</th><th>Até</th></tr></thead><tbody>';
+  Object.keys(TIPOS).forEach(t=>{const d=disp.filter(u=>u.tipo===t); if(!d.length) return; const ps=d.map(u=>u.preco); pt+=`<tr><td>${t} · ${TIPOS[t].area.toLocaleString('pt-BR',{minimumFractionDigits:2})} m²</td><td class="num">${d.length}</td><td class="num">${nf.format(Math.min(...ps))}</td><td class="num">${nf.format(Math.max(...ps))}</td></tr>`;});
+  pt+='</tbody>';
   document.getElementById('pt').innerHTML=pt;
 
   // ---------- modal da unidade ----------
@@ -979,13 +981,13 @@ body.lock{overflow:hidden}
   const lb=document.getElementById('lb'), lbImg=document.getElementById('lb-img'), lbCap=document.getElementById('lb-cap');
   function abrirUnidade(n){
     const u=U.find(x=>x.n===+n); if(!u) return;
-    const T=TIPOS[u.tipo]; const vendida=u.status==='vendida';
-    const irm=U.filter(x=>x.tipo===u.tipo&&x.andar===u.andar&&x.status!=='vendida'&&x.n!==u.n).map(x=>x.n);
-    md.innerHTML=`<div class="hd"><div class="n">${u.n}</div><div class="s"><b>Torre ${u.torre} · ${andarNome(u.andar)}${u.andar===0?' (garden)':' andar'} · final ${u.final}</b>${u.tipo} · ${u.area.toLocaleString('pt-BR',{minimumFractionDigits:2})} m² · ${u.dorm} dormitórios, sendo 1 suíte</div><span class="pill ${vendida?'v':''}">${vendida?'Vendida':'Disponível'}</span></div>
+    const T=TIPOS[u.tipo]; const vendida=u.status!=='disponivel'; const rot=u.status==='vendida'?'Vendida':'Indisponível';
+    const irm=disp.filter(x=>x.preco===u.preco&&x.n!==u.n).map(x=>x.n);
+    md.innerHTML=`<div class="hd"><div class="n">${u.n}</div><div class="s"><b>Torre ${u.torre} · ${andarNome(u.andar)}${u.andar===0?' (garden)':' andar'} · final ${u.final}</b>${u.tipo} · ${u.area.toLocaleString('pt-BR',{minimumFractionDigits:2})} m² · ${u.dorm} dormitórios, sendo 1 suíte</div><span class="pill ${vendida?'v':''}">${vendida?rot:'Disponível'}</span></div>
     <div class="bd">
       <div><div data-lb="Planta ${u.tipo} · unidade ${u.n}"><img src="${T.img}" alt="Planta ${u.tipo}"></div><p style="font-size:12px;color:var(--mudo);margin-top:8px">Planta ${u.tipo} · ${T.finais} · ${T.andares}. Clique para ampliar.</p></div>
       <div>
-        <div class="preco ${vendida?'v':''}">${vendida?'<b>Unidade vendida</b><span>Não faz parte do estoque ofertado.</span>':`<b class="num">${brl.format(u.preco)}</b><span>${brl.format(u.preco/u.area)}/m² · valor de tabela vigente</span>`}</div>
+        <div class="preco ${vendida?'v':''}">${vendida?`<b>Unidade ${rot.toLowerCase()}</b><span>Não faz parte do estoque ofertado.</span>`:`<b class="num">${brl.format(u.preco)}</b><span>${brl.format(u.preco/u.area)}/m² · ${u.fonte==='tabela'?'tabela Mond SET.26':'valor de referência do andar'}</span>`}</div>
         <dl class="ficha">
           <dt>Área privativa</dt><dd>${u.area.toLocaleString('pt-BR',{minimumFractionDigits:2})} m²</dd>
           <dt>Tipologia</dt><dd>${u.tipo}${u.andar===0?' · garden com quintal privativo':''}</dd>
@@ -995,8 +997,8 @@ body.lock{overflow:hidden}
           <dt>Vista</dt><dd>${cap(u.face)}${u.ponta?' · ponta '+u.ponta+(u.ponta==='norte'?' (rua)':' (fundo)'):''}</dd>
           <dt>Varanda</dt><dd>${T.varanda}</dd>
           <dt>Acabamentos</dt><dd>Porcelanato em todo o apartamento, granito na cozinha, travertino nos banheiros, infra para split</dd>
-          ${!vendida?`<dt>Entrada 30%</dt><dd>${brl.format(u.preco*0.30)} parcelados (10x + 90x)</dd><dt>Chaves 70%</dt><dd>${brl.format(u.preco*0.70)} por financiamento bancário</dd>`:''}
-          ${irm.length?`<dt>Mesmo valor</dt><dd>Unidades ${irm.join(', ')} (mesmo andar e tipologia)</dd>`:''}
+          ${!vendida?`<dt>Entrada 30%</dt><dd>${brl.format(u.preco*0.30)} em 100 parcelas de ${brl.format(u.preco*0.003)}</dd><dt>Chaves 70%</dt><dd>${brl.format(u.preco*0.70)} por financiamento bancário</dd>`:''}
+          ${irm.length?`<dt>Mesmo valor</dt><dd>${irm.length>1?"Unidades":"Unidade"} ${irm.join(', ')} </dd>`:''}
         </dl>
       </div>
     </div>`;
