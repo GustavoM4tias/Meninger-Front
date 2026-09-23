@@ -20,7 +20,8 @@
  * Cache-Control no vercel.json), então os clientes se desregistram sozinhos.
  */
 
-const VERSION = 'v1';
+// v2: descarta o cache de assets da v1, que podia ter HTML guardado no lugar de chunk.
+const VERSION = 'v2';
 const ASSET_CACHE = `office-assets-${VERSION}`;
 const DOC_CACHE = `office-doc-${VERSION}`;
 const DOC_FALLBACK = '/index.html';
@@ -49,12 +50,21 @@ self.addEventListener('message', (event) => {
 
 // ─── fetch ────────────────────────────────────────────────────────────────────
 
+// O rewrite do Vercel devolve o index.html (200, text/html) para QUALQUER
+// caminho inexistente, inclusive /assets/<chunk-de-build-antigo>.js. Guardar
+// isso no cache envenenava o chunk para sempre: todo clique no menu para
+// aquela tela falhava o import e o router recarregava a página (23/09).
+function isHtml(res) {
+    return (res.headers.get('content-type') || '').includes('text/html');
+}
+
 async function cacheFirst(request) {
     const cache = await caches.open(ASSET_CACHE);
     const hit = await cache.match(request);
-    if (hit) return hit;
+    if (hit && !isHtml(hit)) return hit;
+    if (hit) await cache.delete(request);
     const res = await fetch(request);
-    if (res && res.ok) cache.put(request, res.clone());
+    if (res && res.ok && !isHtml(res)) cache.put(request, res.clone());
     return res;
 }
 
