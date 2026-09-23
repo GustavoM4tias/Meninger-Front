@@ -35,14 +35,17 @@ const shown = computed(() => {
 </script>
 
 <template>
-  <div v-tippy="tooltip" class="px-3 py-2.5 min-w-0 text-center stagger-in" :style="{ '--i': index }">
-    <dt class="flex items-center justify-center gap-1.5 text-micro text-ink-muted truncate">
+  <div v-tippy="tooltip" :title="tooltip || undefined"
+    class="px-3 py-2.5 min-w-0 text-center stagger-in" :style="{ '--i': index }">
+    <!-- O rótulo nunca some: numa faixa apertada, "Estoque segu..." não diz nada.
+         Ele quebra em duas linhas e o resto da explicação fica no tooltip. -->
+    <dt class="flex items-center justify-center gap-1.5 text-micro text-ink-muted leading-tight">
       <i v-if="icon" :class="[icon, 'text-ink-subtle']" style="font-size:10px"></i>{{ label }}
     </dt>
     <dd class="metric text-metric-sm mt-0.5 truncate transition-colors duration-420"
       :class="counting ? 'metric-counting' : (TONES[tone] || '')">
       {{ shown }}
     </dd>
-    <dd v-if="hint" class="text-micro text-ink-subtle tabular-nums truncate">{{ hint }}</dd>
+    <dd v-if="hint" class="text-micro text-ink-subtle tabular-nums leading-tight">{{ hint }}</dd>
   </div>
 </template>

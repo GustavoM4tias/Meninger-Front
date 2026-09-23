@@ -141,18 +141,42 @@ const celulaAtiva = (c) => {
   return filtroStatus.value.includes(k);
 };
 
+// Sete métricas, não nove: a faixa é uma linha só, e cada item que entra rouba
+// largura de todos os outros — com nove, rótulo e explicação viravam reticências.
+// "Disponíveis" e "Estoque segurado" viraram a explicação de "À venda", que é o
+// número que a diretoria realmente pergunta. O texto inteiro fica no tooltip.
 const metricas = computed(() => {
   const r = mirror.value?.resumo; if (!r) return [];
+  const pct = (n) => (r.unidades ? `${Math.round((n / r.unidades) * 100)}%` : '');
+  const seguradas = r.estoque_comercial || 0;
+  const aVenda = r.a_venda ?? r.disponiveis;
+
   return [
-    { key: 'u', label: 'Unidades', raw: r.unidades },
-    { key: 'd', label: 'Disponíveis', raw: r.disponiveis, tone: 'pos', hint: r.unidades ? `${Math.round((r.disponiveis / r.unidades) * 100)}%` : '' },
-    { key: 'v', label: 'Vendidas', raw: r.vendidas, tone: 'neg', hint: r.unidades ? `${Math.round((r.vendidas / r.unidades) * 100)}%` : '' },
-    { key: 'r', label: 'Reservadas', raw: r.reservadas, tone: 'warn' },
-    { key: 'b', label: 'Bloqueadas', raw: r.bloqueadas, hint: r.estoque_comercial ? `${r.estoque_comercial} seguradas` : '' },
-    { key: 'e', label: 'Estoque segurado', raw: r.estoque_comercial || 0, tone: 'pos', hint: 'bloqueadas que ainda vendem' },
-    { key: 'av', label: 'À venda', raw: r.a_venda ?? r.disponiveis, tone: 'pos', hint: 'disponíveis + seguradas' },
-    { key: 'vgv', label: 'VGV disponível', raw: r.vgv_disponivel, format: fmtBRL, tone: 'accent' },
-    { key: 'm2', label: 'R$/m² disponível', raw: r.valor_m2_disponivel, format: fmtBRL, hint: 'média ponderada' },
+    { key: 'u', label: 'Unidades', raw: r.unidades, tooltip: 'Total de unidades cadastradas no CV' },
+    {
+      key: 'av', label: 'À venda', raw: aVenda, tone: 'pos',
+      hint: seguradas ? `${r.disponiveis} livres + ${seguradas} seguradas` : pct(aVenda),
+      tooltip: seguradas
+        ? `${aVenda} unidades a vender: ${r.disponiveis} disponíveis no CV mais ${seguradas} bloqueadas por decisão comercial, que seguem sendo estoque`
+        : `${aVenda} unidades disponíveis no CV`,
+    },
+    { key: 'v', label: 'Vendidas', raw: r.vendidas, tone: 'neg', hint: pct(r.vendidas), tooltip: 'Unidades vendidas' },
+    { key: 'r', label: 'Reservadas', raw: r.reservadas, tone: 'warn', tooltip: 'Reserva em andamento: fora do estoque até virar venda ou cair' },
+    {
+      key: 'b', label: 'Bloqueadas', raw: r.bloqueadas,
+      hint: seguradas ? `${seguradas} contam como estoque` : '',
+      tooltip: seguradas
+        ? `${r.bloqueadas} bloqueadas no CV, das quais ${seguradas} são estoque comercial segurado (entram em "À venda") e ${r.bloqueadas - seguradas} estão fora do jogo`
+        : 'Bloqueadas no CV',
+    },
+    {
+      key: 'vgv', label: 'VGV à venda', raw: r.vgv_disponivel, format: fmtBRL, tone: 'accent',
+      tooltip: 'Soma do preço das unidades à venda, seguradas incluídas',
+    },
+    {
+      key: 'm2', label: 'R$/m² à venda', raw: r.valor_m2_disponivel, format: fmtBRL, hint: 'média ponderada',
+      tooltip: 'VGV à venda dividido pela área privativa dessas mesmas unidades',
+    },
   ];
 });
 
