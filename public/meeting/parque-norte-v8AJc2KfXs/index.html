@@ -302,7 +302,7 @@ body.ui #hint{opacity:.7}
 .az-sub{opacity:0;transform:translateY(20px)}
 #s-atozero.zero .az-sub{opacity:1;transform:none;transition:.6s .35s}
 /* nota padrão das cenas de condição e campanha */
-.cc{position:absolute;left:clamp(16px,calc(4*var(--vw)),64px);bottom:clamp(14px,3.6dvh,36px);z-index:3;
+.cc{position:absolute;left:clamp(16px,calc(4*var(--vw)),64px);bottom:calc(clamp(14px,3.6dvh,36px) + 34px);z-index:3;
   font-size:clamp(12px,calc(1.05*var(--vw)),16px);font-weight:600;color:var(--muted);letter-spacing:.02em}
 .sc-verde .cc{color:rgba(225,245,232,.82)}
 /* ============ MODULAÇÃO ============ */
@@ -317,6 +317,56 @@ body.ui #hint{opacity:.7}
 .mod-leg .chip{font-size:clamp(14px,calc(1.3*var(--vw)),20px)}
 .mod-leg .sw{width:18px;height:18px;border-radius:5px;flex:none;border:1px solid rgba(0,0,0,.12)}
 .mod-leg b{font-weight:800;color:var(--verde)}
+/* ============ SORTEIO AO VIVO ============ */
+#s-sorteio .sz-pane{display:none}
+#s-sorteio[data-sz="0"] #sz-cad{display:block}
+#s-sorteio[data-sz="1"] #sz-draw{display:flex}
+#s-sorteio[data-sz="2"] #sz-spin{display:block}
+.sz-count{display:flex;align-items:center;gap:18px}
+.sz-count b{font-weight:800;font-size:clamp(56px,calc(7*var(--vw)),120px);line-height:1;color:var(--ouro);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.sz-count span{font-weight:700;font-size:clamp(18px,calc(1.9*var(--vw)),30px);line-height:1.1}
+.sz-count small{display:block;font-weight:500;font-size:.55em;opacity:.7;margin-top:6px}
+.sz-count.bump b{animation:bump .5s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+.sz-feed{display:flex;flex-wrap:wrap;gap:10px;min-height:48px}
+.sz-feed span{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);font-weight:600;font-size:clamp(13px,calc(1.2*var(--vw)),18px);animation:pop .6s cubic-bezier(.2,.8,.3,1.3) both}
+.sz-feed span i{width:8px;height:8px;border-radius:50%;background:var(--ouro);font-style:normal}
+.sz-qr{background:#fff;border-radius:26px;padding:clamp(14px,calc(1.6*var(--vw)),26px);display:inline-block;box-shadow:0 30px 70px rgba(0,0,0,.45);border:4px solid var(--ouro)}
+.sz-qr img{width:min(36dvh,calc(24*var(--vw)));display:block}
+/* palco do nome */
+.sz-stage{position:absolute;inset:0;z-index:3;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  background:radial-gradient(60% 55% at 50% 48%,rgba(255,215,94,.22),transparent 70%),radial-gradient(120% 100% at 50% 50%,#00401f 0%,#001409 100%)}
+.sz-beams{position:absolute;inset:-20%;opacity:.0;pointer-events:none;
+  background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,215,94,.13) 0 8deg,transparent 8deg 20deg);transition:opacity .8s}
+#s-sorteio.won .sz-beams{opacity:1;animation:beams 18s linear infinite}
+@keyframes beams{to{transform:rotate(360deg)}}
+.sz-slot{position:relative;margin-top:3dvh;min-height:clamp(120px,22dvh,240px);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sz-name{font-weight:800;letter-spacing:-.04em;line-height:1;color:#fff;font-size:clamp(44px,calc(7.6*var(--vw)),140px);max-width:92vw;text-wrap:balance;will-change:transform,filter}
+.sz-name.roll{filter:blur(1.5px);opacity:.85}
+#s-sorteio.won .sz-name{color:var(--ouro);text-shadow:0 0 60px rgba(245,179,47,.55);animation:winPop .9s cubic-bezier(.2,.9,.3,1.35) both}
+@keyframes winPop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+.sz-imob{margin-top:1.6dvh;font-weight:600;font-size:clamp(18px,calc(2.2*var(--vw)),36px);color:rgba(235,250,240,.9);min-height:1.3em}
+.sz-call{margin-top:3dvh;padding:.3em 1.2em;border-radius:16px;background:linear-gradient(100deg,#ef9800,#f8c93b);color:#2a1a08;font-weight:800;
+  font-size:clamp(28px,calc(4.2*var(--vw)),72px);letter-spacing:-.01em;opacity:0;transform:scale(2) rotate(-8deg);box-shadow:0 22px 60px rgba(0,0,0,.4)}
+#s-sorteio.won .sz-call{opacity:1;transform:scale(1) rotate(-2deg);transition:transform .55s cubic-bezier(.2,.9,.3,1.35) .5s,opacity .2s .5s}
+#s-sorteio.won .sz-call{animation:callPulse 1.6s ease-in-out 1.4s infinite}
+@keyframes callPulse{0%,100%{box-shadow:0 22px 60px rgba(0,0,0,.4),0 0 0 0 rgba(245,179,47,.6)}50%{box-shadow:0 22px 60px rgba(0,0,0,.4),0 0 0 22px rgba(245,179,47,0)}}
+.sz-btns{position:absolute;bottom:clamp(40px,8dvh,90px);display:flex;gap:16px;opacity:0;pointer-events:none;transition:opacity .5s 1.2s}
+#s-sorteio.won .sz-btns{opacity:1;pointer-events:auto}
+.sz-btn{font:inherit;font-weight:800;font-size:clamp(14px,calc(1.3*var(--vw)),20px);padding:.8em 1.5em;border-radius:99px;border:0;cursor:pointer;
+  background:var(--ouro);color:#2a1a08;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.sz-btn.ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.sz-btn kbd{font:inherit;font-size:.75em;opacity:.7;margin-left:6px;border:1px solid currentColor;border-radius:6px;padding:0 6px}
+/* roleta de verdade */
+.sz-wheel-box{width:min(62dvh,calc(34*var(--vw)))}
+#sz-wheel{cursor:pointer}
+.sz-prize{display:inline-flex;flex-direction:column;padding:.4em .9em;border-radius:20px;background:rgba(0,0,0,.25);border:2px solid var(--ouro);
+  opacity:0;transform:scale(.6)}
+.sz-prize small{font-weight:700;font-size:clamp(14px,calc(1.3*var(--vw)),20px);letter-spacing:.3em;text-transform:uppercase;color:rgba(235,250,240,.8)}
+.sz-prize b{font-weight:800;font-size:clamp(56px,calc(8*var(--vw)),140px);line-height:1;color:var(--ouro);letter-spacing:-.04em;text-shadow:0 0 60px rgba(245,179,47,.4)}
+#s-sorteio.paid .sz-prize{opacity:1;transform:scale(1);transition:transform .7s cubic-bezier(.2,.9,.3,1.4),opacity .3s}
+#s-sorteio.paid #sz-hint{opacity:0}
 /* ============ FINAL ============ */
 #confetti{position:fixed;inset:0;z-index:40;pointer-events:none}
 @media (max-width:860px){
@@ -430,9 +480,10 @@ body.ui #hint{opacity:.7}
 
 <!-- 6 IMPLANTAÇÃO · book p.16 -->
 <section class="scene" id="s-implant" data-title="Implantação" style="background:#2c4a24">
-  <div class="band top" style="--ey:526"><img class="fill cover" src="a/bk_implantacao.jpg" alt="Implantação do Residencial Parque Norte" style="object-position:50% 0%"></div>
+  <div class="band top" style="--ey:526"><img class="fill cover" src="a/bk_implantacao.jpg" alt="" style="filter:blur(22px) brightness(.72) saturate(.9);transform:scale(1.12)"></div>
   <div class="band" style="--sy:526;background:linear-gradient(180deg,#f0a200,#f9cd42)"></div>
   <div class="board">
+    <img class="ab" style="--x:0;--y:0;--w:1152;--h:526;object-fit:fill" src="a/bk_implantacao.jpg" alt="Implantação do Residencial Parque Norte">
     <div class="ab rv lf d3" style="--x:46;--y:556;color:#3a1f0a;line-height:1;font-size:calc(var(--u)*30);letter-spacing:-.02em">Escolha<br><span style="font-weight:400">sua</span> <b style="font-weight:800">Unidade:</b></div>
     <div class="ab" style="--x:290;--y:566;--w:850;display:flex;flex-wrap:nowrap;gap:calc(var(--u)*9)">
       <span class="chip rv up d5" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap"><span class="ico" style="background:var(--verde)"></span><span><b data-count="601"></b> casas no masterplan</span></span>
@@ -446,13 +497,14 @@ body.ui #hint{opacity:.7}
 
 <!-- MODULAÇÃO (implantação ilustrada + módulos coloridos) -->
 <section class="scene" id="s-modulos" data-title="Modulação" style="background:#2c4a24">
-  <div class="band top" style="--ey:526">
-    <img class="fill cover" src="a/bk_implantacao_limpa.jpg" alt="Implantação do Residencial Parque Norte com os módulos" style="object-position:50% 78%">
-    <img class="fill cover ly l1" src="a/modi_m1.png" alt="" style="object-position:50% 78%">
-    <img class="fill cover ly l2" src="a/modi_m2.png" alt="" style="object-position:50% 78%">
-  </div>
+  <div class="band top" style="--ey:526"><img class="fill cover" src="a/bk_implantacao_limpa.jpg" alt="" style="filter:blur(22px) brightness(.72) saturate(.9);transform:scale(1.12)"></div>
   <div class="band" style="--sy:526;background:linear-gradient(180deg,#0b5a33,#003d20)"></div>
   <div class="board">
+    <div class="ab" style="--x:0;--y:0;--w:1152;--h:526">
+      <img class="fill" style="object-fit:fill" src="a/bk_implantacao_limpa.jpg" alt="Implantação do Residencial Parque Norte com os módulos">
+      <img class="fill ly l1" style="object-fit:fill" src="a/modi_m1.png" alt="">
+      <img class="fill ly l2" style="object-fit:fill" src="a/modi_m2.png" alt="">
+    </div>
     <div class="ab rv lf d3" style="--x:46;--y:560;color:#fff;line-height:1;font-size:calc(var(--u)*30);letter-spacing:-.02em;font-weight:800">Modulação</div>
     <div class="ab mod-leg" style="--x:300;--y:562;--w:830;display:flex;flex-wrap:nowrap;gap:calc(var(--u)*12)">
       <span class="chip rv up d8" style="font-size:calc(var(--u)*16);padding:.55em 1.1em;white-space:nowrap"><span class="sw" style="background:#3ec478"></span><span>Módulo I · <b data-count="486"></b> casas</span></span>
@@ -547,7 +599,7 @@ body.ui #hint{opacity:.7}
   <div class="gal-slide" data-label="Dormitório 2" style="background-image:url(a/r_dorm2.jpg)"></div>
   <div class="gal-slide" data-label="Quintal" style="background-image:url(a/r_quintal.jpg)"></div>
   <div class="gal-slide" data-label="Sua rua" style="background-image:url(a/r_fachada2.jpg)"></div>
-  <div class="gal-slide" data-label="A área hoje" data-real="1" style="background-image:url(a/o_area_hoje.jpg)"></div>
+  <div class="gal-slide" data-label="A região" style="background-image:url(a/bk_localizacao.jpg)"></div>
   <div class="shade" style="background:linear-gradient(180deg,rgba(0,0,0,.28),transparent 18%)"></div>
   <div id="gal-steps"></div>
   <div class="board" style="position:absolute;z-index:3;pointer-events:none">
@@ -563,13 +615,14 @@ body.ui #hint{opacity:.7}
       <div class="eyebrow rv"><span class="tick"></span>Conheça a planta do seu novo lar</div>
       <h2 class="h-big rv d1">Feita para<br><span class="green">viver bem</span></h2>
       <div class="mt2">
-        <div class="ck rv d2"><span class="bx">2</span>Dormitórios<small style="margin-left:auto;color:var(--muted);font-size:.8em">44,03 m² construídos</small></div>
+        <div class="ck rv d2"><span class="bx">2</span>Dormitórios</div>
+        <div class="ck rv d2"><span class="bx">✓</span>44,03 m² construídos</div>
         <div class="ck rv d3"><span class="bx">✓</span>Sala e cozinha integradas</div>
         <div class="ck rv d4"><span class="bx">✓</span>Banheiro e área de serviço</div>
         <div class="ck rv d5"><span class="bx">✓</span>Quintal no lote de 240 m²</div>
       </div>
       <div class="row mt2">
-        <span class="chip rv d6"><span class="ico"></span>Piso cerâmico tipo A</span>
+        <span class="chip rv d6"><span class="ico"></span>Piso cerâmico</span>
         <span class="chip rv d7"><span class="ico"></span>Esquadrias de aço</span>
         <span class="chip rv d8"><span class="ico"></span>Caixa d'água de 500 L</span>
         <span class="chip rv d9"><span class="ico"></span>Adaptáveis PNE</span>
@@ -677,7 +730,8 @@ body.ui #hint{opacity:.7}
 <section class="scene" id="s-maps" data-title="Como chegar" style="background:#3f5a2e">
   <div class="bgimg" style="background-image:url(a/bk_maps.jpg);filter:blur(30px) brightness(.55) saturate(.8);inset:-10%"></div>
   <div class="board">
-    <img class="fill cover rv fd" src="a/bk_maps.jpg" alt="Clique aqui: veja a localização no Google Maps">
+    <img class="fill cover rv fd" src="a/bk_maps_limpa.jpg" alt="Veja a localização no Google Maps">
+    <div class="ab rv fd d2" style="--x:282;--y:123;--w:462;--h:67;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:calc(var(--u)*44);letter-spacing:-.01em;color:#3b3a0a">COMO CHEGAR</div>
     <a class="ab" id="maps-link" href="https://maps.app.goo.gl/QbM6jnz7defCQRdi7" target="_blank" rel="noopener" style="--x:240;--y:118;--w:600;--h:122" aria-label="Abrir no Google Maps"></a>
     <div class="ab rv pop d4" style="--x:905;--y:90;--w:180;background:#fff;border-radius:calc(var(--u)*14);padding:calc(var(--u)*12);text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4)">
       <img src="a/qr_maps.png" alt="QR code do Google Maps" style="width:100%;display:block">
@@ -728,13 +782,6 @@ body.ui #hint{opacity:.7}
       <div class="card rv d2"><div class="knum">R$ <span data-count="235000"></span></div><div class="klab">valor de venda</div></div>
       <div class="card rv d3"><div class="knum" style="color:var(--acc)">&minus; R$ <span data-count="25000"></span></div><div class="klab"><b style="color:var(--ink)">desconto construtora</b></div></div>
       <div class="card hl rv d4"><div class="knum">R$ <span data-count="210000"></span></div><div class="klab"><b style="color:var(--ink)">sai por</b> · com o desconto construtora</div></div>
-    </div>
-    <div class="card mt1 rv d5">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap">
-        <div class="klab" style="margin:0">Demanda mínima · assinatura fracionada</div>
-        <div class="knum" style="font-size:clamp(26px,calc(2.8*var(--vw)),44px)"><span data-count="86"></span> de 427 unidades</div>
-      </div>
-      <div class="meter"><div style="--w:20.1%"></div></div>
     </div>
     <div class="row mt2">
       <span class="chip rv d6"><span class="ico"></span><span>Ato de R$ 1.000 &middot; <b>ZERO</b> nas primeiras 100 vendas</span></span>
@@ -787,7 +834,6 @@ body.ui #hint{opacity:.7}
 <!-- 21 FLUXO -->
 <section class="scene" id="s-fluxo" data-title="Fluxo do cliente">
   <div class="wrap">
-    <div class="eyebrow rv"><span class="tick"></span>Simulação de fluxo</div>
     <h2 class="h-med rv d1">O caminho de um <span class="green">cliente bom</span></h2>
     <div class="tl mt2" style="grid-template-columns:repeat(5,1fr)">
       <div class="card st rv d2"><div class="num">01</div><h3>Análise Caixa</h3><p>Pré-cadastro aprovado com o correspondente</p></div>
@@ -881,17 +927,62 @@ body.ui #hint{opacity:.7}
   <p class="cc">*Consulte condições.</p>
 </section>
 
-<!-- 26 GANHOS -->
-<section class="scene sc-verde" id="s-ganhos" data-title="Ganho por venda">
-  <div class="wrap" style="text-align:center">
-    <div class="eyebrow rv d1">Somando tudo, cada venda vale</div>
-    <div class="big-money rv pop d2" style="margin-top:1.5vh">até R$ <span data-count="7800" data-dur="2200"></span></div>
-    <div class="caps mt1 rv d3">para o corretor</div>
-    <div class="row mt2 rv d5" style="justify-content:center">
-      <span class="chip"><span class="ico"></span>R$ 6.300 de comissão (3% sobre a venda)</span>
-      <span class="chip"><span class="ico"></span>+ até R$ 1.500 na roleta da sorte</span>
+<!-- SORTEIO AO VIVO (lista do Office em tempo real) -->
+<section class="scene sc-verde" id="s-sorteio" data-title="Sorteio ao vivo" data-sz="0">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-8vw;bottom:-14vh;width:44vw">
+  <!-- passo 0: inscrição -->
+  <div class="wrap sz-pane" id="sz-cad">
+    <div class="split" style="grid-template-columns:1.1fr .9fr">
+      <div>
+        <div class="eyebrow rv"><span class="tick"></span>Sorteio ao vivo</div>
+        <h2 class="h-big rv d1">Cadastre-se e<br><span style="color:var(--ouro)">concorra agora!</span></h2>
+        <p class="lead mt1 rv d2">Aponte a câmera, preencha <b>nome, WhatsApp e imobiliária</b>. Um nome sai da lista e sobe ao palco para <b>girar a roleta valendo prêmio de verdade</b>.</p>
+        <div class="sz-count mt2 rv d3"><b id="sz-n">0</b><span>inscritos<small id="sz-status">conectando…</small></span></div>
+        <div class="sz-feed mt1" id="sz-feed"></div>
+      </div>
+      <div class="rv pop d3" style="text-align:center;justify-self:center">
+        <div class="sz-qr"><img src="a/qr_sorteio.png" alt="QR code do cadastro do sorteio"></div>
+        <div class="mt1" style="font-weight:800;font-size:clamp(18px,calc(1.8*var(--vw)),28px);letter-spacing:.06em;color:var(--ouro)">APONTE A CÂMERA</div>
+        <div class="note">lp.menin.com.br/sorteio-parque-norte</div>
+      </div>
     </div>
-    <p class="lead mt2 rv d6" style="margin-left:auto;margin-right:auto">E o Módulo 1 soma <b>mais de R$ 3 milhões</b> em comissões.</p>
+  </div>
+  <!-- passo 1: o nome -->
+  <div class="sz-pane sz-stage" id="sz-draw">
+    <div class="sz-beams"></div>
+    <div class="eyebrow" id="sz-kicker">Sorteando entre <b id="sz-n2">0</b> inscritos</div>
+    <div class="sz-slot"><div class="sz-name" id="sz-name">...</div><div class="sz-imob" id="sz-imob"></div></div>
+    <div class="sz-call" id="sz-call">SUBA AO PALCO!</div>
+    <div class="sz-btns" id="sz-btns">
+      <button type="button" class="sz-btn ghost" id="sz-again">&#8635; Sortear de novo <kbd>R</kbd></button>
+      <button type="button" class="sz-btn" id="sz-go">Girar a roleta &rarr;</button>
+    </div>
+  </div>
+  <!-- passo 2: a roleta de verdade -->
+  <div class="wrap sz-pane" id="sz-spin">
+    <div class="split" style="grid-template-columns:.95fr 1.05fr">
+      <div>
+        <div class="eyebrow"><span class="tick"></span>Valendo de verdade</div>
+        <h2 class="h-big" id="sz-who" style="margin-top:.4vh">Nome</h2>
+        <p class="lead mt1" id="sz-who-imob"></p>
+        <div class="sz-prize mt2" id="sz-prize"><small>ganhou</small><b id="sz-prize-v">R$ 0</b></div>
+        <p class="note mt2" id="sz-hint">Aperte &rarr; ou clique na roleta para girar.</p>
+      </div>
+      <div class="wheel-box sz-wheel-box">
+        <div class="pin"></div>
+        <div class="wheel" id="sz-wheel" style="background:conic-gradient(#f5b32f 0 45deg,#0a7a46 45deg 90deg,#fff 90deg 135deg,#f5b32f 135deg 180deg,#0a7a46 180deg 225deg,#fff 225deg 270deg,#f5b32f 270deg 315deg,#0a7a46 315deg 360deg)">
+          <i style="transform:rotate(22.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
+          <i style="transform:rotate(67.5deg)"><b style="color:#fff">R$ 1.250</b></i>
+          <i style="transform:rotate(112.5deg)"><b style="color:#005031">R$ 1.000</b></i>
+          <i style="transform:rotate(157.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
+          <i style="transform:rotate(202.5deg)"><b style="color:#fff">R$ 1.250</b></i>
+          <i style="transform:rotate(247.5deg)"><b style="color:#005031">R$ 1.000</b></i>
+          <i style="transform:rotate(292.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
+          <i style="transform:rotate(337.5deg)"><b style="color:#fff">R$ 1.250</b></i>
+          <span class="hub"><img src="a/icon_pn.png" alt=""></span>
+        </div>
+      </div>
+    </div>
   </div>
   <p class="cc">*Consulte condições.</p>
 </section>
@@ -1083,6 +1174,91 @@ function countDown(el, from, to, dur, done){
   requestAnimationFrame(frame);
 }
 
+/* ---- SORTEIO AO VIVO: lista do Office (formulário só cadastro) ---- */
+var SZ_API = 'https://menin.up.railway.app/api/marketing/public/forms/sorteio-parque-norte/entries';
+var szScene = document.getElementById('s-sorteio');
+var szList = [], szSeenIds = {}, szStep = 0, szPollT = null, szWinner = null, szRolling = false, szSpinning = false, szWheelDeg = 0;
+var SZ_SLICES = [1500, 1250, 1000, 1500, 1250, 1000, 1500, 1250];   // fatia k cobre [45k, 45k+45) a partir do topo
+function szRand(n){ var u = new Uint32Array(1); crypto.getRandomValues(u); return u[0] % n; }
+function szEsc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function szSetStatus(t){ var el = document.getElementById('sz-status'); if(el) el.textContent = t; }
+function szRender(novos){
+  var n = szList.length, el = document.getElementById('sz-n');
+  if(el.textContent !== String(n)){ el.textContent = n; var c = el.parentNode; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
+  document.getElementById('sz-n2').textContent = n;
+  var feed = document.getElementById('sz-feed');
+  var ult = szList.slice(-6).reverse();
+  feed.innerHTML = ult.map(function(p){ return '<span><i></i>' + szEsc(p.nome.split(' ')[0]) + (p.imobiliaria ? ' · ' + szEsc(p.imobiliaria) : '') + '</span>'; }).join('');
+}
+var SZ_DEMO = /[?&]demo/.test(location.search);   // ensaio: ?demo usa nomes fictícios
+function szPoll(){
+  if(SZ_DEMO){
+    szList = ['Ana Paula Souza','Bruno Martins','Carla Ribeiro','Diego Alves','Eduarda Lima','Felipe Costa','Gabriela Nunes','Henrique Rocha','Isabela Moraes','João Pedro Castro']
+      .map(function(n, i){ return { id: i + 1, nome: n, imobiliaria: ['Casa Nova Imóveis','Sinop Prime','Norte Imóveis'][i % 3] }; });
+    szRender(); szSetStatus('modo ensaio · nomes fictícios'); return;
+  }
+  fetch(SZ_API, { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(j){
+    if(!j || !j.ok){ szSetStatus('lista ainda não liberada no Office'); return; }
+    szList = j.items || []; szRender(); szSetStatus('ao vivo · atualiza sozinho');
+  }).catch(function(){ szSetStatus('sem conexão · tentando de novo'); });
+}
+function szStartPoll(){ szPoll(); clearInterval(szPollT); szPollT = setInterval(szPoll, 3000); }
+function szStopPoll(){ clearInterval(szPollT); szPollT = null; }
+function szShow(step){ szStep = step; szScene.setAttribute('data-sz', step); }
+function szDraw(){
+  if(szRolling) return;
+  if(!szList.length){ szSetStatus('ninguém inscrito ainda'); szShow(0); return; }
+  szShow(1); szScene.classList.remove('won','paid'); szRolling = true;
+  var nameEl = document.getElementById('sz-name'), imobEl = document.getElementById('sz-imob');
+  imobEl.textContent = ''; nameEl.classList.add('roll');
+  szWinner = szList[szRand(szList.length)];                 // sorteio justo entre todos os inscritos
+  var t0 = performance.now(), DUR = 5200, last = 0;
+  function tick(now){
+    var p = Math.min((now - t0) / DUR, 1);
+    var gap = 45 + 520 * Math.pow(p, 3);                    // começa rápido e vai freando
+    if(now - last >= gap || p === 1){
+      last = now;
+      var show = p === 1 ? szWinner : szList[szRand(szList.length)];
+      nameEl.textContent = show.nome;
+      nameEl.style.transform = 'translateY(' + (p === 1 ? 0 : (szRand(2) ? -8 : 8)) + 'px)';
+    }
+    if(p < 1){ requestAnimationFrame(tick); return; }
+    nameEl.classList.remove('roll'); nameEl.style.transform = '';
+    imobEl.textContent = szWinner.imobiliaria || '';
+    szScene.classList.add('won'); szRolling = false;
+    burst(220); setTimeout(function(){ burst(160); }, 700);
+    try { var h = JSON.parse(localStorage.getItem('pn_sorteio') || '[]'); h.push({ at: new Date().toISOString(), id: szWinner.id, nome: szWinner.nome, imobiliaria: szWinner.imobiliaria }); localStorage.setItem('pn_sorteio', JSON.stringify(h)); } catch(e){}
+  }
+  requestAnimationFrame(tick);
+}
+function szToWheel(){
+  if(!szWinner) return;
+  szShow(2); szScene.classList.remove('paid');
+  document.getElementById('sz-who').textContent = szWinner.nome;
+  document.getElementById('sz-who-imob').textContent = szWinner.imobiliaria || '';
+  var w = document.getElementById('sz-wheel'); szWheelDeg = 0; w.style.transition = 'none'; w.style.transform = 'none'; szSpinning = false;
+}
+function szSpin(){
+  if(szSpinning || szScene.classList.contains('paid')) return;
+  szSpinning = true;
+  var w = document.getElementById('sz-wheel');
+  var alvo = szRand(3600) / 10;                              // qualquer ponto da roda, sem vício
+  szWheelDeg = 360 * 6 + alvo;
+  w.style.transition = 'transform 6.5s cubic-bezier(.1,.75,.12,1)';
+  w.style.transform = 'rotate(' + szWheelDeg + 'deg)';
+  setTimeout(function(){
+    var sob = (360 - (szWheelDeg % 360)) % 360;             // ângulo da roda que parou embaixo do ponteiro
+    var premio = SZ_SLICES[Math.floor(sob / 45) % 8];
+    document.getElementById('sz-prize-v').textContent = 'R$ ' + fmt.format(premio);
+    szScene.classList.add('paid'); szSpinning = false;
+    burst(260); setTimeout(function(){ burst(200); }, 600); setTimeout(function(){ burst(160); }, 1300);
+    try { var h = JSON.parse(localStorage.getItem('pn_sorteio') || '[]'); if(h.length) { h[h.length - 1].premio = premio; localStorage.setItem('pn_sorteio', JSON.stringify(h)); } } catch(e){}
+  }, 6600);
+}
+document.getElementById('sz-again').addEventListener('click', function(e){ e.stopPropagation(); szDraw(); });
+document.getElementById('sz-go').addEventListener('click', function(e){ e.stopPropagation(); szToWheel(); });
+document.getElementById('sz-wheel').addEventListener('click', function(e){ e.stopPropagation(); szSpin(); });
+
 /* ---- barra de recurso ---- */
 function runSim(scene){
   Array.prototype.forEach.call(scene.querySelectorAll('#simbar .seg'), function(s,i){
@@ -1126,6 +1302,7 @@ function go(n){
   Array.prototype.forEach.call(dots.children, function(d,i){ d.classList.toggle('on', i===cur); });
   if(sc===gal) galShow(0);
   if(sc===decScene) decShow(0);
+  if(sc===szScene){ szShow(0); szScene.classList.remove('won','paid'); szStartPoll(); } else szStopPoll();
   if(sc===rolScene){ rolStep = 0; wheelDeg = 0; wheel.style.transition='none'; wheel.style.transform='none'; wheel.classList.add('idle'); }
   if(sc===comScene){ comStep = 0; comScene.classList.remove('reveal2'); document.getElementById('comi-total').textContent='0'; }
   runCounters(sc);
@@ -1139,6 +1316,11 @@ function next(){
   if(sc===decScene && decIdx < decPages.length-1){ decShow(decIdx+1); return; }
   if(sc===rolScene && rolStep===0){ rolStep=1; spinWheel(); return; }
   if(sc===comScene && comStep===0){ comStep=1; comReveal(); return; }
+  if(sc===szScene){
+    if(szStep===0){ szDraw(); return; }
+    if(szStep===1){ if(!szRolling && szWinner) szToWheel(); return; }
+    if(szStep===2 && !szScene.classList.contains('paid')){ szSpin(); return; }
+  }
   go(cur+1);
 }
 function prev(){
@@ -1146,6 +1328,7 @@ function prev(){
   if(sc===gal && galIdx>0){ galShow(galIdx-1); return; }
   if(sc===decScene && decIdx>0){ decShow(decIdx-1); return; }
   if(sc===comScene && comStep===1){ comStep=0; sc.classList.remove('reveal2'); return; }
+  if(sc===szScene && szStep>0 && !szRolling && !szSpinning){ szShow(szStep===2 ? 1 : 0); return; }
   go(cur-1);
 }
 
@@ -1154,6 +1337,7 @@ document.addEventListener('keydown', function(e){
   switch(e.key){
     case 'ArrowRight': case 'Right': case 'ArrowDown': case ' ': case 'PageDown': case 'Enter': e.preventDefault(); next(); break;
     case 'ArrowLeft': case 'Left': case 'ArrowUp': case 'PageUp': case 'Backspace': e.preventDefault(); prev(); break;
+    case 'r': case 'R': if(scenes[cur]===szScene && szStep===1 && !szRolling){ szDraw(); } break;
     case 'Home': go(0); break;
     case 'End': go(N-1); break;
     case 'f': case 'F':
