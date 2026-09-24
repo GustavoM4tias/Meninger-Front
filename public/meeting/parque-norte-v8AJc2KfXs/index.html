@@ -30,6 +30,10 @@
 .board.cheia{width:max(100vw,calc(100dvh*16/9))}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
+/* apresentação: clique/duplo clique não seleciona texto nem arrasta imagem */
+html,body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+img{-webkit-user-drag:none;user-drag:none}
+::selection{background:transparent}
 body{background:#e9e9e9;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-font-smoothing:antialiased}
 /* ============ PALCO ============ */
 #stage{position:fixed;inset:0;overflow:hidden}
@@ -1384,6 +1388,10 @@ function loop(){
 var uiT = null;
 function showUi(){ document.body.classList.add('ui'); clearTimeout(uiT); uiT = setTimeout(function(){ document.body.classList.remove('ui'); }, 2500); }
 addEventListener('mousemove', showUi); showUi();
+/* sem seleção e sem arrastar (clique rápido no passador/mouse virava texto azul) */
+document.addEventListener('selectstart', function(e){ e.preventDefault(); });
+document.addEventListener('dragstart', function(e){ e.preventDefault(); });
+document.addEventListener('mousedown', function(e){ if(e.detail > 1) e.preventDefault(); });
 
 /* início */
 scenes[0].classList.add('active');
