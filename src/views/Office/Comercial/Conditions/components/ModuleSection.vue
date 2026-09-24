@@ -21,10 +21,12 @@
               <label class="lbl">Mês de Referência</label>
               <select v-model="copyFrom.conditionId" @change="onCopyConditionChange" class="inp">
                 <option value="">Selecionar mês...</option>
-                <option v-for="c in copySourceConditions" :key="c.id" :value="c.id" :disabled="String(c.id) === String(currentConditionId)">
+                <!-- O mês desta ficha vale: copia de OUTRO módulo dela (o próprio sai da lista abaixo) -->
+                <option v-for="c in copySourceConditions" :key="c.id" :value="c.id"
+                  :disabled="String(c.id) === String(currentConditionId) && !c.modules?.some(m => String(m.id) !== String(activeModule?.id))">
                   {{ formatMonth(c.reference_month) }}
-                  <template v-if="String(c.id) === String(currentConditionId)"> — (este mês)</template>
-                  <template v-else> — {{ STATUS_LABELS[c.status] ?? c.status }}</template>
+                  <template v-if="String(c.id) === String(currentConditionId)"> - (este mês, outro módulo)</template>
+                  <template v-else> - {{ STATUS_LABELS[c.status] ?? c.status }}</template>
                 </option>
               </select>
             </div>
@@ -1372,7 +1374,10 @@ const copyFrom = ref({
 const copySourceConditions = ref([]);
 const copySourceModules = computed(() => {
     const cond = copySourceConditions.value.find(c => c.id === copyFrom.value.conditionId);
-    return cond?.modules ?? [];
+    const mods = cond?.modules ?? [];
+    // Mesma ficha: o módulo aberto não pode ser origem dele mesmo
+    if (String(copyFrom.value.conditionId) !== String(props.currentConditionId)) return mods;
+    return mods.filter(m => String(m.id) !== String(activeModule.value?.id));
 });
 
 const copyFieldOptions = [

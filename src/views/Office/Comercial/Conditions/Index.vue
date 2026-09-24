@@ -219,7 +219,7 @@ const filteredGroups = computed(() => {
   }
   if (search.value.trim()) {
     // Sem acento e sem caixa: "monaco" acha "JARDIM MÔNACO", "ipes" acha "IPÊS".
-    const fold = (t) => (t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const fold = (t) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const s = fold(search.value.trim());
     r = r.filter(g =>
       fold(g.enterprise?.nome).includes(s) ||
