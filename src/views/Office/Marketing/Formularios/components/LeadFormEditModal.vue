@@ -80,6 +80,7 @@ const AVAILABLE_FIELDS = [
   { key: 'cep',            label_default: 'CEP',            type: 'text',  enabled: false, required: false },
   { key: 'renda_familiar', label_default: 'Renda familiar', type: 'text',  enabled: false, required: false },
   { key: 'sexo',           label_default: 'Sexo',           type: 'text',  enabled: false, required: false },
+  { key: 'imobiliaria',    label_default: 'Imobiliária',    type: 'text',  enabled: false, required: false },
 ];
 
 const isEdit = computed(() => !!props.form?.id);
@@ -130,6 +131,7 @@ const empty = () => ({
   description: '', priority: 'normal', campaign_ref: '',
   start_date: '', end_date: '',
   midia_slug: '', cv_origem: 'SI',
+  cv_skip: false, public_feed: false,
   bound_empreendimentos: [],
   tags_str: '',
   default_utm_source: '', default_utm_medium: '', default_utm_campaign: '',
@@ -168,6 +170,8 @@ watch(() => props.open, async (v) => {
       end_date: fmtDateInput(f.end_date),
       midia_slug: f.midia_slug || '',
       cv_origem: f.cv_origem || 'SI',
+      cv_skip: !!f.cv_skip,
+      public_feed: !!f.public_feed,
       bound_empreendimentos: Array.isArray(f.bound_empreendimentos) ? [...f.bound_empreendimentos] : [],
       tags_str: Array.isArray(f.tags) ? f.tags.join(', ') : '',
       default_utm_source:   f.default_utm_source   || '',
@@ -281,6 +285,8 @@ async function save() {
     end_date: d.end_date || null,
     midia_slug: d.midia_slug.trim() || null,
     cv_origem: d.cv_origem,
+    cv_skip: !!d.cv_skip,
+    public_feed: !!d.public_feed,
     bound_empreendimentos: Array.isArray(d.bound_empreendimentos) ? d.bound_empreendimentos : [],
     tags: parseList(d.tags_str),
     default_utm_source:   d.default_utm_source.trim()   || null,
@@ -580,6 +586,10 @@ const sections = computed(() => {
         <template v-if="activeSection === 'vinculo'">
           <Panel title="Roteamento ao CV" icon="fas fa-link" subtitle="Esses campos vão direto no payload do lead para o CV CRM">
             <div class="space-y-4">
+              <Switch v-model="data.cv_skip" label="Só cadastro: não vira lead"
+                description="O cadastro fica guardado no Office e nunca vai para o CV. Use em sorteio, lista de presença e inscrição de evento." />
+              <Switch v-if="data.cv_skip" v-model="data.public_feed" label="Lista pública para a apresentação"
+                description="Libera nome e imobiliária dos inscritos (sem telefone) para uma apresentação ao vivo, como o sorteio do meeting. Desligue depois do evento." />
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Input v-model="data.midia_slug" label="Mídia (slug)" placeholder="site-mond-marilia" class="sm:col-span-2"
                   hint="Vira o campo 'midia' no CV. Use kebab-case." />
