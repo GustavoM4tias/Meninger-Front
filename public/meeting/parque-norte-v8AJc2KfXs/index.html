@@ -725,21 +725,6 @@ body.ui #hint{opacity:.7}
   </div>
 </section>
 
-<!-- 16 GOOGLE MAPS · book p.19 -->
-<section class="scene" id="s-maps" data-title="Como chegar" style="background:#3f5a2e">
-  <div class="bgimg" style="background-image:url(a/bk_maps.jpg);filter:blur(30px) brightness(.55) saturate(.8);inset:-10%"></div>
-  <div class="board">
-    <img class="fill cover rv fd" src="a/bk_maps_limpa.jpg" alt="Veja a localização no Google Maps">
-    <div class="ab rv fd d2" style="--x:282;--y:123;--w:462;--h:67;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:calc(var(--u)*44);letter-spacing:-.01em;color:#3b3a0a">COMO CHEGAR</div>
-    <a class="ab" id="maps-link" href="https://maps.app.goo.gl/QbM6jnz7defCQRdi7" target="_blank" rel="noopener" style="--x:240;--y:118;--w:600;--h:122" aria-label="Abrir no Google Maps"></a>
-    <div class="ab rv pop d4" style="--x:905;--y:90;--w:180;background:#fff;border-radius:calc(var(--u)*14);padding:calc(var(--u)*12);text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4)">
-      <img src="a/qr_maps.png" alt="QR code do Google Maps" style="width:100%;display:block">
-      <div style="font-weight:800;color:var(--verde);font-size:calc(var(--u)*12.5);margin-top:calc(var(--u)*8);letter-spacing:.06em">APONTE A CÂMERA</div>
-      <div style="color:var(--muted);font-size:calc(var(--u)*10)">e abra a rota no celular</div>
-    </div>
-  </div>
-</section>
-
 <!-- 17 ESTRATÉGIA COMERCIAL -->
 <section class="scene sc-verde" id="s-ato" data-title="Estratégia comercial">
   <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;bottom:-12vh;width:46vw">
@@ -1149,7 +1134,6 @@ function spinWheel(){
   setTimeout(function(){ burst(70); }, 4200);
 }
 wheel.addEventListener('click', function(e){ e.stopPropagation(); spinWheel(); });
-document.getElementById('maps-link').addEventListener('click', function(e){ e.stopPropagation(); });
 
 /* ---- ato zero: R$ 1.000 é riscado e desce até zero ---- */
 var azScene = document.getElementById('s-atozero'), azNum = document.getElementById('az-num'), azT = [];
