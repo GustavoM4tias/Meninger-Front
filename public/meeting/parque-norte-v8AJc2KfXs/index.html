@@ -1246,14 +1246,17 @@ function szSpin(){
   szWheelDeg = 360 * 6 + alvo;
   w.style.transition = 'transform 6.5s cubic-bezier(.1,.75,.12,1)';
   w.style.transform = 'rotate(' + szWheelDeg + 'deg)';
-  setTimeout(function(){
+  var feito = false;
+  function revela(){
+    if(feito) return; feito = true; w.removeEventListener('transitionend', revela);
     var sob = (360 - (szWheelDeg % 360)) % 360;             // ângulo da roda que parou embaixo do ponteiro
     var premio = SZ_SLICES[Math.floor(sob / 45) % 8];
     document.getElementById('sz-prize-v').textContent = 'R$ ' + fmt.format(premio);
     szScene.classList.add('paid'); szSpinning = false;
     burst(260); setTimeout(function(){ burst(200); }, 600); setTimeout(function(){ burst(160); }, 1300);
     try { var h = JSON.parse(localStorage.getItem('pn_sorteio') || '[]'); if(h.length) { h[h.length - 1].premio = premio; localStorage.setItem('pn_sorteio', JSON.stringify(h)); } } catch(e){}
-  }, 6600);
+  }
+  w.addEventListener('transitionend', revela);   // só revela quando a roda PARA de verdade
 }
 document.getElementById('sz-again').addEventListener('click', function(e){ e.stopPropagation(); szDraw(); });
 document.getElementById('sz-go').addEventListener('click', function(e){ e.stopPropagation(); szToWheel(); });
