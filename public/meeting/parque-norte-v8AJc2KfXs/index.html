@@ -487,9 +487,8 @@ body.ui #hint{opacity:.7}
     <div class="ab rv lf d3" style="--x:46;--y:556;color:#3a1f0a;line-height:1;font-size:calc(var(--u)*30);letter-spacing:-.02em">Escolha<br><span style="font-weight:400">sua</span> <b style="font-weight:800">Unidade:</b></div>
     <div class="ab" style="--x:290;--y:566;--w:850;display:flex;flex-wrap:nowrap;gap:calc(var(--u)*9)">
       <span class="chip rv up d5" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap"><span class="ico" style="background:var(--verde)"></span><span><b data-count="601"></b> casas no masterplan</span></span>
-      <span class="chip rv up d6" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap"><span class="ico" style="background:var(--verde)"></span><span>Módulo I · 486</span></span>
-      <span class="chip rv up d7" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap"><span class="ico" style="background:var(--verde)"></span><span>Módulo II · 115</span></span>
-      <span class="chip rv up d8" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap;background:var(--verde);color:#fff"><span class="ico"></span><span><b data-count="427"></b> neste lançamento</span></span>
+      <span class="chip rv up d6" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap"><span class="ico" style="background:var(--verde)"></span><span>Módulo I · <b data-count="427"></b> casas</span></span>
+      <span class="chip rv up d7" style="font-size:calc(var(--u)*13.5);padding:.6em 1em;white-space:nowrap"><span class="ico" style="background:var(--verde)"></span><span>Módulo II · <b data-count="174"></b> casas</span></span>
     </div>
     <div class="ilus" style="bottom:calc(var(--u)*240)">Imagem meramente ilustrativa*</div>
   </div>
@@ -507,8 +506,8 @@ body.ui #hint{opacity:.7}
     </div>
     <div class="ab rv lf d3" style="--x:46;--y:560;color:#fff;line-height:1;font-size:calc(var(--u)*30);letter-spacing:-.02em;font-weight:800">Modulação</div>
     <div class="ab mod-leg" style="--x:300;--y:562;--w:830;display:flex;flex-wrap:nowrap;gap:calc(var(--u)*12)">
-      <span class="chip rv up d8" style="font-size:calc(var(--u)*16);padding:.55em 1.1em;white-space:nowrap"><span class="sw" style="background:#3ec478"></span><span>Módulo I · <b data-count="486"></b> casas</span></span>
-      <span class="chip rv up d10" style="font-size:calc(var(--u)*16);padding:.55em 1.1em;white-space:nowrap"><span class="sw" style="background:#f7b928"></span><span>Módulo II · <b data-count="115"></b> casas</span></span>
+      <span class="chip rv up d8" style="font-size:calc(var(--u)*16);padding:.55em 1.1em;white-space:nowrap"><span class="sw" style="background:#3ec478"></span><span>Módulo I · <b data-count="427"></b> casas</span></span>
+      <span class="chip rv up d10" style="font-size:calc(var(--u)*16);padding:.55em 1.1em;white-space:nowrap"><span class="sw" style="background:#fa961e"></span><span>Módulo II · <b data-count="174"></b> casas</span></span>
     </div>
   </div>
 </section>
@@ -888,7 +887,7 @@ body.ui #hint{opacity:.7}
       <p class="lead rv d3" style="margin:1.5vh auto 0;max-width:none;font-weight:700;color:#fff">R$ 6.300 por venda</p>
     </div>
     <div class="step2 mt2">
-      <div class="eyebrow">O Módulo 1 (486 casas) soma</div>
+      <div class="eyebrow">O Módulo 1 (427 casas) soma</div>
       <div class="big-money">R$ <span id="comi-total">0</span></div>
       <div class="caps mt1">em comissões</div>
     </div>
@@ -1110,7 +1109,7 @@ var comScene = document.getElementById('s-comissao');
 var comStep = 0;
 function comReveal(){
   comScene.classList.add('reveal2');
-  countTo(document.getElementById('comi-total'), 3061800, 2600, function(){ burst(140); });
+  countTo(document.getElementById('comi-total'), 2690100, 2600, function(){ burst(140); });
 }
 
 /* ---- decorado ---- */
