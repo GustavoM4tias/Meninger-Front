@@ -1153,7 +1153,7 @@ const form = ref({
   cv_idtipo_documento: null,
   tolerancia_dias_uteis: 1,
   revalidacao_baixado_dias: 5,
-  baixa_devolucao_confirmar_dias_uteis: 3,
+  baixa_devolucao_confirmar_dias_uteis: 0,
   reconsultar_baixado_antes_emitir: true,
   cv_situacoes_reserva_morta: [4],
   max_dias_vencimento: 10,
@@ -1721,7 +1721,7 @@ onMounted(async () => {
       form.value.cv_idtipo_documento = store.settings.cv_idtipo_documento || null;
       form.value.tolerancia_dias_uteis = store.settings.tolerancia_dias_uteis ?? 1;
       form.value.revalidacao_baixado_dias = store.settings.revalidacao_baixado_dias ?? 5;
-      form.value.baixa_devolucao_confirmar_dias_uteis = store.settings.baixa_devolucao_confirmar_dias_uteis ?? 3;
+      form.value.baixa_devolucao_confirmar_dias_uteis = store.settings.baixa_devolucao_confirmar_dias_uteis ?? 0;
       form.value.cv_situacoes_reserva_morta = [...(store.settings.cv_situacoes_reserva_morta || [4])];
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
