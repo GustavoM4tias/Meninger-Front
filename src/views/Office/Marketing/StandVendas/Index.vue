@@ -54,54 +54,14 @@
             </Surface>
 
             <!-- ══ Aba Stands ══ -->
-            <div v-if="tab === 'stands'" class="flex flex-col gap-4">
-                <div class="flex items-center justify-end">
-                    <SegmentedControl v-model="standView" size="sm" :options="[
-                        { value: 'tabela', label: 'Tabela', icon: 'fas fa-table-list' },
-                        { value: 'cartoes', label: 'Cartões', icon: 'fas fa-grip' },
-                    ]" />
+            <div v-if="tab === 'stands'" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                <StandCard v-for="s in store.stands" :key="s.id" :stand="s" @open="abrir" />
+                <div v-if="!store.loading && !store.stands.length" class="sm:col-span-2 xl:col-span-3 2xl:col-span-4">
+                    <Surface variant="raised" padding="none">
+                        <EmptyState icon="fas fa-store" title="Nenhum stand cadastrado"
+                            description="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo." />
+                    </Surface>
                 </div>
-
-                <div v-if="standView === 'cartoes'" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                    <StandCard v-for="s in store.stands" :key="s.id" :stand="s" @open="abrir" />
-                    <div v-if="!store.loading && !store.stands.length" class="sm:col-span-2 xl:col-span-3 2xl:col-span-4">
-                        <Surface variant="raised" padding="none">
-                            <EmptyState icon="fas fa-store" title="Nenhum stand cadastrado"
-                                description="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo." />
-                        </Surface>
-                    </div>
-                </div>
-
-                <DataTable v-else :columns="colunasStand" :rows="store.stands" row-key="id"
-                clickable :loading="store.loading" density="comfortable"
-                sort-by="spend_total" sort-dir="desc"
-                empty-icon="fas fa-store" empty-title="Nenhum stand cadastrado"
-                empty-text="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo."
-                @row-click="abrir">
-                <template #cell-name="{ row }">
-                    <span class="font-semibold text-ink"
-                        :title="`${row.name}`
-                            + (row.unclassified_value > 0 ? ` - ${fmtBRL(row.unclassified_value)} sem classificação` : '')">
-                        {{ row.name }}
-                        <i v-if="row.unclassified_value > 0" class="fas fa-circle-question text-data-warn text-micro ml-1"></i>
-                    </span>
-                </template>
-                <!-- A coluna corta; o title abre a lista inteira de centros de custo. -->
-                <template #cell-cost_centers="{ row }">
-                    <span :title="(row.cost_center_names || []).join(', ') || 'Sem centro de custo'">
-                        {{ resumoCc(row) }}
-                    </span>
-                </template>
-                <template #cell-status="{ row }">
-                    <Badge :variant="statusMeta(row.status).variant" size="sm"
-                        :title="row.status === 'defined'
-                            ? 'Custo de construção congelado'
-                            : 'Em apuração: construção ainda soma ao vivo'">
-                        <i :class="statusMeta(row.status).icon" class="mr-1 text-micro"></i>
-                        {{ statusMeta(row.status).label }}
-                    </Badge>
-                </template>
-                </DataTable>
             </div>
 
             <!-- ══ Aba Modelos ══ -->
@@ -234,16 +194,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSalesStandStore, STATUS_META, kindMeta } from '@/stores/Marketing/SalesStand/salesStandStore';
+import { useSalesStandStore, kindMeta } from '@/stores/Marketing/SalesStand/salesStandStore';
 import { useCan } from '@/composables/useCan';
-import { fmtBRL, fmtValueRange, fmtAreaRange, sortModelsByTier } from './standFormat';
+import { fmtValueRange, fmtAreaRange, sortModelsByTier } from './standFormat';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
-import Badge from '@/components/UI/Badge.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import DataTable from '@/components/UI/DataTable.vue';
@@ -262,7 +221,6 @@ const router = useRouter();
 const can = useCan('/marketing/stand-vendas');
 
 const tab = ref('stands');
-const standView = ref('tabela');
 const modelModalOpen = ref(false);
 const editingModel = ref(null);
 const standModalOpen = ref(false);
@@ -280,55 +238,8 @@ const tabs = computed(() => [
     { value: 'conferencia', label: 'Conferência', icon: 'fas fa-clipboard-check' },
 ]);
 
-const statusMeta = (s) => STATUS_META[s] || STATUS_META.draft;
 // Modelos por porte (Standard → Premium), não alfabético.
 const sortedModels = computed(() => sortModelsByTier(store.models));
-
-// Stand com muitos centros de custo não pode esticar a coluna (o title da
-// célula, que a DataTable põe sozinha, mostra a lista inteira).
-function resumoCc(s) {
-    const nomes = s.cost_center_names || [];
-    if (!nomes.length) return '-';
-    if (nomes.length <= 2) return nomes.join(', ');
-    return `${nomes[0]} e mais ${nomes.length - 1}`;
-}
-
-const colunasStand = computed(() => [
-    { key: 'name', label: 'Stand', priority: 1, sortable: true },
-    {
-        key: 'model', label: 'Modelo', priority: 2, sortable: true,
-        value: (r) => r.model?.name || '-',
-    },
-    {
-        key: 'cost_centers', label: 'Centros de custo', priority: 2, sortable: true,
-        value: (r) => resumoCc(r),
-    },
-    {
-        key: 'spend_total', label: 'Gasto total', priority: 1, numeric: true, sortable: true,
-        format: (v) => fmtBRL(v),
-    },
-    {
-        key: 'construction_value', label: 'Construção', priority: 1, numeric: true, sortable: true,
-        format: (v) => fmtBRL(v), class: 'text-series-1',
-    },
-    {
-        key: 'maintenance_value', label: 'Recorrência', priority: 2, numeric: true, sortable: true,
-        format: (v) => fmtBRL(v), class: 'text-series-2',
-    },
-    {
-        key: 'sporadic_value', label: 'Esporádico', priority: 3, numeric: true, sortable: true,
-        format: (v) => fmtBRL(v), class: 'text-series-3',
-    },
-    {
-        key: 'recurring_monthly', label: 'Por mês', priority: 2, numeric: true, sortable: true,
-        format: (v) => fmtBRL(v),
-    },
-    {
-        key: 'unclassified_value', label: 'Sem classificação', priority: 3, numeric: true, sortable: true,
-        format: (v) => fmtBRL(v),
-    },
-    { key: 'status', label: 'Status', priority: 1, sortable: true, truncate: false },
-]);
 
 const colunasCategoria = computed(() => [
     { key: 'name', label: 'Categoria', priority: 1, sortable: true },
