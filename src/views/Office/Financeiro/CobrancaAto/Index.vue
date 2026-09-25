@@ -213,10 +213,6 @@
                   :value="`${form.max_dias_vencimento ?? 10} dias`"
                   note="Padrão geral; a regra de comissão pode sobrescrever por empreendimento." />
 
-                <CampoConfig label="Vencimento acima do limite"
-                  :value="form.agendar_vencimento_acima_limite ? 'Agenda até entrar no prazo' : 'Rejeita'"
-                  note="Agendado, o boleto sai sozinho no dia em que o vencimento entra no limite." />
-
                 <CampoConfig label="Teto de valor por boleto" :value="valorMaximoLabel"
                   note="Série acima do teto não é registrada no banco: fica como erro para conferência." />
               </div>
@@ -270,11 +266,7 @@
                   type="number"
                   label="Máx. dias de vencimento (geral)"
                   placeholder="Ex.: 10"
-                  hint="Vencimento acima deste limite não é emitido na hora. A regra de comissão sobrescreve por empreendimento." />
-
-                <Switch v-model="form.agendar_vencimento_acima_limite"
-                  label="Agendar vencimento acima do limite"
-                  description="Ligado, o boleto fica agendado e sai sozinho no dia em que o vencimento entra no limite, sem reacionar a etapa. Desligado, é rejeitado e vira Ato Divergente." />
+                  hint="Vencimento acima deste limite é rejeitado. A regra de comissão sobrescreve por empreendimento." />
 
                 <Input
                   v-model.number="form.valor_maximo"
@@ -1165,7 +1157,6 @@ const form = ref({
   reconsultar_baixado_antes_emitir: true,
   cv_situacoes_reserva_morta: [4],
   max_dias_vencimento: 10,
-  agendar_vencimento_acima_limite: true,
   valor_maximo: 300000,
   comissao_modo: 'nenhum',
   janela_ativa: true,
@@ -1254,7 +1245,6 @@ function snapshotCvFields() {
     baixa_devolucao_confirmar_dias_uteis: form.value.baixa_devolucao_confirmar_dias_uteis,
     cv_situacoes_reserva_morta: [...(form.value.cv_situacoes_reserva_morta || [])],
     max_dias_vencimento: form.value.max_dias_vencimento,
-    agendar_vencimento_acima_limite: form.value.agendar_vencimento_acima_limite,
     valor_maximo: form.value.valor_maximo,
   };
 }
@@ -1734,7 +1724,6 @@ onMounted(async () => {
       form.value.baixa_devolucao_confirmar_dias_uteis = store.settings.baixa_devolucao_confirmar_dias_uteis ?? 0;
       form.value.cv_situacoes_reserva_morta = [...(store.settings.cv_situacoes_reserva_morta || [4])];
       form.value.max_dias_vencimento = store.settings.max_dias_vencimento ?? 10;
-      form.value.agendar_vencimento_acima_limite = store.settings.agendar_vencimento_acima_limite ?? true;
       form.value.valor_maximo = store.settings.valor_maximo != null ? Number(store.settings.valor_maximo) : null;
       form.value.comissao_modo = store.settings.comissao_modo || 'nenhum';
       form.value.janela_ativa = store.settings.janela_ativa ?? true;
