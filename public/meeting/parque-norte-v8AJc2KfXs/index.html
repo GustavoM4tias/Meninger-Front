@@ -219,9 +219,9 @@ body.ui #hint{opacity:.7}
 #dec-steps i{width:44px;height:4px;border-radius:4px;background:rgba(0,80,49,.18)}
 #dec-steps i.cur{background:var(--lar)}
 /* ============ ATO ============ */
-#s-ato .wrap{text-align:center}
-#s-ato .h-mega{background:linear-gradient(180deg,#fff 30%,#bfe8cf);-webkit-background-clip:text;background-clip:text;color:transparent}
-#s-ato .sub{margin-top:2.4vh;font-size:clamp(14px,calc(1.5*var(--vw)),20px);letter-spacing:.34em;color:var(--ouro);text-transform:uppercase;font-weight:700}
+#s-ato .wrap,#s-mkt-sep .wrap{text-align:center}
+#s-ato .h-mega,#s-mkt-sep .h-mega{background:linear-gradient(180deg,#fff 30%,#bfe8cf);-webkit-background-clip:text;background-clip:text;color:transparent}
+#s-ato .sub,#s-mkt-sep .sub{margin-top:2.4vh;font-size:clamp(14px,calc(1.5*var(--vw)),20px);letter-spacing:.34em;color:var(--ouro);text-transform:uppercase;font-weight:700}
 /* ============ CONDIÇÃO / RECURSO ============ */
 #s-cond .grid{grid-template-columns:repeat(3,1fr)}
 .meter{height:14px;border-radius:99px;background:rgba(0,80,49,.1);overflow:hidden;margin-top:14px}
@@ -711,6 +711,16 @@ body.ui #hint{opacity:.7}
   </div>
 </section>
 
+<!-- SEPARADOR MARKETING -->
+<section class="scene sc-verde" id="s-mkt-sep" data-title="Marketing">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;bottom:-12vh;width:46vw">
+  <div class="wrap">
+    <div class="eyebrow rv d1">Quem traz o cliente</div>
+    <h2 class="h-mega rv pop d2" style="margin-top:2vh">MARKETING</h2>
+    <div class="sub rv d4">na rua &middot; material &middot; leads</div>
+  </div>
+</section>
+
 <!-- MARKETING EM AÇÃO (o que já está na rua) -->
 <section class="scene" id="s-mkt-acao" data-title="Marketing em ação">
   <div class="wrap">
@@ -795,7 +805,7 @@ body.ui #hint{opacity:.7}
       <div class="card hl rv d4"><div class="knum">R$ <span data-count="210000"></span></div><div class="klab"><b style="color:var(--ink)">sai por</b> · com o desconto construtora</div></div>
     </div>
     <div class="row mt2">
-      <span class="chip rv d5" style="border:2px solid var(--ouro)"><span class="ico"></span><span><b>Recurso total:</b> 20% do valor financiado</span></span>
+      <span class="chip rv d5" style="border:2px solid var(--ouro)"><span class="ico"></span><span><b>Recurso total:</b> 20% do valor de avaliação</span></span>
       <span class="chip rv d6"><span class="ico"></span><span>Ato de R$ 1.000 &middot; <b>ZERO</b> nas primeiras 100 vendas</span></span>
       <span class="chip rv d7"><span class="ico"></span>Entrada em até 60&times; direto com a construtora</span>
       <span class="chip rv d8"><span class="ico"></span>Parcela ≤ 30% da renda &middot; fiador aceito</span>
@@ -886,6 +896,7 @@ body.ui #hint{opacity:.7}
     </div>
     <div class="card mt1 rv d3" style="padding-top:8px;padding-bottom:8px">
       <div class="ck rv d3"><span class="bx">✓</span>Produto Caixa Econômica</div>
+      <div class="ck rv d4"><span class="bx">✓</span>ITBI</div>
       <div class="ck rv d5"><span class="bx">✓</span>Registro e prenotação em cartório</div>
       <div class="ck rv d6"><span class="bx">✓</span>Certificação digital</div>
     </div>
@@ -1197,12 +1208,18 @@ function szSetStatus(t){ var el = document.getElementById('sz-status'); if(el) e
 function szRender(novos){
   var n = szList.length, el = document.getElementById('sz-n');
   if(el.textContent !== String(n)){ el.textContent = n; var c = el.parentNode; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
-  document.getElementById('sz-n2').textContent = n;
+  document.getElementById('sz-n2').textContent = szPool().length;
   var feed = document.getElementById('sz-feed');
   var ult = szList.slice(-6).reverse();
   feed.innerHTML = ult.map(function(p){ return '<span><i></i>' + szEsc(p.nome.split(' ')[0]) + (p.imobiliaria ? ' · ' + szEsc(p.imobiliaria) : '') + '</span>'; }).join('');
 }
 var SZ_DEMO = /[?&]demo/.test(location.search);   // ensaio: ?demo usa nomes fictícios
+/* quem já foi sorteado não volta (vale também para o R de "sortear de novo"); guardado no navegador, ?zerar limpa */
+var SZ_KEY = SZ_DEMO ? 'pn_sorteio_demo' : 'pn_sorteio';
+if(/[?&]zerar/.test(location.search)){ try { localStorage.removeItem(SZ_KEY); } catch(e){} }
+var szJaSaiu = {};
+try { JSON.parse(localStorage.getItem(SZ_KEY) || '[]').forEach(function(h){ szJaSaiu[h.id] = 1; }); } catch(e){}
+function szPool(){ return szList.filter(function(p){ return !szJaSaiu[p.id]; }); }
 function szPoll(){
   if(SZ_DEMO){
     szList = ['Ana Paula Souza','Bruno Martins','Carla Ribeiro','Diego Alves','Eduarda Lima','Felipe Costa','Gabriela Nunes','Henrique Rocha','Isabela Moraes','João Pedro Castro']
@@ -1219,18 +1236,20 @@ function szStopPoll(){ clearInterval(szPollT); szPollT = null; }
 function szShow(step){ szStep = step; szScene.setAttribute('data-sz', step); }
 function szDraw(){
   if(szRolling) return;
-  if(!szList.length){ szSetStatus('ninguém inscrito ainda'); szShow(0); return; }
+  var pool = szPool();
+  if(!pool.length){ szSetStatus(szList.length ? 'todos os inscritos já foram sorteados' : 'ninguém inscrito ainda'); szShow(0); return; }
   szShow(1); szScene.classList.remove('won','paid'); szRolling = true;
   var nameEl = document.getElementById('sz-name'), imobEl = document.getElementById('sz-imob');
   imobEl.textContent = ''; nameEl.classList.add('roll');
-  szWinner = szList[szRand(szList.length)];                 // sorteio justo entre todos os inscritos
+  szWinner = pool[szRand(pool.length)];                     // sorteio justo entre quem ainda não saiu
+  szJaSaiu[szWinner.id] = 1;
   var t0 = performance.now(), DUR = 5200, last = 0;
   function tick(now){
     var p = Math.min((now - t0) / DUR, 1);
     var gap = 45 + 520 * Math.pow(p, 3);                    // começa rápido e vai freando
     if(now - last >= gap || p === 1){
       last = now;
-      var show = p === 1 ? szWinner : szList[szRand(szList.length)];
+      var show = p === 1 ? szWinner : pool[szRand(pool.length)];
       nameEl.textContent = show.nome;
       nameEl.style.transform = 'translateY(' + (p === 1 ? 0 : (szRand(2) ? -8 : 8)) + 'px)';
     }
@@ -1239,7 +1258,7 @@ function szDraw(){
     imobEl.textContent = szWinner.imobiliaria || '';
     szScene.classList.add('won'); szRolling = false;
     burst(220); setTimeout(function(){ burst(160); }, 700);
-    try { var h = JSON.parse(localStorage.getItem('pn_sorteio') || '[]'); h.push({ at: new Date().toISOString(), id: szWinner.id, nome: szWinner.nome, imobiliaria: szWinner.imobiliaria }); localStorage.setItem('pn_sorteio', JSON.stringify(h)); } catch(e){}
+    try { var h = JSON.parse(localStorage.getItem(SZ_KEY) || '[]'); h.push({ at: new Date().toISOString(), id: szWinner.id, nome: szWinner.nome, imobiliaria: szWinner.imobiliaria }); localStorage.setItem(SZ_KEY, JSON.stringify(h)); } catch(e){}
   }
   requestAnimationFrame(tick);
 }
