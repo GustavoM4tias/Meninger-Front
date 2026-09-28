@@ -13,6 +13,7 @@
     "prebuild": "node scripts/gen-og-routes.mjs",
     "build": "vite build",
     "preview": "vite preview",
+    "meeting:export": "node scripts/meeting-export.mjs",
     "og:routes": "node scripts/gen-og-routes.mjs"
   },
   "dependencies": {

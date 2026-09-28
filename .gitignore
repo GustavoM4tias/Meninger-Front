@@ -22,6 +22,9 @@ coverage
 # PDFs emitidos/exportados na raiz (artefatos gerados, ex.: export de artigo da KB)
 /*.pdf
 
+# export offline das apresentações (npm run meeting:export)
+/meeting-export/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
