@@ -207,6 +207,12 @@ body.ui #hint{opacity:.7}
   background:rgba(0,80,49,.82);box-shadow:0 0 0 10px rgba(245,179,47,.35),0 20px 60px rgba(0,0,0,.4);transition:opacity .3s,transform .3s}
 .vt-play span{display:block;margin-left:12%;width:0;height:0;border-style:solid;border-width:22px 0 22px 36px;border-color:transparent transparent transparent #fff;margin:auto;transform:translateX(10%)}
 #s-video.tocando .vt-play{opacity:0;transform:translate(-50%,-50%) scale(.7);pointer-events:none}
+.cri-row{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(8px,calc(1.2*var(--vw)),18px);max-width:min(100%,calc(62dvh*5*.8 + 72px));margin-left:auto;margin-right:auto}
+.cri-row img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;border-radius:14px;box-shadow:0 18px 40px rgba(0,50,25,.22)}
+.cri-row div:nth-child(even){transform:translateY(3dvh)}
+.dec4{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(8px,calc(1*var(--vw)),16px)}
+.dec4 .ph{border-radius:16px;overflow:hidden;box-shadow:0 20px 46px rgba(0,50,25,.22);background:#fff;height:min(62dvh,calc(26*var(--vw)))}
+.dec4 .ph img{width:100%;height:100%;object-fit:cover;display:block}
 .mk-ph{margin:0;height:clamp(200px,40dvh,430px)}
 .mk-ph img{width:100%;height:100%;object-fit:cover}
 .mk-tag{position:absolute;left:14px;bottom:14px;background:#fff;color:var(--verde);font-weight:800;border-radius:999px;padding:.45em 1em;font-size:clamp(14px,calc(1.3*var(--vw)),19px);box-shadow:0 8px 20px rgba(0,0,0,.18)}
@@ -733,6 +739,45 @@ body.ui #hint{opacity:.7}
       <div class="card rv d4"><h3 class="mk-h">Brinde do cliente</h3><div class="klab">exclusivo Parque Norte</div></div>
       <div class="card rv d5"><h3 class="mk-h">TV</h3><div class="klab">campanha em veiculação</div></div>
       <div class="card rv d6"><h3 class="mk-h">Rádio</h3><div class="klab">testemunhais no programa Paixão Sertaneja</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- MARKETING NAS REDES (criativos 25/09) -->
+<section class="scene" id="s-mkt-redes" data-title="Nas redes">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="tick"></span>Marketing &middot; tráfego pago</div>
+    <h2 class="h-med rv d1">Campanha rodando <span class="green">nas redes</span></h2>
+    <div class="cri-row mt2">
+      <div class="rv pop d2"><img src="a/m_cri1.jpg" alt="Criativo de tráfego do Parque Norte"></div>
+      <div class="rv pop d3"><img src="a/m_cri2.jpg" alt="Criativo de tráfego do Parque Norte"></div>
+      <div class="rv pop d4"><img src="a/m_cri3.jpg" alt="Criativo de tráfego do Parque Norte"></div>
+      <div class="rv pop d5"><img src="a/m_cri4.jpg" alt="Criativo de tráfego do Parque Norte"></div>
+      <div class="rv pop d6"><img src="a/m_cri5.jpg" alt="Criativo de tráfego do Parque Norte"></div>
+    </div>
+    <div class="row mt2" style="justify-content:center">
+      <span class="chip rv d7"><span class="ico"></span>Instagram e Facebook</span>
+      <span class="chip rv d8"><span class="ico"></span>Pré-cadastro e WhatsApp do produto</span>
+    </div>
+  </div>
+</section>
+
+<!-- MARKETING NO DECORADO (demarcações e plaquinhas 25/09) -->
+<section class="scene" id="s-mkt-dec" data-title="No decorado">
+  <div class="wrap split" style="grid-template-columns:.8fr 1.2fr">
+    <div>
+      <div class="eyebrow rv"><span class="tick"></span>Decorado sinalizado</div>
+      <h2 class="h-big rv d1">O cliente vê<br><span class="green">o tamanho real</span></h2>
+      <div class="mt2">
+        <div class="ck rv d2"><span class="bx">✓</span>Fita no piso marca o limite do terreno</div>
+        <div class="ck rv d3"><span class="bx">✓</span>Plaquinhas mostram o que é e o que não é da obra</div>
+      </div>
+    </div>
+    <div class="dec4">
+      <div class="ph rv pop d3"><img src="a/m_dec1.jpg" alt="Fita no piso do decorado: limite do terreno, 3,50 metros"></div>
+      <div class="ph rv pop d4"><img src="a/m_dec2.jpg" alt="Fita no piso do decorado: limite do terreno, 5 metros"></div>
+      <div class="ph rv pop d5"><img src="a/m_dec3.jpg" alt="Plaquinha de orientação de obra: parede da lavanderia"></div>
+      <div class="ph rv pop d6"><img src="a/m_dec4.jpg" alt="Plaquinha de orientação de obra: porta e parede que não constam na obra"></div>
     </div>
   </div>
 </section>
@@ -1350,7 +1395,7 @@ function next(){
   if(sc===rolScene && rolStep===0){ rolStep=1; spinWheel(); return; }
   if(sc===comScene && comStep===0){ comStep=1; comReveal(); return; }
   if(sc===szScene){
-    if(szStep===0){ szDraw(); return; }
+    if(szStep===0 && szPool().length){ szDraw(); return; }
     if(szStep===1 && szRolling) return;
     if(szStep===2 && !szScene.classList.contains('paid')){ szSpin(); return; }
   }
