@@ -699,51 +699,6 @@ body.ui #hint{opacity:.7}
   </div>
 </section>
 
-<!-- SORTEIO AO VIVO (lista do Office em tempo real) -->
-<section class="scene sc-verde" id="s-sorteio" data-title="Sorteio ao vivo" data-sz="0">
-  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-8vw;bottom:-14vh;width:44vw">
-  <!-- passo 0: inscrição -->
-  <div class="wrap sz-pane" id="sz-cad">
-    <div class="split" style="grid-template-columns:1.1fr .9fr">
-      <div>
-        <div class="eyebrow rv"><span class="tick"></span>Sorteio ao vivo</div>
-        <h2 class="h-big rv d1">Cadastre-se e<br><span style="color:var(--ouro)">concorra agora!</span></h2>
-        <p class="lead mt1 rv d2">Aponte a câmera, preencha <b>nome, WhatsApp e imobiliária</b>. Um nome sai da lista e sobe ao palco para <b>girar a roleta</b>.</p>
-        <div class="sz-count mt2 rv d3"><b id="sz-n">0</b><span>inscritos<small id="sz-status">conectando…</small></span></div>
-        <div class="sz-feed mt1" id="sz-feed"></div>
-      </div>
-      <div class="rv pop d3" style="text-align:center;justify-self:center">
-        <div class="sz-qr"><img src="a/qr_sorteio.png" alt="QR code do cadastro do sorteio"></div>
-        <div class="mt1" style="font-weight:800;font-size:clamp(18px,calc(1.8*var(--vw)),28px);letter-spacing:.06em;color:var(--ouro)">APONTE A CÂMERA</div>
-        <div class="note">lp.menin.com.br/sorteio-parque-norte</div>
-      </div>
-    </div>
-  </div>
-  <!-- passo 1: o nome -->
-  <div class="sz-pane sz-stage" id="sz-draw">
-    <div class="sz-beams"></div>
-    <div class="eyebrow" id="sz-kicker">Sorteando entre <b id="sz-n2">0</b> inscritos</div>
-    <div class="sz-slot"><div class="sz-name" id="sz-name">...</div><div class="sz-imob" id="sz-imob"></div></div>
-    <div class="sz-call" id="sz-call">PARABÉNS!</div>
-    <div class="sz-btns" id="sz-btns">
-      <button type="button" class="sz-btn ghost" id="sz-again">&#8635; Sortear de novo <kbd>R</kbd></button>
-    </div>
-  </div>
-  <p class="cc">*Consulte condições.</p>
-</section>
-
-<!-- LOGO depois do sorteio -->
-<section class="scene logo-sc" id="s-logo3" data-title="Parque Norte" style="overflow:hidden">
-  <div class="board">
-    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
-      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
-      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
-    </svg>
-    <img class="ab rv pop d1" style="--x:258;--y:150;--w:670" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
-    <img class="ab rv d5" style="--x:492;--y:520;--w:200" src="a/menin_preto.png" alt="Menin">
-  </div>
-</section>
-
 <!-- MARKETING EM AÇÃO (o que já está na rua) -->
 <section class="scene" id="s-mkt-acao" data-title="Marketing em ação">
   <div class="wrap">
@@ -796,12 +751,24 @@ body.ui #hint{opacity:.7}
   </div>
 </section>
 
+<!-- LOGO depois dos leads -->
+<section class="scene logo-sc" id="s-logo4" data-title="Parque Norte" style="overflow:hidden">
+  <div class="board">
+    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
+      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
+      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
+    </svg>
+    <img class="ab rv pop d1" style="--x:258;--y:150;--w:670" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
+    <img class="ab rv d5" style="--x:492;--y:520;--w:200" src="a/menin_preto.png" alt="Menin">
+  </div>
+</section>
+
 <section class="scene sc-verde" id="s-ato" data-title="Estratégia comercial">
   <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;bottom:-12vh;width:46vw">
   <div class="wrap">
     <div class="eyebrow rv d1">Agora, o que interessa</div>
     <h2 class="h-mega rv pop d2" style="margin-top:2vh">ESTRATÉGIA<br>COMERCIAL</h2>
-    <div class="sub rv d4">condições &middot; estrutura &middot; campanha</div>
+    <div class="sub rv d4">condições &middot; estrutura &middot; sorteio</div>
   </div>
 </section>
 
@@ -816,6 +783,7 @@ body.ui #hint{opacity:.7}
       <div class="card hl rv d4"><div class="knum">R$ <span data-count="210000"></span></div><div class="klab"><b style="color:var(--ink)">sai por</b> · com o desconto construtora</div></div>
     </div>
     <div class="row mt2">
+      <span class="chip rv d5" style="border:2px solid var(--ouro)"><span class="ico"></span><span><b>Recurso total:</b> 20% do valor financiado</span></span>
       <span class="chip rv d6"><span class="ico"></span><span>Ato de R$ 1.000 &middot; <b>ZERO</b> nas primeiras 100 vendas</span></span>
       <span class="chip rv d7"><span class="ico"></span>Entrada em até 60&times; direto com a construtora</span>
       <span class="chip rv d8"><span class="ico"></span>Parcela ≤ 30% da renda &middot; fiador aceito</span>
@@ -958,6 +926,68 @@ body.ui #hint{opacity:.7}
       <div class="card st rv d5"><div class="num">04</div><h3>Repasse</h3><p>Contratação com a Caixa e registro do contrato</p></div>
     </div>
     <div class="row mt2"><span class="chip rv d6"><span class="ico"></span>Acessos e treinamentos: fale com o gestor do produto</span></div>
+  </div>
+</section>
+
+<!-- ABERTURA DO SORTEIO (título + roleta sem valor) -->
+<section class="scene sc-verde" id="s-sz-abre" data-title="Sorteio">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="left:-8vw;bottom:-14vh;width:40vw">
+  <div class="wrap split" style="grid-template-columns:1.1fr .9fr">
+    <div>
+      <div class="eyebrow rv d1"><span class="tick"></span>Ao vivo, agora</div>
+      <h2 class="h-mega rv pop d2" style="margin-top:1vh">SORTEIO<br><span style="color:var(--ouro)">AO VIVO</span></h2>
+    </div>
+    <div class="wheel-box rv pop d3">
+      <div class="pin"></div>
+      <div class="wheel idle" style="background:conic-gradient(#f5b32f 0 45deg,#0a7a46 45deg 90deg,#fff 90deg 135deg,#f5b32f 135deg 180deg,#0a7a46 180deg 225deg,#fff 225deg 270deg,#f5b32f 270deg 315deg,#0a7a46 315deg 360deg)">
+        <span class="hub"><img src="a/icon_pn.png" alt=""></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SORTEIO AO VIVO (lista do Office em tempo real) -->
+<section class="scene sc-verde" id="s-sorteio" data-title="Sorteio ao vivo" data-sz="0">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-8vw;bottom:-14vh;width:44vw">
+  <!-- passo 0: inscrição -->
+  <div class="wrap sz-pane" id="sz-cad">
+    <div class="split" style="grid-template-columns:1.1fr .9fr">
+      <div>
+        <div class="eyebrow rv"><span class="tick"></span>Sorteio ao vivo</div>
+        <h2 class="h-big rv d1">Cadastre-se e<br><span style="color:var(--ouro)">concorra agora!</span></h2>
+        <p class="lead mt1 rv d2">Aponte a câmera, preencha <b>nome, WhatsApp e imobiliária</b>. Um nome sai da lista e sobe ao palco para <b>girar a roleta</b>.</p>
+        <div class="sz-count mt2 rv d3"><b id="sz-n">0</b><span>inscritos<small id="sz-status">conectando…</small></span></div>
+        <div class="sz-feed mt1" id="sz-feed"></div>
+      </div>
+      <div class="rv pop d3" style="text-align:center;justify-self:center">
+        <div class="sz-qr"><img src="a/qr_sorteio.png" alt="QR code do cadastro do sorteio"></div>
+        <div class="mt1" style="font-weight:800;font-size:clamp(18px,calc(1.8*var(--vw)),28px);letter-spacing:.06em;color:var(--ouro)">APONTE A CÂMERA</div>
+        <div class="note">lp.menin.com.br/sorteio-parque-norte</div>
+      </div>
+    </div>
+  </div>
+  <!-- passo 1: o nome -->
+  <div class="sz-pane sz-stage" id="sz-draw">
+    <div class="sz-beams"></div>
+    <div class="eyebrow" id="sz-kicker">Sorteando entre <b id="sz-n2">0</b> inscritos</div>
+    <div class="sz-slot"><div class="sz-name" id="sz-name">...</div><div class="sz-imob" id="sz-imob"></div></div>
+    <div class="sz-call" id="sz-call">PARABÉNS!</div>
+    <div class="sz-btns" id="sz-btns">
+      <button type="button" class="sz-btn ghost" id="sz-again">&#8635; Sortear de novo <kbd>R</kbd></button>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- LOGO depois do sorteio -->
+<section class="scene logo-sc" id="s-logo3" data-title="Parque Norte" style="overflow:hidden">
+  <div class="board">
+    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
+      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
+      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
+    </svg>
+    <img class="ab rv pop d1" style="--x:258;--y:150;--w:670" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
+    <img class="ab rv d5" style="--x:492;--y:520;--w:200" src="a/menin_preto.png" alt="Menin">
   </div>
 </section>
 
