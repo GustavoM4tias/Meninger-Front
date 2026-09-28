@@ -684,10 +684,6 @@ body.ui #hint{opacity:.7}
   </div>
 </section>
 
-
-
-
-
 <!-- 15 LOCALIZAÇÃO · book p.15 -->
 <section class="scene" id="s-local" data-title="Localização" style="background:#6d8fb8">
   <div class="band top" style="--ey:502"><img class="fill cover" src="a/bk_localizacao.jpg" alt="Localização: centro, BR/MT-140, shopping, saúde e comércio" style="object-position:50% 0%"></div>
@@ -702,6 +698,113 @@ body.ui #hint{opacity:.7}
       <span class="chip rv up d7" style="font-size:calc(var(--u)*13);padding:.6em 1em"><span class="ico" style="background:var(--verde)"></span>MT-140 em duplicação</span>
     </div>
   </div>
+</section>
+
+<!-- SORTEIO AO VIVO (lista do Office em tempo real) -->
+<section class="scene sc-verde" id="s-sorteio" data-title="Sorteio ao vivo" data-sz="0">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-8vw;bottom:-14vh;width:44vw">
+  <!-- passo 0: inscrição -->
+  <div class="wrap sz-pane" id="sz-cad">
+    <div class="split" style="grid-template-columns:1.1fr .9fr">
+      <div>
+        <div class="eyebrow rv"><span class="tick"></span>Sorteio ao vivo</div>
+        <h2 class="h-big rv d1">Cadastre-se e<br><span style="color:var(--ouro)">concorra agora!</span></h2>
+        <p class="lead mt1 rv d2">Aponte a câmera, preencha <b>nome, WhatsApp e imobiliária</b>. Um nome sai da lista e sobe ao palco para <b>girar a roleta</b>.</p>
+        <div class="sz-count mt2 rv d3"><b id="sz-n">0</b><span>inscritos<small id="sz-status">conectando…</small></span></div>
+        <div class="sz-feed mt1" id="sz-feed"></div>
+      </div>
+      <div class="rv pop d3" style="text-align:center;justify-self:center">
+        <div class="sz-qr"><img src="a/qr_sorteio.png" alt="QR code do cadastro do sorteio"></div>
+        <div class="mt1" style="font-weight:800;font-size:clamp(18px,calc(1.8*var(--vw)),28px);letter-spacing:.06em;color:var(--ouro)">APONTE A CÂMERA</div>
+        <div class="note">lp.menin.com.br/sorteio-parque-norte</div>
+      </div>
+    </div>
+  </div>
+  <!-- passo 1: o nome -->
+  <div class="sz-pane sz-stage" id="sz-draw">
+    <div class="sz-beams"></div>
+    <div class="eyebrow" id="sz-kicker">Sorteando entre <b id="sz-n2">0</b> inscritos</div>
+    <div class="sz-slot"><div class="sz-name" id="sz-name">...</div><div class="sz-imob" id="sz-imob"></div></div>
+    <div class="sz-call" id="sz-call">PARABÉNS!</div>
+    <div class="sz-btns" id="sz-btns">
+      <button type="button" class="sz-btn ghost" id="sz-again">&#8635; Sortear de novo <kbd>R</kbd></button>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- LOGO depois do sorteio -->
+<section class="scene logo-sc" id="s-logo3" data-title="Parque Norte" style="overflow:hidden">
+  <div class="board">
+    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
+      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
+      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
+    </svg>
+    <img class="ab rv pop d1" style="--x:258;--y:150;--w:670" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
+    <img class="ab rv d5" style="--x:492;--y:520;--w:200" src="a/menin_preto.png" alt="Menin">
+  </div>
+</section>
+
+<!-- ATO ZERO -->
+<section class="scene sc-verde" id="s-atozero" data-title="Ato Zero">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;top:-10vh;width:38vw">
+  <div class="wrap" style="text-align:center">
+    <div class="eyebrow rv d1">Ato de reserva</div>
+    <div class="az-box rv pop d2" style="margin-top:1.5vh"><div class="mensal az-val">R$ <span id="az-num">1.000</span></div><div class="az-strike"></div></div>
+    <div><div class="az-stamp">CAMPANHA ATO ZERO*</div></div>
+    <div class="az-sub">
+      <div class="caps mt2">nas primeiras <span style="color:var(--ouro)">100 vendas</span></div>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 25 ROLETA -->
+<section class="scene sc-verde" id="s-roleta" data-title="Roleta da sorte" data-steps="2">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow rv"><span class="tick"></span>Campanha de venda</div>
+      <h2 class="h-big rv d1">Roleta da<br><span style="color:var(--ouro)">sorte!</span></h2>
+      <p class="lead mt1 rv d2">A cada venda dentro da <b>demanda mínima</b>, o corretor gira a roleta <b>na hora</b> e leva o prêmio junto com a comissão.</p>
+      <div class="row mt2">
+        <span class="chip rv d3"><span class="ico"></span>Prêmios de R$ 1.000, R$ 1.250 e R$ 1.500</span>
+        <span class="chip rv d4"><span class="ico"></span>Pago após assinatura do contrato Caixa</span>
+      </div>
+      <p class="note mt2 rv d5">Aperte &rarr; para girar a roleta.</p>
+    </div>
+    <div class="wheel-box rv pop d3">
+      <div class="pin"></div>
+      <div class="wheel idle" id="wheel" style="background:conic-gradient(#f5b32f 0 45deg,#0a7a46 45deg 90deg,#fff 90deg 135deg,#f5b32f 135deg 180deg,#0a7a46 180deg 225deg,#fff 225deg 270deg,#f5b32f 270deg 315deg,#0a7a46 315deg 360deg)">
+        <i style="transform:rotate(22.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
+        <i style="transform:rotate(67.5deg)"><b style="color:#fff">R$ 1.250</b></i>
+        <i style="transform:rotate(112.5deg)"><b style="color:#005031">R$ 1.000</b></i>
+        <i style="transform:rotate(157.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
+        <i style="transform:rotate(202.5deg)"><b style="color:#fff">R$ 1.250</b></i>
+        <i style="transform:rotate(247.5deg)"><b style="color:#005031">R$ 1.000</b></i>
+        <i style="transform:rotate(292.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
+        <i style="transform:rotate(337.5deg)"><b style="color:#fff">R$ 1.250</b></i>
+        <span class="hub"><img src="a/icon_pn.png" alt=""></span>
+      </div>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
+</section>
+
+<!-- 23 DOCUMENTAÇÃO -->
+<section class="scene" id="s-doc" data-title="Documentação grátis">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow rv"><span class="tick"></span>Campanha</div>
+      <h2 class="h-big rv d1">Documentação<br><span class="gold">grátis</span></h2>
+      <p class="lead mt1 rv d2">Os custos de documentação ficam <b>por conta da Menin</b>.</p>
+    </div>
+    <div class="card mt1 rv d3" style="padding-top:8px;padding-bottom:8px">
+      <div class="ck rv d3"><span class="bx">✓</span>Produto Caixa Econômica</div>
+      <div class="ck rv d5"><span class="bx">✓</span>Registro e prenotação em cartório</div>
+      <div class="ck rv d6"><span class="bx">✓</span>Certificação digital</div>
+    </div>
+  </div>
+  <p class="cc">*Consulte condições.</p>
 </section>
 
 <!-- 17 ESTRATÉGIA COMERCIAL -->
@@ -722,7 +825,7 @@ body.ui #hint{opacity:.7}
   <div class="wrap">
     <div class="eyebrow rv d1">Agora, o que interessa</div>
     <h2 class="h-mega rv pop d2" style="margin-top:2vh">ESTRATÉGIA<br>COMERCIAL</h2>
-    <div class="sub rv d4">números &middot; condições &middot; campanhas</div>
+    <div class="sub rv d4">condições &middot; estrutura &middot; marketing</div>
   </div>
 </section>
 
@@ -763,20 +866,6 @@ body.ui #hint{opacity:.7}
       <span class="chip rv d7"><span class="ico"></span>Entrada em até 60&times; direto com a construtora</span>
       <span class="chip rv d8"><span class="ico"></span>Parcela ≤ 30% da renda &middot; fiador aceito</span>
       <span class="chip rv d9"><span class="ico"></span>INCC até o habite-se &middot; IPCA + 1% a.m. após</span>
-    </div>
-  </div>
-  <p class="cc">*Consulte condições.</p>
-</section>
-
-<!-- ATO ZERO -->
-<section class="scene sc-verde" id="s-atozero" data-title="Ato Zero">
-  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;top:-10vh;width:38vw">
-  <div class="wrap" style="text-align:center">
-    <div class="eyebrow rv d1">Ato de reserva</div>
-    <div class="az-box rv pop d2" style="margin-top:1.5vh"><div class="mensal az-val">R$ <span id="az-num">1.000</span></div><div class="az-strike"></div></div>
-    <div><div class="az-stamp">CAMPANHA ATO ZERO*</div></div>
-    <div class="az-sub">
-      <div class="caps mt2">nas primeiras <span style="color:var(--ouro)">100 vendas</span></div>
     </div>
   </div>
   <p class="cc">*Consulte condições.</p>
@@ -833,114 +922,6 @@ body.ui #hint{opacity:.7}
   <p class="cc">*Consulte condições.</p>
 </section>
 
-<!-- 23 DOCUMENTAÇÃO -->
-<section class="scene" id="s-doc" data-title="Documentação grátis">
-  <div class="wrap split">
-    <div>
-      <div class="eyebrow rv"><span class="tick"></span>Campanha</div>
-      <h2 class="h-big rv d1">Documentação<br><span class="gold">grátis</span></h2>
-      <p class="lead mt1 rv d2">Os custos de documentação ficam <b>por conta da Menin</b>.</p>
-    </div>
-    <div class="card mt1 rv d3" style="padding-top:8px;padding-bottom:8px">
-      <div class="ck rv d3"><span class="bx">✓</span>Produto Caixa Econômica</div>
-      <div class="ck rv d5"><span class="bx">✓</span>Registro e prenotação em cartório</div>
-      <div class="ck rv d6"><span class="bx">✓</span>Certificação digital</div>
-    </div>
-  </div>
-  <p class="cc">*Consulte condições.</p>
-</section>
-
-<!-- LOGO PARQUE NORTE (depois da documentação) -->
-<section class="scene logo-sc" id="s-logo" data-title="Parque Norte" style="overflow:hidden">
-  <div class="board">
-    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
-      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
-      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
-    </svg>
-    <img class="ab rv pop d1" style="--x:258;--y:150;--w:670" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
-    <img class="ab rv d5" style="--x:492;--y:520;--w:200" src="a/menin_preto.png" alt="Menin">
-  </div>
-</section>
-
-
-
-
-<!-- 25 ROLETA -->
-<section class="scene sc-verde" id="s-roleta" data-title="Roleta da sorte" data-steps="2">
-  <div class="wrap split">
-    <div>
-      <div class="eyebrow rv"><span class="tick"></span>Campanha de venda</div>
-      <h2 class="h-big rv d1">Roleta da<br><span style="color:var(--ouro)">sorte!</span></h2>
-      <p class="lead mt1 rv d2">A cada venda dentro da <b>demanda mínima</b>, o corretor gira a roleta <b>na hora</b> e leva o prêmio junto com a comissão.</p>
-      <div class="row mt2">
-        <span class="chip rv d3"><span class="ico"></span>Prêmios de R$ 1.000, R$ 1.250 e R$ 1.500</span>
-        <span class="chip rv d4"><span class="ico"></span>Pago após assinatura do contrato Caixa</span>
-      </div>
-      <p class="note mt2 rv d5">Aperte &rarr; para girar a roleta.</p>
-    </div>
-    <div class="wheel-box rv pop d3">
-      <div class="pin"></div>
-      <div class="wheel idle" id="wheel" style="background:conic-gradient(#f5b32f 0 45deg,#0a7a46 45deg 90deg,#fff 90deg 135deg,#f5b32f 135deg 180deg,#0a7a46 180deg 225deg,#fff 225deg 270deg,#f5b32f 270deg 315deg,#0a7a46 315deg 360deg)">
-        <i style="transform:rotate(22.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
-        <i style="transform:rotate(67.5deg)"><b style="color:#fff">R$ 1.250</b></i>
-        <i style="transform:rotate(112.5deg)"><b style="color:#005031">R$ 1.000</b></i>
-        <i style="transform:rotate(157.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
-        <i style="transform:rotate(202.5deg)"><b style="color:#fff">R$ 1.250</b></i>
-        <i style="transform:rotate(247.5deg)"><b style="color:#005031">R$ 1.000</b></i>
-        <i style="transform:rotate(292.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
-        <i style="transform:rotate(337.5deg)"><b style="color:#fff">R$ 1.250</b></i>
-        <span class="hub"><img src="a/icon_pn.png" alt=""></span>
-      </div>
-    </div>
-  </div>
-  <p class="cc">*Consulte condições.</p>
-</section>
-
-<!-- SORTEIO AO VIVO (lista do Office em tempo real) -->
-<section class="scene sc-verde" id="s-sorteio" data-title="Sorteio ao vivo" data-sz="0">
-  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-8vw;bottom:-14vh;width:44vw">
-  <!-- passo 0: inscrição -->
-  <div class="wrap sz-pane" id="sz-cad">
-    <div class="split" style="grid-template-columns:1.1fr .9fr">
-      <div>
-        <div class="eyebrow rv"><span class="tick"></span>Sorteio ao vivo</div>
-        <h2 class="h-big rv d1">Cadastre-se e<br><span style="color:var(--ouro)">concorra agora!</span></h2>
-        <p class="lead mt1 rv d2">Aponte a câmera, preencha <b>nome, WhatsApp e imobiliária</b>. Um nome sai da lista e sobe ao palco para <b>girar a roleta</b>.</p>
-        <div class="sz-count mt2 rv d3"><b id="sz-n">0</b><span>inscritos<small id="sz-status">conectando…</small></span></div>
-        <div class="sz-feed mt1" id="sz-feed"></div>
-      </div>
-      <div class="rv pop d3" style="text-align:center;justify-self:center">
-        <div class="sz-qr"><img src="a/qr_sorteio.png" alt="QR code do cadastro do sorteio"></div>
-        <div class="mt1" style="font-weight:800;font-size:clamp(18px,calc(1.8*var(--vw)),28px);letter-spacing:.06em;color:var(--ouro)">APONTE A CÂMERA</div>
-        <div class="note">lp.menin.com.br/sorteio-parque-norte</div>
-      </div>
-    </div>
-  </div>
-  <!-- passo 1: o nome -->
-  <div class="sz-pane sz-stage" id="sz-draw">
-    <div class="sz-beams"></div>
-    <div class="eyebrow" id="sz-kicker">Sorteando entre <b id="sz-n2">0</b> inscritos</div>
-    <div class="sz-slot"><div class="sz-name" id="sz-name">...</div><div class="sz-imob" id="sz-imob"></div></div>
-    <div class="sz-call" id="sz-call">SUBA AO PALCO!</div>
-    <div class="sz-btns" id="sz-btns">
-      <button type="button" class="sz-btn ghost" id="sz-again">&#8635; Sortear de novo <kbd>R</kbd></button>
-    </div>
-  </div>
-  <p class="cc">*Consulte condições.</p>
-</section>
-
-<!-- LOGO depois do sorteio -->
-<section class="scene logo-sc" id="s-logo3" data-title="Parque Norte" style="overflow:hidden">
-  <div class="board">
-    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
-      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
-      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
-    </svg>
-    <img class="ab rv pop d1" style="--x:258;--y:150;--w:670" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
-    <img class="ab rv d5" style="--x:492;--y:520;--w:200" src="a/menin_preto.png" alt="Menin">
-  </div>
-</section>
-
 <!-- 27 ESTRUTURA -->
 <section class="scene" id="s-estrutura" data-title="Estrutura comercial">
   <div class="wrap">
@@ -995,16 +976,8 @@ body.ui #hint{opacity:.7}
   <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;bottom:-12vh;width:46vw">
   <div class="wrap" style="text-align:center">
     <div class="eyebrow rv d1">Leads gerados pela Menin</div>
-    <div class="big-money rv pop d2" style="margin-top:1.5vh"><span data-count="19"></span>%</div>
+    <div class="big-money rv pop d2" style="margin-top:1.5vh"><span data-count="33"></span>%</div>
     <div class="caps mt1 rv d4">dos leads ativos já estão qualificados</div>
-    <div class="funil mt2 rv d5">
-      <i style="flex:3;background:#bfe9cf"></i><i style="flex:78;background:var(--verde-cl)"></i><i style="flex:19;background:var(--ouro)"></i>
-    </div>
-    <div class="row mt1 rv d5" style="justify-content:center">
-      <span class="chip"><span class="ico" style="background:#bfe9cf"></span><b>3%</b>em contato</span>
-      <span class="chip"><span class="ico" style="background:var(--verde-cl)"></span><b>78%</b>em atendimento</span>
-      <span class="chip"><span class="ico" style="background:var(--ouro)"></span><b>19%</b>qualificados</span>
-    </div>
     <p class="lead rv d6" style="margin:2vh auto 0">O cliente já está na fila. <b>Agora é com o corretor.</b></p>
   </div>
 </section>
