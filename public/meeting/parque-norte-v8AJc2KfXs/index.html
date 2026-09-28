@@ -151,7 +151,7 @@ body.ui #hint{opacity:.7}
 .sc-verde .chip .ico{background:var(--ouro)}
 .wm{position:absolute;z-index:1;opacity:.07;pointer-events:none}
 /* ============ 1 CAPA (book p.1) ============ */
-#s-capa .arc{fill:none;stroke:var(--lar);stroke-linecap:butt}
+#s-capa .arc,#s-logo .arc{fill:none;stroke:var(--lar);stroke-linecap:butt}
 #s-capa .logo{width:calc(var(--u)*585)}
 .scene.active#s-capa .blink{animation:blink 2.4s ease-in-out 2s infinite}
 @keyframes blink{0%,100%{opacity:.3}50%{opacity:.9}}
@@ -199,6 +199,10 @@ body.ui #hint{opacity:.7}
   linear-gradient(180deg,#d3e4ea 0%,#e9f0f2 55%,#f1f3f3 100%)!important}
 /* ============ DECORADO ============ */
 .dec-wrap{position:relative;margin-top:clamp(14px,2.4vh,26px);height:min(60vh,620px)}
+.mk-ph{margin:0;height:clamp(200px,40dvh,430px)}
+.mk-ph img{width:100%;height:100%;object-fit:cover}
+.mk-tag{position:absolute;left:14px;bottom:14px;background:#fff;color:var(--verde);font-weight:800;border-radius:999px;padding:.45em 1em;font-size:clamp(14px,calc(1.3*var(--vw)),19px);box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.mk-h{font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)}
 .dec-page{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,calc(1.4*var(--vw)),22px);opacity:0;transition:opacity .6s ease;pointer-events:none}
 .dec-page.show{opacity:1}
 .dec-page .ph{border-radius:18px;overflow:hidden;box-shadow:0 22px 50px rgba(0,50,25,.2);background:#fff}
@@ -619,14 +623,12 @@ body.ui #hint{opacity:.7}
       <h2 class="h-big rv d1">Feita para<br><span class="green">viver bem</span></h2>
       <div class="mt2">
         <div class="ck rv d2"><span class="bx">2</span>Dormitórios</div>
-        <div class="ck rv d2"><span class="bx">✓</span>44,03 m² construídos</div>
         <div class="ck rv d3"><span class="bx">✓</span>Sala e cozinha integradas</div>
         <div class="ck rv d4"><span class="bx">✓</span>Banheiro e área de serviço</div>
-        <div class="ck rv d5"><span class="bx">✓</span>Quintal no lote de 240 m²</div>
+        <div class="ck rv d5"><span class="bx">✓</span>Lote de 240 m²</div>
       </div>
       <div class="row mt2">
         <span class="chip rv d6"><span class="ico"></span>Piso cerâmico</span>
-        <span class="chip rv d7"><span class="ico"></span>Esquadrias de aço</span>
         <span class="chip rv d8"><span class="ico"></span>Caixa d'água de 500 L</span>
         <span class="chip rv d9"><span class="ico"></span>Adaptáveis PNE</span>
       </div>
@@ -667,51 +669,9 @@ body.ui #hint{opacity:.7}
   </div>
 </section>
 
-<!-- 13 DECORADO -->
-<section class="scene" id="s-decorado" data-title="Decorado" data-steps="2">
-  <div class="wrap">
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap">
-      <div>
-        <div class="eyebrow rv"><span class="tick"></span>Fotos reais</div>
-        <h2 class="h-med rv d1">O decorado já está <span class="gold">pronto</span></h2>
-      </div>
-      <span class="chip rv d2"><span class="ico"></span>Visite no stand de vendas, em Sinop</span>
-    </div>
-    <div class="dec-wrap rv d3">
-      <div class="dec-page show">
-        <div class="ph"><img src="a/o_dec21.jpg" alt="Sala do decorado"></div>
-        <div class="ph"><img src="a/o_dec22.jpg" alt="Cozinha do decorado"></div>
-        <div class="ph"><img src="a/o_dec23.jpg" alt="Quarto do decorado"></div>
-      </div>
-      <div class="dec-page">
-        <div class="ph"><img src="a/o_dec24.jpg" alt="Sala de jantar do decorado"></div>
-        <div class="ph"><img src="a/o_dec25.jpg" alt="Banheiro do decorado"></div>
-        <div class="ph"><img src="a/o_dec26.jpg" alt="Área de serviço do decorado"></div>
-      </div>
-    </div>
-    <div id="dec-steps"><i class="cur"></i><i></i></div>
-  </div>
-</section>
 
-<!-- 14 STAND -->
-<section class="scene" id="s-stand" data-title="Stand de vendas">
-  <div class="wrap split">
-    <div>
-      <div class="eyebrow rv"><span class="tick"></span>Stand de vendas</div>
-      <h2 class="h-big rv d1">Leve o cliente para<br><span class="green">sentir a casa</span></h2>
-      <p class="lead mt1 rv d2">O <b>decorado completo</b> está montado no stand de vendas do Parque Norte, em Sinop. Cliente que visita, <b>se imagina morando</b>.</p>
-      <div class="card hl mt2 rv d3">
-        <div class="klab" style="margin:0 0 6px">Agende visitas e tire dúvidas pelo WhatsApp do produto</div>
-        <div class="knum" style="font-size:clamp(38px,calc(4.4*var(--vw)),74px)">66 99927-9467</div>
-      </div>
-      <div class="row mt2">
-        <span class="chip rv d5"><span class="ico"></span>www.menin.com.br</span>
-        <span class="chip rv d6"><span class="ico"></span>Instagram: @meninengenharia</span>
-      </div>
-    </div>
-    <div class="photo rv pop d3" style="max-width:min(40vh,86%);justify-self:center"><img src="a/o_dec27.jpg" alt="Decorado no stand de vendas"></div>
-  </div>
-</section>
+
+
 
 <!-- 15 LOCALIZAÇÃO · book p.15 -->
 <section class="scene" id="s-local" data-title="Localização" style="background:#6d8fb8">
@@ -735,7 +695,7 @@ body.ui #hint{opacity:.7}
   <div class="wrap">
     <div class="eyebrow rv d1">Agora, o que interessa</div>
     <h2 class="h-mega rv pop d2" style="margin-top:2vh">ESTRATÉGIA<br>COMERCIAL</h2>
-    <div class="sub rv d4">números &middot; condições &middot; campanhas &middot; comissão</div>
+    <div class="sub rv d4">números &middot; condições &middot; campanhas</div>
   </div>
 </section>
 
@@ -852,14 +812,10 @@ body.ui #hint{opacity:.7}
     <div>
       <div class="eyebrow rv"><span class="tick"></span>Campanha</div>
       <h2 class="h-big rv d1">Documentação<br><span class="gold">grátis</span></h2>
-      <div class="card hl mt2 rv d2">
-        <div class="knum">+ R$ <span data-count="3632"></span></div>
-        <div class="klab">em custos de documentação por conta da Menin &middot; <b style="color:var(--ink)">o cliente paga R$&nbsp;0</b></div>
-      </div>
+      <p class="lead mt1 rv d2">Os custos de documentação ficam <b>por conta da Menin</b>.</p>
     </div>
     <div class="card mt1 rv d3" style="padding-top:8px;padding-bottom:8px">
       <div class="ck rv d3"><span class="bx">✓</span>Produto Caixa Econômica</div>
-      <div class="ck rv d4"><span class="bx">✓</span>ITBI isento</div>
       <div class="ck rv d5"><span class="bx">✓</span>Registro e prenotação em cartório</div>
       <div class="ck rv d6"><span class="bx">✓</span>Certificação digital</div>
     </div>
@@ -867,22 +823,20 @@ body.ui #hint{opacity:.7}
   <p class="cc">*Consulte condições.</p>
 </section>
 
-<!-- 24 COMISSÃO -->
-<section class="scene sc-verde" id="s-comissao" data-title="Comissão" data-steps="2">
-  <div class="wrap" style="text-align:center">
-    <div class="step1">
-      <div class="eyebrow rv">Comissão</div>
-      <h2 class="h-mega rv pop d1" style="margin-top:1.5vh"><span style="color:var(--ouro)">3%</span> <span style="font-size:.36em;letter-spacing:-.01em">sobre R$ 210 mil</span></h2>
-      <p class="lead rv d3" style="margin:1.5vh auto 0;max-width:none;font-weight:700;color:#fff">R$ 6.300 por venda</p>
-    </div>
-    <div class="step2 mt2">
-      <div class="eyebrow">O Módulo 1 (427 casas) soma</div>
-      <div class="big-money">R$ <span id="comi-total">0</span></div>
-      <div class="caps mt1">em comissões</div>
-    </div>
+<!-- LOGO PARQUE NORTE (depois da documentação) -->
+<section class="scene" id="s-logo" data-title="Parque Norte" style="overflow:hidden">
+  <div class="board">
+    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
+      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
+      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
+    </svg>
+    <img class="ab rv pop d1" style="--x:258;--y:150;--w:670" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
+    <img class="ab rv d5" style="--x:492;--y:520;--w:200" src="a/menin_preto.png" alt="Menin">
   </div>
-  <p class="cc">*Consulte condições.</p>
 </section>
+
+
+
 
 <!-- 25 ROLETA -->
 <section class="scene sc-verde" id="s-roleta" data-title="Roleta da sorte" data-steps="2">
@@ -984,7 +938,7 @@ body.ui #hint{opacity:.7}
       <div class="card rv d2"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Valor de venda</h3><div class="klab">R$ 235.000 &middot; com R$ 25 mil de desconto construtora, sai por R$ 210.000</div></div>
       <div class="card rv d3"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Financiamento</h3><div class="klab">Caixa Econômica &middot; MCMV Faixa 2</div></div>
       <div class="card rv d4"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Decorado pronto</h3><div class="klab">casa decorada no stand, em Sinop</div></div>
-      <div class="card rv d5"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Demanda mínima</h3><div class="klab">86 unidades &middot; assinatura fracionada</div></div>
+      <div class="card rv d5"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Demanda mínima</h3><div class="klab">90 unidades &middot; assinatura fracionada</div></div>
       <div class="card rv d6"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">Entrega</h3><div class="klab">24 meses após assinatura do contrato Caixa</div></div>
       <div class="card hl rv d7"><h3 style="font-size:clamp(17px,calc(1.6*var(--vw)),23px);color:var(--verde)">WhatsApp do produto</h3><div class="klab">66 99927-9467</div></div>
     </div>
@@ -1004,6 +958,34 @@ body.ui #hint{opacity:.7}
       <div class="card st rv d5"><div class="num">04</div><h3>Repasse</h3><p>Contratação com a Caixa e registro do contrato</p></div>
     </div>
     <div class="row mt2"><span class="chip rv d6"><span class="ico"></span>Acessos e treinamentos: fale com o gestor do produto</span></div>
+  </div>
+</section>
+
+<!-- MARKETING EM AÇÃO (o que já está na rua) -->
+<section class="scene" id="s-mkt-acao" data-title="Marketing em ação">
+  <div class="wrap">
+    <div class="eyebrow rv"><span class="tick"></span>Marketing &middot; o que já está sendo feito</div>
+    <h2 class="h-med rv d1">O Parque Norte já está <span class="green">na rua</span></h2>
+    <div class="grid mt2" style="grid-template-columns:1.25fr 1fr;align-items:stretch">
+      <div class="photo rv pop d2 mk-ph"><img src="a/m_outdoor.jpg" alt="Outdoors do Parque Norte na rodovia, em Sinop"><span class="mk-tag">Outdoor</span></div>
+      <div class="photo rv pop d3 mk-ph"><img src="a/m_panfleto.jpg" alt="Panfleto do Parque Norte"><span class="mk-tag">Panfleto</span></div>
+    </div>
+    <div class="grid mt1" style="grid-template-columns:repeat(3,1fr)">
+      <div class="card rv d4"><h3 class="mk-h">Brinde do cliente</h3><div class="klab">exclusivo Parque Norte</div></div>
+      <div class="card rv d5"><h3 class="mk-h">TV</h3><div class="klab">campanha em veiculação</div></div>
+      <div class="card rv d6"><h3 class="mk-h">Rádio</h3><div class="klab">testemunhais no programa Paixão Sertaneja</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- LEADS: conversão em reserva -->
+<section class="scene sc-verde" id="s-leads" data-title="Leads que viram reserva">
+  <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;bottom:-12vh;width:46vw">
+  <div class="wrap" style="text-align:center">
+    <div class="eyebrow rv d1">Leads gerados pela Menin</div>
+    <div class="big-money rv pop d2" style="margin-top:1.5vh"><span data-count="30"></span>%</div>
+    <div class="caps mt1 rv d4">já viraram reserva</div>
+    <p class="lead rv d5" style="margin:2vh auto 0">O marketing gera o contato, <b>o corretor fecha</b>.</p>
   </div>
 </section>
 
@@ -1041,6 +1023,18 @@ body.ui #hint{opacity:.7}
     <img class="rv d5" src="a/menin_branco.png" alt="Menin" style="height:clamp(34px,calc(4.4*var(--vw)),62px);margin-top:1vh">
   </div>
 </section>
+
+<!-- DECORADO ABERTO (última cena) -->
+<section class="scene sc-verde" id="s-aberto" data-title="Decorado aberto">
+  <div class="bgimg kb" style="background-image:url(a/r_sala.jpg);opacity:.25;mix-blend-mode:luminosity"></div>
+  <div class="wrap" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:2.4vh">
+    <div class="eyebrow rv d1">Sinop/MT</div>
+    <h2 class="h-big rv pop d2" style="line-height:1">ABERTO OFICIALMENTE</h2>
+    <div class="caps rv d4" style="color:#fff">o decorado</div>
+    <img class="rv pop d5" src="a/logo_pn_branco.png" alt="Parque Norte" style="width:min(420px,32vw)">
+  </div>
+</section>
+
 
 
 
@@ -1098,8 +1092,8 @@ function comReveal(){
 
 /* ---- decorado ---- */
 var decScene = document.getElementById('s-decorado');
-var decPages = decScene.querySelectorAll('.dec-page');
-var decDots = document.getElementById('dec-steps').children;
+var decPages = decScene ? decScene.querySelectorAll('.dec-page') : [];
+var decDots = decScene ? document.getElementById('dec-steps').children : [];
 var decIdx = 0;
 function decShow(i){
   decIdx = i;
@@ -1293,7 +1287,7 @@ function go(n){
   runCounters(sc);
   if(sc.id==='s-recurso') runSim(sc);
   if(sc===azScene) azRun(); else { azT.forEach(clearTimeout); azT = []; }
-  if(sc.id==='s-final') gentleConfetti(); else { stopGentle(); parts.length = 0; }
+  if(sc.id==='s-final'||sc.id==='s-aberto') gentleConfetti(); else { stopGentle(); parts.length = 0; }
 }
 function next(){
   var sc = scenes[cur];
