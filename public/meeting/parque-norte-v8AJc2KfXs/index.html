@@ -151,7 +151,7 @@ body.ui #hint{opacity:.7}
 .sc-verde .chip .ico{background:var(--ouro)}
 .wm{position:absolute;z-index:1;opacity:.07;pointer-events:none}
 /* ============ 1 CAPA (book p.1) ============ */
-#s-capa .arc,#s-logo .arc{fill:none;stroke:var(--lar);stroke-linecap:butt}
+#s-capa .arc,.logo-sc .arc{fill:none;stroke:var(--lar);stroke-linecap:butt}
 #s-capa .logo{width:calc(var(--u)*585)}
 .scene.active#s-capa .blink{animation:blink 2.4s ease-in-out 2s infinite}
 @keyframes blink{0%,100%{opacity:.3}50%{opacity:.9}}
@@ -199,6 +199,8 @@ body.ui #hint{opacity:.7}
   linear-gradient(180deg,#d3e4ea 0%,#e9f0f2 55%,#f1f3f3 100%)!important}
 /* ============ DECORADO ============ */
 .dec-wrap{position:relative;margin-top:clamp(14px,2.4vh,26px);height:min(60vh,620px)}
+.funil{display:flex;gap:4px;width:min(900px,70vw);height:clamp(14px,2.2dvh,22px);margin-left:auto;margin-right:auto;border-radius:999px;overflow:hidden}
+.funil i{display:block}
 .mk-ph{margin:0;height:clamp(200px,40dvh,430px)}
 .mk-ph img{width:100%;height:100%;object-fit:cover}
 .mk-tag{position:absolute;left:14px;bottom:14px;background:#fff;color:var(--verde);font-weight:800;border-radius:999px;padding:.45em 1em;font-size:clamp(14px,calc(1.3*var(--vw)),19px);box-shadow:0 8px 20px rgba(0,0,0,.18)}
@@ -690,6 +692,18 @@ body.ui #hint{opacity:.7}
 </section>
 
 <!-- 17 ESTRATÉGIA COMERCIAL -->
+<!-- LOGO antes da estratégia comercial -->
+<section class="scene logo-sc" id="s-logo2" data-title="Parque Norte" style="overflow:hidden">
+  <div class="board">
+    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
+      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
+      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
+    </svg>
+    <img class="ab rv pop d1" style="--x:258;--y:150;--w:670" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
+    <img class="ab rv d5" style="--x:492;--y:520;--w:200" src="a/menin_preto.png" alt="Menin">
+  </div>
+</section>
+
 <section class="scene sc-verde" id="s-ato" data-title="Estratégia comercial">
   <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;bottom:-12vh;width:46vw">
   <div class="wrap">
@@ -824,7 +838,7 @@ body.ui #hint{opacity:.7}
 </section>
 
 <!-- LOGO PARQUE NORTE (depois da documentação) -->
-<section class="scene" id="s-logo" data-title="Parque Norte" style="overflow:hidden">
+<section class="scene logo-sc" id="s-logo" data-title="Parque Norte" style="overflow:hidden">
   <div class="board">
     <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
       <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
@@ -902,6 +916,18 @@ body.ui #hint{opacity:.7}
   <p class="cc">*Consulte condições.</p>
 </section>
 
+<!-- LOGO depois do sorteio -->
+<section class="scene logo-sc" id="s-logo3" data-title="Parque Norte" style="overflow:hidden">
+  <div class="board">
+    <svg class="fill" viewBox="0 0 1152 648" style="overflow:visible">
+      <path class="arc draw" pathLength="1" d="M105 722 A965 965 0 0 1 125 -48" stroke-width="60"/>
+      <path class="arc draw d4" pathLength="1" d="M725 820 A410 410 0 0 1 1495 820" stroke-width="130"/>
+    </svg>
+    <img class="ab rv pop d1" style="--x:258;--y:150;--w:670" src="a/logo_pn.png" alt="Residencial Parque Norte · Canarinho 3">
+    <img class="ab rv d5" style="--x:492;--y:520;--w:200" src="a/menin_preto.png" alt="Menin">
+  </div>
+</section>
+
 <!-- 27 ESTRUTURA -->
 <section class="scene" id="s-estrutura" data-title="Estrutura comercial">
   <div class="wrap">
@@ -956,12 +982,15 @@ body.ui #hint{opacity:.7}
   <img class="wm" src="a/icon_pn_branco.png" alt="" style="right:-6vw;bottom:-12vh;width:46vw">
   <div class="wrap" style="text-align:center">
     <div class="eyebrow rv d1">Leads gerados pela Menin</div>
-    <div class="big-money rv pop d2" style="margin-top:1.5vh"><span data-count="68"></span></div>
-    <div class="caps mt1 rv d4">clientes já qualificados</div>
-    <div class="row mt2 rv d5" style="justify-content:center">
-      <span class="chip"><span class="ico"></span><b data-count="352"></b>leads ativos</span>
-      <span class="chip"><span class="ico"></span><b data-count="273"></b>em atendimento</span>
-      <span class="chip"><span class="ico"></span><b>19%</b>já qualificados</span>
+    <div class="big-money rv pop d2" style="margin-top:1.5vh"><span data-count="19"></span>%</div>
+    <div class="caps mt1 rv d4">dos leads ativos já estão qualificados</div>
+    <div class="funil mt2 rv d5">
+      <i style="flex:3;background:#bfe9cf"></i><i style="flex:78;background:var(--verde-cl)"></i><i style="flex:19;background:var(--ouro)"></i>
+    </div>
+    <div class="row mt1 rv d5" style="justify-content:center">
+      <span class="chip"><span class="ico" style="background:#bfe9cf"></span><b>3%</b>em contato</span>
+      <span class="chip"><span class="ico" style="background:var(--verde-cl)"></span><b>78%</b>em atendimento</span>
+      <span class="chip"><span class="ico" style="background:var(--ouro)"></span><b>19%</b>qualificados</span>
     </div>
     <p class="lead rv d6" style="margin:2vh auto 0">O cliente já está na fila. <b>Agora é com o corretor.</b></p>
   </div>
