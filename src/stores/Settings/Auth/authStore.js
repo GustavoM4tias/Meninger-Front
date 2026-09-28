@@ -489,6 +489,7 @@ export const useAuthStore = defineStore('user', {
         phone: payload.phone ?? null,
         // undefined é descartado pelo JSON.stringify — só envia se veio no payload
         daily_alert_limit: payload.daily_alert_limit,
+        system_notifications: payload.system_notifications,
       };
 
       try {
