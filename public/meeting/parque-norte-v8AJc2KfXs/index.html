@@ -201,12 +201,6 @@ body.ui #hint{opacity:.7}
 .dec-wrap{position:relative;margin-top:clamp(14px,2.4vh,26px);height:min(60vh,620px)}
 .funil{display:flex;gap:4px;width:min(900px,70vw);height:clamp(14px,2.2dvh,22px);margin-left:auto;margin-right:auto;border-radius:999px;overflow:hidden}
 .funil i{display:block}
-.vt{position:absolute;left:50%;top:0;height:100%;width:auto;max-width:100%;transform:translateX(-50%);z-index:2;background:#000;cursor:pointer}
-.vt-bg{position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;filter:blur(40px) brightness(.6) saturate(1.1);z-index:1}
-.vt-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:clamp(90px,12dvh,140px);aspect-ratio:1;border-radius:50%;border:0;cursor:pointer;
-  background:rgba(0,80,49,.82);box-shadow:0 0 0 10px rgba(245,179,47,.35),0 20px 60px rgba(0,0,0,.4);transition:opacity .3s,transform .3s}
-.vt-play span{display:block;margin-left:12%;width:0;height:0;border-style:solid;border-width:22px 0 22px 36px;border-color:transparent transparent transparent #fff;margin:auto;transform:translateX(10%)}
-#s-video.tocando .vt-play{opacity:0;transform:translate(-50%,-50%) scale(.7);pointer-events:none}
 .cri-row{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(8px,calc(1.2*var(--vw)),18px);max-width:min(100%,calc(62dvh*5*.8 + 72px));margin-left:auto;margin-right:auto}
 .cri-row img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;border-radius:14px;box-shadow:0 18px 40px rgba(0,50,25,.22)}
 .cri-row div:nth-child(even){transform:translateY(3dvh)}
@@ -419,13 +413,6 @@ body.ui #hint{opacity:.7}
 </svg>
 
 <div id="stage">
-
-<!-- 0 TEASER (vídeo) -->
-<section class="scene" id="s-video" data-title="Teaser" style="background:#000;overflow:hidden">
-  <video class="vt-bg" id="vt-bg" muted playsinline preload="auto" poster="a/v_teaser_poster.jpg" aria-hidden="true"></video>
-  <video class="vt" id="vt" playsinline preload="auto" poster="a/v_teaser_poster.jpg" src="a/v_teaser.mp4"></video>
-  <button type="button" class="vt-play" id="vt-play" aria-label="Tocar o vídeo"><span></span></button>
-</section>
 
 <!-- 1 CAPA · book p.1 -->
 <section class="scene" id="s-capa" data-title="Abertura" style="overflow:hidden">
@@ -1181,21 +1168,6 @@ function galShow(i){
   galPill.classList.remove('go'); void galPill.offsetWidth; galPill.classList.add('go');
 }
 
-/* ---- teaser ---- */
-var vtScene = document.getElementById('s-video'), vt = document.getElementById('vt'), vtBg = document.getElementById('vt-bg');
-vtBg.src = vt.currentSrc || vt.src;
-function vtPlay(){
-  vt.muted = false;
-  var p = vt.play(); vtBg.currentTime = vt.currentTime; vtBg.play().catch(function(){});
-  if(p && p.catch) p.catch(function(){ vt.muted = true; vt.play(); });   /* sem gesto: toca mudo */
-  vtScene.classList.add('tocando');
-}
-function vtStop(){ vt.pause(); vtBg.pause(); vt.currentTime = 0; vtBg.currentTime = 0; vtScene.classList.remove('tocando'); }
-vt.addEventListener('ended', function(){ vtBg.pause(); if(scenes[cur]===vtScene) go(cur+1); });
-vt.addEventListener('seeked', function(){ vtBg.currentTime = vt.currentTime; });
-document.getElementById('vt-play').addEventListener('click', function(e){ e.stopPropagation(); vtPlay(); });
-vt.addEventListener('click', function(e){ e.stopPropagation(); if(vt.paused) vtPlay(); else { vt.pause(); vtBg.pause(); vtScene.classList.remove('tocando'); } });
-
 /* ---- comissão ---- */
 var comScene = document.getElementById('s-comissao');
 var comStep = 0;
@@ -1399,7 +1371,6 @@ function go(n){
   bar.style.width = (cur/(N-1)*100)+'%';
   counter.textContent = (cur+1)+' / '+N;
   Array.prototype.forEach.call(dots.children, function(d,i){ d.classList.toggle('on', i===cur); });
-  vtStop();
   if(sc===gal) galShow(0);
   if(sc===decScene) decShow(0);
   if(sc===szScene){ szShow(0); szScene.classList.remove('won','paid'); szStartPoll(); } else szStopPoll();
@@ -1412,7 +1383,6 @@ function go(n){
 }
 function next(){
   var sc = scenes[cur];
-  if(sc===vtScene && vt.paused && !vt.ended){ vtPlay(); return; }
   if(sc===gal && galIdx < galSlides.length-1){ galShow(galIdx+1); return; }
   if(sc===decScene && decIdx < decPages.length-1){ decShow(decIdx+1); return; }
   if(sc===rolScene && rolStep===0){ rolStep=1; spinWheel(); return; }
