@@ -878,7 +878,7 @@ body.ui #hint{opacity:.7}
       <div>
         <div class="eyebrow rv"><span class="tick"></span>Sorteio ao vivo</div>
         <h2 class="h-big rv d1">Cadastre-se e<br><span style="color:var(--ouro)">concorra agora!</span></h2>
-        <p class="lead mt1 rv d2">Aponte a câmera, preencha <b>nome, WhatsApp e imobiliária</b>. Um nome sai da lista e sobe ao palco para <b>girar a roleta valendo prêmio de verdade</b>.</p>
+        <p class="lead mt1 rv d2">Aponte a câmera, preencha <b>nome, WhatsApp e imobiliária</b>. Um nome sai da lista e sobe ao palco para <b>girar a roleta</b>.</p>
         <div class="sz-count mt2 rv d3"><b id="sz-n">0</b><span>inscritos<small id="sz-status">conectando…</small></span></div>
         <div class="sz-feed mt1" id="sz-feed"></div>
       </div>
@@ -897,33 +897,6 @@ body.ui #hint{opacity:.7}
     <div class="sz-call" id="sz-call">SUBA AO PALCO!</div>
     <div class="sz-btns" id="sz-btns">
       <button type="button" class="sz-btn ghost" id="sz-again">&#8635; Sortear de novo <kbd>R</kbd></button>
-      <button type="button" class="sz-btn" id="sz-go">Girar a roleta &rarr;</button>
-    </div>
-  </div>
-  <!-- passo 2: a roleta de verdade -->
-  <div class="wrap sz-pane" id="sz-spin">
-    <div class="split" style="grid-template-columns:.95fr 1.05fr">
-      <div>
-        <div class="eyebrow"><span class="tick"></span>Valendo de verdade</div>
-        <h2 class="h-big" id="sz-who" style="margin-top:.4vh">Nome</h2>
-        <p class="lead mt1" id="sz-who-imob"></p>
-        <div class="sz-prize mt2" id="sz-prize"><small>ganhou</small><b id="sz-prize-v">R$ 0</b></div>
-        <p class="note mt2" id="sz-hint">Aperte &rarr; ou clique na roleta para girar.</p>
-      </div>
-      <div class="wheel-box sz-wheel-box">
-        <div class="pin"></div>
-        <div class="wheel" id="sz-wheel" style="background:conic-gradient(#f5b32f 0 45deg,#0a7a46 45deg 90deg,#fff 90deg 135deg,#f5b32f 135deg 180deg,#0a7a46 180deg 225deg,#fff 225deg 270deg,#f5b32f 270deg 315deg,#0a7a46 315deg 360deg)">
-          <i style="transform:rotate(22.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
-          <i style="transform:rotate(67.5deg)"><b style="color:#fff">R$ 1.250</b></i>
-          <i style="transform:rotate(112.5deg)"><b style="color:#005031">R$ 1.000</b></i>
-          <i style="transform:rotate(157.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
-          <i style="transform:rotate(202.5deg)"><b style="color:#fff">R$ 1.250</b></i>
-          <i style="transform:rotate(247.5deg)"><b style="color:#005031">R$ 1.000</b></i>
-          <i style="transform:rotate(292.5deg)"><b style="color:#2a1a08">R$ 1.500</b></i>
-          <i style="transform:rotate(337.5deg)"><b style="color:#fff">R$ 1.250</b></i>
-          <span class="hub"><img src="a/icon_pn.png" alt=""></span>
-        </div>
-      </div>
     </div>
   </div>
   <p class="cc">*Consulte condições.</p>
@@ -1235,8 +1208,6 @@ function szSpin(){
   w.addEventListener('transitionend', revela);   // só revela quando a roda PARA de verdade
 }
 document.getElementById('sz-again').addEventListener('click', function(e){ e.stopPropagation(); szDraw(); });
-document.getElementById('sz-go').addEventListener('click', function(e){ e.stopPropagation(); szToWheel(); });
-document.getElementById('sz-wheel').addEventListener('click', function(e){ e.stopPropagation(); szSpin(); });
 
 /* ---- barra de recurso ---- */
 function runSim(scene){
@@ -1297,7 +1268,7 @@ function next(){
   if(sc===comScene && comStep===0){ comStep=1; comReveal(); return; }
   if(sc===szScene){
     if(szStep===0){ szDraw(); return; }
-    if(szStep===1){ if(!szRolling && szWinner) szToWheel(); return; }
+    if(szStep===1 && szRolling) return;
     if(szStep===2 && !szScene.classList.contains('paid')){ szSpin(); return; }
   }
   go(cur+1);
