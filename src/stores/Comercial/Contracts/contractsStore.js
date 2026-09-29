@@ -585,8 +585,13 @@ export const useContractsStore = defineStore('contracts', {
                             const candidates = partnerIndex.get(`${cust}__${unitName}`) || []
                             const match = candidates.find((p) => partners.has(Number(p.enterprise_id)))
                             if (!match) return null
+                            // unit_id também vem do partner: no Sienge cada CC tem
+                            // o seu id de unidade para o mesmo lote, e a chave da
+                            // venda usa unit_id — sem isto o TR virava venda à parte.
                             return {
                                 ...c,
+                                unit_id: match.unit_id,
+                                unit_name: match.unit_name,
                                 enterprise_id: match.enterprise_id,
                                 enterprise_name: match.enterprise_name,
                                 company_id: match.company_id ?? c.company_id,

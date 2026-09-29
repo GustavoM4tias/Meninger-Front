@@ -31,7 +31,19 @@ export const useTrSatelliteStore = defineStore('trSatellite', {
         },
         satelliteIds: (state) => new Set(
             state.items.map(i => Number(i.satellite_enterprise_id)).filter(Number.isFinite)
-        )
+        ),
+        // Completa uma lista de enterprise_ids com os satélites cujo partner está
+        // nela. O detalhe recarrega os contratos por id, e depois do merge a
+        // venda só mostra o id do partner: sem isto o contrato de TR não vem.
+        withSatellites() {
+            return (ids) => {
+                const out = new Set((ids || []).map(Number).filter(Number.isFinite))
+                for (const [sid, partners] of this.partnerIdsBySatellite) {
+                    if ([...partners].some(p => out.has(p))) out.add(sid)
+                }
+                return [...out]
+            }
+        }
     },
 
     actions: {

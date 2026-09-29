@@ -90,7 +90,7 @@ async function openDetail(row) {
   // Faturamento faz. Sem isto o detalhe abre com "Sem imobiliária" em tudo.
   const eid = Number(row.enterprise_id ?? row.id);
   if (Number.isFinite(eid) && eid > 0) {
-    await contractsStore.fetchContracts({ view: 'detail', enterpriseIds: [eid] });
+    await contractsStore.fetchContracts({ view: 'detail', enterpriseIds: trSatelliteStore.withSatellites([eid]) });
   }
 
   isDetailOpen.value = true;

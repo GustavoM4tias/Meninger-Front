@@ -2,6 +2,7 @@
 import { ref, computed, watchEffect } from 'vue';
 import { useCan } from '@/composables/useCan';
 import { useContractsStore } from '@/stores/Comercial/Contracts/contractsStore';
+import { useTrSatelliteStore } from '@/stores/Comercial/Contracts/trSatelliteStore';
 import EnterpriseDetailModal from './EnterpriseDetailModal.vue';
 import Export from '@/components/config/Export.vue';
 
@@ -17,6 +18,7 @@ const props = defineProps({ data: { type: Array, required: true } });
 const emit = defineEmits(['open-land-sync', 'open-closing', 'selection-metrics']);
 
 const contractsStore = useContractsStore();
+const trSatStore = useTrSatelliteStore();
 // Ordenação pelo CABEÇALHO da tabela (padrão do sistema) — o dropdown de
 // direcionamento saiu da toolbar.
 const sortConfig = ref({ key: 'value', direction: 'desc' });
@@ -291,7 +293,7 @@ const openSingle = async (row) => {
   const dashboardSalesSnapshot = Array.isArray(contractsStore.uniqueSales) ? [...contractsStore.uniqueSales] : [];
   const targetSales = salesForRowFrom(dashboardSalesSnapshot, row);
 
-  const enterpriseIds =
+  const enterpriseIds = trSatStore.withSatellites(
     (contractsStore.groupBy === 'company' && Array.isArray(row.enterpriseIds) && row.enterpriseIds.length > 0)
       ? [...new Set(row.enterpriseIds.map(Number).filter(Number.isFinite))]
       : [
@@ -300,7 +302,7 @@ const openSingle = async (row) => {
             .flatMap((s) => (s.contracts || []).map((c) => Number(c?.enterprise_id)))
             .filter((id) => Number.isFinite(id) && id > 0)
         ),
-      ];
+      ]);
 
   if (enterpriseIds.length > 0) {
     await contractsStore.fetchContracts({ view: 'detail', enterpriseIds });
@@ -410,10 +412,10 @@ const openGroup = async () => {
   const allSales = [];
   for (const r of rows) allSales.push(...salesForRowFrom(dashboardSalesSnapshot, r));
 
-  const enterpriseIds =
+  const enterpriseIds = trSatStore.withSatellites(
     (contractsStore.groupBy === 'company')
       ? [...new Set(rows.flatMap(r => (r.enterpriseIds || [])).map(Number).filter(Number.isFinite))]
-      : [...new Set(allSales.flatMap(s => (s.contracts || []).map(c => Number(c.enterprise_id))).filter(Number.isFinite))];
+      : [...new Set(allSales.flatMap(s => (s.contracts || []).map(c => Number(c.enterprise_id))).filter(Number.isFinite))]);
 
   if (enterpriseIds.length > 0) {
     await contractsStore.fetchContracts({ view: 'detail', enterpriseIds });
