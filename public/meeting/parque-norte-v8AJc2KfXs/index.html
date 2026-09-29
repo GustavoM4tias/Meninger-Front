@@ -634,7 +634,7 @@ body.ui #hint{opacity:.7}
   <div class="gal-slide" data-label="Dormitório 2" style="background-image:url(a/r_dorm2.jpg)"></div>
   <div class="gal-slide" data-label="Quintal" style="background-image:url(a/r_quintal.jpg)"></div>
   <div class="gal-slide" data-label="Sua rua" style="background-image:url(a/r_fachada2.jpg)"></div>
-  <div class="gal-slide" data-label="A região" style="background-image:url(a/bk_localizacao.jpg)"></div>
+  <div class="gal-slide" data-label="" style="background-image:url(a/bk_localizacao.jpg)"></div>
   <div class="shade" style="background:linear-gradient(180deg,rgba(0,0,0,.28),transparent 18%)"></div>
   <div id="gal-steps"></div>
   <div class="board" style="position:absolute;z-index:3;pointer-events:none">
@@ -1177,6 +1177,7 @@ function galShow(i){
   galSlides.forEach(function(s,k){ s.classList.toggle('show', k===i); });
   Array.prototype.forEach.call(galSteps.children, function(el,k){ el.className = k<i ? 'done' : (k===i ? 'cur' : ''); });
   galName.textContent = galSlides[i].getAttribute('data-label');
+  galPill.style.visibility = galName.textContent ? '' : 'hidden';
   galIlus.textContent = galSlides[i].getAttribute('data-real') ? 'Foto real · ago/2026' : 'Imagem meramente ilustrativa*';
   galPill.classList.remove('go'); void galPill.offsetWidth; galPill.classList.add('go');
 }
