@@ -3,6 +3,8 @@ import { ref, nextTick, computed } from 'vue';
 import { useEmeVoice } from '@/composables/useEmeVoice';
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore';
 import EmeContextBar from './EmeContextBar.vue';
+import EmeAttachments from './EmeAttachments.vue';
+import { useOfficeAIStore } from '@/stores/officeAIStore';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -91,10 +93,17 @@ function onInput(e) {
   autoResize();
 }
 
+// Anexo pronto conta como mensagem (o texto vira "Segue anexo." no envio);
+// anexo ainda subindo segura o envio para não sair sem ele.
+const aiStore = useOfficeAIStore();
+const temAnexo = computed(() => aiStore.pendingAttachments.some(a => a.path && !a.error));
+const podeEnviar = computed(() =>
+  (props.modelValue.trim() || temAnexo.value) && !props.disabled && !props.isStreaming && !aiStore.attachmentsUploading);
+
 function send() {
   const text = props.modelValue.trim();
-  if (!text || props.disabled || props.isStreaming) return;
-  emit('send', text);
+  if (!podeEnviar.value) return;
+  emit('send', text || 'Segue anexo.');
   emit('update:modelValue', '');
   nextTick(() => { if (textareaEl.value) textareaEl.value.style.height = 'auto'; });
 }
@@ -117,7 +126,7 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
           : 'hover:shadow-elevated focus-within:border-accent/40 focus-within:shadow-glow-accent',
         containerStateClass,
       ]">
-    <div class="px-4 pt-3"><EmeContextBar /></div>
+    <div class="px-4 pt-3 space-y-2"><EmeContextBar /><EmeAttachments part="chips" /></div>
 
     <textarea
       ref="textareaEl"
@@ -154,6 +163,7 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
       <span v-else></span>
 
       <div class="flex items-center gap-1.5">
+        <EmeAttachments part="button" :size="size" />
         <button v-if="voiceAvailable" type="button" @click="onMicClick"
           :title="micTitle"
           :class="[
@@ -170,11 +180,11 @@ defineExpose({ focus: () => textareaEl.value?.focus() });
         </button>
 
         <button type="button" @click="send"
-          :disabled="!modelValue.trim() || disabled || isStreaming"
+          :disabled="!podeEnviar"
           :class="[
             buttonSize,
             'rounded-full grid place-items-center border transition-all duration-150',
-            modelValue.trim() && !isStreaming
+            podeEnviar
               ? 'bg-accent text-white border-accent hover:bg-accent-hover hover:scale-105 shadow-glow-accent'
               : 'bg-surface-sunken text-ink-subtle border-line cursor-not-allowed'
           ]">

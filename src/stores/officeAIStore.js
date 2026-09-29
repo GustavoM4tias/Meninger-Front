@@ -234,8 +234,54 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     if (data) storageUsage.value = data
   }
 
+  // ── Anexos (PDF de NF/boleto para a Eme lançar no Fluxo de Pagamento) ──────
+  // Sobem na hora em que a pessoa escolhe (pasta do próprio usuário no
+  // storage); o envio da mensagem leva só os prontos e limpa a lista. O
+  // servidor revalida a pasta - daqui ele só aceita o que é da pessoa.
+  const pendingAttachments = ref([])   // [{ key, fileName, path, url, uploading, error }]
+  const attachmentsUploading = computed(() => pendingAttachments.value.some(a => a.uploading))
+
+  async function addAttachment(file) {
+    if (!file) return
+    const key = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    if (file.type !== 'application/pdf') {
+      pendingAttachments.value.push({ key, fileName: file.name, uploading: false, error: 'Só PDF.' })
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      pendingAttachments.value.push({ key, fileName: file.name, uploading: false, error: 'Passa de 5 MB.' })
+      return
+    }
+    pendingAttachments.value.push({ key, fileName: file.name, uploading: true, error: null })
+    const set = (patch) => {
+      const i = pendingAttachments.value.findIndex(a => a.key === key)
+      if (i >= 0) pendingAttachments.value.splice(i, 1, { ...pendingAttachments.value[i], ...patch })
+    }
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('context', 'eme_chat_attachment')
+      const res = await fetch(`${API_URL}/uploads`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: fd,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.message || 'Erro no upload')
+      set({ uploading: false, path: data.path, url: data.url })
+    } catch (err) {
+      set({ uploading: false, error: err.message || 'Falha no envio' })
+    }
+  }
+
+  function removeAttachment(key) {
+    pendingAttachments.value = pendingAttachments.value.filter(a => a.key !== key)
+  }
+
   // ── Envio de mensagem com SSE streaming ───────────────────────────────────
   async function sendMessage(text, { viaVoice = false } = {}) {
+    const anexos = pendingAttachments.value.filter(a => a.path && !a.error)
+    if (!text?.trim() && anexos.length) text = 'Segue anexo.'
     if (!text?.trim()) {
       console.warn('[officeAIStore] sendMessage ignorada — texto vazio')
       return
@@ -250,10 +296,13 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     messages.value.push({
       id: Date.now(),
       role: 'user',
-      content: text,
+      content: anexos.length ? `${text}\n\n📎 ${anexos.map(a => a.fileName).join(', ')}` : text,
       response_type: 'text',
       created_at: new Date(),
     })
+    // Os anexos vão com ESTA mensagem; a lista esvazia para a próxima.
+    const attachmentsPayload = anexos.map(a => ({ path: a.path, url: a.url, fileName: a.fileName }))
+    pendingAttachments.value = []
     isStreaming.value = true
     streamingText.value = ''
     pendingAction.value = null
@@ -306,6 +355,7 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
           // O backend trata isto como DADO, com teto de tamanho, nunca como
           // instrução: texto de tela pode conter qualquer coisa.
           screen: contextoTela,
+          ...(attachmentsPayload.length && { attachments: attachmentsPayload }),
         }),
         signal: abortCtrl.signal,
       })
@@ -602,5 +652,6 @@ export const useOfficeAIStore = defineStore('officeAI', () => {
     loadStorageUsage, sendMessage, cancelStream, retryMessage, renameSession, sendFeedback,
     setMode, minimize, expand, setDraft,
     currentSessionTitle,
+    pendingAttachments, attachmentsUploading, addAttachment, removeAttachment,
   }
 })

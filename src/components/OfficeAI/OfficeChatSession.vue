@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, nextTick, watch } from 'vue'
 import EmeContextBar from './EmeContextBar.vue';
+import EmeAttachments from './EmeAttachments.vue';
 import { useOfficeAIStore } from '@/stores/officeAIStore'
 import { useAuthStore } from '@/stores/Settings/Auth/authStore'
 import { usePermissionStore } from '@/stores/Settings/Permissions/permissionStore'
@@ -113,11 +114,16 @@ watch(() => [aiStore.messages.length, aiStore.streamingText], () => {
   })
 }, { deep: true })
 
+// Anexo pronto conta como mensagem; anexo subindo segura o envio.
+const temAnexo = computed(() => aiStore.pendingAttachments.some(a => a.path && !a.error))
+const podeEnviar = computed(() =>
+  (!!messageInput.value.trim() || temAnexo.value) && !aiStore.isStreaming && !aiStore.isAtStorageLimit && !aiStore.attachmentsUploading)
+
 function send() {
   const text = messageInput.value.trim()
-  if (!text || aiStore.isStreaming) return
+  if (!podeEnviar.value) return
   messageInput.value = ''
-  aiStore.sendMessage(text)
+  aiStore.sendMessage(text || 'Segue anexo.')
 }
 
 function onKeydown(e) {
@@ -218,6 +224,7 @@ async function confirmFeedback({ comment }) {
     <div class="border-t border-line px-3 py-3 bg-surface">
       <!-- Onde a pessoa está e o que ela apontou com Ctrl+clique -->
       <EmeContextBar />
+      <EmeAttachments part="chips" class="mb-2" />
       <div
         class="relative bg-surface-sunken border rounded-2xl flex items-end gap-2 px-2 py-1 transition"
         :class="composerStateClass">
@@ -232,6 +239,7 @@ async function confirmFeedback({ comment }) {
           ]" />
 
         <div class="flex items-center gap-1.5 h-full my-auto pr-1 pb-1">
+          <EmeAttachments part="button" />
           <button v-if="voiceAvailable" type="button" @click="onMicClick"
             :title="micTitle"
             :class="[
@@ -247,9 +255,9 @@ async function confirmFeedback({ comment }) {
           </button>
 
           <button type="button" @click="send"
-            :disabled="!messageInput.trim() || aiStore.isStreaming || aiStore.isAtStorageLimit"
+            :disabled="!podeEnviar"
             class="w-8 h-8 rounded-full flex items-center justify-center border transition-colors"
-            :class="messageInput.trim() && !aiStore.isStreaming
+            :class="podeEnviar
               ? 'bg-accent text-white border-accent hover:bg-accent-hover shadow-glow-accent'
               : 'bg-surface-raised text-ink-subtle border-line cursor-not-allowed'">
             <i class="fas fa-arrow-up text-xs" />
