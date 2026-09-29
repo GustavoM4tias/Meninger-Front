@@ -27,6 +27,9 @@ import LaunchPipelineCard from './components/LaunchPipelineCard.vue';
 import SiengeCredentialsModal from './components/SiengeCredentialsModal.vue';
 import RidRequestModal from './components/RidRequestModal.vue';
 import UpdateBoletoModal from './components/UpdateBoletoModal.vue';
+import AttachDocumentModal from './components/AttachDocumentModal.vue';
+import LaunchTypesModal from './components/LaunchTypesModal.vue';
+import SiengeWatchModal from './components/SiengeWatchModal.vue';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -67,7 +70,7 @@ const draft = ref({ search: '', dateFrom: '', dateTo: '', launchType: '' });
 
 const tipoOptions = computed(() => [
     { value: '', label: 'Todos os tipos' },
-    ...(store.launchTypes || []).map((t) => ({ value: t, label: t })),
+    ...(store.launchTypes || []).map((t) => ({ value: t.name ?? t, label: t.name ?? t })),
 ]);
 
 /** Conta DIMENSÕES preenchidas, não valores. */
@@ -305,6 +308,11 @@ function handleUpdateBoleto(launch) {
 }
 async function onBoletoUpdated() { await store.fetchLaunches(true); }
 
+/* ── Esteira modular: nota depois da medição, receitas e vigia ─────────── */
+const attachDocLaunch = ref(null);
+const showTypesModal = ref(false);
+const showWatchModal = ref(false);
+
 function onCredentialsSaved() {
     store.siengeCredentialsOk = true;
     showCredentialsModal.value = false;
@@ -350,6 +358,14 @@ onUnmounted(() => store.stopAllPolling());
                 <Favorite :router="'/financeiro/paymentflow'" :section="'Fluxo de Pagamento'" />
             </template>
             <template #actions>
+                <Button v-if="can('configure')" size="sm" variant="outline" icon="fas fa-diagram-project"
+                    title="Tipos de lançamento e receitas" @click="showTypesModal = true">
+                    <span class="hidden sm:inline">Receitas</span>
+                </Button>
+                <Button v-if="can('configure')" size="sm" variant="outline" icon="fas fa-binoculars"
+                    title="Conferir as telas do Sienge que o robô usa" @click="showWatchModal = true">
+                    <span class="hidden sm:inline">Vigia</span>
+                </Button>
                 <Button size="sm" icon="fas fa-plus" @click="store.openCreateModal">
                     <span class="hidden sm:inline">Lançamento</span>
                 </Button>
@@ -363,12 +379,15 @@ onUnmounted(() => store.stopAllPolling());
                         { title: 'Veja onde estão', text: 'Os cartões contam quantos lançamentos há em cada etapa e quanto somam. Clique num deles para deixar na tabela só aquela etapa; clique de novo para desfazer.' },
                         { title: 'Acompanhe um lançamento', text: 'Clique na linha para abrir o pipeline: cada passo com Sienge aparece com o estado atual e o que deu errado, se deu.' },
                         { title: 'Aja quando travar', text: 'Dentro da linha aberta ficam as ações: rodar o pipeline de novo, pedir o RID do fornecedor, atualizar o boleto ou cancelar o lançamento.' },
+                        { title: 'Cada tipo tem sua receita', text: 'Em Receitas fica o que cada tipo faz no Sienge: usar contrato existente ou criar, documento do título, boleto ou transferência, medir antes da nota. O portão de regras recusa o lançamento que foge da receita, antes de ir ao Sienge.' },
+                        { title: 'Pela Eme', text: 'No chat da Eme, anexe a nota e o boleto em PDF e peça, por exemplo, para subir o salário do mês. Ela mostra um cartão com o que vai acontecer; o lançamento só é feito quando você clica em Confirmar.' },
                     ]"
                     :tips="[
                         'A cor da etapa é a mesma no cartão, no selo da linha e no chip: verde é título pago, vermelho é erro e cinza é cancelado.',
                         'Cancelados e títulos pagos ficam escondidos por padrão. Clicar no chip deles liga a exibição e filtra de uma vez.',
                         'Quando há pipeline rodando, a tela se atualiza sozinha - o aviso aparece ao lado da contagem.',
                         'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',
+                        'Quando o Sienge muda uma tela, o robô para de conseguir lançar. O botão Vigia abre as telas que ele usa, sem salvar nada, e diz o que mudou.',
                     ]"
                 />
             </template>
@@ -505,6 +524,8 @@ onUnmounted(() => store.stopAllPolling());
                         <LaunchPipelineCard :launch="row"
                             :polling="!!store.pipelinePolling[row.id]"
                             :running="store.pipelineRunningIds.has(row.id)"
+                            :receita="store.recipeOfType(row.launchType)"
+                            @attach-document="l => attachDocLaunch = l"
                             @run-pipeline="store.runPipeline" @poll="store.pollNow"
                             @retry-contract="store.runPipeline"
                             @dismiss-error="store.fetchLaunches(true)"
@@ -641,5 +662,12 @@ onUnmounted(() => store.stopAllPolling());
         <UpdateBoletoModal v-if="showUpdateBoletoModal && updateBoletoLaunch" :launch="updateBoletoLaunch"
             @close="showUpdateBoletoModal = false; updateBoletoLaunch = null"
             @updated="onBoletoUpdated" />
+
+        <AttachDocumentModal v-if="attachDocLaunch" :launch="attachDocLaunch"
+            :receita="store.recipeOfType(attachDocLaunch.launchType)"
+            @close="attachDocLaunch = null" @attached="store.fetchLaunches(true)" />
+
+        <LaunchTypesModal v-if="showTypesModal" @close="showTypesModal = false" />
+        <SiengeWatchModal v-if="showWatchModal" @close="showWatchModal = false" />
     </PageContainer>
 </template>

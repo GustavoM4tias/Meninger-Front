@@ -37,6 +37,12 @@ export const PIPELINE_STAGE_LABELS = {
     titulo_error: { label: 'Erro no título', icon: 'fa-triangle-exclamation', color: 'red' },
     awaiting_titulo_authorization: { label: 'Aguardando pagamento do título', icon: 'fa-clock', color: 'orange' },
     titulo_pago: { label: 'Título pago', icon: 'fa-circle-check', color: 'emerald' },
+    // esteira modular (receita por tipo + portão de regras)
+    gate_blocked: { label: 'Recusado pelo portão de regras', icon: 'fa-shield-halved', color: 'red' },
+    contract_rejected: { label: 'Nenhum contrato aceito pela regra', icon: 'fa-shield-halved', color: 'red' },
+    awaiting_document: { label: 'Aguardando a nota fiscal', icon: 'fa-file-circle-exclamation', color: 'orange' },
+    contract_manual_block: { label: 'Contrato manual - verificar', icon: 'fa-shield-halved', color: 'orange' },
+    aborted: { label: 'Interrompido', icon: 'fa-stop', color: 'gray' },
     // legado
     validating_items: { label: 'Validando itens...', icon: 'fa-spinner fa-spin', color: 'blue' },
     items_ok: { label: 'Saldo disponível', icon: 'fa-circle-check', color: 'green' },
@@ -698,12 +704,55 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         } : {};
     }
 
-    async function fetchLaunchTypes() {
-        if (launchTypes.value.length) return; // já carregados
+    async function fetchLaunchTypes(force = false) {
+        if (launchTypes.value.length && !force) return; // já carregados
         try {
             const data = await requestWithAuth(`${API_URL}/sienge/launch-types`);
             launchTypes.value = Array.isArray(data) ? data : [];
         } catch (_) { /* silencioso */ }
+    }
+
+    /** Receita efetiva do tipo (null = tipo desconhecido). */
+    function recipeOfType(name) {
+        return launchTypes.value.find(t => t.name === name)?.receitaEfetiva || null;
+    }
+
+    // ── Tipos / receitas (capacidade `configure`) ─────────────────────────────
+    /** Todos os tipos, inclusive inativos - só para a tela de receitas. */
+    async function fetchAllLaunchTypes() {
+        const data = await requestWithAuth(`${API_URL}/sienge/launch-types?includeInactive=true`);
+        return Array.isArray(data) ? data : [];
+    }
+
+    async function saveLaunchType(id, patch) {
+        const saved = await requestWithAuth(`${API_URL}/sienge/launch-types/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(patch),
+        });
+        await fetchLaunchTypes(true);
+        return saved;
+    }
+
+    // ── Documento depois da medição ───────────────────────────────────────────
+    async function uploadDocument(file, context, referenceId = null) {
+        return uploadToStorage(file, context, referenceId);
+    }
+    async function extractDocument(file, mode = 'auto') {
+        return extractPdf(file, mode);
+    }
+    async function attachDocument(launchId, fields) {
+        const data = await requestWithAuth(`${API_URL}/sienge/payment-flow/${launchId}/document`, {
+            method: 'POST',
+            body: JSON.stringify(fields),
+        });
+        await _refreshLaunchInList(launchId);
+        startPolling(launchId);
+        return data;
+    }
+
+    // ── Vigia das telas do Sienge ─────────────────────────────────────────────
+    async function runSiengeWatch() {
+        return requestWithAuth(`${API_URL}/sienge/payment-flow/sienge-watch`, { method: 'POST' });
     }
 
     async function checkSiengeCredentials() {
@@ -869,7 +918,10 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         startLiveRefresh, stopLiveRefresh,
 
         // Actions: tipos de lançamento / credenciais
-        fetchLaunchTypes, checkSiengeCredentials, getTypeDefaults,
+        fetchLaunchTypes, checkSiengeCredentials, getTypeDefaults, recipeOfType, saveLaunchType, fetchAllLaunchTypes,
+
+        // Actions: documento depois da medição / vigia
+        uploadDocument, extractDocument, attachDocument, runSiengeWatch,
 
         // Actions: filtros / paginação
         setPage, applyFilters, resetFilters, toggleShowCancelled, toggleShowErrors, toggleShowTituloPago,

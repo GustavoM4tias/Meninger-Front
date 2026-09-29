@@ -12,13 +12,21 @@ const props = defineProps({
   launch: { type: Object, required: true },
   polling: { type: Boolean, default: false },
   running: { type: Boolean, default: false },
+  // Receita efetiva do tipo (GET /launch-types -> receitaEfetiva). Contrato
+  // "existente" não tem aditivo: o passo some do stepper.
+  receita: { type: Object, default: null },
 });
 
 const emit = defineEmits([
   'run-pipeline', 'poll', 'dismiss-error', 'retry-contract',
   'open-rid-modal', 'register-boleto', 'update-boleto',
-  'continue-existing-contract', 'abort',
+  'continue-existing-contract', 'abort', 'attach-document',
 ]);
+
+const semAditivo = computed(() => props.receita?.contrato === 'existente');
+// Portão de regras recusou (dados, credor ou contrato): corrige e processa de novo.
+const gateBlocked = computed(() => ['gate_blocked', 'contract_rejected'].includes(stage.value));
+const awaitingDocument = computed(() => stage.value === 'awaiting_document');
 
 const ridEmailSent = computed(() => !!props.launch.ridEmailSent);
 const ridSentAtLabel = computed(() => {
@@ -59,7 +67,8 @@ const isRunning = computed(() =>
 );
 const isReady = computed(() => ['ready', 'titulo_pago'].includes(stage.value));
 const hasError = computed(() =>
-  ['contract_error', 'additive_error', 'measurement_error', 'titulo_error'].includes(stage.value) || creditorMissing.value
+  ['contract_error', 'additive_error', 'measurement_error', 'titulo_error', 'gate_blocked', 'contract_rejected', 'items_insufficient'].includes(stage.value)
+  || creditorMissing.value
 );
 
 const TITULO_STAGES = ['creating_titulo', 'titulo_created', 'titulo_error',
@@ -104,7 +113,7 @@ const stepTextFor = (state) => ({
 // ── Medição step ───────────────────────────────────
 const measurementCreating = computed(() => stage.value === 'creating_measurement');
 const measurementCreated = computed(() =>
-  ['measurement_created', 'awaiting_measurement_authorization', ...TITULO_STAGES, 'ready'].includes(stage.value)
+  ['measurement_created', 'awaiting_measurement_authorization', 'awaiting_document', ...TITULO_STAGES, 'ready'].includes(stage.value)
 );
 const measurementError = computed(() => stage.value === 'measurement_error');
 const measurementErrorMsg = computed(() => measurementError.value ? (props.launch.siengeMeasurementError || null) : null);
@@ -124,7 +133,7 @@ const additiveCreated = computed(() =>
   stage.value === 'additive_created' ||
   (stage.value === 'awaiting_authorization' && isAdditivePath.value) ||
   ['creating_measurement', 'measurement_created', 'measurement_error',
-   'awaiting_measurement_authorization', ...TITULO_STAGES, 'ready'].includes(stage.value)
+   'awaiting_measurement_authorization', 'awaiting_document', ...TITULO_STAGES, 'ready'].includes(stage.value)
 );
 const additiveError = computed(() => stage.value === 'additive_error');
 const additiveErrorMsg = computed(() => additiveError.value ? (props.launch.siengeContractError || null) : null);
@@ -271,6 +280,15 @@ const cardBorderClass = computed(() => {
           <i class="fas fa-spinner fa-spin"></i>Criando contrato no Sienge via automação...
         </div>
 
+        <div v-else-if="gateBlocked"
+          class="rounded-lg border border-data-neg/20 bg-data-neg/10 p-3 text-data-neg space-y-1">
+          <p class="font-semibold flex items-center gap-1.5">
+            <i class="fas fa-shield-halved"></i>Recusado pelo portão de regras
+          </p>
+          <p class="break-words leading-relaxed">{{ launch.siengeContractError }}</p>
+          <p class="pt-1 text-ink-muted">Nada foi feito no Sienge. Corrija o lançamento (ou a regra do tipo) e clique em Processar.</p>
+        </div>
+
         <div v-else-if="stage === 'contract_manual_block'"
           class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 text-data-warn space-y-2">
           <p class="font-semibold flex items-center gap-1.5">
@@ -335,9 +353,9 @@ const cardBorderClass = computed(() => {
                   </div>
                   <span class="text-micro leading-tight" :class="stepTextFor(contractState)">Contrato</span>
                 </div>
-                <div class="flex-1 h-0.5 mx-1 bg-line"></div>
+                <div v-if="!semAditivo" class="flex-1 h-0.5 mx-1 bg-line"></div>
                 <!-- Aditivo -->
-                <div class="flex flex-col items-center text-center flex-1 min-w-0">
+                <div v-if="!semAditivo" class="flex flex-col items-center text-center flex-1 min-w-0">
                   <div class="h-7 w-7 rounded-full grid place-items-center mb-1 transition-colors"
                     :class="stepBgFor(additiveState)">
                     <i v-if="additiveCreating" class="fas fa-spinner fa-spin text-xs"></i>
@@ -422,6 +440,18 @@ const cardBorderClass = computed(() => {
             </p>
             <p v-if="measurementErrorMsg" class="break-words leading-relaxed">{{ measurementErrorMsg }}</p>
             <p v-else class="italic opacity-70">Detalhes do erro não disponíveis.</p>
+          </div>
+
+          <div v-else-if="awaitingDocument"
+            class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 text-data-warn space-y-2">
+            <p class="font-semibold flex items-center gap-1.5">
+              <i class="fas fa-file-circle-exclamation"></i>Medição autorizada - aguardando a nota fiscal
+              <span v-if="launch.siengeMeasurementNumber" class="font-normal opacity-75">#{{ launch.siengeMeasurementNumber }}</span>
+            </p>
+            <p class="text-ink-muted">O título só é gerado depois que a nota for anexada. Assim que anexar, ele sai na hora.</p>
+            <Button size="sm" icon="fas fa-file-arrow-up" :disabled="running" @click="emit('attach-document', launch)">
+              Anexar nota fiscal
+            </Button>
           </div>
 
           <div v-else-if="measurementCreated && !inTituloStage"

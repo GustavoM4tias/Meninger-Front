@@ -224,6 +224,7 @@ const form = ref({
     unitPrice: '',
     nfNumber: '',
     nfType: '',
+    nfAccessKey: '',
     boletoBarcode: '',
     boletoAmount: '',
     notes: '',
@@ -241,6 +242,7 @@ watch(() => store.nfPrefill, (pf) => {
     if (pf.documentDate && !form.value.nfIssueDate) form.value.nfIssueDate = pf.documentDate;
     if (pf.nfNumber && !form.value.nfNumber) form.value.nfNumber = pf.nfNumber;
     if (pf.nfType && !form.value.nfType) form.value.nfType = pf.nfType;
+    if (pf.nfAccessKey && !form.value.nfAccessKey) form.value.nfAccessKey = pf.nfAccessKey;
     if (pf.unitPrice && !form.value.unitPrice) form.value.unitPrice = pf.unitPrice;
     if (pf.contractEndDate && !form.value.contractEndDate) form.value.contractEndDate = pf.contractEndDate;
 
@@ -283,6 +285,23 @@ function applyTypeDefaults(type) {
 
 watch(() => form.value.launchType, t => {
     if (t) applyTypeDefaults(t);
+    // Receita que fixa o documento do título (ex.: Salário PJ lança NFS).
+    const doc = store.recipeOfType(t)?.titulo?.documento;
+    if (doc) form.value.nfType = doc;
+});
+
+// ── Receita do tipo: o que a esteira vai fazer e o que ela exige ─────────────
+const selectedType = computed(() => store.launchTypes.find(t => t.name === form.value.launchType) || null);
+const selectedReceita = computed(() => selectedType.value?.receitaEfetiva || null);
+const selectedPassos = computed(() => (selectedType.value?.passos || []).map(p => p.label));
+const docFixo = computed(() => selectedReceita.value?.titulo?.documento || '');
+const isNfe = computed(() => String(form.value.nfType || '').toUpperCase() === 'NFE');
+// Boleto: sempre obrigatório nos tipos sem receita (como antes); com receita,
+// só quando paga por boleto e a nota vem já na criação.
+const boletoRequired = computed(() => {
+    const r = selectedReceita.value;
+    if (!r?.configurada) return true;
+    return r.titulo?.pagamento !== 'transferencia' && !r.medicaoAntesDoDocumento;
 });
 
 // ── Código do documento do tipo selecionado (read-only) ───────────────────────
@@ -352,7 +371,8 @@ const hasBoleto = computed(() => !!store.boletoFile);
 const formValid = computed(() =>
     form.value.launchType &&
     form.value.unitPrice &&
-    hasBoleto.value
+    (hasBoleto.value || !boletoRequired.value) &&
+    (!isNfe.value || !selectedReceita.value?.configurada || String(form.value.nfAccessKey).replace(/\D/g, '').length === 44)
 );
 
 // Lista completa processada (Removido o "Não" e formatado para busca)
@@ -546,6 +566,7 @@ async function handleSubmit() {
             nfType: n(form.value.nfType),
             nfNumber: n(form.value.nfNumber),
             nfIssueDate: n(form.value.nfIssueDate),
+            nfAccessKey: isNfe.value ? (String(form.value.nfAccessKey || '').replace(/\D/g, '') || null) : null,
             // Boleto
             boletoDueDate: n(form.value.boletoDueDate),
             boletoBarcode: n(form.value.boletoBarcode),
@@ -858,6 +879,17 @@ onMounted(async () => {
                         </div>
                     </div>
 
+                    <!-- O que a esteira vai fazer com este tipo (receita) -->
+                    <div v-if="selectedPassos.length" class="mt-2 rounded-lg border border-line bg-surface-sunken px-3 py-2">
+                        <p class="text-micro uppercase tracking-wider text-ink-subtle font-mono mb-1">No Sienge</p>
+                        <p class="text-xs text-ink">{{ selectedPassos.join(' → ') }}</p>
+                        <p v-if="selectedReceita?.configurada && !boletoRequired" class="text-micro text-ink-muted mt-1">
+                            {{ selectedReceita.medicaoAntesDoDocumento
+                                ? 'A nota pode vir depois: a medição roda e o título espera o documento.'
+                                : 'Pago por transferência: boleto não é necessário.' }}
+                        </p>
+                    </div>
+
                     <!-- Formulário inline para admin adicionar novo tipo -->
                     <div v-if="showAddType && can('configure')"
                         class="mt-3 p-3 rounded-xl border border-accent/25 bg-accent/20 space-y-2">
@@ -962,8 +994,9 @@ onMounted(async () => {
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div>
                             <label class="field-label">Tipo Doc</label>
-                            <MultiSelector v-model="selectedDocTypeLabel" :options="docTypeOptions"
+                            <MultiSelector v-if="!docFixo" v-model="selectedDocTypeLabel" :options="docTypeOptions"
                                 placeholder="Busque por NFe, Fatura..." :single="true" class="text-xs" />
+                            <p v-else class="input-field font-mono !pb-[.75rem]" title="Definido pela receita do tipo">{{ docFixo }}</p>
                         </div>
 
                         <div>
@@ -986,6 +1019,12 @@ onMounted(async () => {
                             </label>
                             <input v-model="form.boletoDueDate" type="date" class="input-field !pb-[.75rem]" />
                         </div>
+                    </div>
+
+                    <div v-if="isNfe">
+                        <label class="field-label">Chave de acesso da NF-e <span class="text-ink-subtle font-normal">(44 dígitos)</span></label>
+                        <input v-model="form.nfAccessKey" type="text" inputmode="numeric" maxlength="60"
+                            class="input-field font-mono" placeholder="0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000" />
                     </div>
 
                     <div
