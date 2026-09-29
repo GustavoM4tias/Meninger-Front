@@ -1443,10 +1443,23 @@ const kpiCards = computed(() => {
      antigo — assim o número na tela não muda de significado. */
   const b = (k) => st[k] || { qty: 0, valor: 0 };
   const pct = (k) => (st.emitidos?.qty ? Math.round((b(k).qty / st.emitidos.qty) * 1000) / 10 : 0);
+  /* Emitido que não cai em Pagos/Pendentes/Baixados (reserva encerrada no CV,
+     expirado, negado, estornado). Sem isso os cartões não fecham com o total. */
+  const foraQty = b('emitidos').qty - b('pagos').qty - b('pendentes').qty - b('cancelados').qty;
+  const foraPartes = [
+    ['encerrados', 'de reserva encerrada no CV'], ['expirados', 'expirado(s)'],
+    ['negados', 'negado(s)'], ['estornados', 'estornado(s)'],
+  ].filter(([k]) => b(k).qty).map(([k, rot]) => `${b(k).qty} ${rot} (${formatCurrency(b(k).valor)})`);
+  const foraTexto = foraPartes.length ? foraPartes.join(', ') : `${foraQty} em outra situação`;
   return [
     { key: 'emitidos', label: 'Emitidos', value: b('emitidos').qty,
-      hint: formatCurrency(b('emitidos').valor), icon: 'fas fa-barcode', tone: 'accent',
-      tooltip: 'Clique para ver todos os registros' },
+      hint: foraQty > 0
+        ? `${formatCurrency(b('emitidos').valor)} · ${foraQty} fora dos cartões`
+        : formatCurrency(b('emitidos').valor),
+      icon: 'fas fa-barcode', tone: 'accent',
+      tooltip: foraQty > 0
+        ? `Emitidos = Pagos + Pendentes + Baixados + ${foraTexto}. Clique para ver todos os registros`
+        : 'Emitidos = Pagos + Pendentes + Baixados. Clique para ver todos os registros' },
     { key: 'paid', label: 'Pagos', value: b('pagos').qty,
       hint: `${pct('pagos')}% · ${formatCurrency(b('pagos').valor)}`,
       icon: 'fas fa-circle-check', tone: 'pos', tooltip: 'Clique para ver só os pagos' },
@@ -1458,9 +1471,9 @@ const kpiCards = computed(() => {
       icon: 'fas fa-ban', tone: 'neutral',
       tooltip: 'Boleto vencido sem pagamento, com a reserva viva. Esta é a evasão de verdade' },
     { key: 'error', label: 'Com erro', value: b('erros').qty,
-      hint: formatCurrency(b('erros').valor),
+      hint: `não emitidos · ${formatCurrency(b('erros').valor)}`,
       icon: 'fas fa-triangle-exclamation', tone: 'neg',
-      tooltip: 'Reservas que hoje estão sem boleto por falha. Clique para ver só elas' },
+      tooltip: 'Reservas que hoje estão sem boleto por falha. Ficam FORA dos Emitidos. Clique para ver só elas' },
     { key: 'skipped', label: 'Ignoradas', value: b('ignorados').qty,
       hint: b('ignorados').valor ? formatCurrency(b('ignorados').valor) : 'sem série de Ato',
       icon: 'fas fa-user-slash', tone: 'neutral',
