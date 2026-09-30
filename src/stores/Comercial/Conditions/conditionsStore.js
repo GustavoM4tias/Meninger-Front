@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import API_URL from '@/config/apiUrl';
 import { useCarregamentoStore } from '@/stores/Config/carregamento';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
@@ -23,6 +23,16 @@ export const useConditionsStore = defineStore('conditions', () => {
        Detail desenhava - o que amarrava o aviso a UMA tela, entao componente
        filho notificava e nada aparecia se o Detail nao estivesse montado.
        Agora vai pelo toast do app, que e global. */
+    /* Adimplencia premiada (Desconto Construtora): descontar do preco das
+       unidades ou mostrar o cheio do CV. Mesma chave da aba Tabelas de preco
+       dos Empreendimentos; padrao ligado, lembrado por navegador. */
+    const descontarAdimplencia = ref((() => {
+        try { return localStorage.getItem('conditions.descontarAdimplencia') !== '0'; } catch { return true; }
+    })());
+    watch(descontarAdimplencia, (v) => {
+        try { localStorage.setItem('conditions.descontarAdimplencia', v ? '1' : '0'); } catch { /* sem storage */ }
+    });
+
     const toast = useToast();
     function notify(message, type = 'success') {
         if (type === 'success') toast.success(message);
@@ -407,6 +417,7 @@ export const useConditionsStore = defineStore('conditions', () => {
     return {
         list, detail, priceTables, priceDistribution, correspondents, officeUsers, correspondentCompanies, settings, permissions, error,
         notify,
+        descontarAdimplencia,
         fetchList, fetchDetail,
         createCondition, saveCondition, publishCondition,
         submitForApproval, authorizeCondition, unlockCondition, cancelApproval, closeCondition,

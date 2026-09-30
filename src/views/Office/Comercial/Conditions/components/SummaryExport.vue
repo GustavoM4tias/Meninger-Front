@@ -573,6 +573,9 @@
               <div class="info-card-header">
                 <i class="fas fa-tag text-accent"></i>
                 Tabelas de Preço
+                <span v-if="!isPrinting" class="ml-auto normal-case tracking-normal font-normal">
+                  <Switch v-model="conditionsStore.descontarAdimplencia" size="sm" label="Descontar adimplência premiada" />
+                </span>
               </div>
               <div v-if="modSelectedPriceTables(mod).length"> 
                 <div class="space-y-4 flex flex-col gap-4 p-4"> <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela"
@@ -593,7 +596,7 @@
                     <div v-if="t.unit_count > 0" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap border-b border-line/50 pb-3 w-full">
                       <span><i class="fas fa-home mr-1"></i><strong>{{ t.unit_count }}</strong> unidades</span>
                       <span><i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(t.price_min) }}</strong> até <strong>{{ formatCurrencyShort(t.price_max) }}</strong></span>
-                      <span><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(t.price_avg) }}</strong></span>
+                      <span><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(t.price_avg) }}</strong><template v-if="t.descontada"> (cheio {{ formatCurrencyShort(t.price_cheio_avg) }})</template></span>
                       <span v-if="t.adimplencia_n"><i class="fas fa-award mr-1"></i>Adimplência <strong>{{ t.adimplencia_min === t.adimplencia_max ? formatCurrencyShort(t.adimplencia_avg) : `${formatCurrencyShort(t.adimplencia_min)} a ${formatCurrencyShort(t.adimplencia_max)}` }}</strong> ({{ t.adimplencia_n }} unid.) · Líquido médio <strong>{{ formatCurrencyShort(t.liquido_avg) }}</strong></span>
                       <span v-else class="text-ink-subtle"><i class="fas fa-award mr-1"></i>Sem adimplência cadastrada</span>
                       <template v-if="tableM2Stats(mod, t)">
@@ -707,7 +710,8 @@
             <div class="info-card-header">
               <i class="fas fa-home text-accent"></i>
               Unidades
-              <span class="ml-auto flex items-center gap-1.5 text-micro font-normal text-ink-subtle normal-case tracking-normal">
+              <span class="ml-auto flex items-center gap-3 text-micro font-normal text-ink-subtle normal-case tracking-normal">
+                <Switch v-if="!isPrinting" v-model="conditionsStore.descontarAdimplencia" size="sm" label="Descontar adimplência" />
                 <i class="fas fa-snowflake text-accent text-micro"></i>
                 Congelado em {{ formatSnapshotDate(mod.unit_snapshot.capturedAt) }}
               </span>
@@ -747,7 +751,7 @@
                     <div v-for="u in (bloco.unidades ?? [])" :key="u.idunidade"
                       :class="['rounded px-1.5 py-1 text-center border text-micro leading-tight', unitStatusClass(u)]">
                       <p class="font-semibold text-ink truncate">{{ u.nome }}</p>
-                      <p v-if="u.valor_total != null" class="text-accent font-bold">{{ formatCurrencyShort(u.valor_total) }}</p>
+                      <p v-if="u.valor_total != null" class="text-accent font-bold">{{ formatCurrencyShort(precoUnidade(mod, u)) }}</p>
                       <p v-if="u.area_privativa" class="text-ink-subtle">{{ Number(u.area_privativa).toFixed(2) }}m²</p>
                     </div>
                   </div>
@@ -832,7 +836,8 @@ import { ref, computed, nextTick, watch } from 'vue';
 import QRCode from 'qrcode';
 import AppraisalQrCode from './AppraisalQrCode.vue';
 import { computeCostSummary } from './costSummary.js';
-import { recortarTabela } from './priceTableModule.js';
+import { recortarTabela, mapaAdimplencia } from './priceTableModule.js';
+import Switch from '@/components/UI/Switch.vue';
 
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 const conditionsStore = useConditionsStore();
@@ -947,7 +952,8 @@ function modSubsidyLabel(mod) {
 
 function modSelectedPriceTables(mod) {
     const ids = mod.price_table_ids ?? [];
-    return props.priceTables.filter(t => ids.includes(t.idtabela)).map(t => recortarTabela(t, mod.idetapa));
+    return props.priceTables.filter(t => ids.includes(t.idtabela))
+        .map(t => recortarTabela(t, mod.idetapa, { descontar: conditionsStore.descontarAdimplencia }));
 }
 
 function manualTableStats(mt) {
@@ -1089,6 +1095,15 @@ function stageNameForModule(mod) {
 }
 
 // ── Snapshot de unidades ──────────────────────────────────────────────────────
+
+// Preço da unidade na grade: o do snapshot, menos a adimplência premiada
+// quando a chave "Descontar" está ligada (mesma regra da aba Tabelas de preço).
+function precoUnidade(mod, u) {
+    if (u?.valor_total == null) return null;
+    if (!conditionsStore.descontarAdimplencia) return Number(u.valor_total);
+    const tabs = [...modSelectedPriceTables(mod)].sort((a, b) => (b.vigente ? 1 : 0) - (a.vigente ? 1 : 0));
+    return Number(u.valor_total) - (mapaAdimplencia(tabs).get(String(u.idunidade)) ?? 0);
+}
 
 function snapshotBlocos(mod) {
     return mod?.unit_snapshot?.data ?? [];
@@ -1385,7 +1400,8 @@ async function buildPrintHtml() {
 
     const priceTables = mod => {
         const ids = mod.price_table_ids ?? [];
-        return (props.priceTables ?? []).filter(t => ids.includes(t.idtabela)).map(t => recortarTabela(t, mod.idetapa));
+        return (props.priceTables ?? []).filter(t => ids.includes(t.idtabela))
+        .map(t => recortarTabela(t, mod.idetapa, { descontar: conditionsStore.descontarAdimplencia }));
     };
 
     const unitMinPrint = units => {
@@ -1520,7 +1536,7 @@ async function buildPrintHtml() {
                     <div style="display: flex; gap: 12px; font-size: 9px; color: #64748b; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px; flex-wrap: wrap;">
                         <span>🏠 <strong>${t.unit_count}</strong> unid.</span>
                         <span>🏷️ De <strong>${fmtShort(t.price_min)}</strong> a <strong>${fmtShort(t.price_max)}</strong></span>
-                        <span>📈 Média <strong>${fmtShort(t.price_avg)}</strong></span>
+                        <span>📈 Média <strong>${fmtShort(t.price_avg)}</strong>${t.descontada ? ` (cheio ${fmtShort(t.price_cheio_avg)}, já sem a adimplência)` : ''}</span>
                         ${t.adimplencia_n
                             ? `<span>🏅 Adimplência <strong>${t.adimplencia_min === t.adimplencia_max ? fmtShort(t.adimplencia_avg) : `${fmtShort(t.adimplencia_min)} a ${fmtShort(t.adimplencia_max)}`}</strong> (${t.adimplencia_n} unid.) · Líquido médio <strong>${fmtShort(t.liquido_avg)}</strong></span>`
                             : '<span>🏅 Sem adimplência cadastrada</span>'}
@@ -1789,7 +1805,7 @@ async function buildPrintHtml() {
                               const statusClass = st.isSold ? 'unit-sold' : st.isReserved ? 'unit-reserved' : st.isBlocked ? 'unit-blocked' : st.isStock ? 'unit-stock' : 'unit-available';
                               return `<div class="unit-card-print ${statusClass}">
                                 <p>${escapeHtml(u.nome)}</p>
-                                ${u.valor_total != null ? `<span class="unit-price">${fmtShort(u.valor_total)}</span>` : ''}
+                                ${u.valor_total != null ? `<span class="unit-price">${fmtShort(precoUnidade(mod, u))}</span>` : ''}
                                 ${u.area_privativa ? `<span class="unit-area">${Number(u.area_privativa).toFixed(2)}m²</span>` : ''}
                               </div>`;
                           }).join('')}

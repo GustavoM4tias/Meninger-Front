@@ -336,7 +336,10 @@
         <!-- Tabelas do CV -->
         <div>
           <p class="lbl-section mb-3"><i class="fas fa-table text-accent"></i> Tabelas do CV</p>
-          <p class="text-xs text-ink-subtle mb-3">Selecione as tabelas que valem para este módulo.</p>
+          <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <p class="text-xs text-ink-subtle">Selecione as tabelas que valem para este módulo.</p>
+            <Switch v-model="store.descontarAdimplencia" size="sm" label="Descontar adimplência premiada" />
+          </div>
           <!-- Aviso de tabelas selecionadas mas inativas no CV -->
           <div v-if="orphanedPriceTableIds.length" class="flex items-start gap-2.5 px-4 py-3 bg-data-warn/20 border border-data-warn/25 rounded-md mb-3">
             <i class="fas fa-exclamation-triangle text-data-warn text-sm flex-shrink-0 mt-0.5"></i>
@@ -670,6 +673,7 @@
         <!-- Seletor de tabela de preços -->
         <template v-else-if="displayUnits.length">
         <div v-if="selectedTablesWithPrices.length" class="flex items-center gap-2 mb-3 flex-wrap">
+          <Switch v-model="store.descontarAdimplencia" size="sm" label="Descontar adimplência premiada" class="mr-2" />
           <span class="text-xs text-ink-subtle font-medium flex-shrink-0">Preços de:</span>
           <SegmentedControl
             size="sm"
@@ -798,7 +802,8 @@ import NegotiationRules from './NegotiationRules.vue';
 import CampaignManager from './CampaignManager.vue';
 import OperationalSection from './OperationalSection.vue';
 import DocsSection from './DocsSection.vue';
-import { recortarTabela } from './priceTableModule.js';
+import { recortarTabela, mapaAdimplencia } from './priceTableModule.js';
+import Switch from '@/components/UI/Switch.vue';
 
 const props = defineProps({
     modules:            { type: Array,            default: () => [] },
@@ -1065,7 +1070,15 @@ function removeOrphanedTables() {
 }
 
 // Tabelas recortadas para as unidades do módulo ativo (o CV lista o empreendimento inteiro).
-const tabelasDoModulo = computed(() => props.priceTables.map(t => recortarTabela(t, activeModule.value?.idetapa)));
+const tabelasDoModulo = computed(() => props.priceTables.map(t =>
+    recortarTabela(t, activeModule.value?.idetapa, { descontar: store.descontarAdimplencia })));
+
+// Adimplência por unidade, das tabelas do módulo (a vigente primeiro).
+const adimplDoModulo = computed(() => {
+    const ids = new Set(activeModule.value?.price_table_ids ?? []);
+    const sel = tabelasDoModulo.value.filter(t => ids.has(t.idtabela));
+    return mapaAdimplencia([...sel].sort((a, b) => (b.vigente ? 1 : 0) - (a.vigente ? 1 : 0)));
+});
 
 // Tables selected for this module that have price data
 const selectedTablesWithPrices = computed(() => {
@@ -1360,8 +1373,11 @@ function unitTotal(units) {
 
 // Returns the price to display for a unit cell — snapshot price takes priority
 function unitDisplayPrice(unit) {
-    if (showingSnapshot.value && unit.valor_total != null) return unit.valor_total;
-    return unitPriceMap.value.get(String(unit.idunidade)) ?? null;
+    const cheio = showingSnapshot.value && unit.valor_total != null
+        ? unit.valor_total
+        : (unitPriceMap.value.get(String(unit.idunidade)) ?? null);
+    if (cheio == null || !store.descontarAdimplencia) return cheio;
+    return Number(cheio) - (adimplDoModulo.value.get(String(unit.idunidade)) ?? 0);
 }
 
 
