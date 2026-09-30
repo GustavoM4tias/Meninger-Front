@@ -589,19 +589,22 @@
                       </div>
                     </div>
 
+                    <p v-if="!t.unit_count" class="text-xs text-ink-subtle italic">Esta tabela não tem preço para as unidades deste módulo.</p>
                     <div v-if="t.unit_count > 0" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap border-b border-line/50 pb-3 w-full">
                       <span><i class="fas fa-home mr-1"></i><strong>{{ t.unit_count }}</strong> unidades</span>
                       <span><i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(t.price_min) }}</strong> até <strong>{{ formatCurrencyShort(t.price_max) }}</strong></span>
                       <span><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(t.price_avg) }}</strong></span>
+                      <span v-if="t.adimplencia_n"><i class="fas fa-award mr-1"></i>Adimplência <strong>{{ t.adimplencia_min === t.adimplencia_max ? formatCurrencyShort(t.adimplencia_avg) : `${formatCurrencyShort(t.adimplencia_min)} a ${formatCurrencyShort(t.adimplencia_max)}` }}</strong> ({{ t.adimplencia_n }} unid.) · Líquido médio <strong>{{ formatCurrencyShort(t.liquido_avg) }}</strong></span>
+                      <span v-else class="text-ink-subtle"><i class="fas fa-award mr-1"></i>Sem adimplência cadastrada</span>
                       <template v-if="tableM2Stats(mod, t)">
                         <span class="border-l border-line pl-4"><i class="fas fa-ruler-combined mr-1"></i>m²: Mín <strong>{{ formatM2(tableM2Stats(mod, t).min) }}</strong> · Máx <strong>{{ formatM2(tableM2Stats(mod, t).max) }}</strong> · Média <strong>{{ formatM2(tableM2Stats(mod, t).avg) }}</strong></span>
                       </template>
                     </div>
 
-                    <div v-if="t.unidades?.length" class="w-full">
-                      <p class="text-micro font-bold text-accent uppercase tracking-wider mb-2">Fluxo Médio (Ref: {{ t.unidades[0].unidade }})</p>
+                    <div v-if="t.fluxo?.length" class="w-full">
+                      <p class="text-micro font-bold text-accent uppercase tracking-wider mb-2">Fluxo Médio ({{ t.fluxo_n }} {{ t.fluxo_base }})</p>
                       <div class="flex flex-wrap gap-2 w-full">
-                        <div v-for="serie in t.unidades[0].series" :key="serie.nome" 
+                        <div v-for="serie in t.fluxo" :key="serie.nome" 
                           class="bg-surface-raised/60 p-2 rounded-lg border border-line flex flex-col justify-between flex-grow flex-shrink-0 basis-[calc(25%-0.5rem)] min-w-[120px] max-w-full">
                           
                           <p class="text-micro text-ink-subtle uppercase font-bold whitespace-normal leading-tight mb-1">
@@ -829,6 +832,7 @@ import { ref, computed, nextTick, watch } from 'vue';
 import QRCode from 'qrcode';
 import AppraisalQrCode from './AppraisalQrCode.vue';
 import { computeCostSummary } from './costSummary.js';
+import { recortarTabela } from './priceTableModule.js';
 
 import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStore';
 const conditionsStore = useConditionsStore();
@@ -943,7 +947,7 @@ function modSubsidyLabel(mod) {
 
 function modSelectedPriceTables(mod) {
     const ids = mod.price_table_ids ?? [];
-    return props.priceTables.filter(t => ids.includes(t.idtabela));
+    return props.priceTables.filter(t => ids.includes(t.idtabela)).map(t => recortarTabela(t, mod.idetapa));
 }
 
 function manualTableStats(mt) {
@@ -1381,7 +1385,7 @@ async function buildPrintHtml() {
 
     const priceTables = mod => {
         const ids = mod.price_table_ids ?? [];
-        return (props.priceTables ?? []).filter(t => ids.includes(t.idtabela));
+        return (props.priceTables ?? []).filter(t => ids.includes(t.idtabela)).map(t => recortarTabela(t, mod.idetapa));
     };
 
     const unitMinPrint = units => {
@@ -1479,13 +1483,12 @@ async function buildPrintHtml() {
                 ? `<div style="display: flex; flex-direction: column; gap: 12px;">
            ${tables.map(t => {
                // Extrai as séries da primeira unidade se existir
-                const firstUnit = t.unidades?.[0];
-                const seriesHtml = firstUnit?.series?.length 
+                const seriesHtml = t.fluxo?.length
                     ? `<p style="font-size: 8px; font-weight: 700; color: #3b82f6; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">
-                        Fluxo Médio (Ref: ${escapeHtml(firstUnit.unidade)})
+                        Fluxo Médio (${t.fluxo_n} ${escapeHtml(t.fluxo_base)})
                       </p>
                       <div style="display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-bottom: 8px;">
-                        ${firstUnit.series.map(serie => `
+                        ${t.fluxo.map(serie => `
                             <div style="background: #ffffff; padding: 6px; border-radius: 6px; border: 1px solid #e5e7eb; 
                                         display: flex; flex-direction: column; justify-content: space-between;
                                         flex-grow: 1; flex-shrink: 0; flex-basis: 22%; min-width: 100px; min-height: 55px;">
@@ -1518,6 +1521,9 @@ async function buildPrintHtml() {
                         <span>🏠 <strong>${t.unit_count}</strong> unid.</span>
                         <span>🏷️ De <strong>${fmtShort(t.price_min)}</strong> a <strong>${fmtShort(t.price_max)}</strong></span>
                         <span>📈 Média <strong>${fmtShort(t.price_avg)}</strong></span>
+                        ${t.adimplencia_n
+                            ? `<span>🏅 Adimplência <strong>${t.adimplencia_min === t.adimplencia_max ? fmtShort(t.adimplencia_avg) : `${fmtShort(t.adimplencia_min)} a ${fmtShort(t.adimplencia_max)}`}</strong> (${t.adimplencia_n} unid.) · Líquido médio <strong>${fmtShort(t.liquido_avg)}</strong></span>`
+                            : '<span>🏅 Sem adimplência cadastrada</span>'}
                         ${(() => {
                             const am = {};
                             for (const b of (mod.unit_snapshot?.data ?? [])) {

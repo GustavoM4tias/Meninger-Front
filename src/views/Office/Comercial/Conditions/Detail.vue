@@ -1049,8 +1049,9 @@ async function captureAllUnitSnapshots() {
                 const table = priceTables.find(t => t.idtabela === tableId && t.unit_count > 0);
                 if (table?.unidades) {
                     for (const u of table.unidades) {
-                        if (u.idunidade != null && !priceMap.has(String(u.idunidade))) {
-                            priceMap.set(String(u.idunidade), u.valor_total ?? null);
+                        // Tabela de outro módulo lista a unidade com 0: só preço de verdade conta.
+                        if (u.idunidade != null && Number(u.valor_total) > 0 && !priceMap.has(String(u.idunidade))) {
+                            priceMap.set(String(u.idunidade), u.valor_total);
                         }
                     }
                 }

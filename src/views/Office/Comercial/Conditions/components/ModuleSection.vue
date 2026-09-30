@@ -358,7 +358,7 @@
 
           <div v-if="priceTables.length" class="space-y-2">
             <div
-              v-for="t in priceTables"
+              v-for="t in tabelasDoModulo"
               :key="t.idtabela"
               :class="[
                 'rounded-xl border overflow-hidden transition-all',
@@ -413,7 +413,7 @@
                         · Média <strong class="text-ink">{{ fmtCurrencyShort(t.price_avg) }}</strong>
                       </span>
                     </template>
-                    <span v-else class="text-xs text-ink-subtle italic">Sem dados de unidades</span>
+                    <span v-else class="text-xs text-ink-subtle italic">Sem preço para as unidades deste módulo</span>
                   </div>
                 </div>
 
@@ -798,6 +798,7 @@ import NegotiationRules from './NegotiationRules.vue';
 import CampaignManager from './CampaignManager.vue';
 import OperationalSection from './OperationalSection.vue';
 import DocsSection from './DocsSection.vue';
+import { recortarTabela } from './priceTableModule.js';
 
 const props = defineProps({
     modules:            { type: Array,            default: () => [] },
@@ -1063,10 +1064,13 @@ function removeOrphanedTables() {
     store.notify('Tabelas inativas do CV removidas da seleção.');
 }
 
+// Tabelas recortadas para as unidades do módulo ativo (o CV lista o empreendimento inteiro).
+const tabelasDoModulo = computed(() => props.priceTables.map(t => recortarTabela(t, activeModule.value?.idetapa)));
+
 // Tables selected for this module that have price data
 const selectedTablesWithPrices = computed(() => {
     const selectedIds = new Set(activeModule.value?.price_table_ids ?? []);
-    return props.priceTables.filter(t => selectedIds.has(t.idtabela) && t.unit_count > 0);
+    return tabelasDoModulo.value.filter(t => selectedIds.has(t.idtabela) && t.unit_count > 0);
 });
 
 // Map: idunidade → valor_total from the active price table selector
@@ -1075,7 +1079,7 @@ const unitPriceMap = computed(() => {
     const tables = selectedTablesWithPrices.value;
     if (!tables.length) return map;
     const tableId = selectedPriceTableForUnits.value ?? tables[0]?.idtabela;
-    const table = props.priceTables.find(t => t.idtabela === tableId);
+    const table = tabelasDoModulo.value.find(t => t.idtabela === tableId);
     for (const u of (table?.unidades ?? [])) {
         if (u.idunidade != null) map.set(String(u.idunidade), u.valor_total ?? null);
     }
