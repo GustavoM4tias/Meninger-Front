@@ -604,27 +604,6 @@
                       </template>
                     </div>
 
-                    <div v-if="t.fluxo?.length" class="w-full">
-                      <p class="text-micro font-bold text-accent uppercase tracking-wider mb-2">Fluxo Médio ({{ t.fluxo_n }} {{ t.fluxo_base }})</p>
-                      <div class="flex flex-wrap gap-2 w-full">
-                        <div v-for="serie in t.fluxo" :key="serie.nome" 
-                          class="bg-surface-raised/60 p-2 rounded-lg border border-line flex flex-col justify-between flex-grow flex-shrink-0 basis-[calc(25%-0.5rem)] min-w-[120px] max-w-full">
-                          
-                          <p class="text-micro text-ink-subtle uppercase font-bold whitespace-normal leading-tight mb-1">
-                            {{ serie.nome }}
-                          </p>
-                          
-                          <div>
-                            <p class="text-sm font-black text-ink">{{ formatCurrencyShort(serie.valor) }}</p>
-                            <p class="text-micro text-ink-muted">
-                              {{ serie.qtd_parcelas }}x 
-                              <span v-if="serie.data_vencimento" class="text-micro">({{ serie.data_vencimento.split('/')[2] }})</span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
                     <div v-if="t.forma" class="bg-accent/10  p-2 rounded-lg w-full">
                       <p class="text-micro text-accent font-medium italic">
                         <i class="fas fa-info-circle mr-1"></i>{{ t.forma }}
@@ -1498,33 +1477,6 @@ async function buildPrintHtml() {
             ${tables.length
                 ? `<div style="display: flex; flex-direction: column; gap: 12px;">
            ${tables.map(t => {
-               // Extrai as séries da primeira unidade se existir
-                const seriesHtml = t.fluxo?.length
-                    ? `<p style="font-size: 8px; font-weight: 700; color: #3b82f6; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">
-                        Fluxo Médio (${t.fluxo_n} ${escapeHtml(t.fluxo_base)})
-                      </p>
-                      <div style="display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin-bottom: 8px;">
-                        ${t.fluxo.map(serie => `
-                            <div style="background: #ffffff; padding: 6px; border-radius: 6px; border: 1px solid #e5e7eb; 
-                                        display: flex; flex-direction: column; justify-content: space-between;
-                                        flex-grow: 1; flex-shrink: 0; flex-basis: 22%; min-width: 100px; min-height: 55px;">
-                                
-                                <span style="font-size: 7px; color: #9ca3af; font-weight: 700; text-transform: uppercase; white-space: normal; line-height: 1.1; margin-bottom: 4px;">
-                                    ${escapeHtml(serie.nome)}
-                                </span>
-                                
-                                <div style="display: flex; flex-direction: column;">
-                                    <span style="font-size: 10px; color: #111827; font-weight: 800; line-height: 1;">
-                                        ${fmtShort(serie.valor)}
-                                    </span>
-                                    <span style="font-size: 8px; color: #6b7280; margin-top: 2px;">
-                                        ${serie.qtd_parcelas}x ${serie.data_vencimento ? `<small>(${serie.data_vencimento.split('/')[2]})</small>` : ''}
-                                    </span>
-                                </div>
-                            </div>
-                        `).join('')}
-                      </div>`
-                    : '';
 
                return `
                 <div class="price-row" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; break-inside: avoid;">
@@ -1559,8 +1511,6 @@ async function buildPrintHtml() {
                             return `<span style="border-left:1px solid #e2e8f0;padding-left:8px;margin-left:4px;">📐 m²: Mín <strong>${fmtM2p(mn)}</strong> · Máx <strong>${fmtM2p(mx)}</strong> · Média <strong>${fmtM2p(av)}</strong></span>`;
                         })()}
                     </div>
-
-                    ${seriesHtml}
 
                     ${t.forma ? `
                         <div style="background: #eff6ff; padding: 5px 8px; border-radius: 4px; border-left: 3px solid #3b82f6;">

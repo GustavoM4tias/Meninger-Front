@@ -3,7 +3,7 @@
 // O CV lista na tabela TODAS as unidades do empreendimento (módulos vendidos
 // vêm com valor zerado), e a ficha é por módulo. O back marca cada unidade com
 // `idetapa` e `adimplencia` (Desconto Construtora em R$); aqui a tabela vira a
-// do módulo: contagem, faixa de preço, adimplência e o fluxo médio das séries.
+// do módulo: contagem, faixa de preço e adimplência.
 //
 // `unit_count` conta só unidade COM preço: tabela que não precifica o módulo
 // fica com 0 e as telas já tratam isso como "sem dados".
@@ -20,25 +20,10 @@ export function recortarTabela(t, idetapa, { descontar = false } = {}) {
     const doModulo = temEtapa ? todas.filter(u => String(u.idetapa) === String(idetapa)) : todas;
     const comPreco = doModulo.filter(u => Number(u.valor_total) > 0);
 
-    // Fluxo médio: das disponíveis, que é o que o corretor vende; se o módulo
-    // já vendeu tudo, de todas as precificadas.
+    // Adimplência: das disponíveis, que é o que se vende; se o módulo já
+    // vendeu tudo, de todas as precificadas.
     const disponiveis = comPreco.filter(u => /dispon/i.test(u.situacao ?? ''));
     const base = disponiveis.length ? disponiveis : comPreco;
-    const ordem = [];
-    const porSerie = new Map();
-    for (const u of base) {
-        for (const s of (u.series ?? [])) {
-            if (!porSerie.has(s.nome)) {
-                ordem.push(s.nome);
-                porSerie.set(s.nome, { nome: s.nome, qtd_parcelas: s.qtd_parcelas, data_vencimento: s.data_vencimento, valores: [] });
-            }
-            porSerie.get(s.nome).valores.push(Number(s.valor) || 0);
-        }
-    }
-    const fluxo = ordem.map(nome => {
-        const s = porSerie.get(nome);
-        return { nome, qtd_parcelas: s.qtd_parcelas, data_vencimento: s.data_vencimento, valor: media(s.valores) };
-    });
 
     const valorDe = (u) => Number(u.valor_total) - (descontar ? (Number(u.adimplencia) || 0) : 0);
     const cheios = comPreco.map(u => Number(u.valor_total));
@@ -59,9 +44,6 @@ export function recortarTabela(t, idetapa, { descontar = false } = {}) {
         price_cheio_max: cheios.length ? Math.max(...cheios) : null,
         price_cheio_avg: media(cheios),
         descontada: Boolean(descontar) && adimpl.length > 0,
-        fluxo,
-        fluxo_base: disponiveis.length ? 'disponíveis' : 'unidades precificadas',
-        fluxo_n: base.length,
         adimplencia_n: adimpl.length,
         adimplencia_min: adimpl.length ? Math.min(...adimpl) : null,
         adimplencia_max: adimpl.length ? Math.max(...adimpl) : null,
