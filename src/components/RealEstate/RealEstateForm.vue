@@ -148,6 +148,9 @@ function validate() {
     if (!imob.razao_social.trim()) errs.push('Informe a razão social.');
     if (onlyDigits(imob.cnpj).length !== 14) errs.push('CNPJ incompleto.');
     if (!imob.creci.trim()) errs.push('Informe o CRECI da imobiliária.');
+    // O CV procura a cidade pelo NOME; código de município ("6469") é recusado.
+    if (imob.cidade.trim() && !/[a-zA-ZÀ-ÿ]/.test(imob.cidade)) errs.push('Cidade da imobiliária: escreva o nome da cidade, não o código.');
+    if (ger.cidade.trim() && !/[a-zA-ZÀ-ÿ]/.test(ger.cidade)) errs.push('Cidade do gerente: escreva o nome da cidade, não o código.');
     if (!ger.nome.trim()) errs.push('Informe o nome do gerente.');
     if (onlyDigits(ger.documento).length !== 11) errs.push('CPF do gerente incompleto.');
     if (!/^\S+@\S+\.\S+$/.test(ger.email.trim())) errs.push('E-mail do gerente inválido.');
