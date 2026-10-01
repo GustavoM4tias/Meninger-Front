@@ -23,43 +23,15 @@ function hasOverride(id) {
     || ov.pos_x != null || ov.pos_y != null));
 }
 
-// ── Layout: Reingold-Tilford simplificado (top-down por subárvore) ──
+// ── Layout: árvore compacta por contorno (top-down por subárvore) ──
+// Cada subárvore guarda o contorno (por linha, o x mais à esquerda e mais à
+// direita que ocupa) e os irmãos encostam um no outro só onde dividem linha. Assim
+// um analista solto ao lado de um coordenador com time grande fica colado no
+// coordenador, e não depois da última pessoa do time dele.
 const NODE_W = 220;
 const NODE_H = 92;
 const H_GAP = 24;
 const V_GAP = 70;
-
-function computeWidth(node) {
-  if (!node.children || node.children.length === 0) {
-    node._w = NODE_W;
-    return NODE_W;
-  }
-  let total = 0;
-  node.children.forEach((c, i) => {
-    const w = computeWidth(c);
-    total += w;
-    if (i > 0) total += H_GAP;
-  });
-  node._w = Math.max(NODE_W, total);
-  return node._w;
-}
-
-// Centraliza o chefe sobre o time grande: quando um filho é estritamente o mais
-// largo (ex.: um coordenador com 10 gestores ao lado de 2 analistas soltos), ele
-// vai para o meio e os demais se dividem dos dois lados, na ordem em que vieram.
-// Não mexe em quem tem ordem manual (display_order) nem em irmãos de mesma largura.
-function centerWidest(node, overrideMap) {
-  const kids = node.children || [];
-  kids.forEach(c => centerWidest(c, overrideMap));
-  if (kids.length < 3) return;
-  if (kids.some(c => overrideMap?.[c.data?.id]?.display_order != null)) return;
-  const max = Math.max(...kids.map(c => c._w));
-  const widest = kids.filter(c => c._w === max);
-  if (widest.length !== 1) return;
-  const rest = kids.filter(c => c !== widest[0]);
-  const half = Math.floor(rest.length / 2);
-  node.children = [...rest.slice(0, half), widest[0], ...rest.slice(half)];
-}
 
 // Linha de cada card: quem tem o mesmo cargo fica na mesma linha (a mais funda
 // entre eles), sempre abaixo do próprio chefe. Ex.: um Adm Comercial que responde
@@ -92,27 +64,79 @@ function assignRows(root) {
   (function walk(n, depth) { n._row = depth; (n.children || []).forEach(c => walk(c, depth + 1)); })(root, 0);
 }
 
+// Monta a subárvore com o card do nó em x=0 e devolve o contorno
+// Map(linha -> {l, r}). Os filhos ficam com `_dx` relativo ao pai.
+//
+// Centraliza o chefe sobre o time grande: com 3+ filhos e um deles estritamente
+// o mais largo (ex.: um coordenador com 10 gestores ao lado de analistas
+// soltos), ele vai para o meio, os demais se dividem dos dois lados na ordem em
+// que vieram, e o chefe fica alinhado em cima dele. Não mexe em quem tem ordem
+// manual (display_order) nem em irmãos de mesma largura.
+function layoutSubtree(node, overrideMap) {
+  const contour = new Map([[node._row, { l: 0, r: NODE_W }]]);
+  let kids = node.children || [];
+  if (!kids.length) return contour;
+
+  const contours = new Map(kids.map(k => [k, layoutSubtree(k, overrideMap)]));
+  const widthOf = (k) => {
+    let l = Infinity, r = -Infinity;
+    for (const e of contours.get(k).values()) { l = Math.min(l, e.l); r = Math.max(r, e.r); }
+    return r - l;
+  };
+
+  let anchor = null;
+  if (kids.length >= 3 && !kids.some(k => overrideMap?.[k.data?.id]?.display_order != null)) {
+    const widths = kids.map(widthOf);
+    const max = Math.max(...widths);
+    if (widths.filter(w => w === max).length === 1) {
+      anchor = kids[widths.indexOf(max)];
+      const rest = kids.filter(k => k !== anchor);
+      const half = Math.floor(rest.length / 2);
+      kids = node.children = [...rest.slice(0, half), anchor, ...rest.slice(half)];
+    }
+  }
+
+  // Encosta cada filho no contorno acumulado dos anteriores.
+  const acc = new Map();
+  let prevDx = null;
+  for (const k of kids) {
+    const ck = contours.get(k);
+    let dx = null;
+    for (const [row, e] of ck) {
+      const a = acc.get(row);
+      if (a) dx = Math.max(dx ?? -Infinity, a.r + H_GAP - e.l);
+    }
+    if (dx == null) dx = prevDx == null ? 0 : prevDx + NODE_W + H_GAP;
+    k._dx = dx;
+    prevDx = dx;
+    for (const [row, e] of ck) {
+      const a = acc.get(row);
+      acc.set(row, a ? { l: Math.min(a.l, e.l + dx), r: Math.max(a.r, e.r + dx) } : { l: e.l + dx, r: e.r + dx });
+    }
+  }
+
+  // Pai em cima do time grande; sem ele, no meio entre o primeiro e o último filho.
+  const px = anchor ? anchor._dx : (kids[0]._dx + kids[kids.length - 1]._dx) / 2;
+  for (const k of kids) k._dx -= px;
+  for (const [row, e] of acc) {
+    const l = e.l - px, r = e.r - px;
+    const cur = contour.get(row);
+    contour.set(row, cur ? { l: Math.min(cur.l, l), r: Math.max(cur.r, r) } : { l, r });
+  }
+  return contour;
+}
+
 function placeSubtree(node, x) {
-  // Centraliza o nó horizontalmente sobre sua subárvore; a altura vem da linha.
-  node._x = x + node._w / 2 - NODE_W / 2;
+  node._x = x;
   node._y = node._row * (NODE_H + V_GAP);
   node._level = node._row;
-
-  if (!node.children || node.children.length === 0) return;
-
-  let cursor = x;
-  node.children.forEach((child, i) => {
-    if (i > 0) cursor += H_GAP;
-    placeSubtree(child, cursor);
-    cursor += child._w;
-  });
+  (node.children || []).forEach(child => placeSubtree(child, x + child._dx));
 }
 
 function buildGraph(rootNode) {
   const root = JSON.parse(JSON.stringify(rootNode));
-  computeWidth(root);
-  centerWidest(root, props.overrideMap);
   assignRows(root);
+  layoutSubtree(root, props.overrideMap);
   placeSubtree(root, 0);
 
   const nodes = [];
