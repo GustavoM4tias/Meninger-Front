@@ -35,12 +35,11 @@ const CONTRATO_OPTS = [
   { value: 'auto', label: 'Automático: acha contrato e faz aditivo; sem contrato, cria' },
   { value: 'existente', label: 'Contrato existente: mede direto, sem aditivo (ex.: salário PJ)' },
   { value: 'criar', label: 'Sempre criar contrato novo' },
-  { value: 'nenhum', label: 'Sem contrato: título direto pela API (ex.: reembolso RB)' },
 ];
 const PAGAMENTO_OPTS = [
   { value: 'boleto', label: 'Boleto (registra a linha digitável)' },
   { value: 'transferencia', label: 'Transferência (sem boleto)' },
-  { value: 'pix', label: 'PIX na chave CPF do credor' },
+  { value: 'pix', label: 'PIX na chave do credor (escolhido no Sienge)' },
 ];
 const PAGAMENTO_LABEL = { boleto: 'boleto', transferencia: 'transferência', pix: 'PIX' };
 const CREDOR_OPTS = [
@@ -82,10 +81,6 @@ const passos = computed(() => {
   const f = form.value;
   if (!f) return [];
   const out = ['Fornecedor'];
-  if (f.contrato === 'nenhum') {
-    out.push(`Título ${f.tituloDocumento || 'do lançamento'} direto, sem contrato - ${PAGAMENTO_LABEL[f.pagamento] || f.pagamento}`);
-    return out;
-  }
   if (f.contrato === 'existente') out.push(`Contrato existente (${f.documentosContrato || f.documento})`);
   else if (f.contrato === 'criar') out.push('Contrato - criação');
   else out.push('Contrato - aditivo ou criação');
