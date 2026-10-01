@@ -39,7 +39,7 @@ const CONTRATO_OPTS = [
 const PAGAMENTO_OPTS = [
   { value: 'boleto', label: 'Boleto (registra a linha digitável)' },
   { value: 'transferencia', label: 'Transferência (sem boleto)' },
-  { value: 'pix', label: 'PIX na chave do credor (escolhido no Sienge)' },
+  { value: 'pix', label: 'PIX na chave do credor (só RB)' },
 ];
 const PAGAMENTO_LABEL = { boleto: 'boleto', transferencia: 'transferência', pix: 'PIX' };
 const CREDOR_OPTS = [
