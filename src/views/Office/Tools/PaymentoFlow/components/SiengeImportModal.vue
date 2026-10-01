@@ -38,7 +38,7 @@ const totalSel = computed(() => candidatos.value.filter(c => selecionados.value.
 
 const ETAPA_TOM = {
     medicao_pendente: 'warning', medicao_autorizada: 'info',
-    titulo_sem_boleto: 'danger', titulo_aberto: 'accent',
+    titulo_sem_boleto: 'danger', titulo_aberto: 'accent', liberada_sem_titulo: 'warning',
 };
 
 const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });

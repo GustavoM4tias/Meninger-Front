@@ -20,7 +20,7 @@ const props = defineProps({
 const emit = defineEmits([
   'run-pipeline', 'poll', 'dismiss-error', 'retry-contract',
   'open-rid-modal', 'register-boleto', 'update-boleto',
-  'continue-existing-contract', 'abort', 'attach-document',
+  'continue-existing-contract', 'abort', 'attach-document', 'measure-on-balance',
 ]);
 
 const semAditivo = computed(() => props.receita?.contrato === 'existente');
@@ -287,6 +287,23 @@ const cardBorderClass = computed(() => {
           </p>
           <p class="break-words leading-relaxed">{{ launch.siengeContractError }}</p>
           <p class="pt-1 text-ink-muted">Nada foi feito no Sienge. Corrija o lançamento (ou a regra do tipo) e clique em Processar.</p>
+        </div>
+
+        <div v-else-if="stage === 'awaiting_balance_confirmation'"
+          class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 text-data-warn space-y-2">
+          <p class="font-semibold flex items-center gap-1.5">
+            <i class="fas fa-scale-balanced"></i>Contrato já tem saldo - decida antes de seguir
+          </p>
+          <p class="text-ink-muted">{{ launch.siengeContractError }}</p>
+          <div class="flex flex-wrap gap-2">
+            <Button size="sm" icon="fas fa-ruler-combined" :disabled="running" @click="emit('measure-on-balance', launch)">
+              Medir no saldo
+            </Button>
+            <Button size="sm" variant="outline" icon="fas fa-file-circle-plus" :disabled="running"
+              @click="emit('continue-existing-contract', launch.id)">
+              Aditivo mesmo assim
+            </Button>
+          </div>
         </div>
 
         <div v-else-if="stage === 'contract_manual_block'"

@@ -21,6 +21,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePaymentFlowStore } from '@/stores/Tools/PaymentFlow/paymentFlowStore';
 import { useCan } from '@/composables/useCan';
+import { useToast } from 'vue-toastification';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 
 import CreateLaunchModal from './components/CreateLaunchModal.vue';
 import LaunchPipelineCard from './components/LaunchPipelineCard.vue';
@@ -49,6 +51,7 @@ import Badge from '@/components/UI/Badge.vue';
 import { useIncrementalList } from '@/composables/useIncrementalList';
 
 const store = usePaymentFlowStore();
+const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 
@@ -309,6 +312,31 @@ function handleUpdateBoleto(launch) {
 }
 async function onBoletoUpdated() { await store.fetchLaunches(true); }
 
+/* ── Medir no saldo: plano validado no servidor -> confirmação -> execução ──
+   A confirmação mostra o que foi conferido e o que vai acontecer; o servidor
+   valida tudo de novo no clique (contrato, vigência, saldo do item, duplicidade). */
+async function handleMeasureOnBalance(launch) {
+    try {
+        const plano = await store.planPaymentAction({ acao: 'medir_no_saldo', launchId: launch.id });
+        const falhas = plano.validacoes.filter(v => v.nivel === 'falha').map(v => v.texto);
+        if (!plano.ok) {
+            toast.error(`Não dá para medir no saldo: ${falhas.join(' ')}`);
+            return;
+        }
+        const conferido = plano.validacoes.map(v => `${v.nivel === 'aviso' ? 'Atenção: ' : ''}${v.texto}`).join(' ');
+        if (!await pedirConfirmacao({
+            title: `Medir ${launch.providerName || ''} no saldo do contrato?`,
+            consequence: `${plano.efeitos.join(' ')} Conferido: ${conferido}`,
+            confirmLabel: 'Medir no saldo',
+            tone: 'accent',
+        })) return;
+        const r = await store.executePaymentAction({ acao: 'medir_no_saldo', launchId: launch.id });
+        toast.success(r.mensagem || 'Medição em andamento.');
+    } catch (err) {
+        toast.error(err.message || 'Não foi possível medir no saldo.');
+    }
+}
+
 /* ── Esteira modular: nota depois da medição, receitas e vigia ─────────── */
 const attachDocLaunch = ref(null);
 const showTypesModal = ref(false);
@@ -533,6 +561,7 @@ onUnmounted(() => store.stopAllPolling());
                             :running="store.pipelineRunningIds.has(row.id)"
                             :receita="store.recipeOfType(row.launchType)"
                             @attach-document="l => attachDocLaunch = l"
+                            @measure-on-balance="handleMeasureOnBalance"
                             @run-pipeline="store.runPipeline" @poll="store.pollNow"
                             @retry-contract="store.runPipeline"
                             @dismiss-error="store.fetchLaunches(true)"

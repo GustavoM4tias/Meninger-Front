@@ -52,6 +52,7 @@ const VizChoice = lazy(() => import('./VizChoice.vue'));
 const VizConfirm = lazy(() => import('./VizConfirm.vue'));
 const VizEmail = lazy(() => import('./VizEmail.vue'));
 const VizPaymentLaunch = lazy(() => import('./VizPaymentLaunch.vue'));
+const VizPaymentAction = lazy(() => import('./VizPaymentAction.vue'));
 const VizNav = lazy(() => import('./VizNav.vue'));
 const VizTimeline = lazy(() => import('./VizTimeline.vue'));
 const VizMap = lazy(() => import('./VizMap.vue'));
@@ -182,6 +183,7 @@ function acao(a) {
   <VizConfirm v-else-if="b.kind === 'confirm'" :confirm="b.confirm" />
   <VizEmail v-else-if="b.kind === 'email'" :block="b" :compact="compact" />
   <VizPaymentLaunch v-else-if="b.kind === 'payment_launch'" :block="b" :compact="compact" />
+  <VizPaymentAction v-else-if="b.kind === 'payment_action'" :block="b" :compact="compact" />
 
   <!-- Legado -->
   <component v-else-if="b.kind === 'legacy' && FAIXAS[b.legacyType]" :is="FAIXAS[b.legacyType]"

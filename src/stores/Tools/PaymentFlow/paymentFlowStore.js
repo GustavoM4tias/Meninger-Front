@@ -41,6 +41,7 @@ export const PIPELINE_STAGE_LABELS = {
     gate_blocked: { label: 'Recusado pelo portão de regras', icon: 'fa-shield-halved', color: 'red' },
     contract_rejected: { label: 'Nenhum contrato aceito pela regra', icon: 'fa-shield-halved', color: 'red' },
     awaiting_document: { label: 'Aguardando a nota fiscal', icon: 'fa-file-circle-exclamation', color: 'orange' },
+    awaiting_balance_confirmation: { label: 'Contrato com saldo: medir ou aditivo?', icon: 'fa-scale-balanced', color: 'orange' },
     contract_manual_block: { label: 'Contrato manual - verificar', icon: 'fa-shield-halved', color: 'orange' },
     aborted: { label: 'Interrompido', icon: 'fa-stop', color: 'gray' },
     // legado
@@ -750,6 +751,17 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         return data;
     }
 
+    // ── Ações validadas (medir no saldo, gerar título, registrar boleto, importar) ─
+    // plan só lê e valida; execute refaz a validação no servidor e age.
+    async function planPaymentAction(pedido) {
+        return requestWithAuth(`${API_URL}/sienge/payment-flow/action/plan`, { method: 'POST', body: JSON.stringify(pedido) });
+    }
+    async function executePaymentAction(pedido) {
+        const r = await requestWithAuth(`${API_URL}/sienge/payment-flow/action`, { method: 'POST', body: JSON.stringify(pedido) });
+        if (r?.launchId) { await _refreshLaunchInList(r.launchId); startPolling(r.launchId); }
+        return r;
+    }
+
     // ── Importar do Sienge (busca em segundo plano + importação) ──────────────
     async function startSiengeImportScan() {
         return requestWithAuth(`${API_URL}/sienge/payment-flow/sienge-import/scan`, { method: 'POST' });
@@ -950,6 +962,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
 
         // Actions: importar do Sienge
         startSiengeImportScan, getSiengeImportScan, applySiengeImport, getSiengeImportSettings, saveSiengeImportSettings,
+        planPaymentAction, executePaymentAction,
 
         // Actions: filtros / paginação
         setPage, applyFilters, resetFilters, toggleShowCancelled, toggleShowErrors, toggleShowTituloPago,
