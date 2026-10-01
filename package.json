@@ -4,6 +4,9 @@
   "academyVersion": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "vite",
     "test": "node --test \"tests/**/*.test.mjs\"",
