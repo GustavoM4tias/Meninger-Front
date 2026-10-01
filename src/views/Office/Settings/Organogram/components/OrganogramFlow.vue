@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { VueFlow, Position, MarkerType, useVueFlow } from '@vue-flow/core';
+import { VueFlow, Position, MarkerType, useVueFlow, BaseEdge, getSmoothStepPath } from '@vue-flow/core';
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
 
@@ -44,18 +44,66 @@ function computeWidth(node) {
   return node._w;
 }
 
-function placeSubtree(node, x, y, level = 0) {
-  // Centraliza o nó horizontalmente sobre sua subárvore
+// Centraliza o chefe sobre o time grande: quando um filho é estritamente o mais
+// largo (ex.: um coordenador com 10 gestores ao lado de 2 analistas soltos), ele
+// vai para o meio e os demais se dividem dos dois lados, na ordem em que vieram.
+// Não mexe em quem tem ordem manual (display_order) nem em irmãos de mesma largura.
+function centerWidest(node, overrideMap) {
+  const kids = node.children || [];
+  kids.forEach(c => centerWidest(c, overrideMap));
+  if (kids.length < 3) return;
+  if (kids.some(c => overrideMap?.[c.data?.id]?.display_order != null)) return;
+  const max = Math.max(...kids.map(c => c._w));
+  const widest = kids.filter(c => c._w === max);
+  if (widest.length !== 1) return;
+  const rest = kids.filter(c => c !== widest[0]);
+  const half = Math.floor(rest.length / 2);
+  node.children = [...rest.slice(0, half), widest[0], ...rest.slice(half)];
+}
+
+// Linha de cada card: quem tem o mesmo cargo fica na mesma linha (a mais funda
+// entre eles), sempre abaixo do próprio chefe. Ex.: um Adm Comercial que responde
+// direto à gerente desce para a linha dos outros Adm, em vez de ficar na linha
+// dos gestores. Se cargo igual em chefe e subordinado impedir de fechar, volta à
+// profundidade simples.
+function assignRows(root) {
+  const all = [];
+  (function walk(n, depth) {
+    n._row = depth;
+    all.push(n);
+    (n.children || []).forEach(c => walk(c, depth + 1));
+  })(root, 0);
+  const cargoOf = (n) => (n.type === 'company' ? null : (n.data?.title || null));
+
+  for (let i = 0; i < 8; i++) {
+    const maxByCargo = new Map();
+    for (const n of all) {
+      const c = cargoOf(n);
+      if (c) maxByCargo.set(c, Math.max(maxByCargo.get(c) ?? 0, n._row));
+    }
+    let changed = false;
+    (function walk(n, parentRow) {
+      const row = Math.max(parentRow + 1, maxByCargo.get(cargoOf(n)) ?? 0);
+      if (row !== n._row) { n._row = row; changed = true; }
+      (n.children || []).forEach(c => walk(c, n._row));
+    })(root, -1);
+    if (!changed) return;
+  }
+  (function walk(n, depth) { n._row = depth; (n.children || []).forEach(c => walk(c, depth + 1)); })(root, 0);
+}
+
+function placeSubtree(node, x) {
+  // Centraliza o nó horizontalmente sobre sua subárvore; a altura vem da linha.
   node._x = x + node._w / 2 - NODE_W / 2;
-  node._y = y;
-  node._level = level;
+  node._y = node._row * (NODE_H + V_GAP);
+  node._level = node._row;
 
   if (!node.children || node.children.length === 0) return;
 
   let cursor = x;
   node.children.forEach((child, i) => {
     if (i > 0) cursor += H_GAP;
-    placeSubtree(child, cursor, y + NODE_H + V_GAP, level + 1);
+    placeSubtree(child, cursor);
     cursor += child._w;
   });
 }
@@ -63,7 +111,9 @@ function placeSubtree(node, x, y, level = 0) {
 function buildGraph(rootNode) {
   const root = JSON.parse(JSON.stringify(rootNode));
   computeWidth(root);
-  placeSubtree(root, 0, 0);
+  centerWidest(root, props.overrideMap);
+  assignRows(root);
+  placeSubtree(root, 0);
 
   const nodes = [];
   const edges = [];
@@ -97,7 +147,7 @@ function buildGraph(rootNode) {
         id: `e-${parentId}-${node.key}`,
         source: parentId,
         target: node.key,
-        type: 'smoothstep',
+        type: 'org',
         animated: false,
         class: 'org-edge',
         markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6', width: 12, height: 12 },
@@ -107,6 +157,17 @@ function buildGraph(rootNode) {
   }
   walk(root);
   return { nodes, edges };
+}
+
+// Ligação em cotovelo com a dobra logo abaixo do chefe (o smoothstep padrão dobra
+// no meio do caminho e, quando o filho está várias linhas abaixo, a dobra cai em
+// cima dos cards das linhas do meio).
+function orgEdgePath(p) {
+  return getSmoothStepPath({
+    sourceX: p.sourceX, sourceY: p.sourceY, sourcePosition: p.sourcePosition,
+    targetX: p.targetX, targetY: p.targetY, targetPosition: p.targetPosition,
+    centerY: Math.min((p.sourceY + p.targetY) / 2, p.sourceY + V_GAP / 2),
+  })[0];
 }
 
 const graph = computed(() => buildGraph(props.rootNode));
@@ -303,6 +364,11 @@ watch(() => props.rootNode, () => {
             </div>
           </div>
         </div>
+      </template>
+
+      <template #edge-org="edgeProps">
+        <BaseEdge :id="edgeProps.id" :path="orgEdgePath(edgeProps)"
+          :marker-end="edgeProps.markerEnd" :style="edgeProps.style" />
       </template>
 
       <!-- Company (root) -->

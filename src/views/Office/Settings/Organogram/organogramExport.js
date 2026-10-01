@@ -113,7 +113,9 @@ function edgePath(s, t) {
   // (posição livre do modo edição) - o cotovelo ficaria torto nesse caso.
   if (Math.abs(x1 - x2) < 1.5 || y2 - y1 < 24) return `M${x1},${y1} L${x2},${y2}`;
 
-  const my = (y1 + y2) / 2;
+  // Dobra logo abaixo do pai (igual à tela): filho várias linhas abaixo não
+  // pode ter a dobra passando por cima dos cards das linhas do meio.
+  const my = Math.min((y1 + y2) / 2, y1 + 35);
   const r = Math.min(10, Math.abs(x2 - x1) / 2, (y2 - y1) / 2);
   const dir = x2 > x1 ? 1 : -1;
   return [
