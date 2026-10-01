@@ -750,6 +750,31 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         return data;
     }
 
+    // ── Importar do Sienge (busca em segundo plano + importação) ──────────────
+    async function startSiengeImportScan() {
+        return requestWithAuth(`${API_URL}/sienge/payment-flow/sienge-import/scan`, { method: 'POST' });
+    }
+    async function getSiengeImportScan() {
+        return requestWithAuth(`${API_URL}/sienge/payment-flow/sienge-import/scan`);
+    }
+    async function applySiengeImport(keys = null) {
+        const r = await requestWithAuth(`${API_URL}/sienge/payment-flow/sienge-import`, {
+            method: 'POST',
+            body: JSON.stringify(keys ? { keys } : {}),
+        });
+        await Promise.all([fetchLaunches(true), fetchSummary()]);
+        return r;
+    }
+    async function getSiengeImportSettings() {
+        return requestWithAuth(`${API_URL}/sienge/payment-flow/sienge-import/settings`);
+    }
+    async function saveSiengeImportSettings(values) {
+        return requestWithAuth(`${API_URL}/sienge/payment-flow/sienge-import/settings`, {
+            method: 'PUT',
+            body: JSON.stringify(values),
+        });
+    }
+
     // ── Vigia das telas do Sienge ─────────────────────────────────────────────
     async function runSiengeWatch() {
         return requestWithAuth(`${API_URL}/sienge/payment-flow/sienge-watch`, { method: 'POST' });
@@ -922,6 +947,9 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
 
         // Actions: documento depois da medição / vigia
         uploadDocument, extractDocument, attachDocument, runSiengeWatch,
+
+        // Actions: importar do Sienge
+        startSiengeImportScan, getSiengeImportScan, applySiengeImport, getSiengeImportSettings, saveSiengeImportSettings,
 
         // Actions: filtros / paginação
         setPage, applyFilters, resetFilters, toggleShowCancelled, toggleShowErrors, toggleShowTituloPago,

@@ -30,6 +30,7 @@ import UpdateBoletoModal from './components/UpdateBoletoModal.vue';
 import AttachDocumentModal from './components/AttachDocumentModal.vue';
 import LaunchTypesModal from './components/LaunchTypesModal.vue';
 import SiengeWatchModal from './components/SiengeWatchModal.vue';
+import SiengeImportModal from './components/SiengeImportModal.vue';
 
 import Favorite from '@/components/config/Favorite.vue';
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -312,6 +313,7 @@ async function onBoletoUpdated() { await store.fetchLaunches(true); }
 const attachDocLaunch = ref(null);
 const showTypesModal = ref(false);
 const showWatchModal = ref(false);
+const showImportModal = ref(false);
 
 function onCredentialsSaved() {
     store.siengeCredentialsOk = true;
@@ -358,6 +360,10 @@ onUnmounted(() => store.stopAllPolling());
                 <Favorite :router="'/financeiro/paymentflow'" :section="'Fluxo de Pagamento'" />
             </template>
             <template #actions>
+                <Button v-if="can('import')" size="sm" variant="outline" icon="fas fa-cloud-arrow-down"
+                    title="Trazer o que foi medido no Sienge por fora do Office" @click="showImportModal = true">
+                    <span class="hidden sm:inline">Importar do Sienge</span>
+                </Button>
                 <Button v-if="can('configure')" size="sm" variant="outline" icon="fas fa-diagram-project"
                     title="Tipos de lançamento e receitas" @click="showTypesModal = true">
                     <span class="hidden sm:inline">Receitas</span>
@@ -380,6 +386,7 @@ onUnmounted(() => store.stopAllPolling());
                         { title: 'Acompanhe um lançamento', text: 'Clique na linha para abrir o pipeline: cada passo com Sienge aparece com o estado atual e o que deu errado, se deu.' },
                         { title: 'Aja quando travar', text: 'Dentro da linha aberta ficam as ações: rodar o pipeline de novo, pedir o RID do fornecedor, atualizar o boleto ou cancelar o lançamento.' },
                         { title: 'Cada tipo tem sua receita', text: 'Em Receitas fica o que cada tipo faz no Sienge: usar contrato existente ou criar, documento do título, boleto ou transferência, medir antes da nota. O portão de regras recusa o lançamento que foge da receita, antes de ir ao Sienge.' },
+                        { title: 'Medido por fora do Office', text: 'Importar do Sienge busca sozinho o que foi medido no Sienge nos empreendimentos comerciais do seu acesso e ainda não está aqui, e traz cada um na etapa em que está: medição aguardando autorização, sem título, título sem boleto ou aguardando pagamento. Nada muda no Sienge.' },
                         { title: 'Pela Eme', text: 'No chat da Eme, anexe a nota e o boleto em PDF e peça, por exemplo, para subir o salário do mês. Ela mostra um cartão com o que vai acontecer; o lançamento só é feito quando você clica em Confirmar.' },
                     ]"
                     :tips="[
@@ -667,6 +674,7 @@ onUnmounted(() => store.stopAllPolling());
             :receita="store.recipeOfType(attachDocLaunch.launchType)"
             @close="attachDocLaunch = null" @attached="store.fetchLaunches(true)" />
 
+        <SiengeImportModal v-if="showImportModal" @close="showImportModal = false" />
         <LaunchTypesModal v-if="showTypesModal" @close="showTypesModal = false" />
         <SiengeWatchModal v-if="showWatchModal" @close="showWatchModal = false" />
     </PageContainer>
