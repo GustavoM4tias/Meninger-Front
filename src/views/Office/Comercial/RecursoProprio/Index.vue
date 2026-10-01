@@ -129,7 +129,7 @@ const kpis = computed(() => {
     { key: 'semrec', label: 'Nada recebido', raw: c.semRec, icon: 'fas fa-circle-exclamation', tone: c.semRec ? 'warn' : 'neutral',
       hint: 'sem ato nem mensal recebidos', tooltip: 'Clique para ver só essas reservas' },
     { key: 'regra', label: 'Fora da regra da ficha', raw: c.regra, icon: 'fas fa-clipboard-check', tone: c.regra ? 'warn' : 'neutral',
-      hint: dados.value?.ficha ? 'ato, parcela mínima ou nº de parcelas' : 'sem ficha comercial', tooltip: 'Clique para ver só essas reservas' },
+      hint: dados.value?.ficha ? '% da renda, ato, parcela mínima ou nº de parcelas' : 'sem ficha comercial', tooltip: 'Clique para ver só essas reservas' },
   ];
 });
 
@@ -281,7 +281,7 @@ function aoSalvarConfig() {
         :steps="[
           { title: 'Escolha o empreendimento', text: 'Entram todas as reservas ativas dele. Canceladas, distratos e vencidas ficam de fora.' },
           { title: 'Leia a condição', text: 'Venda, financiamento, FGTS, subsídios, ato e parcelas vêm do financeiro da reserva no CV, exatamente como estão lá. Nada é recalculado.' },
-          { title: 'Confira as regras', text: 'A Ficha Comercial mais recente diz o ato mínimo, a parcela mínima, o máximo de parcelas e o limite da parcela sobre a renda. Ela só confere, nunca troca valor da reserva.' },
+          { title: 'Confira as regras', text: 'A Ficha Comercial mais recente diz o limite da parcela sobre a renda, o ato mínimo, a parcela mínima e o máximo de parcelas. Passou de qualquer um, a reserva entra em Fora da regra. A ficha só confere, nunca troca valor da reserva.' },
           { title: 'Veja o recebido', text: 'Entrada de caixa no Sienge, consultada na hora, mais o boleto pago no Office que o Sienge ainda não lançou.' },
           { title: 'Abra a linha', text: 'Clique no cliente para ver o detalhe, o que está fora da regra e para escrever uma observação.' },
         ]"
