@@ -73,6 +73,18 @@ export const RELATORIOS = [
     content: 'Relatório de Reservas — funil pós pré-cadastro até a venda concretizada',
   },
   {
+    key: 'recurso-proprio',
+    route: '/comercial/relatorios/recurso-proprio',
+    label: 'Recurso Próprio',
+    pageTitle: 'Recurso Próprio por cliente',
+    icon: 'fas fa-wallet',
+    load: () => import('@/views/Office/Comercial/RecursoProprio/Index.vue'),
+    subtitle: 'O que cada cliente paga direto à Menin, quanto pesa na renda e quanto já entrou.',
+    // Traz o proprio "Como usar" (e os botoes Exportar/Configurar) pelo Teleport.
+    ajudaPropria: true,
+    content: 'Relatório de recurso próprio por cliente - ato, parcelas, subsídios, % da renda, recebido no Sienge e conferência com a ficha comercial',
+  },
+  {
     key: 'leads',
     route: '/comercial/relatorios/leads',
     label: 'Leads',
