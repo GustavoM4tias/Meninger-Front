@@ -316,11 +316,14 @@ const resumoBusca = computed(() => {
       texto: `Buscando a adimplência no CV: ${b.atualizados} de ${b.total} atualizado(s). O CV manda a planilha por e-mail em alguns minutos e o Office aplica sozinho (espera até ${hora(b.prazo_ate)}).` };
   }
   const falhas = b.itens.filter((i) => i.status !== 'atualizado');
-  const mudou = b.itens.reduce((s, i) => s + (i.gravadas || 0) + (i.encerradas || 0), 0);
+  // Trocar o valor de uma unidade encerra o antigo E grava o novo: somar os
+  // dois contaria a unidade duas vezes. Encerrada sem gravada = perdeu a adimplência.
+  const novos = b.itens.reduce((s, i) => s + (i.gravadas || 0), 0);
+  const tirados = b.itens.reduce((s, i) => s + Math.max(0, (i.encerradas || 0) - (i.gravadas || 0)), 0);
   return {
     tom: falhas.length ? 'text-data-warn' : 'text-data-pos',
     icone: falhas.length ? 'fas fa-triangle-exclamation' : 'fas fa-check',
-    texto: `Busca no CV de ${hora(b.solicitado_em)}: ${b.atualizados} de ${b.total} atualizado(s), ${mudou} unidade(s) mudaram.`
+    texto: `Busca no CV de ${hora(b.solicitado_em)}: ${b.atualizados} de ${b.total} atualizado(s); ${novos ? `${novos} unidade(s) com valor novo` : 'nenhum valor mudou'}${tirados ? `, ${tirados} sem adimplência agora` : ''}.`
       + (falhas.length ? ` Faltou: ${falhas.map((f) => `${f.nome} (${f.msg || f.status})`).join('; ')}` : ''),
   };
 });
