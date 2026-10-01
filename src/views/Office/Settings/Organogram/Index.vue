@@ -3,6 +3,7 @@ import { ref, computed, onMounted, nextTick } from 'vue';
 import { useCan } from '@/composables/useCan';
 import { useOrgCatalog } from '@/composables/useOrgCatalog';
 import { useToast } from 'vue-toastification';
+import { pedirConfirmacao } from '@/composables/useConfirm';
 import { useAuthStore } from '@/stores/Settings/Auth/authStore';
 import API_URL from '@/config/apiUrl';
 
@@ -257,6 +258,35 @@ async function resetPerson() {
   finally { savingEdit.value = false; }
 }
 
+// Solta todos os cards arrastados e volta ao layout automático. Card fixado à
+// mão não acompanha a árvore: quem entra depois cai por cima dos fixados e quem
+// troca de gestor fica parado no lugar antigo. Grupo e ordem continuam valendo.
+const manualPosCount = computed(() =>
+  Object.values(overrideMap.value).filter(o => o.pos_x != null || o.pos_y != null).length
+);
+async function organizeAll() {
+  const n = manualPosCount.value;
+  if (!n || !await pedirConfirmacao({
+    tone: 'accent',
+    title: 'Organizar o organograma automaticamente?',
+    consequence: `${n} card(s) arrastado(s) à mão voltam para o lugar calculado pela hierarquia, para todo mundo que abre a tela. Quem foi posto em outro grupo ou reordenado continua assim.`,
+    hint: 'As posições arrastadas não são guardadas: para ter um card fora do lugar de novo, é arrastar outra vez.',
+    confirmLabel: 'Organizar',
+  })) return;
+  savingEdit.value = true;
+  try {
+    const res = await fetch(`${API_URL}/organogram/overrides/positions`, {
+      method: 'DELETE', headers: authHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok || json?.success === false) throw new Error(json?.error || 'Falha ao organizar.');
+    await loadOverrides();
+    buildTree();
+    toast.success('Organograma organizado.');
+  } catch (e) { toast.error(e.message); }
+  finally { savingEdit.value = false; }
+}
+
 function toggleEditMode() {
   editMode.value = !editMode.value;
   selectedPerson.value = null; // evita painel em estado inconsistente ao alternar
@@ -446,6 +476,11 @@ onMounted(async () => {
             :disabled="!hasResults" @click.stop="exportOpen = true">
             <span class="hidden sm:inline">Exportar</span>
           </Button>
+          <Button v-if="editMode && manualPosCount" size="sm" variant="secondary"
+            icon="fas fa-wand-magic-sparkles" :loading="savingEdit"
+            @click.stop="organizeAll">
+            Organizar
+          </Button>
           <Button v-if="can('edit')" size="sm"
             :variant="editMode ? 'primary' : 'secondary'"
             :icon="editMode ? 'fas fa-check' : 'fas fa-pen-ruler'"
@@ -496,7 +531,7 @@ onMounted(async () => {
                  px-3.5 py-2 rounded-full bg-surface-overlay border border-accent/30 shadow-elevated
                  text-xs text-ink-muted backdrop-blur pointer-events-none">
           <i class="fas fa-pen-ruler text-accent"></i>
-          <span>Modo edição — <strong class="text-ink">arraste</strong> os cards ou <strong class="text-ink">clique</strong> numa pessoa para mover de grupo / reordenar.</span>
+          <span>Modo edição - <strong class="text-ink">arraste</strong> os cards, <strong class="text-ink">clique</strong> numa pessoa para mover de grupo / reordenar, ou use <strong class="text-ink">Organizar</strong> para voltar tudo ao layout automático.</span>
         </div>
 
       </Surface>
