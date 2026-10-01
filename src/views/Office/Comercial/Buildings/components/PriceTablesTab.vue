@@ -17,7 +17,7 @@
  */
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { getPriceTables, getPriceTable, syncPriceTables, criarBuscaAdimplencia, statusBuscaAdimplencia } from '@/utils/Building/apiBuilding';
-import Dropdown from '@/components/UI/Dropdown.vue';
+import Modal from '@/components/UI/Modal.vue';
 import AdimplenciaModal from './AdimplenciaModal.vue';
 
 import DataTable from '@/components/UI/DataTable.vue';
@@ -282,6 +282,18 @@ const acompanhar = (id) => {
   pollBusca = setInterval(ler, 20000);
 };
 
+const escolhaAberta = ref(false);
+// Fecha a escolha e já pede: a janela do CV precisa nascer neste clique.
+const escolherBusca = (todos) => { escolhaAberta.value = false; atualizarDoCv(todos); };
+
+// Só mostra a busca que inclui ESTE empreendimento (a última da pessoa pode
+// ter sido de outro, e o texto confundia: "1 de 1 atualizado" no lugar errado).
+const buscaCvAqui = computed(() => {
+  const b = buscaCv.value;
+  if (!b) return null;
+  return b.itens?.some((i) => Number(i.idempreendimento) === Number(props.idempreendimento)) ? b : null;
+});
+
 const atualizarDoCv = async (todos) => {
   buscaErro.value = '';
   // A janela tem que nascer no clique, senão o bloqueador de pop-up a mata.
@@ -308,7 +320,7 @@ const atualizarDoCv = async (todos) => {
 };
 
 const resumoBusca = computed(() => {
-  const b = buscaCv.value;
+  const b = buscaCvAqui.value;
   if (!b) return null;
   const hora = (d) => (d ? new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '');
   if (b.status === 'aguardando') {
@@ -474,28 +486,11 @@ onBeforeUnmount(pararPoll);
               v-tippy="'Adimplência premiada (Desconto Construtora) por unidade. O CV não manda esse campo; o cadastro é aqui e vale para as tabelas.'">
               <span class="hidden sm:inline">Adimplência premiada</span>
             </Button>
-            <Dropdown v-if="canConfigure" align="right" :offset="8">
-              <template #trigger>
-                <Button variant="secondary" size="sm" :loading="buscando || buscaCv?.status === 'aguardando'" icon="fas fa-cloud-arrow-down"
-                  v-tippy="'Busca a adimplência premiada no CV e atualiza aqui, sem importar arquivo.'">
-                  <span class="hidden sm:inline">{{ buscaCv?.status === 'aguardando' ? 'Buscando no CV...' : 'Atualizar do CV' }}</span>
-                </Button>
-              </template>
-              <div class="w-72 bg-surface-overlay border border-line rounded-xl shadow-overlay overflow-hidden py-1">
-                <button v-for="opt in opcoesBusca" :key="opt.t"
-                  type="button" data-dropdown-item @click="atualizarDoCv(opt.todos)"
-                  class="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-surface-sunken transition-colors group">
-                  <i :class="opt.i" class="mt-0.5 w-4 text-ink-muted group-hover:text-accent transition-colors"></i>
-                  <span class="min-w-0">
-                    <span class="block text-sm text-ink group-hover:text-accent transition-colors">{{ opt.t }}</span>
-                    <span class="block text-micro text-ink-subtle">{{ opt.d }}</span>
-                  </span>
-                </button>
-                <p class="px-3 pt-2 pb-2.5 text-micro text-ink-subtle border-t border-line mt-1">
-                  Abre uma janela do CV com o seu login. Se o CV pedir para entrar, entre e clique de novo.
-                </p>
-              </div>
-            </Dropdown>
+            <Button v-if="canConfigure" variant="secondary" size="sm" :loading="buscando || buscaCvAqui?.status === 'aguardando'" icon="fas fa-cloud-arrow-down"
+              @click="escolhaAberta = true"
+              v-tippy="'Busca a adimplência premiada no CV e atualiza aqui, sem importar arquivo.'">
+              <span class="hidden sm:inline">{{ buscaCvAqui?.status === 'aguardando' ? 'Buscando no CV...' : 'Atualizar do CV' }}</span>
+            </Button>
             <Button v-if="canSync" variant="secondary" size="sm" :loading="syncing"
               :icon="syncMsg?.ok ? 'fas fa-check' : 'fas fa-rotate'" @click="sincronizar"
               v-tippy="'Lê agora as tabelas deste empreendimento no CV. O robô faz isso todo dia às 9h.'">
@@ -539,6 +534,24 @@ onBeforeUnmount(pararPoll);
         <template #footer>Clique numa tabela para ver as unidades e as séries de pagamento. {{ descontar ? 'Preços já com a adimplência premiada descontada onde ela existe.' : 'Preços cheios, como estão no CV.' }}</template>
       </Panel>
     </template>
+
+    <!-- Escolha do alcance. Modal (e não menu suspenso) porque a barra de ações
+         do Panel tem overflow e cortava o menu: o botão parecia não fazer nada. -->
+    <Modal :open="escolhaAberta" size="sm" title="Atualizar adimplência do CV"
+      subtitle="Abre uma janela do CV com o seu login. O CV manda a planilha por e-mail e o Office atualiza sozinho em alguns minutos."
+      @close="escolhaAberta = false">
+      <div class="space-y-2">
+        <button v-for="opt in opcoesBusca" :key="opt.t" type="button" @click="escolherBusca(opt.todos)"
+          class="w-full flex items-start gap-3 px-3 py-3 rounded-lg border border-line text-left hover:bg-surface-sunken hover:border-accent/40 transition-colors group">
+          <i :class="opt.i" class="mt-0.5 w-4 text-ink-muted group-hover:text-accent transition-colors"></i>
+          <span class="min-w-0">
+            <span class="block text-sm text-ink group-hover:text-accent transition-colors">{{ opt.t }}</span>
+            <span class="block text-micro text-ink-subtle">{{ opt.d }}</span>
+          </span>
+        </button>
+        <p class="text-micro text-ink-subtle pt-1">Se a janela do CV pedir para entrar, entre e clique de novo aqui.</p>
+      </div>
+    </Modal>
 
     <AdimplenciaModal :open="adimplenciaAberta" :idempreendimento="idempreendimento" :can-configure="canConfigure"
       @close="adimplenciaAberta = false" @saved="aposGravarAdimplencia" />
