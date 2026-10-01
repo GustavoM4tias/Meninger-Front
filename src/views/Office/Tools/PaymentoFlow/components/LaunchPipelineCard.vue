@@ -453,6 +453,11 @@ const cardBorderClass = computed(() => {
               {{ authLevelLabel(launch.siengeContractAuthLevel) }}
             </Badge>
           </div>
+          <!-- Pendência deixada pelo robô no contrato criado (ex.: caução não conferida) -->
+          <p v-if="!isAuthorized && launch.siengeContractError && stage === 'awaiting_authorization'"
+            class="rounded-lg border border-data-warn/30 bg-data-warn/10 px-3 py-2 text-data-warn break-words leading-relaxed">
+            <i class="fas fa-triangle-exclamation mr-1"></i>{{ launch.siengeContractError }}
+          </p>
 
           <!-- Medição -->
           <div v-if="measurementCreating" class="flex items-center gap-2 text-accent">
