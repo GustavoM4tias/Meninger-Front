@@ -67,7 +67,7 @@ const isRunning = computed(() =>
 );
 const isReady = computed(() => ['ready', 'titulo_pago'].includes(stage.value));
 const hasError = computed(() =>
-  ['contract_error', 'additive_error', 'measurement_error', 'titulo_error', 'gate_blocked', 'contract_rejected', 'items_insufficient'].includes(stage.value)
+  ['contract_error', 'additive_error', 'measurement_error', 'titulo_error', 'gate_blocked', 'contract_rejected', 'items_insufficient', 'aborted'].includes(stage.value)
   || creditorMissing.value
 );
 
@@ -287,6 +287,15 @@ const cardBorderClass = computed(() => {
           </p>
           <p class="break-words leading-relaxed">{{ launch.siengeContractError }}</p>
           <p class="pt-1 text-ink-muted">Nada foi feito no Sienge. Corrija o lançamento (ou a regra do tipo) e clique em Processar.</p>
+        </div>
+
+        <div v-else-if="stage === 'aborted'"
+          class="rounded-lg border border-data-warn/30 bg-data-warn/10 p-3 text-data-warn space-y-1">
+          <p class="font-semibold flex items-center gap-1.5">
+            <i class="fas fa-circle-pause"></i>Automação interrompida
+          </p>
+          <p class="break-words leading-relaxed">{{ launch.siengeContractError || 'Processo interrompido.' }}</p>
+          <p class="pt-1 text-ink-muted">Processar retoma do começo e reaproveita o que já estiver no Sienge.</p>
         </div>
 
         <div v-else-if="stage === 'awaiting_balance_confirmation'"
