@@ -16,7 +16,8 @@
  * cópia congelada quando foi lida; vigente usa o cadastro de hoje.
  */
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { getPriceTables, getPriceTable, syncPriceTables, criarBuscaAdimplencia, statusBuscaAdimplencia } from '@/utils/Building/apiBuilding';
+import { getPriceTables, getPriceTable, syncPriceTables, importAdimplencia, criarBuscaAdimplencia, statusBuscaAdimplencia } from '@/utils/Building/apiBuilding';
+import { CV_ORIGIN, cvExportarUnidadesUrl } from '@/utils/cvLinks';
 import Modal from '@/components/UI/Modal.vue';
 import AdimplenciaModal from './AdimplenciaModal.vue';
 
@@ -252,20 +253,33 @@ const sincronizar = async () => {
   }
 };
 
-// ── "Atualizar do CV": adimplência premiada sem importar arquivo ─────────
-// O servidor não entra no CV (login com CAPTCHA). Quem pede é a pessoa: a
-// janela abre a exportação de unidades do CV com a sessão dela, o CV manda a
-// planilha por e-mail em alguns minutos e o Office aplica sozinho. Aqui só se
-// abre a janela e se acompanha a busca.
-const buscaCv = ref(null);          // status vindo do back
+// ── "Atualizar do CV": adimplência premiada direto do CV ─────────────────
+// O CV não dá o campo por API, o servidor não entra no CV (login com CAPTCHA)
+// e o CV só entrega a exportação de unidades pedida de DENTRO dele - pedida
+// pelo Office, ele redireciona sem fazer nada (medido em 01/10/2026). Então:
+//   1. "Abrir o CV" abre a tela de exportação deste empreendimento numa aba;
+//   2. lá a pessoa clica no favorito "Office: adimplência" (instalado uma vez),
+//      que baixa a planilha com o login dela e a entrega a ESTA aba
+//      (postMessage, só para a origem do Office);
+//   3. esta aba confere a origem (só o CV) e grava pela importação que já
+//      existe, com o login da pessoa. Nada de rota pública.
+// Empreendimento grande o CV manda por e-mail em vez de entregar na hora: o
+// favorito avisa e esta aba abre a busca que lê o e-mail (cron do back).
+const buscaCv = ref(null);          // busca por e-mail (só quando o CV manda por e-mail)
 const buscaErro = ref('');
-const buscando = ref(false);      // abrindo a janela / pedindo ao back
+const buscando = ref(false);
+const recebido = ref(null);         // resultado da planilha que chegou pelo favorito
+const escolhaAberta = ref(false);
 let pollBusca = null;
-const opcoesBusca = [
-  { todos: false, i: 'fas fa-building', t: 'Este empreendimento', d: 'Pede ao CV só as unidades deste' },
-  { todos: true, i: 'fas fa-city', t: 'Todos os empreendimentos', d: 'Pede ao CV um por um; demora mais' },
-];
-const ESPERA_ENTRE_PEDIDOS_MS = 3500; // dá tempo do CV registrar um pedido antes do próximo
+
+const OFFICE_ORIGIN = window.location.origin;
+const favoritoCodigo = `(async function(){var o=window.opener;var m=location.pathname.match(/empreendimentos\\/(\\d+)/);`
+  + `if(!o||!m){alert('Abra o CV pelo botão "Atualizar do CV" do Office e clique de novo aqui.');return}`
+  + `try{var r=await fetch('/'+location.pathname.split('/')[1]+'/cadastros/empreendimentos/'+m[1]+'/exportar_unidades_download',{credentials:'include'});var t=await r.text();`
+  + `if(/ID Unidade/.test(t)&&/Adimpl/i.test(t)){o.postMessage({tipo:'office-adimplencia',idempreendimento:Number(m[1]),csv:t},${JSON.stringify(OFFICE_ORIGIN)});alert('Pronto: planilha enviada ao Office. Pode fechar esta aba.')}`
+  + `else{o.postMessage({tipo:'office-adimplencia-email',idempreendimento:Number(m[1])},${JSON.stringify(OFFICE_ORIGIN)});alert('O CV vai mandar esta planilha por e-mail. O Office aplica sozinho quando chegar (alguns minutos). Pode fechar esta aba.')}`
+  + `}catch(e){alert('Não consegui baixar a planilha do CV: '+e.message)}})()`;
+const favoritoHref = 'javascript:' + encodeURIComponent(favoritoCodigo);
 
 const pararPoll = () => { if (pollBusca) { clearInterval(pollBusca); pollBusca = null; } };
 const acompanhar = (id) => {
@@ -282,50 +296,53 @@ const acompanhar = (id) => {
   pollBusca = setInterval(ler, 20000);
 };
 
-const escolhaAberta = ref(false);
-// Fecha a escolha e já pede: a janela do CV precisa nascer neste clique.
-const escolherBusca = (todos) => { escolhaAberta.value = false; atualizarDoCv(todos); };
-
-// Só mostra a busca que inclui ESTE empreendimento (a última da pessoa pode
-// ter sido de outro, e o texto confundia: "1 de 1 atualizado" no lugar errado).
+// Só mostra a busca que inclui ESTE empreendimento.
 const buscaCvAqui = computed(() => {
   const b = buscaCv.value;
   if (!b) return null;
   return b.itens?.some((i) => Number(i.idempreendimento) === Number(props.idempreendimento)) ? b : null;
 });
 
-const atualizarDoCv = async (todos) => {
-  buscaErro.value = '';
-  // A janela tem que nascer no clique, senão o bloqueador de pop-up a mata.
-  const janela = window.open('about:blank', 'cv-exportacao', 'width=640,height=720');
-  buscando.value = true;
-  try {
-    const b = await criarBuscaAdimplencia(todos ? { todos: true } : { ids: [props.idempreendimento] });
-    acompanhar(b.id);
-    if (!janela) {
-      buscaErro.value = 'O navegador bloqueou a janela do CV. Libere pop-ups para o Office e clique de novo.';
-      return;
-    }
-    for (let i = 0; i < b.urls.length; i++) {
-      if (janela.closed) { buscaErro.value = 'A janela do CV foi fechada antes do fim: os empreendimentos que faltaram não foram pedidos.'; break; }
-      janela.location.href = b.urls[i].url;
-      if (i < b.urls.length - 1) await new Promise((r) => setTimeout(r, ESPERA_ENTRE_PEDIDOS_MS));
-    }
-  } catch (e) {
-    buscaErro.value = e.message;
-    janela?.close();
-  } finally {
-    buscando.value = false;
-  }
+const abrirCv = () => {
+  buscaErro.value = ''; recebido.value = null;
+  const aba = window.open(cvExportarUnidadesUrl(props.idempreendimento), '_blank');
+  if (!aba) buscaErro.value = 'O navegador bloqueou a aba do CV. Libere pop-ups para o Office e clique de novo.';
+  escolhaAberta.value = false;
 };
 
+const aoReceberDoCv = async (ev) => {
+  if (ev.origin !== CV_ORIGIN) return;
+  const d = ev.data || {};
+  if (Number(d.idempreendimento) !== Number(props.idempreendimento)) return;
+  if (d.tipo === 'office-adimplencia' && typeof d.csv === 'string') {
+    buscando.value = true; buscaErro.value = '';
+    try {
+      const r = await importAdimplencia(props.idempreendimento, { csv: d.csv, observacao: `Atualizado do CV pelo favorito em ${new Date().toLocaleDateString('pt-BR')}` });
+      recebido.value = { gravadas: r.gravadas ?? 0, encerradas: r.encerradas ?? 0, com_valor: r.importacao?.com_valor ?? 0, em: new Date() };
+      buscaCv.value = null; pararPoll();
+      await aposGravarAdimplencia();
+    } catch (e) { buscaErro.value = e.message; } finally { buscando.value = false; }
+  } else if (d.tipo === 'office-adimplencia-email') {
+    try { const b = await criarBuscaAdimplencia({ ids: [props.idempreendimento] }); acompanhar(b.id); }
+    catch (e) { buscaErro.value = e.message; }
+  }
+};
+window.addEventListener('message', aoReceberDoCv);
+onBeforeUnmount(() => window.removeEventListener('message', aoReceberDoCv));
+
 const resumoBusca = computed(() => {
+  const hora = (d) => (d ? new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '');
+  if (recebido.value) {
+    const r = recebido.value;
+    const tirados = Math.max(0, r.encerradas - r.gravadas);
+    return { tom: 'text-data-pos', icone: 'fas fa-check',
+      texto: `Adimplência atualizada do CV às ${hora(r.em)}: ${r.com_valor} unidade(s) com adimplência no CV; ${r.gravadas ? `${r.gravadas} com valor novo` : 'nenhum valor mudou'}${tirados ? `, ${tirados} sem adimplência agora` : ''}.` };
+  }
   const b = buscaCvAqui.value;
   if (!b) return null;
-  const hora = (d) => (d ? new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '');
   if (b.status === 'aguardando') {
     return { tom: 'text-ink-muted', icone: 'fas fa-circle-notch fa-spin',
-      texto: `Buscando a adimplência no CV: ${b.atualizados} de ${b.total} atualizado(s). O CV manda a planilha por e-mail em alguns minutos e o Office aplica sozinho (espera até ${hora(b.prazo_ate)}).` };
+      texto: `O CV vai mandar a planilha por e-mail; o Office aplica sozinho quando chegar (espera até ${hora(b.prazo_ate)}).` };
   }
   const falhas = b.itens.filter((i) => i.status !== 'atualizado');
   // Trocar o valor de uma unidade encerra o antigo E grava o novo: somar os
@@ -486,10 +503,10 @@ onBeforeUnmount(pararPoll);
               v-tippy="'Adimplência premiada (Desconto Construtora) por unidade. O CV não manda esse campo; o cadastro é aqui e vale para as tabelas.'">
               <span class="hidden sm:inline">Adimplência premiada</span>
             </Button>
-            <Button v-if="canConfigure" variant="secondary" size="sm" :loading="buscando || buscaCvAqui?.status === 'aguardando'" icon="fas fa-cloud-arrow-down"
+            <Button v-if="canConfigure" variant="secondary" size="sm" :loading="buscando" icon="fas fa-cloud-arrow-down"
               @click="escolhaAberta = true"
               v-tippy="'Busca a adimplência premiada no CV e atualiza aqui, sem importar arquivo.'">
-              <span class="hidden sm:inline">{{ buscaCvAqui?.status === 'aguardando' ? 'Buscando no CV...' : 'Atualizar do CV' }}</span>
+              <span class="hidden sm:inline">Atualizar do CV</span>
             </Button>
             <Button v-if="canSync" variant="secondary" size="sm" :loading="syncing"
               :icon="syncMsg?.ok ? 'fas fa-check' : 'fas fa-rotate'" @click="sincronizar"
@@ -535,22 +552,34 @@ onBeforeUnmount(pararPoll);
       </Panel>
     </template>
 
-    <!-- Escolha do alcance. Modal (e não menu suspenso) porque a barra de ações
-         do Panel tem overflow e cortava o menu: o botão parecia não fazer nada. -->
-    <Modal :open="escolhaAberta" size="sm" title="Atualizar adimplência do CV"
-      subtitle="Abre uma janela do CV com o seu login. O CV manda a planilha por e-mail e o Office atualiza sozinho em alguns minutos."
+    <!-- Atualizar do CV: o favorito precisa rodar DENTRO do CV (ver o script). -->
+    <Modal :open="escolhaAberta" size="md" title="Atualizar adimplência do CV"
+      subtitle="O CV só entrega a planilha de unidades para quem pede de dentro dele. O favorito faz esse pedido com o seu login e devolve a planilha para o Office."
       @close="escolhaAberta = false">
-      <div class="space-y-2">
-        <button v-for="opt in opcoesBusca" :key="opt.t" type="button" @click="escolherBusca(opt.todos)"
-          class="w-full flex items-start gap-3 px-3 py-3 rounded-lg border border-line text-left hover:bg-surface-sunken hover:border-accent/40 transition-colors group">
-          <i :class="opt.i" class="mt-0.5 w-4 text-ink-muted group-hover:text-accent transition-colors"></i>
-          <span class="min-w-0">
-            <span class="block text-sm text-ink group-hover:text-accent transition-colors">{{ opt.t }}</span>
-            <span class="block text-micro text-ink-subtle">{{ opt.d }}</span>
-          </span>
-        </button>
-        <p class="text-micro text-ink-subtle pt-1">Se a janela do CV pedir para entrar, entre e clique de novo aqui.</p>
-      </div>
+      <ol class="space-y-4 text-sm text-ink">
+        <li class="flex gap-3">
+          <span class="flex-shrink-0 w-6 h-6 rounded-full bg-accent/15 text-accent text-xs font-bold flex items-center justify-center">1</span>
+          <div class="min-w-0">
+            <p class="font-medium">Só na primeira vez: arraste este botão para a barra de favoritos</p>
+            <a :href="favoritoHref" @click.prevent
+              class="mt-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-accent text-accent text-sm font-medium cursor-grab select-none">
+              <i class="fas fa-bookmark"></i> Office: adimplência
+            </a>
+            <p class="text-micro text-ink-subtle mt-1">Barra de favoritos escondida? Ctrl+Shift+B mostra.</p>
+          </div>
+        </li>
+        <li class="flex gap-3">
+          <span class="flex-shrink-0 w-6 h-6 rounded-full bg-accent/15 text-accent text-xs font-bold flex items-center justify-center">2</span>
+          <div class="min-w-0">
+            <p class="font-medium">Abra o CV neste empreendimento</p>
+            <Button class="mt-2" variant="primary" size="sm" icon="fas fa-arrow-up-right-from-square" @click="abrirCv">Abrir o CV</Button>
+          </div>
+        </li>
+        <li class="flex gap-3">
+          <span class="flex-shrink-0 w-6 h-6 rounded-full bg-accent/15 text-accent text-xs font-bold flex items-center justify-center">3</span>
+          <p class="min-w-0 font-medium">Na aba do CV, clique no favorito <strong>Office: adimplência</strong>. O Office atualiza sozinho.</p>
+        </li>
+      </ol>
     </Modal>
 
     <AdimplenciaModal :open="adimplenciaAberta" :idempreendimento="idempreendimento" :can-configure="canConfigure"

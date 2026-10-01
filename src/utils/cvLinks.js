@@ -6,7 +6,13 @@
 // passam obrigatoriamente pela tela do CV. Melhor levar o usuário direto para
 // a listagem já filtrada do que mandar ele procurar.
 
-const GESTOR = 'https://menin.cvcrm.com.br/gestor/cadastros';
+export const CV_ORIGIN = 'https://menin.cvcrm.com.br';
+const GESTOR = `${CV_ORIGIN}/gestor/cadastros`;
+
+/** Tela "Exportar unidades" do empreendimento (o favorito "Office: adimplência" roda nela). */
+export function cvExportarUnidadesUrl(idempreendimento) {
+    return `${GESTOR}/empreendimentos/${idempreendimento}/exportarunidades`;
+}
 
 const qs = (pares) =>
     Object.entries(pares)
