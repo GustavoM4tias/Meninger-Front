@@ -15,10 +15,10 @@ import { useToast } from 'vue-toastification';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import { fmtMoney, fmtNum, fmtDate, fmtDateTime } from '@/utils/format';
 import { useCan } from '@/composables/useCan';
-import { fieldBase } from '@/components/UI/_classes';
 
 import PageHelp from '@/components/UI/PageHelp.vue';
-import Select from '@/components/UI/Select.vue';
+import MultiSelector from '@/components/UI/MultiSelector.vue';
+import IconButton from '@/components/UI/IconButton.vue';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
 import Badge from '@/components/UI/Badge.vue';
@@ -28,6 +28,8 @@ import Panel from '@/components/UI/Panel.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import ConfigModal from './ConfigModal.vue';
+import DetalheModal from './DetalheModal.vue';
+import { cvReservaFinanceiroUrl } from './cvLinks';
 
 const TELA = '/comercial/relatorios/recurso-proprio';
 const can = useCan(TELA);
@@ -35,7 +37,6 @@ const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 
-const fieldCls = `${fieldBase} px-3 py-2 text-sm rounded-lg`;
 
 // ── Empreendimento (fica na URL: o link compartilhado abre no mesmo) ────────
 const empreendimentos = ref([]);
@@ -43,6 +44,11 @@ const idemp = ref(route.query.empreendimento ? String(route.query.empreendimento
 const opcoesEmp = computed(() => empreendimentos.value.map((e) => ({
   value: String(e.id), label: `${e.nome} (${e.reservas})`,
 })));
+// Seletor padrão do Office (busca + lista), em modo de um só.
+const empSelecionado = computed({
+  get: () => (idemp.value ? [idemp.value] : []),
+  set: (v) => { idemp.value = Array.isArray(v) && v.length ? String(v[v.length - 1]) : ''; },
+});
 
 async function carregarEmpreendimentos() {
   try {
@@ -103,6 +109,7 @@ const contagens = computed(() => {
     acima: L.filter((l) => l.nivelRenda !== 'ok').length,
     atencao: L.filter((l) => l.nivelRenda === 'atencao').length,
     alto: L.filter((l) => l.nivelRenda === 'alto').length,
+    comFiador: L.filter((l) => l.rendaComFiador).length,
     semRec: L.filter((l) => recebido(l) === 0).length,
     regra: L.filter((l) => l.foraDaRegra.length).length,
     pend: L.filter((l) => l.pendencias.length).length,
@@ -124,7 +131,7 @@ const kpis = computed(() => {
       hint: `${rp ? pct(rec / rp, 1) : '-'} do recurso próprio · falta ${brl0(Math.max(0, rp - rec))}`,
       tooltip: 'Ato e mensais recebidos no Sienge, mais o que foi pago no Office e ainda não lançado' },
     { key: 'renda', label: `Acima de ${fmtNum(lim?.rendaPct ?? 30, 0)}% da renda`, raw: c.acima, icon: 'fas fa-scale-unbalanced',
-      tone: c.acima ? 'neg' : 'neutral', hint: `${c.atencao} pouco acima · ${c.alto} bem acima`,
+      tone: c.acima ? 'neg' : 'neutral', hint: `${c.atencao} pouco acima · ${c.alto} bem acima${c.comFiador ? ` · ${c.comFiador} com fiador` : ''}`,
       tooltip: 'Clique para ver só esses clientes' },
     { key: 'semrec', label: 'Nada recebido', raw: c.semRec, icon: 'fas fa-circle-exclamation', tone: c.semRec ? 'warn' : 'neutral',
       hint: 'sem ato nem mensal recebidos', tooltip: 'Clique para ver só essas reservas' },
@@ -234,31 +241,31 @@ function exportarCsv() {
   URL.revokeObjectURL(a.href);
 }
 
-// ── Observação por reserva ──────────────────────────────────────────────────
-const TONS_NOTA = [
-  { value: 'alerta', label: 'Ícone de alerta' },
-  { value: 'info', label: 'Ícone de informação' },
-];
-const rascunhos = ref({});
-function rascunho(l) {
-  if (!rascunhos.value[l.id]) rascunhos.value[l.id] = { texto: l.nota?.texto || '', tom: l.nota?.tom || 'alerta', salvando: false };
-  return rascunhos.value[l.id];
+// ── Detalhe da reserva (modal) ──────────────────────────────────────────────
+const detalheAberto = ref(false);
+const detalheLinha = ref(null);
+function abrirDetalhe(l) { detalheLinha.value = l; detalheAberto.value = true; }
+function aoSalvarNota({ id, nota }) {
+  const l = linhas.value.find((x) => x.id === id);
+  if (l) l.nota = nota;
 }
-async function salvarNota(l) {
-  const r = rascunho(l);
-  r.salvando = true;
-  try {
-    const res = await requestWithAuth(`/recurso-proprio/notas/${l.id}`, {
-      method: 'PUT', body: JSON.stringify({ texto: r.texto, tom: r.tom }),
-    });
-    l.nota = res.nota;
-    toast.success(res.nota ? 'Observação salva. Ela aparece para todos que abrem este relatório.' : 'Observação apagada.');
-  } catch (e) {
-    toast.error(e.message || 'Não foi possível salvar a observação.');
-  } finally {
-    r.salvando = false;
-  }
-}
+function abrirCv(l) { window.open(cvReservaFinanceiroUrl(l.id), '_blank', 'noopener'); }
+
+// ── Estoque do empreendimento ───────────────────────────────────────────────
+const estoqueItens = computed(() => {
+  const e = dados.value?.estoque;
+  if (!e) return [];
+  const vendidoPct = e.total ? (e.vendidas / e.total) * 100 : 0;
+  return [
+    { k: 'Unidades', v: e.total, cor: 'text-ink' },
+    { k: 'À venda', v: e.aVenda, cor: 'text-accent', dica: 'disponíveis + bloqueadas comercialmente' },
+    { k: 'Disponíveis', v: e.disponiveis, cor: 'text-ink' },
+    { k: 'Bloqueadas comercialmente', v: e.bloqueadasComercial, cor: 'text-data-warn', dica: 'estoque segurado, conta como à venda' },
+    { k: 'Outros bloqueios', v: e.bloqueadasOutras, cor: 'text-ink-muted', dica: 'Sienge, terreno etc.; não é estoque' },
+    { k: 'Reservadas', v: e.reservadas, cor: 'text-ink' },
+    { k: 'Vendidas', v: e.vendidas, cor: 'text-data-pos', dica: `${fmtNum(vendidoPct, 1)}% do total` },
+  ];
+});
 
 // ── Configuração ────────────────────────────────────────────────────────────
 const configAberta = ref(false);
@@ -283,12 +290,13 @@ function aoSalvarConfig() {
           { title: 'Leia a condição', text: 'Venda, financiamento, FGTS, subsídios, ato e parcelas vêm do financeiro da reserva no CV, exatamente como estão lá. Nada é recalculado.' },
           { title: 'Confira as regras', text: 'A Ficha Comercial mais recente diz o limite da parcela sobre a renda, o ato mínimo, a parcela mínima e o máximo de parcelas. Passou de qualquer um, a reserva entra em Fora da regra. A ficha só confere, nunca troca valor da reserva.' },
           { title: 'Veja o recebido', text: 'Entrada de caixa no Sienge, consultada na hora, mais o boleto pago no Office que o Sienge ainda não lançou.' },
-          { title: 'Abra a linha', text: 'Clique no cliente para ver o detalhe, o que está fora da regra e para escrever uma observação.' },
+          { title: 'Abra a linha', text: 'Clique no cliente para abrir o detalhe: séries do financeiro, cada recebimento do Sienge, a conferência da ficha e a observação. O botão no fim da linha abre o financeiro da reserva direto no CV.' },
         ]"
         :tips="[
           'Os cartões do topo filtram a tabela. Clique de novo para voltar a ver todas.',
           '% da renda: amarelo passou do limite até a tolerância; vermelho passou disso. O limite vem do texto da Regra do RP da ficha (ex.: “30% da renda”).',
           'Só são conferidas pela ficha as reservas feitas depois que o empreendimento passou a ter ficha comercial.',
+          'Fiador: reserva acima do limite da renda com fiador registrado no CV não conta como fora da regra e aparece marcada “com fiador”. O CV não traz a renda do fiador, então ela precisa ser conferida.',
           'Recebido do Sienge conta só dinheiro que entrou (Recebimento e Adiantamento). Reparcelamento, promoção e abatimento de adiantamento não contam.',
           'A observação da linha aparece para todos que abrem o relatório, com o nome de quem escreveu.',
         ]"
@@ -298,7 +306,8 @@ function aoSalvarConfig() {
     <!-- Empreendimento -->
     <div class="flex flex-col sm:flex-row sm:items-end gap-3">
       <div class="w-full sm:w-96">
-        <Select v-model="idemp" :options="opcoesEmp" label="Empreendimento" placeholder="Escolha um empreendimento" />
+        <MultiSelector v-model="empSelecionado" single :options="opcoesEmp" :page-size="200"
+          label="Empreendimento" placeholder="Buscar empreendimento..." />
       </div>
       <Button v-if="idemp" variant="secondary" icon="fas fa-rotate-right" :loading="carregando" @click="carregar">Atualizar</Button>
     </div>
@@ -336,6 +345,22 @@ function aoSalvarConfig() {
           <span v-if="contagens.semRenda" class="text-data-warn">{{ contagens.semRenda }} sem renda no pré-cadastro (% da renda fica em branco).</span>
         </div>
 
+        <!-- Estoque -->
+        <Panel v-if="estoqueItens.length" :padded="false">
+          <div class="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6">
+            <p class="text-xs font-semibold uppercase tracking-wide text-ink-muted lg:w-40 shrink-0">
+              <i class="fas fa-building mr-1"></i>Estoque
+            </p>
+            <dl class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-x-6 gap-y-2 flex-1">
+              <div v-for="i in estoqueItens" :key="i.k" :title="i.dica || ''">
+                <dt class="text-micro uppercase tracking-wide text-ink-subtle">{{ i.k }}</dt>
+                <dd :class="['text-sm font-semibold tabular-nums', i.cor]">{{ i.v }}</dd>
+                <dd v-if="i.dica" class="text-micro text-ink-subtle leading-tight">{{ i.dica }}</dd>
+              </div>
+            </dl>
+          </div>
+        </Panel>
+
         <!-- Regras da ficha -->
         <Panel v-if="regrasFicha.length" :padded="false">
           <div class="divide-y divide-line">
@@ -361,7 +386,7 @@ function aoSalvarConfig() {
           </div>
         </div>
 
-        <DataTable :columns="COLUNAS" :rows="ordenadas" row-key="id" :loading="carregando" manual-sort expandable
+        <DataTable :columns="COLUNAS" :rows="ordenadas" row-key="id" :loading="carregando" manual-sort clickable @row-click="abrirDetalhe"
           v-model:sort-by="ordem.by" v-model:sort-dir="ordem.dir"
           empty-title="Nenhuma reserva neste recorte" empty-text="Limpe a busca ou clique de novo no cartão do topo.">
           <template #cell-nome="{ row }">
@@ -409,6 +434,9 @@ function aoSalvarConfig() {
               :class="['tabular-nums font-semibold', row.nivelRenda === 'alto' ? 'text-data-neg' : row.nivelRenda === 'atencao' ? 'text-data-warn' : 'text-ink']">
               {{ pct(row.pctRenda, row.nivelRenda === 'atencao' ? 1 : 0) }}
             </span>
+            <p v-if="row.fiadores?.length" class="text-micro text-accent" :title="row.fiadores.map((f) => `${f.tipo}: ${f.nome}`).join(' · ')">
+              <i class="fas fa-user-shield mr-0.5"></i>com fiador
+            </p>
             <span v-else class="text-ink-subtle">-</span>
           </template>
           <template #cell-recebido="{ row }">
@@ -422,60 +450,16 @@ function aoSalvarConfig() {
           </template>
           <template #cell-corretor="{ row }"><span class="text-xs text-ink-muted">{{ row.corretor || '-' }}</span></template>
 
-          <template #expanded="{ row }">
-            <div class="grid gap-4 lg:grid-cols-3 text-sm">
-              <div class="space-y-1.5">
-                <p class="text-micro uppercase tracking-wide text-ink-subtle">Condição no CV</p>
-                <p>Venda <b class="tabular-nums">{{ brl(row.venda) }}</b> · financiamento <b class="tabular-nums">{{ brl(row.financiamento) }}</b></p>
-                <p>FGTS <b class="tabular-nums">{{ brl(row.fgts) }}</b> · federal <b class="tabular-nums">{{ brl(row.federal) }}</b> · estadual <b class="tabular-nums">{{ brl(row.estadual) }}</b></p>
-                <p v-if="row.desconto">Desconto construtora <b class="tabular-nums">{{ brl(row.desconto) }}</b></p>
-                <p>Ato <b class="tabular-nums">{{ brl(row.ato) }}</b> + parcelas <b class="tabular-nums">{{ brl(row.parcelas) }}</b>
-                  <span v-if="row.outrasParcelas" class="text-ink-muted">(inclui {{ brl(row.outrasParcelas) }} de entrada, anuais, semestrais ou chaves)</span></p>
-                <p>Renda {{ row.renda ? brl(row.renda) : 'não informada' }}<span v-if="row.rendaFonte === 'reserva'" class="text-ink-muted"> (da reserva; o pré-cadastro não tem)</span>
-                  · limite {{ fmtNum(row.limiteRendaPct, 0) }}%</p>
-                <p v-if="row.seriesNaoClassificadas.length" class="text-data-warn">
-                  Série sem grupo, fora da conta: {{ row.seriesNaoClassificadas.map((s) => `${s.serie} (${s.idserie}) ${brl(s.total)}`).join(', ') }}
-                </p>
-                <p class="text-ink-muted">Reservada em {{ fmtDate(row.dataReserva) }} · {{ row.modulo || row.etapa || '-' }} · {{ row.imobiliaria || '-' }}</p>
-              </div>
-
-              <div class="space-y-1.5">
-                <p class="text-micro uppercase tracking-wide text-ink-subtle">Recebido</p>
-                <template v-if="recebido(row)">
-                  <p v-for="(v, k) in row.recebidoPorCondicao" :key="k">Condição {{ k }} <b class="tabular-nums">{{ brl(v) }}</b></p>
-                  <p class="text-ink-muted">Último recebimento {{ fmtDate(row.ultimoRecebimento) }}<span v-if="row.casouPor === 'nome'"> · casado pelo nome do titular</span><span v-else-if="row.casouPor?.includes('unidade')"> · cliente com mais de uma unidade, separado pela unidade</span></p>
-                </template>
-                <p v-else class="text-ink-muted">Nada recebido.</p>
-                <p v-for="p in row.pendencias" :key="p" class="text-data-warn"><i class="fas fa-clock mr-1"></i>{{ p }}</p>
-
-                <p class="text-micro uppercase tracking-wide text-ink-subtle pt-2">Regra da ficha</p>
-                <p v-if="!row.fichaUsada" class="text-ink-muted">Não conferida: reserva anterior à primeira ficha do empreendimento, ou empreendimento sem ficha.</p>
-                <p v-else-if="!row.foraDaRegra.length" class="text-data-pos"><i class="fas fa-check mr-1"></i>Dentro da regra (ficha de {{ mesAno(row.fichaUsada.mes) }}).</p>
-                <p v-for="f in row.foraDaRegra" :key="f.codigo" class="text-data-warn"><i class="fas fa-triangle-exclamation mr-1"></i>{{ f.texto }}</p>
-              </div>
-
-              <div class="space-y-2">
-                <p class="text-micro uppercase tracking-wide text-ink-subtle">Observação</p>
-                <template v-if="can('annotate')">
-                  <textarea v-model="rascunho(row).texto" rows="3" :class="[fieldCls, 'w-full resize-y']"
-                    placeholder="Ex.: tem proposta para quitação, que será ajustada antes da assinatura do contrato CEF."></textarea>
-                  <div class="flex items-center gap-2">
-                    <div class="w-48">
-                      <Select v-model="rascunho(row).tom" size="sm" :options="TONS_NOTA" />
-                    </div>
-                    <Button size="sm" :loading="rascunho(row).salvando" @click="salvarNota(row)">Salvar</Button>
-                  </div>
-                </template>
-                <p v-else-if="row.nota" class="whitespace-pre-line">{{ row.nota.texto }}</p>
-                <p v-else class="text-ink-muted">Sem observação.</p>
-                <p v-if="row.nota?.por" class="text-micro text-ink-subtle">Por {{ row.nota.por }} em {{ fmtDateTime(row.nota.em) }}</p>
-              </div>
-            </div>
+          <template #actions="{ row }">
+            <IconButton icon="fas fa-arrow-up-right-from-square" size="sm" label="Abrir o financeiro da reserva no CV"
+              title="Abrir o financeiro da reserva no CV" @click.stop="abrirCv(row)" />
           </template>
         </DataTable>
       </template>
     </template>
 
+    <DetalheModal v-model:open="detalheAberto" :linha="detalheLinha" :pode-anotar="can('annotate')"
+      @nota-salva="aoSalvarNota" />
     <ConfigModal v-if="can('configure')" v-model:open="configAberta" @salvo="aoSalvarConfig" />
   </div>
 </template>
