@@ -207,6 +207,30 @@ export const importAdimplencia = async (idempreendimento, { csv, vigencia_de, ob
 };
 
 // ── Espelho de vendas (torres x andares x finais) ───────────────────────────
+// "Atualizar do CV": o back devolve as URLs de exportação do CV, que o front
+// abre no navegador de quem clicou (o servidor não loga no CV: CAPTCHA). O CV
+// manda a planilha por e-mail e o Office aplica sozinho; o status diz quando.
+export const criarBuscaAdimplencia = async ({ ids = null, todos = false } = {}) => {
+    const response = await fetch(`${API_URL}/cv/adimplencia/buscas`, {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify({ ids, todos }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao iniciar a busca no CV');
+    }
+    return response.json();
+};
+
+// `id` = número da busca, ou 'ultima' (a última que esta pessoa pediu).
+export const statusBuscaAdimplencia = async (id) => {
+    const response = await fetch(`${API_URL}/cv/adimplencia/buscas/${id}`, { headers: authHeaders() });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao ler o andamento da busca');
+    }
+    return response.json();
+};
+
 export const getMirror = async (idempreendimento) => {
     const response = await fetch(`${API_URL}/cv/empreendimento/${idempreendimento}/espelho`, {
         method: 'GET', headers: authHeaders(),

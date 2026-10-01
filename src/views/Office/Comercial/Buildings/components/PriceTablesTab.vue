@@ -15,8 +15,9 @@
  * chave "Descontar adimplência" mostra o cheio do CV. Tabela encerrada usa a
  * cópia congelada quando foi lida; vigente usa o cadastro de hoje.
  */
-import { ref, computed, watch, onMounted } from 'vue';
-import { getPriceTables, getPriceTable, syncPriceTables } from '@/utils/Building/apiBuilding';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { getPriceTables, getPriceTable, syncPriceTables, criarBuscaAdimplencia, statusBuscaAdimplencia } from '@/utils/Building/apiBuilding';
+import Dropdown from '@/components/UI/Dropdown.vue';
 import AdimplenciaModal from './AdimplenciaModal.vue';
 
 import DataTable from '@/components/UI/DataTable.vue';
@@ -251,7 +252,92 @@ const sincronizar = async () => {
   }
 };
 
-onMounted(carregarLista);
+// ── "Atualizar do CV": adimplência premiada sem importar arquivo ─────────
+// O servidor não entra no CV (login com CAPTCHA). Quem pede é a pessoa: a
+// janela abre a exportação de unidades do CV com a sessão dela, o CV manda a
+// planilha por e-mail em alguns minutos e o Office aplica sozinho. Aqui só se
+// abre a janela e se acompanha a busca.
+const buscaCv = ref(null);          // status vindo do back
+const buscaErro = ref('');
+const buscando = ref(false);      // abrindo a janela / pedindo ao back
+let pollBusca = null;
+const opcoesBusca = [
+  { todos: false, i: 'fas fa-building', t: 'Este empreendimento', d: 'Pede ao CV só as unidades deste' },
+  { todos: true, i: 'fas fa-city', t: 'Todos os empreendimentos', d: 'Pede ao CV um por um; demora mais' },
+];
+const ESPERA_ENTRE_PEDIDOS_MS = 3500; // dá tempo do CV registrar um pedido antes do próximo
+
+const pararPoll = () => { if (pollBusca) { clearInterval(pollBusca); pollBusca = null; } };
+const acompanhar = (id) => {
+  pararPoll();
+  const ler = async () => {
+    try {
+      const antes = buscaCv.value?.atualizados ?? 0;
+      buscaCv.value = await statusBuscaAdimplencia(id);
+      if (buscaCv.value && buscaCv.value.atualizados !== antes) await aposGravarAdimplencia();
+      if (buscaCv.value?.status !== 'aguardando') pararPoll();
+    } catch (e) { buscaErro.value = e.message; pararPoll(); }
+  };
+  ler();
+  pollBusca = setInterval(ler, 20000);
+};
+
+const atualizarDoCv = async (todos) => {
+  buscaErro.value = '';
+  // A janela tem que nascer no clique, senão o bloqueador de pop-up a mata.
+  const janela = window.open('about:blank', 'cv-exportacao', 'width=640,height=720');
+  buscando.value = true;
+  try {
+    const b = await criarBuscaAdimplencia(todos ? { todos: true } : { ids: [props.idempreendimento] });
+    acompanhar(b.id);
+    if (!janela) {
+      buscaErro.value = 'O navegador bloqueou a janela do CV. Libere pop-ups para o Office e clique de novo.';
+      return;
+    }
+    for (let i = 0; i < b.urls.length; i++) {
+      if (janela.closed) { buscaErro.value = 'A janela do CV foi fechada antes do fim: os empreendimentos que faltaram não foram pedidos.'; break; }
+      janela.location.href = b.urls[i].url;
+      if (i < b.urls.length - 1) await new Promise((r) => setTimeout(r, ESPERA_ENTRE_PEDIDOS_MS));
+    }
+  } catch (e) {
+    buscaErro.value = e.message;
+    janela?.close();
+  } finally {
+    buscando.value = false;
+  }
+};
+
+const resumoBusca = computed(() => {
+  const b = buscaCv.value;
+  if (!b) return null;
+  const hora = (d) => (d ? new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '');
+  if (b.status === 'aguardando') {
+    return { tom: 'text-ink-muted', icone: 'fas fa-circle-notch fa-spin',
+      texto: `Buscando a adimplência no CV: ${b.atualizados} de ${b.total} atualizado(s). O CV manda a planilha por e-mail em alguns minutos e o Office aplica sozinho (espera até ${hora(b.prazo_ate)}).` };
+  }
+  const falhas = b.itens.filter((i) => i.status !== 'atualizado');
+  const mudou = b.itens.reduce((s, i) => s + (i.gravadas || 0) + (i.encerradas || 0), 0);
+  return {
+    tom: falhas.length ? 'text-data-warn' : 'text-data-pos',
+    icone: falhas.length ? 'fas fa-triangle-exclamation' : 'fas fa-check',
+    texto: `Busca no CV de ${hora(b.solicitado_em)}: ${b.atualizados} de ${b.total} atualizado(s), ${mudou} unidade(s) mudaram.`
+      + (falhas.length ? ` Faltou: ${falhas.map((f) => `${f.nome} (${f.msg || f.status})`).join('; ')}` : ''),
+  };
+});
+
+onMounted(async () => {
+  await carregarLista();
+  // Busca em andamento (ou das últimas horas) desta pessoa volta a aparecer.
+  if (!props.canConfigure) return;
+  try {
+    const b = await statusBuscaAdimplencia('ultima');
+    if (b && (b.status === 'aguardando' || Date.now() - new Date(b.solicitado_em).getTime() < 6 * 3600 * 1000)) {
+      buscaCv.value = b;
+      if (b.status === 'aguardando') acompanhar(b.id);
+    }
+  } catch { /* sem busca: nada a mostrar */ }
+});
+onBeforeUnmount(pararPoll);
 </script>
 
 <template>
@@ -385,6 +471,28 @@ onMounted(carregarLista);
               v-tippy="'Adimplência premiada (Desconto Construtora) por unidade. O CV não manda esse campo; o cadastro é aqui e vale para as tabelas.'">
               <span class="hidden sm:inline">Adimplência premiada</span>
             </Button>
+            <Dropdown v-if="canConfigure" align="right" :offset="8">
+              <template #trigger>
+                <Button variant="secondary" size="sm" :loading="buscando || buscaCv?.status === 'aguardando'" icon="fas fa-cloud-arrow-down"
+                  v-tippy="'Busca a adimplência premiada no CV e atualiza aqui, sem importar arquivo.'">
+                  <span class="hidden sm:inline">{{ buscaCv?.status === 'aguardando' ? 'Buscando no CV...' : 'Atualizar do CV' }}</span>
+                </Button>
+              </template>
+              <div class="w-72 bg-surface-overlay border border-line rounded-xl shadow-overlay overflow-hidden py-1">
+                <button v-for="opt in opcoesBusca" :key="opt.t"
+                  type="button" data-dropdown-item @click="atualizarDoCv(opt.todos)"
+                  class="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-surface-sunken transition-colors group">
+                  <i :class="opt.i" class="mt-0.5 w-4 text-ink-muted group-hover:text-accent transition-colors"></i>
+                  <span class="min-w-0">
+                    <span class="block text-sm text-ink group-hover:text-accent transition-colors">{{ opt.t }}</span>
+                    <span class="block text-micro text-ink-subtle">{{ opt.d }}</span>
+                  </span>
+                </button>
+                <p class="px-3 pt-2 pb-2.5 text-micro text-ink-subtle border-t border-line mt-1">
+                  Abre uma janela do CV com o seu login. Se o CV pedir para entrar, entre e clique de novo.
+                </p>
+              </div>
+            </Dropdown>
             <Button v-if="canSync" variant="secondary" size="sm" :loading="syncing"
               :icon="syncMsg?.ok ? 'fas fa-check' : 'fas fa-rotate'" @click="sincronizar"
               v-tippy="'Lê agora as tabelas deste empreendimento no CV. O robô faz isso todo dia às 9h.'">
@@ -394,6 +502,10 @@ onMounted(carregarLista);
         </template>
 
         <div class="p-3 sm:p-4 space-y-3">
+        <p v-if="resumoBusca" class="text-xs" :class="resumoBusca.tom">
+          <i :class="resumoBusca.icone"></i> {{ resumoBusca.texto }}
+        </p>
+        <p v-if="buscaErro" class="text-xs text-data-neg"><i class="fas fa-triangle-exclamation"></i> {{ buscaErro }}</p>
         <p v-if="syncMsg" class="text-xs" :class="syncMsg.ok ? 'text-data-pos' : 'text-data-neg'">
           <i class="fas" :class="syncMsg.ok ? 'fa-check' : 'fa-triangle-exclamation'"></i> {{ syncMsg.text }}
         </p>
