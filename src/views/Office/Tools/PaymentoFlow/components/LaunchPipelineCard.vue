@@ -24,6 +24,8 @@ const emit = defineEmits([
 ]);
 
 const semAditivo = computed(() => props.receita?.contrato === 'existente');
+// Título direto (ex.: Reembolso RB): não tem contrato, aditivo nem medição.
+const semContrato = computed(() => props.receita?.contrato === 'nenhum');
 // Portão de regras recusou (dados, credor ou contrato): corrige e processa de novo.
 const gateBlocked = computed(() => ['gate_blocked', 'contract_rejected'].includes(stage.value));
 const awaitingDocument = computed(() => stage.value === 'awaiting_document');
@@ -287,6 +289,11 @@ const cardBorderClass = computed(() => {
           </p>
           <p class="break-words leading-relaxed">{{ launch.siengeContractError }}</p>
           <p class="pt-1 text-ink-muted">Nada foi feito no Sienge. Corrija o lançamento (ou a regra do tipo) e clique em Processar.</p>
+        </div>
+
+        <div v-else-if="semContrato" class="rounded-lg bg-surface-sunken border border-line px-3 py-2 text-ink-muted flex items-start gap-2">
+          <i class="fas fa-bolt text-accent mt-0.5"></i>
+          <span>Este tipo não usa contrato nem medição: depois do fornecedor, o título {{ receita?.titulo?.documento || '' }} é criado direto no Sienge{{ receita?.titulo?.pagamento === 'pix' ? ', com PIX na chave CPF do credor' : '' }}.</span>
         </div>
 
         <div v-else-if="stage === 'awaiting_balance_confirmation'"
