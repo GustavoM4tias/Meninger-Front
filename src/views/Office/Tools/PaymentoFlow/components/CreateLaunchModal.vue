@@ -301,7 +301,7 @@ const isNfe = computed(() => String(form.value.nfType || '').toUpperCase() === '
 const boletoRequired = computed(() => {
     const r = selectedReceita.value;
     if (!r?.configurada) return true;
-    return r.titulo?.pagamento !== 'transferencia' && !r.medicaoAntesDoDocumento;
+    return r.titulo?.pagamento === 'boleto' && !r.medicaoAntesDoDocumento;
 });
 
 // ── Código do documento do tipo selecionado (read-only) ───────────────────────
@@ -1015,7 +1015,7 @@ onMounted(async () => {
                         <div>
                             <label class="field-label">
                                 Vencimento
-                                <span class="text-ink-subtle font-normal">(boleto)</span>
+                                <span class="text-ink-subtle font-normal">({{ selectedReceita?.titulo?.pagamento === 'pix' ? 'PIX' : selectedReceita?.titulo?.pagamento === 'transferencia' ? 'transferência' : 'boleto' }})</span>
                             </label>
                             <input v-model="form.boletoDueDate" type="date" class="input-field !pb-[.75rem]" />
                         </div>
