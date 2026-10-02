@@ -18,6 +18,7 @@ import { useCan } from '@/composables/useCan';
 
 import PageHelp from '@/components/UI/PageHelp.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
+import Select from '@/components/UI/Select.vue';
 import IconButton from '@/components/UI/IconButton.vue';
 import Input from '@/components/UI/Input.vue';
 import Button from '@/components/UI/Button.vue';
@@ -50,6 +51,18 @@ const empSelecionado = computed({
   set: (v) => { idemp.value = Array.isArray(v) && v.length ? String(v[v.length - 1]) : ''; },
 });
 
+// Módulo (etapa do CV): recorta reservas, regras da ficha e estoque. Vazio = todos.
+const idetapa = ref(route.query.modulo ? String(route.query.modulo) : '');
+const opcoesModulo = computed(() => [
+  { value: 'todos', label: 'Todos os módulos' },
+  ...(dados.value?.modulos || []).map((m) => ({ value: String(m.idetapa), label: `${m.nome} (${m.reservas})` })),
+]);
+// O Select do Office trata '' como "nada escolhido": o "todos" precisa de sentinela.
+const moduloSelecionado = computed({
+  get: () => idetapa.value || 'todos',
+  set: (v) => { idetapa.value = v && v !== 'todos' ? String(v) : ''; },
+});
+
 async function carregarEmpreendimentos() {
   try {
     const r = await requestWithAuth('/recurso-proprio/empreendimentos');
@@ -69,7 +82,8 @@ async function carregar() {
   carregando.value = true;
   erro.value = '';
   try {
-    dados.value = await requestWithAuth(`/recurso-proprio?idempreendimento=${encodeURIComponent(idemp.value)}`);
+    const qs = `idempreendimento=${encodeURIComponent(idemp.value)}${idetapa.value ? `&idetapa=${encodeURIComponent(idetapa.value)}` : ''}`;
+    dados.value = await requestWithAuth(`/recurso-proprio?${qs}`);
   } catch (e) {
     erro.value = e.message || 'Não foi possível montar o relatório.';
     dados.value = null;
@@ -78,10 +92,23 @@ async function carregar() {
   }
 }
 
-watch(idemp, (v) => {
+function sincronizarUrl() {
+  router.replace({ query: { ...route.query, empreendimento: idemp.value || undefined, modulo: idetapa.value || undefined } });
+}
+
+watch(idemp, () => {
   filtro.value = 'todos';
   busca.value = '';
-  router.replace({ query: { ...route.query, empreendimento: v || undefined } });
+  // Trocou de empreendimento: o módulo do anterior não existe neste. Zerar o
+  // módulo dispara o watch dele, que recarrega - aqui não, senão busca 2 vezes.
+  if (idetapa.value) { idetapa.value = ''; return; }
+  sincronizarUrl();
+  carregar();
+});
+
+watch(idetapa, () => {
+  filtro.value = 'todos';
+  sincronizarUrl();
   carregar();
 });
 
@@ -123,6 +150,9 @@ const kpis = computed(() => {
   const rp = soma(L, (l) => l.recursoProprio);
   const rec = soma(L, recebido);
   const lim = dados.value?.limites;
+  // Sem limite de renda na ficha (ex.: Adhara 30/70) não existe régua: o
+  // cartão some em vez de comparar com um número que a ficha não diz.
+  const temLimite = lim?.rendaPct != null || L.some((l) => l.limiteRendaPct != null);
   return [
     { key: 'todos', label: 'Recurso próprio', raw: rp, format: brl0, icon: 'fas fa-wallet', tone: 'accent',
       hint: `${brl0(soma(L, (l) => l.ato))} de ato + ${brl0(soma(L, (l) => l.parcelas))} em parcelas`,
@@ -130,13 +160,13 @@ const kpis = computed(() => {
     { key: 'recebido', label: 'Recebido', raw: rec, format: brl0, icon: 'fas fa-hand-holding-dollar', tone: 'pos',
       hint: `${rp ? pct(rec / rp, 1) : '-'} do recurso próprio · falta ${brl0(Math.max(0, rp - rec))}`,
       tooltip: 'Ato e mensais recebidos no Sienge, mais o que foi pago no Office e ainda não lançado' },
-    { key: 'renda', label: `Acima de ${fmtNum(lim?.rendaPct ?? 30, 0)}% da renda`, raw: c.acima, icon: 'fas fa-scale-unbalanced',
+    ...(temLimite ? [{ key: 'renda', label: `Acima de ${fmtNum(lim?.rendaPct ?? 30, 0)}% da renda`, raw: c.acima, icon: 'fas fa-scale-unbalanced',
       tone: c.acima ? 'neg' : 'neutral', hint: `${c.atencao} pouco acima · ${c.alto} bem acima${c.comFiador ? ` · ${c.comFiador} com fiador` : ''}`,
-      tooltip: 'Clique para ver só esses clientes' },
+      tooltip: 'Clique para ver só esses clientes' }] : []),
     { key: 'semrec', label: 'Nada recebido', raw: c.semRec, icon: 'fas fa-circle-exclamation', tone: c.semRec ? 'warn' : 'neutral',
       hint: 'sem ato nem mensal recebidos', tooltip: 'Clique para ver só essas reservas' },
     { key: 'regra', label: 'Fora da regra da ficha', raw: c.regra, icon: 'fas fa-clipboard-check', tone: c.regra ? 'warn' : 'neutral',
-      hint: dados.value?.ficha ? '% da renda, ato, parcela mínima ou nº de parcelas' : 'sem ficha comercial', tooltip: 'Clique para ver só essas reservas' },
+      hint: dados.value?.ficha ? (temLimite ? '% da renda, ato, parcela mínima ou nº de parcelas' : 'ato, parcela mínima ou nº de parcelas') : 'sem ficha comercial', tooltip: 'Clique para ver só essas reservas' },
   ];
 });
 
@@ -294,7 +324,8 @@ function aoSalvarConfig() {
         ]"
         :tips="[
           'Os cartões do topo filtram a tabela. Clique de novo para voltar a ver todas.',
-          '% da renda: amarelo passou do limite até a tolerância; vermelho passou disso. O limite vem do texto da Regra do RP da ficha (ex.: “30% da renda”).',
+          '% da renda: amarelo passou do limite até a tolerância; vermelho passou disso. O limite vem SÓ do texto da Regra do RP da ficha (ex.: “30% da renda”); sem ele, a % aparece sem cor.',
+          'Empreendimento com mais de um módulo: escolha o módulo ao lado para ver as regras, o estoque e as reservas só dele.',
           'Só são conferidas pela ficha as reservas feitas depois que o empreendimento passou a ter ficha comercial.',
           'Fiador: reserva acima do limite da renda com fiador registrado no CV não conta como fora da regra e aparece marcada “com fiador”. O CV não traz a renda do fiador, então ela precisa ser conferida.',
           'Recebido do Sienge conta só dinheiro que entrou (Recebimento e Adiantamento). Reparcelamento, promoção e abatimento de adiantamento não contam.',
@@ -308,6 +339,9 @@ function aoSalvarConfig() {
       <div class="w-full sm:w-96">
         <MultiSelector v-model="empSelecionado" single :options="opcoesEmp" :page-size="200"
           label="Empreendimento" placeholder="Buscar empreendimento..." />
+      </div>
+      <div v-if="idemp && (dados?.modulos?.length || 0) > 1" class="w-full sm:w-64">
+        <Select v-model="moduloSelecionado" :options="opcoesModulo" label="Módulo" />
       </div>
       <Button v-if="idemp" variant="secondary" icon="fas fa-rotate-right" :loading="carregando" @click="carregar">Atualizar</Button>
     </div>
@@ -335,7 +369,8 @@ function aoSalvarConfig() {
             </Badge>
             <router-link :to="`/comercial/conditions/${dados.ficha.id}`" class="text-accent hover:underline ml-1">abrir ficha</router-link>
           </span>
-          <span v-else class="text-data-warn"><i class="fas fa-triangle-exclamation mr-1"></i>Sem ficha comercial: nada é conferido, e o limite da renda é o configurado ({{ fmtNum(dados.limites.rendaPct, 0) }}%).</span>
+          <span v-else class="text-data-warn"><i class="fas fa-triangle-exclamation mr-1"></i>Sem ficha comercial: nada é conferido e não há limite de renda.</span>
+          <span v-if="dados.ficha && dados.limites.rendaPct == null" class="text-ink-muted"><i class="fas fa-circle-info mr-1"></i>A ficha não tem limite de renda{{ dados.idetapa ? ' para este módulo' : '' }}: a % da renda aparece sem cor.</span>
           <span>
             <i class="fas fa-database mr-1"></i>
             <template v-if="dados.recebido.consultadoEm">Recebido do Sienge consultado {{ fmtDateTime(dados.recebido.consultadoEm) }}</template>
@@ -362,7 +397,13 @@ function aoSalvarConfig() {
         </Panel>
 
         <!-- Regras da ficha -->
-        <Panel v-if="regrasFicha.length" :padded="false">
+        <p v-if="dados.ficha && !regrasFicha.length && dados.idetapa" class="text-xs text-ink-muted">
+          <i class="fas fa-circle-info mr-1"></i>A ficha de {{ mesAno(dados.ficha.mes) }} não tem este módulo: as reservas dele não são conferidas.
+        </p>
+        <p v-else-if="regrasFicha.length > 1" class="text-xs text-ink-muted">
+          <i class="fas fa-circle-info mr-1"></i>Escolha o módulo ao lado do empreendimento para ver as regras, o estoque e as reservas de um só.
+        </p>
+        <Panel v-if="regrasFicha.length === 1" :padded="false">
           <div class="divide-y divide-line">
             <div v-for="m in regrasFicha" :key="m.nome" class="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6">
               <p class="text-xs font-semibold uppercase tracking-wide text-ink-muted lg:w-40 shrink-0">{{ m.nome }}</p>

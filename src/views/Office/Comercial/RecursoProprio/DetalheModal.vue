@@ -121,7 +121,7 @@ async function salvarNota() {
         <div class="rounded-xl border border-line bg-surface-sunken/40 p-3">
           <p class="text-micro uppercase tracking-wide text-ink-subtle">% da renda</p>
           <p :class="['text-lg font-bold tabular-nums', corRenda]">{{ l.pctRenda ? pct(l.pctRenda) : '-' }}</p>
-          <p class="text-micro text-ink-subtle tabular-nums">renda {{ l.renda ? brl(l.renda) : 'não informada' }} · limite {{ fmtNum(l.limiteRendaPct, 0) }}%</p>
+          <p class="text-micro text-ink-subtle tabular-nums">renda {{ l.renda ? brl(l.renda) : 'não informada' }} · {{ l.limiteRendaPct != null ? `limite ${fmtNum(l.limiteRendaPct, 0)}%` : 'ficha sem limite' }}</p>
         </div>
         <div class="rounded-xl border border-line bg-surface-sunken/40 p-3">
           <p class="text-micro uppercase tracking-wide text-ink-subtle">Recebido</p>

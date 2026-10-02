@@ -53,7 +53,6 @@ async function carregar() {
     grupoDe.value = g;
     form.value = {
       situacoes_excluidas: lista(c.situacoes_excluidas),
-      limite_renda_pct: c.limite_renda_pct,
       tolerancia_renda_pct: c.tolerancia_renda_pct,
       recebido_folga_dias: c.recebido_folga_dias,
       sienge_documentos: lista(c.sienge_documentos),
@@ -84,7 +83,6 @@ async function salvar() {
       body: JSON.stringify({
         series,
         situacoes_excluidas: partes(f.situacoes_excluidas),
-        limite_renda_pct: Number(String(f.limite_renda_pct).replace(',', '.')),
         tolerancia_renda_pct: Number(String(f.tolerancia_renda_pct).replace(',', '.')),
         recebido_folga_dias: Number(f.recebido_folga_dias),
         sienge_documentos: partes(f.sienge_documentos),
@@ -133,10 +131,8 @@ async function salvar() {
           <Input v-model="form.situacoes_excluidas" label="Situações da reserva que ficam de fora"
             hint="Separadas por vírgula, como aparecem no CV. Ex.: Cancelada, Distrato, Vencida" />
         </div>
-        <Input v-model="form.limite_renda_pct" label="Limite da parcela sobre a renda (%)"
-          hint="Só vale quando a ficha comercial não diz. A ficha diz no texto da Regra do RP (ex.: “30% da renda”)." />
-        <Input v-model="form.tolerancia_renda_pct" label="Tolerância (pontos percentuais)"
-          hint="Até o limite + tolerância a linha fica amarela; acima, vermelha." />
+        <Input v-model="form.tolerancia_renda_pct" label="Tolerância sobre o limite da renda (pontos percentuais)"
+          hint="O limite vem da ficha (Regra do RP). Até o limite + tolerância a linha fica amarela; acima, vermelha." />
       </section>
 
       <section class="space-y-2">
