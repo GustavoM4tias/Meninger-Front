@@ -150,6 +150,95 @@
             </div>
           </div>
 
+          <!-- Tabelas de Preço — sempre visível -->
+          <div class="info-card mb-4">
+            <div class="info-card-header">
+              <i class="fas fa-tag text-accent"></i>
+              Tabelas de Preço
+              <span v-if="!isPrinting" class="ml-auto normal-case tracking-normal font-normal">
+                <Switch v-model="conditionsStore.descontarAdimplencia" size="sm" label="Descontar adimplência premiada" />
+              </span>
+            </div>
+            <div v-if="modSelectedPriceTables(mod).length"> 
+              <div class="space-y-4 flex flex-col gap-4 p-4"> <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela"
+                  class="price-table-row flex-col items-start gap-3 p-4 bg-surface-sunken/40 rounded-xl border border-line">
+                  
+                  <div class="flex items-center justify-between w-full gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <i class="fas fa-table text-accent text-xs flex-shrink-0"></i>
+                      <span class="text-sm text-ink font-bold truncate">{{ t.nome }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                      <span v-if="t.vigente" class="badge-green">vigente</span>
+                      <span class="text-xs text-ink-subtle">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
+                    </div>
+                  </div>
+
+                  <p v-if="!t.unit_count" class="text-xs text-ink-subtle italic">Esta tabela não tem preço para as unidades deste módulo.</p>
+                  <div v-if="t.unit_count > 0" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap border-b border-line/50 pb-3 w-full">
+                    <span><i class="fas fa-home mr-1"></i><strong>{{ t.unit_count }}</strong> unidades</span>
+                    <span><i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(t.price_min) }}</strong> até <strong>{{ formatCurrencyShort(t.price_max) }}</strong></span>
+                    <span><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(t.price_avg) }}</strong><template v-if="t.descontada"> (cheio {{ formatCurrencyShort(t.price_cheio_avg) }})</template></span>
+                    <span v-if="t.adimplencia_n"><i class="fas fa-award mr-1"></i>Adimplência <strong>{{ t.adimplencia_min === t.adimplencia_max ? formatCurrencyShort(t.adimplencia_avg) : `${formatCurrencyShort(t.adimplencia_min)} a ${formatCurrencyShort(t.adimplencia_max)}` }}</strong> ({{ t.adimplencia_n }} unid.) · Líquido médio <strong>{{ formatCurrencyShort(t.liquido_avg) }}</strong></span>
+                    <span v-else class="text-ink-subtle"><i class="fas fa-award mr-1"></i>Sem adimplência cadastrada</span>
+                    <template v-if="tableM2Stats(mod, t)">
+                      <span class="border-l border-line pl-4"><i class="fas fa-ruler-combined mr-1"></i>m²: Mín <strong>{{ formatM2(tableM2Stats(mod, t).min) }}</strong> · Máx <strong>{{ formatM2(tableM2Stats(mod, t).max) }}</strong> · Média <strong>{{ formatM2(tableM2Stats(mod, t).avg) }}</strong></span>
+                    </template>
+                  </div>
+
+                  <div v-if="t.forma" class="bg-accent/10  p-2 rounded-lg w-full">
+                    <p class="text-micro text-accent font-medium italic">
+                      <i class="fas fa-info-circle mr-1"></i>{{ t.forma }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabelas manuais -->
+            <div v-if="(mod.manual_price_tables ?? []).length" class="p-4 space-y-3" :class="modSelectedPriceTables(mod).length ? 'pt-0' : ''">
+              <p class="text-micro font-bold text-data-warn uppercase tracking-wider">Tabelas Manuais</p>
+              <div v-for="(mt, mi) in mod.manual_price_tables" :key="mi"
+                class="price-table-row flex-col items-start gap-2 p-4 bg-surface-sunken/40 rounded-xl border border-line">
+                <div class="flex items-center justify-between w-full gap-2">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <i class="fas fa-file-invoice-dollar text-data-warn text-xs flex-shrink-0"></i>
+                    <span class="text-sm text-ink font-bold truncate">{{ mt.name || '(sem nome)' }}</span>
+                  </div>
+                  <span v-if="mt.validity_from || mt.validity_to" class="text-xs text-ink-subtle flex-shrink-0">
+                    {{ formatDate(mt.validity_from) }} → {{ formatDate(mt.validity_to) }}
+                  </span>
+                </div>
+                <div v-if="manualTableStats(mt)" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap w-full">
+                  <span><i class="fas fa-home mr-1"></i><strong>{{ manualTableStats(mt).filled }}</strong>/{{ manualTableStats(mt).total }} unidades</span>
+                  <span v-if="manualTableStats(mt).min != null">
+                    <i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(manualTableStats(mt).min) }}</strong> até <strong>{{ formatCurrencyShort(manualTableStats(mt).max) }}</strong>
+                  </span>
+                  <span v-if="manualTableStats(mt).avg != null"><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(manualTableStats(mt).avg) }}</strong></span>
+                </div>
+                <div v-if="mt.note" class="note-block w-full">
+                  <span class="note-label">Observação da Tabela</span>
+                  <p>{{ mt.note }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Premissa de preço / observação -->
+            <div v-if="mod.price_premise_note" class="p-4 pt-0">
+              <div class="note-block">
+                <span class="note-label">Premissa de Preço / Observação</span>
+                <p>{{ mod.price_premise_note }}</p>
+              </div>
+            </div>
+
+            <!-- Vazio -->
+            <div v-if="!modSelectedPriceTables(mod).length && !(mod.manual_price_tables ?? []).length && !mod.price_premise_note"
+              class="empty-info-row">
+              <i class="fas fa-tag text-ink-subtle text-sm"></i>
+              <span>Nenhuma tabela de preço selecionada neste módulo</span>
+            </div>
+          </div>
+
           <!-- ── Produto ──────────────────────────────────────────────────── -->
           <div class="info-card mb-4">
             <div class="info-card-header">
@@ -567,95 +656,6 @@
               </div>
             </div>
           </div>
-
-            <!-- Tabelas de Preço — sempre visível -->
-            <div class="info-card mb-4">
-              <div class="info-card-header">
-                <i class="fas fa-tag text-accent"></i>
-                Tabelas de Preço
-                <span v-if="!isPrinting" class="ml-auto normal-case tracking-normal font-normal">
-                  <Switch v-model="conditionsStore.descontarAdimplencia" size="sm" label="Descontar adimplência premiada" />
-                </span>
-              </div>
-              <div v-if="modSelectedPriceTables(mod).length"> 
-                <div class="space-y-4 flex flex-col gap-4 p-4"> <div v-for="t in modSelectedPriceTables(mod)" :key="t.idtabela"
-                    class="price-table-row flex-col items-start gap-3 p-4 bg-surface-sunken/40 rounded-xl border border-line">
-                    
-                    <div class="flex items-center justify-between w-full gap-2">
-                      <div class="flex items-center gap-2 min-w-0">
-                        <i class="fas fa-table text-accent text-xs flex-shrink-0"></i>
-                        <span class="text-sm text-ink font-bold truncate">{{ t.nome }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 flex-shrink-0">
-                        <span v-if="t.vigente" class="badge-green">vigente</span>
-                        <span class="text-xs text-ink-subtle">{{ formatDate(t.data_vigencia_de) }} → {{ formatDate(t.data_vigencia_ate) }}</span>
-                      </div>
-                    </div>
-
-                    <p v-if="!t.unit_count" class="text-xs text-ink-subtle italic">Esta tabela não tem preço para as unidades deste módulo.</p>
-                    <div v-if="t.unit_count > 0" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap border-b border-line/50 pb-3 w-full">
-                      <span><i class="fas fa-home mr-1"></i><strong>{{ t.unit_count }}</strong> unidades</span>
-                      <span><i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(t.price_min) }}</strong> até <strong>{{ formatCurrencyShort(t.price_max) }}</strong></span>
-                      <span><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(t.price_avg) }}</strong><template v-if="t.descontada"> (cheio {{ formatCurrencyShort(t.price_cheio_avg) }})</template></span>
-                      <span v-if="t.adimplencia_n"><i class="fas fa-award mr-1"></i>Adimplência <strong>{{ t.adimplencia_min === t.adimplencia_max ? formatCurrencyShort(t.adimplencia_avg) : `${formatCurrencyShort(t.adimplencia_min)} a ${formatCurrencyShort(t.adimplencia_max)}` }}</strong> ({{ t.adimplencia_n }} unid.) · Líquido médio <strong>{{ formatCurrencyShort(t.liquido_avg) }}</strong></span>
-                      <span v-else class="text-ink-subtle"><i class="fas fa-award mr-1"></i>Sem adimplência cadastrada</span>
-                      <template v-if="tableM2Stats(mod, t)">
-                        <span class="border-l border-line pl-4"><i class="fas fa-ruler-combined mr-1"></i>m²: Mín <strong>{{ formatM2(tableM2Stats(mod, t).min) }}</strong> · Máx <strong>{{ formatM2(tableM2Stats(mod, t).max) }}</strong> · Média <strong>{{ formatM2(tableM2Stats(mod, t).avg) }}</strong></span>
-                      </template>
-                    </div>
-
-                    <div v-if="t.forma" class="bg-accent/10  p-2 rounded-lg w-full">
-                      <p class="text-micro text-accent font-medium italic">
-                        <i class="fas fa-info-circle mr-1"></i>{{ t.forma }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Tabelas manuais -->
-              <div v-if="(mod.manual_price_tables ?? []).length" class="p-4 space-y-3" :class="modSelectedPriceTables(mod).length ? 'pt-0' : ''">
-                <p class="text-micro font-bold text-data-warn uppercase tracking-wider">Tabelas Manuais</p>
-                <div v-for="(mt, mi) in mod.manual_price_tables" :key="mi"
-                  class="price-table-row flex-col items-start gap-2 p-4 bg-surface-sunken/40 rounded-xl border border-line">
-                  <div class="flex items-center justify-between w-full gap-2">
-                    <div class="flex items-center gap-2 min-w-0">
-                      <i class="fas fa-file-invoice-dollar text-data-warn text-xs flex-shrink-0"></i>
-                      <span class="text-sm text-ink font-bold truncate">{{ mt.name || '(sem nome)' }}</span>
-                    </div>
-                    <span v-if="mt.validity_from || mt.validity_to" class="text-xs text-ink-subtle flex-shrink-0">
-                      {{ formatDate(mt.validity_from) }} → {{ formatDate(mt.validity_to) }}
-                    </span>
-                  </div>
-                  <div v-if="manualTableStats(mt)" class="flex items-center gap-4 text-xs text-ink-muted flex-wrap w-full">
-                    <span><i class="fas fa-home mr-1"></i><strong>{{ manualTableStats(mt).filled }}</strong>/{{ manualTableStats(mt).total }} unidades</span>
-                    <span v-if="manualTableStats(mt).min != null">
-                      <i class="fas fa-tag mr-1"></i>De <strong>{{ formatCurrencyShort(manualTableStats(mt).min) }}</strong> até <strong>{{ formatCurrencyShort(manualTableStats(mt).max) }}</strong>
-                    </span>
-                    <span v-if="manualTableStats(mt).avg != null"><i class="fas fa-chart-line mr-1"></i>Média <strong>{{ formatCurrencyShort(manualTableStats(mt).avg) }}</strong></span>
-                  </div>
-                  <div v-if="mt.note" class="note-block w-full">
-                    <span class="note-label">Observação da Tabela</span>
-                    <p>{{ mt.note }}</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Premissa de preço / observação -->
-              <div v-if="mod.price_premise_note" class="p-4 pt-0">
-                <div class="note-block">
-                  <span class="note-label">Premissa de Preço / Observação</span>
-                  <p>{{ mod.price_premise_note }}</p>
-                </div>
-              </div>
-
-              <!-- Vazio -->
-              <div v-if="!modSelectedPriceTables(mod).length && !(mod.manual_price_tables ?? []).length && !mod.price_premise_note"
-                class="empty-info-row">
-                <i class="fas fa-tag text-ink-subtle text-sm"></i>
-                <span>Nenhuma tabela de preço selecionada neste módulo</span>
-              </div>
-            </div>
 
           <!-- ── Campanhas ───────────────────────────────────────────────── -->
           <div class="info-card mb-4">
@@ -1780,6 +1780,10 @@ async function buildPrintHtml() {
               ${kpis.join('')}
             </div>
 
+            ${card('🏷️', 'Tabelas de Preço', tablesHtml)}
+
+            <div class="spacer"></div>
+
             ${card('🏢', `Produto — ${mod.module_name || '—'}`, prodBody)}
 
             <div class="spacer"></div>
@@ -1795,10 +1799,6 @@ async function buildPrintHtml() {
             ${hasDocs ? `${card('📋', 'Documentação', docsBody)}<div class="spacer"></div>` : ''}
 
             ${hasMcmv ? `${card('🏠', 'Avaliação MCMV', mcmvHtml)}<div class="spacer"></div>` : ''}
-
-            <div class="spacer"></div>
-
-            ${card('🏷️', 'Tabelas de Preço', tablesHtml)}
 
             <div class="spacer"></div>
 
