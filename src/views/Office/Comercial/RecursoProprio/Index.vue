@@ -467,7 +467,7 @@ function aoSalvarConfig() {
           </div>
         </div>
 
-        <DataTable :columns="COLUNAS" :rows="ordenadas" row-key="id" :loading="carregando" manual-sort clickable @row-click="abrirDetalhe"
+        <DataTable :columns="COLUNAS" :rows="ordenadas" row-key="id" :loading="carregando" manual-sort clickable sticky-header @row-click="abrirDetalhe"
           v-model:sort-by="ordem.by" v-model:sort-dir="ordem.dir"
           empty-title="Nenhuma reserva neste recorte" empty-text="Limpe a busca ou clique de novo no cartão do topo.">
           <template #cell-nome="{ row }">

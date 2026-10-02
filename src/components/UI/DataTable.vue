@@ -70,6 +70,12 @@ const props = defineProps({
      só. Serve para lista longa de números, onde um card por linha vira uma
      coluna de dois metros. */
   layout: { type: String, default: 'auto' },
+  /* Cabeçalho fixo ao rolar. O container de rolagem horizontal corta o
+     `sticky` da página, então com isto ligado a tabela ganha altura máxima e
+     rola POR DENTRO, com o cabeçalho preso no topo. `true` = quase a tela
+     inteira; uma string vira o max-height (ex.: '60vh'). Desligado por padrão:
+     nenhuma tela existente muda. */
+  stickyHeader: { type: [Boolean, String], default: false },
 });
 
 const emit = defineEmits(['row-click', 'update:sortBy', 'update:sortDir']);
@@ -194,6 +200,11 @@ function resetarLargura(col) {
   larguras.value = resto;
 }
 const estiloTabela = computed(() => (temLarguraFixa.value ? { tableLayout: 'fixed', width: 'max-content', minWidth: '100%' } : null));
+const alturaFixa = computed(() => (props.stickyHeader
+  ? { maxHeight: typeof props.stickyHeader === 'string' ? props.stickyHeader : 'calc(100dvh - 7rem)' }
+  : null));
+// Célula de cabeçalho presa: fundo OPACO, senão as linhas aparecem por trás.
+const thFixo = computed(() => (props.stickyHeader ? 'sticky top-0 z-10 bg-surface-sunken' : ''));
 const classeCards = computed(() => ((props.layout === 'cards' || props.layout === 'list') ? '' : props.layout === 'table' ? 'hidden' : 'md:hidden'));
 const emLista = computed(() => props.layout === 'list');
 
@@ -248,13 +259,13 @@ function onRowClick(row, i) {
       <!-- ══ DESKTOP: tabela ═══════════════════════════════════════════════
            O scroll horizontal fica PRESO a este container. O corpo da página
            nunca rola de lado. -->
-      <div :class="[classeTabela, 'overflow-x-auto rounded-xl border border-line']">
+      <div :class="[classeTabela, 'overflow-x-auto rounded-xl border border-line', stickyHeader ? 'overflow-y-auto' : '']" :style="alturaFixa">
         <table ref="tabelaEl" class="w-full text-sm border-collapse" :style="estiloTabela">
           <thead>
             <tr class="bg-surface-sunken/60">
               <th v-for="col in columns" :key="col.key" scope="col" :data-col="col.key"
                 :style="larguraDe(col) ? { width: larguraDe(col) } : null"
-                :class="['relative metric-label px-3 py-2.5 border-b border-line whitespace-nowrap select-none',
+                :class="['relative metric-label px-3 py-2.5 border-b border-line whitespace-nowrap select-none', thFixo,
                          alignClass(col),
                          sortable && col.sortable ? 'cursor-pointer hover:text-ink transition-colors' : '']"
                 :aria-sort="localSort.by === col.key ? (localSort.dir === 'asc' ? 'ascending' : 'descending') : 'none'"
@@ -278,8 +289,8 @@ function onRowClick(row, i) {
                   @dblclick.stop="resetarLargura(col)"
                   @click.stop></span>
               </th>
-              <th v-if="expandable" scope="col" class="w-px px-2 py-2.5 border-b border-line"><span class="sr-only">Abrir</span></th>
-              <th v-if="$slots.actions" scope="col" class="w-px px-3 py-2.5 border-b border-line"><span class="sr-only">Ações</span></th>
+              <th v-if="expandable" scope="col" :class="['w-px px-2 py-2.5 border-b border-line', thFixo]"><span class="sr-only">Abrir</span></th>
+              <th v-if="$slots.actions" scope="col" :class="['w-px px-3 py-2.5 border-b border-line', thFixo]"><span class="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody>
