@@ -233,12 +233,12 @@ const regrasFicha = computed(() => {
   return lista.map((r) => ({
     nome: r.modulo?.nome || 'Ficha',
     itens: [
-      ['Ato mínimo', r.atoMinimo ? brl(r.atoMinimo) : '-'],
-      ['Parcela mínima', r.parcelaMinima ? brl(r.parcelaMinima) : '-'],
-      ['Máx. parcelas', r.maxParcelas ? `${r.maxParcelas}x` : '-'],
-      ['Limite da renda', r.limiteRendaPct ? `${fmtNum(r.limiteRendaPct, 0)}%` : '-'],
-      ['Máx. entrada', r.maxEntradaPct ? `${fmtNum(r.maxEntradaPct, 0)}%` : '-'],
+      { k: 'Limite da renda', v: r.limiteRendaPct ? `${fmtNum(r.limiteRendaPct, 0)}%` : null, icon: 'fas fa-scale-unbalanced' },
+      { k: 'Ato mínimo', v: r.atoMinimo ? brl(r.atoMinimo) : null, icon: 'fas fa-hand-holding-dollar' },
+      { k: 'Parcela mínima', v: r.parcelaMinima ? brl(r.parcelaMinima) : null, icon: 'fas fa-receipt' },
+      { k: 'Máx. parcelas', v: r.maxParcelas ? `${r.maxParcelas}x` : null, icon: 'fas fa-calendar-days' },
     ],
+    maxEntrada: r.maxEntradaPct ? `${fmtNum(r.maxEntradaPct, 0)}%` : null,
     regraRp: r.regraRp,
   }));
 });
@@ -282,19 +282,35 @@ function aoSalvarNota({ id, nota }) {
 function abrirCv(l) { window.open(cvReservaFinanceiroUrl(l.id), '_blank', 'noopener'); }
 
 // ── Estoque do empreendimento ───────────────────────────────────────────────
-const estoqueItens = computed(() => {
+// Barra empilhada + legenda. A ordem é a da vida da unidade: vendida,
+// reservada, disponível, segurada pela estratégia comercial, travada por outro
+// motivo. "À venda" = disponível + segurada (o número da diretoria).
+const estoque = computed(() => {
   const e = dados.value?.estoque;
-  if (!e) return [];
-  const vendidoPct = e.total ? (e.vendidas / e.total) * 100 : 0;
-  return [
-    { k: 'Unidades', v: e.total, cor: 'text-ink' },
-    { k: 'À venda', v: e.aVenda, cor: 'text-accent', dica: 'disponíveis + bloqueadas comercialmente' },
-    { k: 'Disponíveis', v: e.disponiveis, cor: 'text-ink' },
-    { k: 'Bloqueadas comercialmente', v: e.bloqueadasComercial, cor: 'text-data-warn', dica: 'estoque segurado, conta como à venda' },
-    { k: 'Outros bloqueios', v: e.bloqueadasOutras, cor: 'text-ink-muted', dica: 'Sienge, terreno etc.; não é estoque' },
-    { k: 'Reservadas', v: e.reservadas, cor: 'text-ink' },
-    { k: 'Vendidas', v: e.vendidas, cor: 'text-data-pos', dica: `${fmtNum(vendidoPct, 1)}% do total` },
-  ];
+  if (!e || !e.total) return null;
+  const segs = [
+    { k: 'Vendidas', v: e.vendidas, cor: 'bg-data-pos', dica: '' },
+    { k: 'Reservadas', v: e.reservadas, cor: 'bg-accent', dica: '' },
+    { k: 'Disponíveis', v: e.disponiveis, cor: 'bg-accent/35', dica: '' },
+    { k: 'Bloqueadas comercialmente', v: e.bloqueadasComercial, cor: 'bg-data-warn', dica: 'estoque segurado, conta como à venda' },
+    { k: 'Outros bloqueios', v: e.bloqueadasOutras, cor: 'bg-ink-subtle/40', dica: 'Sienge, terreno etc.; não é estoque' },
+  ].map((x) => ({ ...x, pct: (x.v / e.total) * 100 }));
+  return { ...e, segs, vendidoPct: (e.vendidas / e.total) * 100 };
+});
+const escopoEstoque = computed(() => {
+  const m = (dados.value?.modulos || []).find((x) => x.idetapa === dados.value?.idetapa);
+  return m ? m.nome : 'Empreendimento inteiro';
+});
+
+// Regras: uma ficha de módulo só por vez (com vários, o seletor de módulo escolhe).
+const regraAtual = computed(() => (regrasFicha.value.length === 1 ? regrasFicha.value[0] : null));
+const regraTextoAberto = ref(false);
+watch(() => dados.value?.idetapa, () => { regraTextoAberto.value = false; });
+
+// Cartões: tantas colunas quantos cartões, para a linha sempre fechar a largura.
+const colsKpi = computed(() => {
+  const n = kpis.value.length;
+  return { sm: 2, md: n === 4 ? 2 : Math.min(n, 3), lg: n };
 });
 
 // ── Configuração ────────────────────────────────────────────────────────────
@@ -361,15 +377,7 @@ function aoSalvarConfig() {
       <template v-if="dados">
         <!-- Fontes -->
         <div class="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-ink-muted">
-          <span v-if="dados.ficha">
-            <i class="fas fa-clipboard-list mr-1"></i>
-            Regras da ficha de {{ mesAno(dados.ficha.mes) }}
-            <Badge size="sm" :variant="dados.ficha.status === 'approved' || dados.ficha.status === 'closed' ? 'success' : 'warning'">
-              {{ STATUS_FICHA[dados.ficha.status] || dados.ficha.status }}
-            </Badge>
-            <router-link :to="`/comercial/conditions/${dados.ficha.id}`" class="text-accent hover:underline ml-1">abrir ficha</router-link>
-          </span>
-          <span v-else class="text-data-warn"><i class="fas fa-triangle-exclamation mr-1"></i>Sem ficha comercial: nada é conferido e não há limite de renda.</span>
+          <span v-if="!dados.ficha" class="text-data-warn"><i class="fas fa-triangle-exclamation mr-1"></i>Sem ficha comercial: nada é conferido e não há limite de renda.</span>
           <span v-if="dados.ficha && dados.limites.rendaPct == null" class="text-ink-muted"><i class="fas fa-circle-info mr-1"></i>A ficha não tem limite de renda{{ dados.idetapa ? ' para este módulo' : '' }}: a % da renda aparece sem cor.</span>
           <span>
             <i class="fas fa-database mr-1"></i>
@@ -380,45 +388,77 @@ function aoSalvarConfig() {
           <span v-if="contagens.semRenda" class="text-data-warn">{{ contagens.semRenda }} sem renda no pré-cadastro (% da renda fica em branco).</span>
         </div>
 
-        <!-- Estoque -->
-        <Panel v-if="estoqueItens.length" :padded="false">
-          <div class="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6">
-            <p class="text-xs font-semibold uppercase tracking-wide text-ink-muted lg:w-40 shrink-0">
-              <i class="fas fa-building mr-1"></i>Estoque
-            </p>
-            <dl class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-x-6 gap-y-2 flex-1">
-              <div v-for="i in estoqueItens" :key="i.k" :title="i.dica || ''">
-                <dt class="text-micro uppercase tracking-wide text-ink-subtle">{{ i.k }}</dt>
-                <dd :class="['text-sm font-semibold tabular-nums', i.cor]">{{ i.v }}</dd>
-                <dd v-if="i.dica" class="text-micro text-ink-subtle leading-tight">{{ i.dica }}</dd>
+        <!-- Estoque + regras do módulo: lado a lado no largo, empilhados no
+             estreito; sozinho, o bloco ocupa a linha inteira. -->
+        <div v-if="estoque || dados.ficha" :class="['grid gap-4', estoque && dados.ficha ? 'lg:grid-cols-5' : '']">
+          <Panel v-if="estoque" :class="dados.ficha ? 'lg:col-span-3' : ''" title="Estoque" icon="fas fa-building"
+            :subtitle="`${escopoEstoque} · ${estoque.total} unidades`">
+            <template #actions>
+              <div class="text-right leading-tight pr-1">
+                <p class="text-lg font-bold tabular-nums text-accent">{{ estoque.aVenda }}</p>
+                <p class="text-micro text-ink-subtle">à venda</p>
               </div>
-            </dl>
-          </div>
-        </Panel>
-
-        <!-- Regras da ficha -->
-        <p v-if="dados.ficha && !regrasFicha.length && dados.idetapa" class="text-xs text-ink-muted">
-          <i class="fas fa-circle-info mr-1"></i>A ficha de {{ mesAno(dados.ficha.mes) }} não tem este módulo: as reservas dele não são conferidas.
-        </p>
-        <p v-else-if="regrasFicha.length > 1" class="text-xs text-ink-muted">
-          <i class="fas fa-circle-info mr-1"></i>Escolha o módulo ao lado do empreendimento para ver as regras, o estoque e as reservas de um só.
-        </p>
-        <Panel v-if="regrasFicha.length === 1" :padded="false">
-          <div class="divide-y divide-line">
-            <div v-for="m in regrasFicha" :key="m.nome" class="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6">
-              <p class="text-xs font-semibold uppercase tracking-wide text-ink-muted lg:w-40 shrink-0">{{ m.nome }}</p>
-              <dl class="grid grid-cols-2 sm:grid-cols-5 gap-x-6 gap-y-1 flex-1">
-                <div v-for="[k, v] in m.itens" :key="k">
-                  <dt class="text-micro uppercase tracking-wide text-ink-subtle">{{ k }}</dt>
-                  <dd class="text-sm font-semibold text-ink tabular-nums">{{ v }}</dd>
-                </div>
-              </dl>
-              <p v-if="m.regraRp" class="text-xs text-ink-muted lg:max-w-md whitespace-pre-line">{{ m.regraRp }}</p>
+            </template>
+            <div class="space-y-4">
+              <div class="flex h-3 w-full overflow-hidden rounded-full bg-surface-sunken" role="img"
+                :aria-label="estoque.segs.map((x) => `${x.k}: ${x.v}`).join(', ')">
+                <div v-for="x in estoque.segs.filter((y) => y.v)" :key="x.k" :class="[x.cor, 'h-full']"
+                  :style="{ width: `${x.pct}%` }" :title="`${x.k}: ${x.v}`"></div>
+              </div>
+              <ul class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-x-4 gap-y-3">
+                <li v-for="x in estoque.segs" :key="x.k" class="min-w-0" :title="x.dica || ''">
+                  <p class="flex items-center gap-1.5 text-micro uppercase tracking-wide text-ink-subtle">
+                    <span :class="[x.cor, 'h-2 w-2 rounded-sm shrink-0']"></span>
+                    <span class="truncate">{{ x.k }}</span>
+                  </p>
+                  <p class="mt-0.5 flex items-baseline gap-1.5">
+                    <span class="text-base font-semibold tabular-nums text-ink">{{ x.v }}</span>
+                    <span class="text-micro tabular-nums text-ink-subtle">{{ fmtNum(x.pct, 0) }}%</span>
+                  </p>
+                  <p v-if="x.dica" class="text-micro text-ink-subtle leading-tight">{{ x.dica }}</p>
+                </li>
+              </ul>
             </div>
-          </div>
-        </Panel>
+          </Panel>
 
-        <StatRow :items="kpis" :cols="{ sm: 2, md: 3, lg: 5 }" selectable :active-key="filtro" @select="escolherKpi" />
+          <Panel v-if="dados.ficha" :class="estoque ? 'lg:col-span-2' : ''" icon="fas fa-clipboard-list"
+            :title="regraAtual ? `Regras da ficha · ${regraAtual.nome}` : 'Regras da ficha'"
+            :subtitle="`Ficha de ${mesAno(dados.ficha.mes)} · ${STATUS_FICHA[dados.ficha.status] || dados.ficha.status}`">
+            <template #actions>
+              <router-link :to="`/comercial/conditions/${dados.ficha.id}`" class="text-xs font-medium text-accent hover:underline whitespace-nowrap">
+                Abrir ficha <i class="fas fa-arrow-right text-micro ml-0.5"></i>
+              </router-link>
+            </template>
+
+            <div v-if="regraAtual" class="space-y-3">
+              <div class="grid grid-cols-2 gap-2.5">
+                <div v-for="i in regraAtual.itens" :key="i.k" class="rounded-lg bg-surface-sunken/60 px-3 py-2.5">
+                  <p class="flex items-center gap-1.5 text-micro uppercase tracking-wide text-ink-subtle">
+                    <i :class="[i.icon, 'text-micro']"></i>{{ i.k }}
+                  </p>
+                  <p :class="['mt-0.5 text-base font-semibold tabular-nums', i.v ? 'text-ink' : 'text-ink-subtle']">{{ i.v || 'sem regra' }}</p>
+                </div>
+              </div>
+              <p v-if="regraAtual.maxEntrada" class="text-xs text-ink-muted">
+                Máx. entrada {{ regraAtual.maxEntrada }} <span class="text-ink-subtle">(informativo, não conferido)</span>
+              </p>
+              <div v-if="regraAtual.regraRp" class="rounded-lg border border-line px-3 py-2">
+                <p class="text-micro uppercase tracking-wide text-ink-subtle mb-1">Regra do RP</p>
+                <p :class="['text-xs text-ink-muted whitespace-pre-line', regraTextoAberto ? '' : 'line-clamp-2']">{{ regraAtual.regraRp }}</p>
+                <button v-if="regraAtual.regraRp.length > 120" type="button"
+                  class="mt-1 text-micro font-medium text-accent hover:underline" @click="regraTextoAberto = !regraTextoAberto">
+                  {{ regraTextoAberto ? 'ver menos' : 'ver tudo' }}
+                </button>
+              </div>
+            </div>
+            <EmptyState v-else-if="dados.idetapa" size="sm" icon="fas fa-circle-info" title="Módulo fora da ficha"
+              :description="`A ficha de ${mesAno(dados.ficha.mes)} não tem este módulo: as reservas dele não são conferidas.`" />
+            <EmptyState v-else size="sm" icon="fas fa-layer-group" title="Escolha um módulo"
+              description="Cada módulo tem a sua regra. Escolha o módulo ao lado do empreendimento para ver a dele." />
+          </Panel>
+        </div>
+
+        <StatRow :items="kpis" :cols="colsKpi" selectable :active-key="filtro" @select="escolherKpi" />
 
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
           <p class="text-xs text-ink-muted sm:mr-auto">{{ rodape }}</p>
