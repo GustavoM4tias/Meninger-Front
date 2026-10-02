@@ -755,7 +755,7 @@ body.lock{overflow:hidden}
       <a href="https://menin.com.br" target="_blank" rel="noopener"><span class="ic"><svg class="i"><use href="#i-globe"/></svg></span><div><small>Site</small>menin.com.br · @meninengenharia</div></a>
     </div>
   </div>
-  <ul class="notas rv"><li>Imagens de perspectiva são meramente ilustrativas. Móveis, objetos de decoração e paisagismo são sugestões e não fazem parte do contrato. O empreendimento será entregue conforme o memorial descritivo.</li><li>Situação das unidades conforme o CV Menin em 01/10/2026. Valores da tabela oficial Urban Esmeraldas R31. Saldo corrigido pelo INCC até as chaves e, depois, pelo IGP-M/FGV + 1% a.m. Tabela sujeita a alteração sem aviso prévio; valores confirmados na proposta.</li></ul>
+  <ul class="notas rv"><li>Imagens de perspectiva são meramente ilustrativas. Móveis, objetos de decoração e paisagismo são sugestões e não fazem parte do contrato. O empreendimento será entregue conforme o memorial descritivo.</li><li>Situação das unidades conforme o CV Menin em 02/10/2026. Valores da tabela oficial Urban Esmeraldas R31. Saldo corrigido pelo INCC até as chaves e, depois, pelo IGP-M/FGV + 1% a.m. Tabela sujeita a alteração sem aviso prévio; valores confirmados na proposta.</li></ul>
 </div></section>
 <footer><div class="wrap">Urban Esmeraldas · Incorporadora MF Urban Esmeraldas SPE Ltda · CNPJ 45.133.974/0001-81 · Av. Jesus Montolar, 840, Marília/SP</div></footer>
 
@@ -984,6 +984,7 @@ body.lock{overflow:hidden}
   });
   let tx=0; lb.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true}); lb.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx; if(Math.abs(d)>50) mostrar(idx+(d<0?1:-1));});
 
+  const hu=decodeURIComponent(location.hash).match(/^#u=(.+)$/); if(hu) setTimeout(()=>abrirUnidade(hu[1]),400);
   // movimento
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function contar(el){
