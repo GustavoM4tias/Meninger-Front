@@ -419,6 +419,7 @@ onUnmounted(() => store.stopAllPolling());
                     ]"
                     :tips="[
                         'A cor da etapa é a mesma no cartão, no selo da linha e no chip: verde é título pago, vermelho é erro e cinza é cancelado.',
+                        'Título lançado e ainda não pago mostra se o pagamento já foi autorizado no Sienge e por quem. A consulta é ao vivo, a cada 20 minutos ou ao atualizar o lançamento; se o Sienge não responder, vale o backup do dia anterior e o cartão avisa.',
                         'Cancelados e títulos pagos ficam escondidos por padrão. Clicar no chip deles liga a exibição e filtra de uma vez.',
                         'Quando há pipeline rodando, a tela se atualiza sozinha - o aviso aparece ao lado da contagem.',
                         'Os filtros ficam gravados no endereço da página: dá para salvar o link ou mandar para alguém já filtrado.',

@@ -38,7 +38,16 @@ const ridSentAtLabel = computed(() => {
 });
 
 const stage = computed(() => props.launch.pipelineStage || 'idle');
-const stageMeta = computed(() => PIPELINE_STAGE_LABELS[stage.value] || PIPELINE_STAGE_LABELS.idle);
+const stageMeta = computed(() => {
+  // Título lançado e não pago: o estágio sozinho não diz se o pagamento já foi
+  // autorizado no Sienge; quem diz é a autorização da parcela (API ao vivo).
+  if (stage.value === 'awaiting_titulo_authorization' && props.launch.siengeTituloAuthorized != null) {
+    return props.launch.siengeTituloAuthorized
+      ? { label: 'Autorizado, aguardando pagamento', icon: 'fa-user-check', color: 'orange' }
+      : { label: 'Aguardando autorização do pagamento', icon: 'fa-lock', color: 'orange' };
+  }
+  return PIPELINE_STAGE_LABELS[stage.value] || PIPELINE_STAGE_LABELS.idle;
+});
 
 const stageColorMap = {
   gray: 'text-ink-subtle', blue: 'text-accent', green: 'text-data-pos',
@@ -79,6 +88,25 @@ const tituloError = computed(() => stage.value === 'titulo_error');
 const tituloErrorMsg = computed(() => tituloError.value ? (props.launch.siengeTituloError || null) : null);
 const tituloPago = computed(() => stage.value === 'titulo_pago');
 const tituloAwaiting = computed(() => stage.value === 'awaiting_titulo_authorization');
+// Autorização do pagamento no Sienge: true/false, ou null enquanto não consultada.
+const tituloAutorizado = computed(() => props.launch.siengeTituloAuthorized ?? null);
+const tituloAwaitingLabel = computed(() =>
+  tituloAutorizado.value === true ? 'Autorizado, aguardando pagamento'
+    : tituloAutorizado.value === false ? 'Aguardando autorização do pagamento'
+      : 'Aguardando pagamento');
+const diaMes = (iso) => {
+  const m = String(iso || '').match(/^\d{4}-(\d{2})-(\d{2})/);
+  return m ? `${m[2]}/${m[1]}` : '';
+};
+const primeiroNome = (nome) => String(nome || '').trim().split(/\s+/)[0];
+const autorizacoesTitulo = computed(() =>
+  (props.launch.siengeTituloAuthorization?.autorizacoes || [])
+    .map(a => `${primeiroNome(a.nome)} (${diaMes(a.data)})`).join(', '));
+const autorizacaoDoBackup = computed(() => props.launch.siengeTituloAuthorization?.fonte === 'backup');
+// O status S/N do título é CONSISTÊNCIA no Sienge, não autorização.
+const CONSISTENCIA = { S: 'completo', N: 'incompleto', I: 'em inclusão' };
+const tituloConsistencia = computed(() =>
+  CONSISTENCIA[props.launch.siengeTituloStatus] || props.launch.siengeTituloStatus || null);
 
 const inTituloStage = computed(() => tituloCreating.value || tituloCreated.value || tituloError.value);
 
@@ -551,7 +579,7 @@ const cardBorderClass = computed(() => {
                 :class="tituloPago || !tituloAwaiting
                   ? 'text-data-pos'
                   : 'text-data-warn'">
-                {{ tituloPago ? 'Título pago' : tituloAwaiting ? 'Aguardando pagamento' : 'Título criado' }}
+                {{ tituloPago ? 'Título pago' : tituloAwaiting ? tituloAwaitingLabel : 'Título criado' }}
               </span>
             </div>
             <Badge v-if="launch.siengeTituloNumber"
@@ -560,8 +588,21 @@ const cardBorderClass = computed(() => {
             </Badge>
           </div>
 
-          <p v-if="launch.siengeTituloStatus" class="text-micro text-ink-subtle font-mono">
-            Status Sienge: {{ launch.siengeTituloStatus }}
+          <p v-if="!tituloPago && tituloAutorizado !== null" class="text-xs"
+            :class="tituloAutorizado ? 'text-ink' : 'text-data-warn'">
+            <i :class="tituloAutorizado ? 'fas fa-user-check' : 'fas fa-lock'" class="mr-1"></i>
+            <template v-if="tituloAutorizado">Pagamento autorizado no Sienge</template>
+            <template v-else>Pagamento ainda não autorizado no Sienge</template>
+            <span v-if="autorizacoesTitulo" class="text-ink-subtle">
+              {{ tituloAutorizado ? `por ${autorizacoesTitulo}` : `- já autorizaram: ${autorizacoesTitulo}` }}
+            </span>
+          </p>
+          <p v-if="!tituloPago && autorizacaoDoBackup" class="text-micro text-ink-subtle">
+            API do Sienge indisponível na última consulta: autorização lida do backup do dia anterior.
+          </p>
+
+          <p v-if="tituloConsistencia" class="text-micro text-ink-subtle font-mono">
+            Cadastro do título no Sienge: {{ tituloConsistencia }}
           </p>
 
           <div v-if="boletoRegisterError"
