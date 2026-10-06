@@ -824,7 +824,7 @@
       <Conciliacao v-if="activeTab === 'conciliacao'" />
 
       <!-- ── TAB: Parcelas (mensais depois do ato) ─────────────────────────── -->
-      <Parcelas v-if="activeTab === 'parcelas'" />
+      <Parcelas v-if="activeTab === 'parcelas' && can('configure')" />
 
       <div v-if="activeTab === 'history'" class="space-y-4">
 
@@ -1058,11 +1058,12 @@ const activeTab = ref(ABAS_VALIDAS.includes(route.query.tab) ? route.query.tab :
 const tabOptions = computed(() => {
   const base = [
     { value: 'history', label: 'Histórico', icon: 'fas fa-clock-rotate-left' },
-    // As mensais depois do ato: plano por reserva, até o Sienge faturar.
-    { value: 'parcelas', label: 'Parcelas', icon: 'fas fa-calendar-check' },
     { value: 'conciliacao', label: 'Conciliação', icon: 'fas fa-code-compare' },
   ];
   if (can('configure')) {
+    // As mensais depois do ato: plano por reserva, até o Sienge faturar.
+    // Pausada para o usuário comum (out/2026): só admin vê a aba.
+    base.splice(1, 0, { value: 'parcelas', label: 'Parcelas', icon: 'fas fa-calendar-check' });
     base.push({ value: 'settings', label: 'Configurações', icon: 'fas fa-gear' });
   }
   return base;
