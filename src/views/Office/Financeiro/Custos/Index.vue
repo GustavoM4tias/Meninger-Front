@@ -182,6 +182,7 @@ function limpar() {
   selectedEnterpriseNames.value = [];
   store.selectedDepartments = [];
   recorte.value = '';
+  ccMarcados.value = [];
   router.replace({ query: {} });
   buscar();
 }
@@ -306,6 +307,7 @@ const kpiCards = computed(() => {
 const ordem = ref({ by: 'total', dir: 'desc' });
 
 const COLUNAS = [
+  { key: 'sel', label: 'Sel.', priority: 2, align: 'center', width: '3.25rem', truncate: false },
   { key: 'nome', label: 'Empreendimento', priority: 1, sortable: true, value: nomeDoGrupo },
   { key: 'total', label: 'Pago', priority: 1, numeric: true, sortable: true, width: '11rem',
     value: (g) => Number(g.total || 0) },
@@ -321,6 +323,62 @@ const ordenada = computed(() => ordenar(lista.value, COLUNAS, ordem.value));
 const inc = useIncrementalList(ordenada, { step: 50 });
 
 const periodoLabel = computed(() => `${formatDate(store.startDate)} → ${formatDate(store.endDate)}`);
+
+/* ── Seleção de empreendimentos (antes do modal) ─────────────────────────
+   Marcar vários e abrir junta os lançamentos num modal só, com os mesmos
+   filtros e a mesma exportação do modal de um empreendimento. A marca é por
+   centro de custo e sobrevive a um novo Filtrar; só conta o que está na lista. */
+const ccMarcados = ref([]);
+const ccMarcadosSet = computed(() => new Set(ccMarcados.value.map(Number)));
+const gruposMarcados = computed(() =>
+  filteredGroups.value.filter((g) => ccMarcadosSet.value.has(Number(g.costCenterId)))
+);
+const gruposMarcadosTotal = computed(() =>
+  gruposMarcados.value.reduce((sum, g) => sum + Number(g.total || 0), 0)
+);
+const todosGruposMarcados = computed(() =>
+  lista.value.length > 0 && lista.value.every((g) => ccMarcadosSet.value.has(Number(g.costCenterId)))
+);
+const algunsGruposMarcados = computed(() =>
+  !todosGruposMarcados.value && lista.value.some((g) => ccMarcadosSet.value.has(Number(g.costCenterId)))
+);
+
+function toggleGrupo(cc) {
+  const id = Number(cc);
+  ccMarcados.value = ccMarcadosSet.value.has(id)
+    ? ccMarcados.value.filter((x) => Number(x) !== id)
+    : [...ccMarcados.value, id];
+}
+
+function toggleTodosGrupos() {
+  ccMarcados.value = todosGruposMarcados.value ? [] : lista.value.map((g) => Number(g.costCenterId));
+}
+
+/* Grupo-união: cada lançamento leva o nome do seu empreendimento, que vira
+   coluna no modal e campo na exportação. */
+function montarUniao(ids) {
+  const set = new Set(ids.map(Number));
+  const grupos = filteredGroups.value.filter((g) => set.has(Number(g.costCenterId)));
+  if (!grupos.length) return null;
+  const expenses = grupos.flatMap((g) => {
+    const empreendimento = nomeDoGrupo(g);
+    return g.expenses.map((e) => ({ ...e, costCenterId: e.costCenterId ?? g.costCenterId, empreendimento }));
+  });
+  return {
+    merged: true,
+    costCenterId: null,
+    costCenterIds: grupos.map((g) => Number(g.costCenterId)),
+    nomes: grupos.map(nomeDoGrupo),
+    expenses,
+  };
+}
+
+function abrirMarcados({ exportar = false } = {}) {
+  const g = montarUniao(gruposMarcados.value.map((x) => x.costCenterId));
+  if (!g) return;
+  openDetails(g);
+  if (exportar) showExport.value = true;
+}
 
 /* ── Modal de detalhes ───────────────────────────────────────────────── */
 const selectedGroup = ref(null);
@@ -352,6 +410,14 @@ const modalFiltrosAtivos = computed(() =>
 // Exportação (modal universal do sistema)
 const showExport = ref(false);
 
+/* Nome do que está aberto no modal: um empreendimento ou a união de vários. */
+function tituloDoGrupo(g) {
+  if (!g) return '';
+  if (g.merged) return `${nf.format(g.costCenterIds.length)} empreendimentos`;
+  return resolveEnterpriseName(g.costCenterId) || g.costCenterName || 'Empreendimento';
+}
+const ccsDoGrupo = (g) => (g?.merged ? g.costCenterIds.join(', ') : String(g?.costCenterId || ''));
+
 const exportFilters = computed(() => {
   if (!selectedGroup.value) return {};
   const range = (from, to) => {
@@ -360,9 +426,10 @@ const exportFilters = computed(() => {
     if (to) return `até ${formatDate(to)}`;
     return '';
   };
+  const g = selectedGroup.value;
   return {
-    'Empreendimento': resolveEnterpriseName(selectedGroup.value.costCenterId) || selectedGroup.value.costCenterName || '',
-    'Centro de custo': String(selectedGroup.value.costCenterId || ''),
+    'Empreendimento': g.merged ? g.nomes.join(', ') : tituloDoGrupo(g),
+    'Centro de custo': ccsDoGrupo(g),
     'Período': range(store.startDate, store.endDate),
     'Busca': modalSearch.value,
     'Departamento': modalFilterDept.value,
@@ -441,6 +508,23 @@ const COLUNAS_LANC = [
   { key: 'parcela', label: 'Parcela', priority: 2, align: 'center', width: '5.5rem', value: parcelaDoLancamento },
 ];
 
+/* Na união de empreendimentos a linha precisa dizer de qual CC ela é. */
+const COL_EMPREENDIMENTO = { key: 'empreendimento', label: 'Empreendimento', priority: 2, sortable: true,
+  width: '14rem', value: (e) => e.empreendimento || '' };
+const colunasLanc = computed(() => (selectedGroup.value?.merged
+  ? [...COLUNAS_LANC.slice(0, 2), COL_EMPREENDIMENTO, ...COLUNAS_LANC.slice(2)]
+  : COLUNAS_LANC));
+
+const exportPreselect = computed(() => [
+  ...(selectedGroup.value?.merged ? ['empreendimento', 'costCenterId'] : []),
+  'paidAt', 'dueDate', 'amount', 'status',
+  'installmentNumber', 'installmentsNumber',
+  'departmentName', 'description',
+  'bill.creditor_json.name', 'bill.creditor_json.cnpj',
+  'bill.document_identification_id', 'bill.document_number',
+  'bill.totalInvoiceAmount',
+]);
+
 const modalFiltrados = computed(() => {
   if (!selectedGroup.value) return [];
   let list = [...(selectedGroup.value.expenses || [])];
@@ -456,8 +540,10 @@ const modalFiltrados = computed(() => {
       const dept = deptDoLancamento(exp).toLowerCase();
       const billId = String(exp.bill?.id || '');
       const amount = String(exp.amount || '');
+      const emp = (exp.empreendimento || '').toLowerCase();
       return name.includes(q) || doc.includes(q) || obs.includes(q) || notes.includes(q)
-        || cnpj.includes(q) || dept.includes(q) || billId.includes(q) || amount.includes(q);
+        || cnpj.includes(q) || dept.includes(q) || billId.includes(q) || amount.includes(q)
+        || emp.includes(q);
     });
   }
 
@@ -482,7 +568,7 @@ const modalFiltrados = computed(() => {
 });
 
 /* Ordem: filtrar -> ordenar -> fatiar. */
-const modalExpenses = computed(() => ordenar(modalFiltrados.value, COLUNAS_LANC, modalOrdem.value));
+const modalExpenses = computed(() => ordenar(modalFiltrados.value, colunasLanc.value, modalOrdem.value));
 const incModal = useIncrementalList(modalExpenses, { step: 50, root: scrollRoot });
 
 const modalTotal = computed(() =>
@@ -617,7 +703,9 @@ async function removeSelectedExpenses() {
    e o lançamento abertos para a versão nova (ou fecham, se sumiram). */
 function refreshAfterEdit() {
   if (!selectedGroup.value) return;
-  const updated = filteredGroups.value.find((g) => g.costCenterId === selectedGroup.value.costCenterId);
+  const updated = selectedGroup.value.merged
+    ? montarUniao(selectedGroup.value.costCenterIds)
+    : filteredGroups.value.find((g) => g.costCenterId === selectedGroup.value.costCenterId);
   selectedGroup.value = updated?.expenses?.length ? updated : null;
   if (detailItem.value) {
     const exp = selectedGroup.value?.expenses?.find((e) => e.id === detailItem.value.id) || null;
@@ -685,6 +773,7 @@ onMounted(async () => {
             { title: 'Clique em Cancelados para recortar', text: 'A tabela passa a mostrar só os empreendimentos com lançamento cancelado. Clicar de novo desfaz o recorte.' },
             { title: 'Ordene a tabela', text: 'Clique no título da coluna para ordenar por valor, cancelado ou quantidade. No celular o controle de ordenação fica acima da lista.' },
             { title: 'Abra o empreendimento', text: 'Clique na linha para ver os lançamentos. Lá dá para buscar, filtrar por departamento e data, e clicar num lançamento para abrir o registro inteiro, com a observação editável e a exclusão.' },
+            { title: 'Junte vários empreendimentos', text: 'Marque a caixinha de cada empreendimento (ou Selecionar todos). Na barra que aparece embaixo, Ver juntos abre os lançamentos de todos num modal só, com a coluna Empreendimento; Exportar já abre a exportação dessa união, com os mesmos campos do modal.' },
           ]"
           :tips="[
             'O que você enxerga depende da visibilidade de departamento configurada nas Alçadas.',
@@ -734,6 +823,13 @@ onMounted(async () => {
 
       <!-- Linha de estado: o que está na tabela agora -->
       <div class="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+        <!-- Fora da tabela para existir também no celular, onde não há cabeçalho. -->
+        <label v-if="lista.length" class="inline-flex items-center gap-2 cursor-pointer select-none mr-2">
+          <input type="checkbox" class="checkbox checkbox-sm"
+            :checked="todosGruposMarcados" :indeterminate.prop="algunsGruposMarcados"
+            @change="toggleTodosGrupos" />
+          <span>Selecionar todos</span>
+        </label>
         <span class="tabular-nums">
           <b class="text-ink">{{ nf.format(lista.length) }}</b>
           de {{ nf.format(filteredGroups.length) }} empreendimento{{ filteredGroups.length === 1 ? '' : 's' }}
@@ -756,6 +852,14 @@ onMounted(async () => {
         empty-title="Nenhum gasto encontrado"
         empty-text="Ajuste os filtros ou o recorte para ver resultados."
         @row-click="openDetails">
+
+        <!-- Marcar não abre: o clique nunca chega na linha. -->
+        <template #cell-sel="{ row }">
+          <input type="checkbox" class="checkbox checkbox-sm"
+            :checked="ccMarcadosSet.has(Number(row.costCenterId))"
+            :aria-label="`Selecionar ${nomeDoGrupo(row)}`"
+            @click.stop @change="toggleGrupo(row.costCenterId)" />
+        </template>
 
         <template #cell-nome="{ row }">
           <span class="flex items-center gap-2.5 min-w-0">
@@ -797,6 +901,29 @@ onMounted(async () => {
         <Spinner size="sm" />
         carregando mais {{ Math.min(inc.step, inc.restantes.value) }} de {{ inc.restantes.value }} restantes
       </div>
+
+      <!-- Ação da seleção: junta os empreendimentos marcados num modal só. -->
+      <div v-if="gruposMarcados.length"
+        class="sticky bottom-3 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-line
+               bg-surface/90 backdrop-blur px-3 py-2 shadow-lg">
+        <span class="text-sm text-ink tabular-nums">
+          <b>{{ nf.format(gruposMarcados.length) }}</b>
+          empreendimento{{ gruposMarcados.length === 1 ? '' : 's' }}
+          <span class="text-ink-muted">&middot;</span>
+          <span class="font-mono">{{ fmtMoney(gruposMarcadosTotal) }}</span>
+        </span>
+        <div class="ml-auto flex items-center gap-1.5">
+          <Button variant="ghost" size="sm" icon="fas fa-xmark" @click="ccMarcados = []">
+            <span class="hidden sm:inline">Desmarcar</span>
+          </Button>
+          <Button variant="outline" size="sm" icon="fas fa-download" @click="abrirMarcados({ exportar: true })">
+            Exportar
+          </Button>
+          <Button variant="primary" size="sm" icon="fas fa-layer-group" @click="abrirMarcados()">
+            Ver juntos
+          </Button>
+        </div>
+      </div>
     </div>
   </PageContainer>
 
@@ -807,14 +934,15 @@ onMounted(async () => {
     <template #header>
       <div v-if="selectedGroup" class="flex items-center gap-3 min-w-0">
         <div class="h-9 w-9 rounded-lg bg-accent-soft text-accent border border-accent/20 grid place-items-center shrink-0">
-          <i class="fas fa-building text-sm"></i>
+          <i class="text-sm" :class="selectedGroup.merged ? 'fas fa-layer-group' : 'fas fa-building'"></i>
         </div>
         <div class="min-w-0">
-          <h2 class="text-base font-semibold text-ink truncate">
-            {{ resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || 'Empreendimento' }}
+          <h2 class="text-base font-semibold text-ink truncate"
+            :title="selectedGroup.merged ? selectedGroup.nomes.join(', ') : undefined">
+            {{ tituloDoGrupo(selectedGroup) }}
           </h2>
-          <p class="text-xs text-ink-muted mt-0.5">
-            CC <span class="font-mono tabular-nums text-ink">{{ selectedGroup.costCenterId }}</span> &middot;
+          <p class="text-xs text-ink-muted mt-0.5 truncate">
+            CC <span class="font-mono tabular-nums text-ink">{{ ccsDoGrupo(selectedGroup) }}</span> &middot;
             <span class="tabular-nums text-ink">{{ nf.format(selectedGroup.expenses.length) }}</span> lançamento(s) &middot;
             <span class="font-mono tabular-nums text-ink-subtle">{{ periodoLabel }}</span>
           </p>
@@ -865,7 +993,7 @@ onMounted(async () => {
       </div>
 
       <div class="px-4 sm:px-5 py-4">
-        <DataTable :columns="COLUNAS_LANC" :rows="incModal.visiveis.value" row-key="id"
+        <DataTable :columns="colunasLanc" :rows="incModal.visiveis.value" row-key="id"
           clickable manual-sort density="compact"
           v-model:sort-by="modalOrdem.by" v-model:sort-dir="modalOrdem.dir"
           more-label="Ver mais campos"
@@ -943,17 +1071,10 @@ onMounted(async () => {
       </div>
 
       <Export v-model="showExport" :source="modalExpenses" title="Custos"
-        :subtitle="`${resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || 'Empreendimento'} (CC ${selectedGroup.costCenterId})`"
+        :subtitle="`${tituloDoGrupo(selectedGroup)} (CC ${ccsDoGrupo(selectedGroup)})`"
         initial-delimiter=";" initial-array-mode="join"
         :filters="exportFilters"
-        :preselect="[
-          'paidAt', 'dueDate', 'amount', 'status',
-          'installmentNumber', 'installmentsNumber',
-          'departmentName', 'description',
-          'bill.creditor_json.name', 'bill.creditor_json.cnpj',
-          'bill.document_identification_id', 'bill.document_number',
-          'bill.totalInvoiceAmount',
-        ]" />
+        :preselect="exportPreselect" />
     </div>
 
     <!-- Rodapé: a ação da seleção mora aqui, onde o polegar alcança. Sem
@@ -992,8 +1113,8 @@ onMounted(async () => {
   <LancamentoDetailModal
     :expense="detailItem"
     :visivel="detailVisible"
-    :enterprise-name="selectedGroup ? (resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || '') : ''"
-    :cost-center-id="selectedGroup?.costCenterId || ''"
+    :enterprise-name="selectedGroup?.merged ? (detailItem?.empreendimento || '') : (selectedGroup ? (resolveEnterpriseName(selectedGroup.costCenterId) || selectedGroup.costCenterName || '') : '')"
+    :cost-center-id="selectedGroup?.merged ? (detailItem?.costCenterId || '') : (selectedGroup?.costCenterId || '')"
     :saving="detailSaving"
     @fechar="fecharLancamento"
     @salvar="salvarObservacao"
