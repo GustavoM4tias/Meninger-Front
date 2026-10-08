@@ -44,6 +44,9 @@
                 </p>
             </div>
 
+            <Switch v-model="form.expected_monthly" label="Vence todo mês"
+                description="Liga para conta fixa do stand (aluguel, energia, água, internet). Mês fechado sem pagamento dela vira aviso no relatório do stand." />
+
             <Input v-model="form.description" label="Descrição" placeholder="Opcional" />
 
             <div v-if="errorMsg" class="text-sm text-data-neg flex items-center gap-2">
@@ -83,6 +86,7 @@ import Input from '@/components/UI/Input.vue';
 import Badge from '@/components/UI/Badge.vue';
 import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
+import Switch from '@/components/UI/Switch.vue';
 
 const props = defineProps({
     open: { type: Boolean, default: false },
@@ -92,7 +96,7 @@ const emit = defineEmits(['close', 'saved']);
 
 const store = useSalesStandStore();
 const errorMsg = ref('');
-const form = ref({ name: '', kind: 'recorrencia', conta_codes: [], description: '' });
+const form = ref({ name: '', kind: 'recorrencia', conta_codes: [], description: '', expected_monthly: false });
 const buscaConta = ref('');
 
 const contas = computed(() => store.contas);
@@ -124,8 +128,9 @@ watch(() => props.open, async (open) => {
             kind: props.category.kind || 'recorrencia',
             conta_codes: [...(props.category.conta_codes || [])],
             description: props.category.description || '',
+            expected_monthly: !!props.category.expected_monthly,
         }
-        : { name: '', kind: 'recorrencia', conta_codes: [], description: '' };
+        : { name: '', kind: 'recorrencia', conta_codes: [], description: '', expected_monthly: false };
 });
 
 function alternarConta(code) {
@@ -143,6 +148,7 @@ async function salvar() {
             kind: form.value.kind,
             conta_codes: form.value.conta_codes,
             description: form.value.description,
+            expected_monthly: !!form.value.expected_monthly,
         }, props.category?.id || null);
         emit('saved');
         emit('close');

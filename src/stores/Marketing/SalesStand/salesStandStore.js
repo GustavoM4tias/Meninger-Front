@@ -47,6 +47,9 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
     const expenses = ref([]);       // lançamento a lançamento, já classificado
     const summary = ref(null);      // totais, por mês, por categoria, por conta
     const patterns = ref([]);       // padrões recorrentes detectados
+    // Títulos em conta de stand SEM o departamento do stand: pendência para o
+    // administrativo acertar no Sienge. Não entram em nenhum total.
+    const outside = ref([]);
     const detailLoading = ref(false);
 
     const modelOptions = computed(() => models.value
@@ -263,6 +266,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
             expenses.value = data.expenses || [];
             summary.value = data.summary || null;
             patterns.value = data.patterns || [];
+            outside.value = data.outside_department || [];
             categories.value = data.categories || categories.value;
             spendUnavailable.value = !!data.spend_unavailable;
             return detail.value;
@@ -273,6 +277,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
             expenses.value = [];
             summary.value = null;
             patterns.value = [];
+            outside.value = [];
             throw e;
         } finally {
             detailLoading.value = false;
@@ -284,6 +289,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
         expenses.value = [];
         summary.value = null;
         patterns.value = [];
+        outside.value = [];
     }
 
     /** Classifica lançamentos em lote. payload: { keys, kind?, category_id?, reset? } */
@@ -378,7 +384,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
         stands, models, categories, contas, costCenters, settings, departments,
         audit, auditLoading, liveCheck, liveChecking,
         spendUnavailable, loading, saving, error,
-        detail, expenses, summary, patterns, detailLoading,
+        detail, expenses, summary, patterns, outside, detailLoading,
         modelOptions, categoryOptions, costCenterOptions, costCenterCodeByOption, costCenterOptionByCode,
         fetchMeta, fetchStands, fetchModels, fetchCategories, fetchContas,
         fetchSettings, saveSettings, fetchAudit, revalidarConferencia,

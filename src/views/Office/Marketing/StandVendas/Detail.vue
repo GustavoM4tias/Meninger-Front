@@ -9,6 +9,8 @@
                     <PageHelp storage-key="marketing-sales-stand-detalhe" title="Como usar o detalhe do stand"
                         intro="Aqui está tudo de um stand: quanto custou, o que se repete todo mês, o que ele tem e como ele ficou."
                         :steps="[
+                            { title: 'Leia o relatório', text: 'A aba Relatório mostra quanto o stand custou, mês a mês, por categoria e quanto custa para ficar aberto. Todo número abre os lançamentos que o formam; do lançamento dá para classificar ali mesmo.' },
+                            { title: 'Resolva as pendências', text: 'No fim do relatório ficam o que está fora do departamento no Sienge, o que não tem classificação e as contas mensais que faltaram. Resolvidas, elas somem sozinhas.' },
                             { title: 'Separe os tipos de gasto', text: 'Na aba Custos, marque os lançamentos e diga o que é construção, o que é recorrência e o que é esporádico. Dá para marcar vários de uma vez, até de meses diferentes.' },
                             { title: 'Use os padrões achados', text: 'O que se repete mês a mês (aluguel, energia, café) aparece no topo já somado. Um clique marca todos os lançamentos daquele padrão como recorrência.' },
                             { title: 'Marque os itens', text: 'A aba Itens traz a lista do modelo. Desmarque o que este stand não tem e acrescente o que ele tem de diferente.' },
@@ -55,127 +57,23 @@
             </template>
 
             <template v-else-if="stand">
-                <!-- Números do stand -->
-                <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
-                    <Surface variant="flat" padding="sm" bordered
-                        :title="`${store.expenses.length} lançamentos pagos no plano 2.02.07 dos centros de custo deste stand`">
-                        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Gasto total</p>
-                        <p class="font-mono tabular-nums font-bold text-ink text-metric-sm">{{ fmtBRL(stand.spend_total) }}</p>
-                        <p class="text-micro text-ink-subtle mt-0.5">{{ store.expenses.length }} lançamentos</p>
-                    </Surface>
-                    <Surface variant="flat" padding="sm" bordered
-                        :title="stand.status === 'defined'
-                            ? `Congelada em ${fmtDate(stand.defined_at)}. Hoje os lançamentos de construção somam ${fmtBRL(stand.construction_live)}.`
-                            : 'Soma dos lançamentos classificados como construção. Congela quando o stand for definido.'">
-                        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">
-                            Construção
-                            <i v-if="stand.status === 'defined'" class="fas fa-lock text-micro ml-0.5"></i>
-                        </p>
-                        <p class="font-mono tabular-nums font-bold text-series-1 text-metric-sm">
-                            {{ fmtBRL(stand.construction_value) }}
-                        </p>
-                        <p v-if="stand.status === 'defined' && divergeConstrucao" class="text-micro text-data-warn mt-0.5">
-                            hoje somaria {{ fmtBRL(stand.construction_live) }}
-                        </p>
-                        <p v-else class="text-micro text-ink-subtle mt-0.5">
-                            {{ stand.status === 'defined' ? `congelada em ${fmtDate(stand.defined_at)}` : 'apurando' }}
-                        </p>
-                    </Surface>
-                    <Surface variant="flat" padding="sm" bordered
-                        title="Soma de tudo que está classificado como recorrência, desde o primeiro mês">
-                        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Recorrência</p>
-                        <p class="font-mono tabular-nums font-bold text-series-2 text-metric-sm">
-                            {{ fmtBRL(stand.maintenance_value) }}
-                        </p>
-                        <p class="text-micro text-ink-subtle mt-0.5">acumulada</p>
-                    </Surface>
-                    <Surface variant="flat" padding="sm" bordered
-                        title="Gasto que acontece de vez em quando: não é montagem do stand nem custo mensal">
-                        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Esporádico</p>
-                        <p class="font-mono tabular-nums font-bold text-series-3 text-metric-sm">
-                            {{ fmtBRL(stand.sporadic_value) }}
-                        </p>
-                        <p class="text-micro text-ink-subtle mt-0.5">eventual</p>
-                    </Surface>
-                    <Surface variant="flat" padding="sm" bordered
-                        title="Média da recorrência nos últimos 3 meses JÁ FECHADOS (o mês corrente entra pela metade no backup e puxaria a média para baixo)">
-                        <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-1">Custo por mês</p>
-                        <p class="font-mono tabular-nums font-bold text-ink text-metric-sm">
-                            {{ fmtBRL(stand.recurring_monthly) }}
-                        </p>
-                        <p class="text-micro text-ink-subtle mt-0.5">média dos 3 meses fechados</p>
-                    </Surface>
-                </div>
-
-                <!-- Como o gasto se reparte, num olho só. -->
-                <Surface v-if="stand.spend_total > 0" variant="raised" padding="sm" class="mb-5">
-                    <div class="flex items-center gap-0.5">
-                        <span v-for="f in composicao" :key="f.kind" class="h-2.5 first:rounded-l last:rounded-r"
-                            :class="kindMeta(f.kind).dot" :style="{ width: f.width }"
-                            :title="`${kindMeta(f.kind).label}: ${fmtBRL(f.value)} (${f.pct}%)`"></span>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5">
-                        <span v-for="f in composicao" :key="f.kind"
-                            class="inline-flex items-center gap-1.5 text-xs text-ink-muted"
-                            :title="kindMeta(f.kind).hint">
-                            <span class="w-2 h-2 rounded-full" :class="kindMeta(f.kind).dot"></span>
-                            {{ kindMeta(f.kind).label }}
-                            <span class="font-mono tabular-nums text-ink">{{ fmtBRL(f.value) }}</span>
-                            <span class="font-mono tabular-nums text-ink-subtle">{{ f.pct }}%</span>
-                        </span>
-                    </div>
-                </Surface>
-
-                <!-- Identificação. Enquanto o stand é rascunho, modelo e centros
-                     de custo se trocam daqui mesmo; depois de definido eles
-                     travam, porque o valor congelado fala daquele conjunto. -->
-                <Surface variant="raised" padding="sm" class="mb-5">
-                    <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-                        <Badge :variant="statusMeta.variant" size="sm" :title="statusTitle">
-                            <i :class="statusMeta.icon" class="mr-1 text-micro"></i>{{ statusMeta.label }}
-                        </Badge>
-
-                        <button type="button" class="text-ink-muted text-left transition-colors"
-                            :class="podeTrocarBase ? 'hover:text-ink cursor-pointer' : 'cursor-default'"
-                            :title="podeTrocarBase
-                                ? 'Trocar o modelo deste stand'
-                                : 'Stand definido: reabra para trocar o modelo'"
-                            @click="podeTrocarBase && (editando = true)">
-                            <i class="fas fa-shapes text-micro mr-1.5 text-ink-subtle"></i>
-                            {{ stand.model?.name || 'Sem modelo' }}
-                            <span v-if="faixaModelo" class="text-ink-subtle font-mono tabular-nums ml-1">({{ faixaModelo }})</span>
-                            <i v-if="podeTrocarBase" class="fas fa-pen text-micro ml-1.5 text-ink-subtle"></i>
-                            <i v-else class="fas fa-lock text-micro ml-1.5 text-ink-subtle"></i>
-                        </button>
-
-                        <button type="button" class="text-ink-muted min-w-0 text-left transition-colors"
-                            :class="podeTrocarBase ? 'hover:text-ink cursor-pointer' : 'cursor-default'"
-                            :title="podeTrocarBase
-                                ? `Alterar os centros de custo (hoje: ${(stand.cost_center_names || []).join(', ') || 'nenhum'})`
-                                : `Stand definido: reabra para alterar os centros de custo (hoje: ${(stand.cost_center_names || []).join(', ')})`"
-                            @click="podeTrocarBase && (editando = true)">
-                            <i class="fas fa-building text-micro mr-1.5 text-ink-subtle"></i>
-                            {{ ccResumo }}
-                            <i v-if="podeTrocarBase" class="fas fa-pen text-micro ml-1.5 text-ink-subtle"></i>
-                            <i v-else class="fas fa-lock text-micro ml-1.5 text-ink-subtle"></i>
-                        </button>
-
-                        <span v-if="stand.notes" class="text-ink-muted min-w-0" :title="stand.notes">
-                            <i class="fas fa-note-sticky text-micro mr-1.5 text-ink-subtle"></i>{{ stand.notes }}
-                        </span>
-                    </div>
-                </Surface>
-
-                <!-- Abas -->
-                <div class="mb-5">
+                <!-- Abas: o relatório é a leitura; Custos, Itens e Fotos são o
+                     trabalho de quem cuida do stand. -->
+                <div class="mb-6">
                     <SegmentedControl v-model="tab" :options="[
+                        { value: 'relatorio', label: 'Relatório', icon: 'fas fa-chart-column' },
                         { value: 'custos', label: 'Custos', icon: 'fas fa-receipt', count: store.expenses.length },
                         { value: 'itens', label: 'Itens', icon: 'fas fa-list-check', count: stand.items?.length || 0 },
                         { value: 'fotos', label: 'Fotos', icon: 'fas fa-images', count: stand.images?.length || 0 },
                     ]" />
                 </div>
 
-                <ExpenseTab v-if="tab === 'custos'" :expenses="store.expenses" :summary="store.summary"
+                <StandReport v-if="tab === 'relatorio'" :stand="stand" :expenses="store.expenses"
+                    :outside="store.outside" :categories="store.categories" :category-options="store.categoryOptions"
+                    :can-manage="podeCuidar" :saving="store.saving"
+                    @classify="classificar" @edit="editando = true" />
+
+                <ExpenseTab v-else-if="tab === 'custos'" :expenses="store.expenses" :summary="store.summary"
                     :patterns="store.patterns" :category-options="store.categoryOptions"
                     :can-manage="podeCuidar" :saving="store.saving" @classify="classificar" />
 
@@ -206,17 +104,16 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import { useSalesStandStore, STATUS_META, kindMeta } from '@/stores/Marketing/SalesStand/salesStandStore';
+import { useSalesStandStore } from '@/stores/Marketing/SalesStand/salesStandStore';
 import { useCan } from '@/composables/useCan';
 import { pedirConfirmacao } from '@/composables/useConfirm';
-import { fmtBRL, fmtDate, fmtValueRange, fmtAreaRange } from './standFormat';
+import { fmtBRL } from './standFormat';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
-import Badge from '@/components/UI/Badge.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
@@ -225,6 +122,7 @@ import StandFormModal from './StandFormModal.vue';
 import ExpenseTab from './components/ExpenseTab.vue';
 import ItemsTab from './components/ItemsTab.vue';
 import PhotosTab from './components/PhotosTab.vue';
+import StandReport from './report/StandReport.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -232,7 +130,7 @@ const toast = useToast();
 const store = useSalesStandStore();
 const can = useCan('/marketing/stand-vendas');
 
-const tab = ref('custos');
+const tab = ref('relatorio');
 const editando = ref(false);
 
 const standId = computed(() => Number(route.params.id));
@@ -243,60 +141,9 @@ const canManage = computed(() => can('manage'));
 // `!!stand` não é detalhe: o cabeçalho renderiza antes de o stand chegar, e
 // sem ele os botões leem `stand.status` de um nulo.
 const podeCuidar = computed(() => canManage.value && !!stand.value);
-const statusMeta = computed(() => STATUS_META[stand.value?.status] || STATUS_META.draft);
-
-// Modelo e centros de custo mudam o que o stand É. Com o custo de construção
-// já congelado, trocar isso deixaria o número falando de outro stand — por
-// isso só em rascunho (a API cobra o mesmo).
-// Repartição do gasto por tipo. Usa a construção AO VIVO: num stand definido
-// o valor congelado pode não fechar com o total, e a faixa passaria de 100%.
-const PARTES = [
-    ['construcao', 'construction_live'],
-    ['recorrencia', 'maintenance_value'],
-    ['esporadica', 'sporadic_value'],
-    ['sem_classificacao', 'unclassified_value'],
-];
-const composicao = computed(() => {
-    const total = Number(stand.value?.spend_total) || 0;
-    if (!total) return [];
-    return PARTES
-        .map(([kind, campo]) => ({ kind, value: Number(stand.value?.[campo]) || 0 }))
-        .filter((f) => f.value > 0)
-        .map((f) => ({
-            ...f,
-            pct: Math.round((f.value / total) * 100),
-            width: `${Math.max(2, Math.round((f.value / total) * 100))}%`,
-        }));
-});
-
-const podeTrocarBase = computed(() => podeCuidar.value && stand.value?.status !== 'defined');
-const statusTitle = computed(() => (stand.value?.status === 'defined'
-    ? `Construção congelada em ${fmtDate(stand.value?.defined_at)}. Modelo e centros de custo travados.`
-    : 'Em apuração: dá para trocar modelo e centros de custo, e o custo de construção ainda soma ao vivo.'));
-
-const faixaModelo = computed(() => {
-    if (!stand.value?.model) return '';
-    return [fmtValueRange(stand.value.model), fmtAreaRange(stand.value.model)].filter(Boolean).join(' · ');
-});
-
-const ccResumo = computed(() => {
-    const nomes = stand.value?.cost_center_names || [];
-    if (!nomes.length) return 'Sem centro de custo';
-    if (nomes.length <= 2) return nomes.join(', ');
-    return `${nomes[0]} e mais ${nomes.length - 1} centros de custo`;
-});
-
 const subtitulo = computed(() => {
     if (!stand.value) return 'Custo, itens e fotos do stand.';
     return `${stand.value.model?.name || 'Sem modelo'} · ${stand.value.cost_center_names?.length || 0} centro(s) de custo no Sienge`;
-});
-
-// Depois de definido, o que ainda entra como construção não mexe no valor
-// congelado. Se os dois números divergem, a tela mostra — em vez de deixar o
-// congelado parecer o total.
-const divergeConstrucao = computed(() => {
-    if (!stand.value || stand.value.status !== 'defined') return false;
-    return Math.abs(Number(stand.value.construction_live || 0) - Number(stand.value.construction_value || 0)) >= 0.01;
 });
 
 async function carregar() {
@@ -313,6 +160,7 @@ const voltar = () => router.push('/marketing/stand-vendas');
 async function classificar(payload) {
     try {
         await store.classify(standId.value, payload);
+        if (tab.value === 'relatorio') toast.success(payload.reset ? 'O lançamento voltou a herdar da conta.' : 'Classificação salva.');
     } catch (e) {
         toast.error(e.message || 'Não foi possível classificar os lançamentos.');
     }

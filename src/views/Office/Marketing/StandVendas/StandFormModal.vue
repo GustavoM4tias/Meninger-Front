@@ -43,6 +43,9 @@
                     hint="Percentual do recorrente (pós-definição) a lançar como custo de marketing. Ainda sem efeito." />
             </div>
 
+            <Input v-model="form.opened_at" type="date" label="Inauguração"
+                hint="Marca a linha do tempo do relatório e conta os dias do stand no ar." />
+
             <Input v-model="form.notes" label="Observações" placeholder="Opcional" />
 
             <div v-if="errorMsg" class="text-sm text-data-neg flex items-center gap-2">
@@ -90,7 +93,7 @@ const errorMsg = ref('');
 // número congelado fala daquele conjunto — trocar sem reabrir seria mentira.
 const travado = computed(() => props.stand?.status === 'defined');
 const ccSelection = ref([]);
-const form = ref({ name: '', model_id: '', notes: '', maintenance_percent: '' });
+const form = ref({ name: '', model_id: '', notes: '', opened_at: '', maintenance_percent: '' });
 
 watch(() => props.open, (open) => {
     if (!open) return;
@@ -100,13 +103,14 @@ watch(() => props.open, (open) => {
             name: props.stand.name || '',
             model_id: props.stand.model_id || '',
             notes: props.stand.notes || '',
+            opened_at: props.stand.opened_at ? String(props.stand.opened_at).slice(0, 10) : '',
             maintenance_percent: props.stand.maintenance_percent != null ? String(Number(props.stand.maintenance_percent)) : '',
         };
         ccSelection.value = (props.stand.cost_center_ids || [])
             .map((id) => store.costCenterOptionByCode.get(Number(id)))
             .filter(Boolean);
     } else {
-        form.value = { name: '', model_id: '', notes: '', maintenance_percent: '' };
+        form.value = { name: '', model_id: '', notes: '', opened_at: '', maintenance_percent: '' };
         ccSelection.value = [];
     }
 });
@@ -123,6 +127,7 @@ async function save() {
         model_id: form.value.model_id || null,
         cost_center_ids: ccIds,
         notes: form.value.notes,
+        opened_at: form.value.opened_at || null,
     };
     if (props.stand) {
         payload.maintenance_percent = form.value.maintenance_percent === '' ? null : Number(form.value.maintenance_percent);
