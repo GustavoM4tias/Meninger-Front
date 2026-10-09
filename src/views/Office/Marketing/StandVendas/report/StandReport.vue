@@ -15,7 +15,7 @@ import ReportDialog from './ReportDialog.vue';
 import { fmtBRL, fmtDate, fmtYm, fmtValueRange, fmtAreaRange } from '../standFormat';
 import {
     KIND_ORDER, FASE, faseLabel, kindOf, sumOf, catKey, catLabel, reportMonths, amountIn, currentYm,
-    buildNotes, noteParts, daysSince, niceName, shortNote, buildGroups,
+    buildNotes, noteParts, daysSince, niceName, shortNote, buildGroups, loadReportFonts,
 } from './reportModel';
 import './standReport.css';
 
@@ -30,15 +30,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['classify', 'edit']);
 
-// Fontes do relatório (as mesmas do HTML). Carrega uma vez por sessão.
-onMounted(() => {
-    if (document.getElementById('sr-fonts')) return;
-    const l = document.createElement('link');
-    l.id = 'sr-fonts';
-    l.rel = 'stylesheet';
-    l.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap';
-    document.head.appendChild(l);
-});
+onMounted(loadReportFonts);
 
 // ── Números-base ─────────────────────────────────────────────────────────────
 const items = computed(() => props.expenses);

@@ -285,3 +285,13 @@ export function buildGroups(items, max = 6) {
     grupos.sort((a, b) => (a.key === OUTRAS.key) - (b.key === OUTRAS.key) || (ordem[a.kind] ?? 9) - (ordem[b.kind] ?? 9) || b.value - a.value);
     return { grupos, groupOf };
 }
+
+// Fontes do relatório (as do HTML aprovado). Carrega uma vez por sessão.
+export function loadReportFonts() {
+    if (typeof document === 'undefined' || document.getElementById('sr-fonts')) return;
+    const l = document.createElement('link');
+    l.id = 'sr-fonts';
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap';
+    document.head.appendChild(l);
+}

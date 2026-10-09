@@ -54,45 +54,14 @@
             </Surface>
 
             <!-- ══ Aba Stands ══ -->
-            <div v-if="tab === 'stands'" class="flex flex-col gap-6">
-                <!-- Todos os stands num olhar: o que custaram e quanto custam por mês. -->
-                <section v-if="store.stands.length" class="grid grid-cols-2 lg:grid-cols-4 border-y border-line resumo">
-                    <div class="resumo-item stagger-in" style="--i: 0">
-                        <span class="metric-label">{{ store.stands.length }} stand{{ store.stands.length === 1 ? '' : 's' }}</span>
-                        <span class="metric text-metric-sm sm:text-metric whitespace-nowrap" :class="{ 'metric-counting': cTotal.counting.value }">{{ fmtBRLShort(cTotal.display.value) }}</span>
-                        <span class="text-xs text-ink-muted">gasto total no Sienge</span>
-                    </div>
-                    <div class="resumo-item stagger-in" style="--i: 1">
-                        <span class="metric-label">Construção</span>
-                        <span class="metric text-metric-sm sm:text-metric whitespace-nowrap" :class="{ 'metric-counting': cConstr.counting.value }">{{ fmtBRLShort(cConstr.display.value) }}</span>
-                        <span class="text-xs text-ink-muted">média de {{ fmtBRLShort(resumo.construcao / Math.max(1, resumo.comConstrucao)) }} por stand</span>
-                    </div>
-                    <div class="resumo-item stagger-in" style="--i: 2">
-                        <span class="metric-label">Para manter</span>
-                        <span class="metric text-metric-sm sm:text-metric whitespace-nowrap" :class="{ 'metric-counting': cMes.counting.value }">{{ fmtBRLShort(cMes.display.value) }}<span class="text-sm font-normal text-ink-muted">/mês</span></span>
-                        <span class="text-xs text-ink-muted">todos os stands abertos</span>
-                    </div>
-                    <div class="resumo-item stagger-in" style="--i: 3">
-                        <span class="metric-label">Pendências</span>
-                        <span class="metric text-metric-sm sm:text-metric" :class="resumo.pendencias ? 'text-data-warn' : 'text-data-pos'">{{ resumo.pendencias }}</span>
-                        <span class="text-xs text-ink-muted">{{ resumo.pendencias ? `em ${resumo.comPendencia} stand(s)` : 'tudo em dia' }}</span>
-                    </div>
-                </section>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    <template v-if="store.loading && !store.stands.length">
-                        <Skeleton v-for="n in 3" :key="n" variant="chart" height="h-96" />
-                    </template>
-                    <StandCard v-for="(s, idx) in store.stands" :key="s.id" :stand="s" class="stagger-in"
-                        :style="{ '--i': idx + 2 }" @open="abrir" />
-                    <div v-if="!store.loading && !store.stands.length" class="md:col-span-2 xl:col-span-3">
-                        <Surface variant="raised" padding="none">
-                            <EmptyState icon="fas fa-store" title="Nenhum stand cadastrado"
-                                description="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo." />
-                        </Surface>
-                    </div>
-                </div>
-            </div>
+            <template v-if="tab === 'stands'">
+                <Skeleton v-if="store.loading && !store.stands.length" variant="chart" height="h-96" />
+                <StandsOverview v-else-if="store.stands.length" :stands="store.stands" @open="abrir" />
+                <Surface v-else variant="raised" padding="none">
+                    <EmptyState icon="fas fa-store" title="Nenhum stand cadastrado"
+                        description="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo." />
+                </Surface>
+            </template>
 
             <!-- ══ Aba Modelos ══ -->
             <div v-else-if="tab === 'modelos'" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -227,8 +196,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSalesStandStore, kindMeta } from '@/stores/Marketing/SalesStand/salesStandStore';
 import { useCan } from '@/composables/useCan';
-import { fmtValueRange, fmtAreaRange, sortModelsByTier, fmtBRLShort } from './standFormat';
-import { useCountUp } from '@/composables/useCountUp';
+import { fmtValueRange, fmtAreaRange, sortModelsByTier } from './standFormat';
 import Skeleton from '@/components/UI/Skeleton.vue';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -246,7 +214,7 @@ import ModelFormModal from './ModelFormModal.vue';
 import StandFormModal from './StandFormModal.vue';
 import CategoryFormModal from './CategoryFormModal.vue';
 import SourceSettingsCard from './components/SourceSettingsCard.vue';
-import StandCard from './components/StandCard.vue';
+import StandsOverview from './report/StandsOverview.vue';
 import AuditTab from './components/AuditTab.vue';
 import AutoRulesCard from './components/AutoRulesCard.vue';
 
@@ -286,23 +254,6 @@ const colunasCategoria = computed(() => [
     { key: 'sort_order', label: 'Ordem', priority: 3, numeric: true, sortable: true },
 ]);
 
-// Resumo de todos os stands que a pessoa enxerga.
-const resumo = computed(() => {
-    const st = store.stands;
-    const soma = (campo) => st.reduce((acc, x) => acc + (Number(x[campo]) || 0), 0);
-    return {
-        total: soma('spend_total'),
-        construcao: soma('construction_value'),
-        comConstrucao: st.filter((x) => Number(x.construction_value) > 0).length,
-        mensal: soma('recurring_monthly'),
-        pendencias: soma('pending_count'),
-        comPendencia: st.filter((x) => Number(x.pending_count) > 0).length,
-    };
-});
-const cTotal = useCountUp(computed(() => resumo.value.total), { duration: 850 });
-const cConstr = useCountUp(computed(() => resumo.value.construcao), { duration: 850 });
-const cMes = useCountUp(computed(() => resumo.value.mensal), { duration: 850 });
-
 const abrir = (s) => router.push(`/marketing/stand-vendas/${s.id}`);
 
 function openNewModel() { editingModel.value = null; modelModalOpen.value = true; }
@@ -317,13 +268,3 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
-.resumo-item { @apply flex flex-col gap-1 px-4 py-4 min-w-0; }
-.resumo > .resumo-item:nth-child(odd) { padding-left: 0; }
-.resumo > .resumo-item:nth-child(2n) { @apply border-l border-line; }
-.resumo > .resumo-item:nth-child(n+3) { @apply border-t border-line; }
-@media (min-width: 1024px) {
-    .resumo > .resumo-item:nth-child(n+3) { border-top-width: 0; }
-    .resumo > .resumo-item + .resumo-item { @apply border-l border-line; padding-left: 1rem; }
-}
-</style>
