@@ -149,14 +149,27 @@ export function monthlyGaps(categories, items, openedAt) {
 /** As pendências do stand, na ordem em que valem ser resolvidas. */
 export function buildNotes({ items, outside, categories, openedAt, contaPrefix = '20207' }) {
     const notes = [];
-    if (outside.length) {
+    const subs = outside.filter((i) => i.outsideReason === 'substituto');
+    if (subs.length) {
+        notes.push({
+            id: 'substituto',
+            title: subs.length === 1 ? 'Nota que substituiu um provisório do stand sem o departamento' : `${subs.length} notas que substituíram provisórios do stand sem o departamento`,
+            text: `O título provisório (PCT do contrato ou PPC do pedido) era do Stand de Vendas, mas a nota que o substituiu foi criada em outro departamento. O dinheiro saiu da conta (${fmtMoney(sumOf(subs))}), mas fica fora de todos os números desta tela. Abra cada um para ver empresa, centro de custo e departamento.`,
+            act: 'Confira se é gasto do stand. Se for, inclua o departamento Stand de Vendas no título e clique em "Já corrigi: conferir no Sienge": entra na hora.',
+            items: subs,
+            tone: 'warn',
+            liveCheck: true,
+        });
+    }
+    const planoFora = outside.filter((i) => i.outsideReason !== 'substituto');
+    if (planoFora.length) {
         notes.push({
             id: 'fora-depto',
-            title: outside.length === 1 ? 'Título de stand fora do departamento' : `${outside.length} títulos de stand fora do departamento`,
-            text: `Estão numa conta do plano de stand, mas sem o departamento Stand de Vendas no Sienge. Por isso ficam fora de todos os números desta tela. Com eles, o gasto total iria a ${fmtMoney(sumOf(items) + sumOf(outside))}.`,
+            title: planoFora.length === 1 ? 'Título de stand fora do departamento' : `${planoFora.length} títulos de stand fora do departamento`,
+            text: `Estão numa conta do plano de stand, mas sem o departamento Stand de Vendas no Sienge (${fmtMoney(sumOf(planoFora))}). Por isso ficam fora de todos os números desta tela. Com tudo o que está fora do departamento, o gasto total iria a ${fmtMoney(sumOf(items) + sumOf(outside))}.`,
             act: 'Acerto no Sienge: apropriar o título ao departamento Stand de Vendas. Depois, clique em "Já corrigi: conferir no Sienge" e ele entra na hora.',
             liveCheck: true,
-            items: outside,
+            items: planoFora,
             tone: 'warn',
         });
     }

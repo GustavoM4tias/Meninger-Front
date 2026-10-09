@@ -628,6 +628,7 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
                 <p><b>Fonte.</b> Backup do Sienge, centros de custo {{ (stand.cost_centers || []).map((c) => c.code).join(', ') || '-' }}.</p>
                 <p><b>O que conta como gasto de stand.</b> Os títulos pagos na régua da aba Categorias (hoje, os apropriados ao departamento Stand de Vendas), pelo valor efetivamente pago: baixas de pagamento e adiantamento, sem estornos, com juros e multa e menos descontos, rateado pelo centro de custo e pelo departamento. Documentos PCT ficam fora.</p>
                 <p><b>Fases e natureza.</b> Cada lançamento ganha natureza pela conta do Sienge ou, sem ela, por palavra no fornecedor e na observação. A fase vem da natureza e da janela de montagem: o que foi pago até alguns dias depois da inauguração é implantação; obra paga depois é ajuste. Classificação feita à mão vale sobre tudo.</p>
+                <p><b>Medição é título.</b> "Faturamento da medição N do contrato" é a observação que o Sienge escreve no título criado pela medição de um contrato. Ele é pago como qualquer outro título e só conta quando tem baixa de pagamento. O título provisório do contrato (PCT) e do pedido (PPC) não conta: ele é baixado por substituição quando chega a nota, e quem conta é a nota. Abatimento de adiantamento também não conta, porque o dinheiro já saiu no adiantamento. Clique em qualquer pagamento para ver empresa, centro de custo, departamentos e a conta bancária de onde saiu.</p>
                 <p><b>Para manter.</b> Cada conta de operação entra pela média dos meses em que foi paga nos últimos 3 meses fechados; conta que só apareceu no mês corrente entra pelo valor dele.</p>
             </div>
         </section>
@@ -636,7 +637,7 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
 
         <ReportDialog :open="dlgOpen" :root="dlgRoot" :items="items" :outside="outside" :notes="notes"
             :grupos="grupos" :group-of="groupOf" :breakdown="stand.recurring_breakdown || []" :monthly="monthly"
-            :photos="fotos" :category-options="categoryOptions" :can-manage="canManage" :saving="saving"
+            :photos="fotos" :category-options="categoryOptions" :cost-centers="stand.cost_centers || []" :can-manage="canManage" :saving="saving"
             @close="dlgOpen = false" @classify="(p) => emit('classify', p)" />
     </div>
 </template>

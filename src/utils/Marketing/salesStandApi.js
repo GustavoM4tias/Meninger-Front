@@ -34,6 +34,8 @@ export default {
     conferencia: () => req('/conferencia'),
     // Bate na API do Sienge, ao vivo, para saber o que ja foi corrigido
     revalidar: (payload = {}) => req('/conferencia/revalidar', { method: 'POST', ...body(payload) }),
+    // Confere UM título na API do Sienge, agora (só leitura)
+    conferirTitulo: (payload) => req('/conferencia/titulo', { method: 'POST', ...body(payload) }),
     saveSettings: (payload) => req('/settings', { method: 'PATCH', ...body(payload) }),
 
     // Stands modelo (categorias)

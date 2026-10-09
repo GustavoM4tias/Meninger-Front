@@ -24,6 +24,7 @@ const props = defineProps({
     monthly: { type: Number, default: 0 },
     photos: { type: Array, default: () => [] },
     categoryOptions: { type: Array, default: () => [] },
+    costCenters: { type: Array, default: () => [] },
     canManage: { type: Boolean, default: false },
     saving: { type: Boolean, default: false },
 });
@@ -99,10 +100,28 @@ function comoClassificou(i) {
     if (i.phase === 'pos_montagem') return `${base}; ajuste porque foi pago depois da montagem`;
     return base;
 }
+const ORIGEM = {
+    ME: 'Medição de contrato (o título nasce da medição aprovada)', CP: 'Contas a pagar (lançado direto)',
+    AC: 'Pedido de compra', GI: 'Guia de imposto retido', FP: 'Folha de pagamento', LO: 'Locação',
+};
+const origem = (o) => ORIGEM[String(o || '').trim()] || (o ? `Origem ${o}` : 'Não informada');
+// Por que este valor está (ou não) no relatório, em uma frase.
+function porQueConta(i) {
+    const stand = (i.departments || []).find((d) => /stand/i.test(d.name || ''));
+    const pago = `${(i.paymentTypes || ['Pagamento']).join(' e ').toLowerCase()}${(i.bankAccounts || []).length ? ` pela conta ${i.bankAccounts.join(', ')}` : ''}`;
+    if (i.outsideDepartment) {
+        return i.outsideReason === 'substituto'
+            ? `Não conta: substituiu um provisório do Stand de Vendas, mas foi criado sem esse departamento. O dinheiro saiu (${pago}).`
+            : `Não conta: a conta é de stand, mas o título não está no departamento Stand de Vendas. O dinheiro saiu (${pago}).`;
+    }
+    return `Conta porque é título pago do contas a pagar (${pago}) e está no departamento ${stand ? `${stand.name} (${stand.pct}%)` : 'do stand'}${i.liveFixed ? ', confirmado agora na API do Sienge' : ''}.`;
+}
 const detalhes = computed(() => {
     const i = item.value;
     if (!i) return [];
+    const cc = props.costCenters.find((c) => Number(c.code) === Number(i.costCenterId));
     return [
+        ['Por que conta', porQueConta(i)],
         ['Pago em', (i.months || []).length > 1 ? i.months.map((m) => `${fmtDate(m.paidAt)} (${fmtBRL(m.amount)})`).join(' + ') : fmtDate(i.paidAt)],
         ['Emissão', fmtDate(i.issuedAt)],
         ['Fornecedor no Sienge', i.supplier],
@@ -110,6 +129,11 @@ const detalhes = computed(() => {
         ['Natureza', i.categoryName || 'Sem categoria'],
         ['Como foi classificado', comoClassificou(i)],
         ['Documento', `${i.docType || ''} ${i.docNumber || ''} · título ${i.billId}/${i.installment}`],
+        ['Origem do título', origem(i.origin)],
+        ['Empresa', i.company ? `${i.company}${i.companyId ? ` (cód. ${i.companyId})` : ''}` : '-'],
+        ['Centro de custo', cc ? `${cc.code} · ${cc.name}` : String(i.costCenterId || '-')],
+        ['Departamentos do título', (i.departments || []).length ? i.departments.map((d) => `${d.name} (${d.pct}%)`).join(', ') : 'Nenhum departamento'],
+        ['Como foi pago', `${(i.paymentTypes || []).join(' e ') || '-'}${(i.bankAccounts || []).length ? ` · conta ${i.bankAccounts.join(', ')}` : ''}`],
     ];
 });
 function salvarClasse() {
