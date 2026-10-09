@@ -89,11 +89,12 @@ watch(item, (i) => { form.value = { kind: i?.kind || 'construcao', category_id: 
 
 function comoClassificou(i) {
     if (i.outsideDepartment) return 'Fora dos totais até o título ganhar o departamento do stand no Sienge';
-    if (i.source === 'manual') return 'Classificado à mão neste stand';
-    if (!i.kind) return 'Sem classificação: nenhuma conta, regra ou janela de montagem pegou este lançamento';
-    const base = i.source === 'regra' ? `Pela regra "${i.rule}"`
+    const vivo = i.liveFixed ? `Corrigido no Sienge (conferência ao vivo de ${fmtDate(i.liveCheckedAt)}); ` : '';
+    if (i.source === 'manual') return `${vivo}Classificado à mão neste stand`;
+    if (!i.kind) return `${vivo}Sem classificação: nenhuma conta, regra ou janela de montagem pegou este lançamento`;
+    const base = vivo + (i.source === 'regra' ? `Pela regra "${i.rule}"`
         : i.source === 'categoria' ? `Pela conta ${i.contaCode} (categoria ${i.categoryName})`
-            : 'Pela janela de montagem';
+            : 'Pela janela de montagem');
     if (i.phase === 'montagem') return `${base}; implantação porque foi pago dentro da janela de montagem`;
     if (i.phase === 'pos_montagem') return `${base}; ajuste porque foi pago depois da montagem`;
     return base;
@@ -179,7 +180,7 @@ const head = computed(() => {
                                     <b>{{ niceName(r.item.supplier) }}</b>
                                     <span><i class="sw sm" :style="{ background: corDe(r.item) }"></i>{{ catLabel(r.item) }}<template v-if="shortNote(r.item.notes)"> · {{ shortNote(r.item.notes) }}</template></span>
                                 </span>
-                                <span class="a num">{{ fmtBRL(r.value) }}<span v-if="r.item.outsideDepartment" class="tag">fora do departamento</span></span>
+                                <span class="a num">{{ fmtBRL(r.value) }}<span v-if="r.item.outsideDepartment" class="tag">fora do departamento</span><span v-else-if="r.item.liveFixed" class="tag ok" data-tip="A API do Sienge confirmou o departamento do stand; o espelho confirma na próxima carga">corrigido no Sienge</span></span>
                             </button>
                             <p v-if="!rows.length" class="srd-empty">Nenhum pagamento neste recorte.</p>
                         </div>

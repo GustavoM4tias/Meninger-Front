@@ -65,7 +65,8 @@
                 <StandReport v-if="tab === 'relatorio'" :stand="stand" :expenses="store.expenses"
                     :outside="store.outside" :categories="store.categories" :category-options="store.categoryOptions"
                     :can-manage="podeCuidar" :saving="store.saving"
-                    @classify="classificar" @edit="editando = true" />
+                    :checking="store.liveCheckingStand"
+                    @classify="classificar" @edit="editando = true" @live-check="conferirAoVivo" />
 
                 <ExpenseTab v-else-if="tab === 'custos'" :expenses="store.expenses" :summary="store.summary"
                     :patterns="store.patterns" :category-options="store.categoryOptions"
@@ -160,6 +161,19 @@ async function classificar(payload) {
         if (tab.value === 'relatorio') toast.success(payload.reset ? 'O lançamento voltou a herdar da conta.' : 'Classificação salva.');
     } catch (e) {
         toast.error(e.message || 'Não foi possível classificar os lançamentos.');
+    }
+}
+
+// Título corrigido no Sienge não precisa esperar a carga diária do espelho:
+// a conferência ao vivo confirma e o relatório já conta.
+async function conferirAoVivo() {
+    try {
+        const r = await store.liveCheckStand(standId.value);
+        if (!r.checked) toast.info('Nenhum título deste stand está fora do departamento.');
+        else if (r.resolved) toast.success(`${r.resolved} de ${r.checked} título(s) já corrigido(s) no Sienge: entraram no relatório.`);
+        else toast.info(`Nenhum dos ${r.checked} título(s) foi corrigido no Sienge ainda.`);
+    } catch (e) {
+        toast.error(e.message || 'Não foi possível consultar o Sienge agora.');
     }
 }
 

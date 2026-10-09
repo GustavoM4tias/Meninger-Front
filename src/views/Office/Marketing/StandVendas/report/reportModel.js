@@ -154,9 +154,22 @@ export function buildNotes({ items, outside, categories, openedAt, contaPrefix =
             id: 'fora-depto',
             title: outside.length === 1 ? 'Título de stand fora do departamento' : `${outside.length} títulos de stand fora do departamento`,
             text: `Estão numa conta do plano de stand, mas sem o departamento Stand de Vendas no Sienge. Por isso ficam fora de todos os números desta tela. Com eles, o gasto total iria a ${fmtMoney(sumOf(items) + sumOf(outside))}.`,
-            act: 'Acerto no Sienge: apropriar o título ao departamento Stand de Vendas. Na próxima carga ele entra sozinho.',
+            act: 'Acerto no Sienge: apropriar o título ao departamento Stand de Vendas. Depois, clique em "Já corrigi: conferir no Sienge" e ele entra na hora.',
+            liveCheck: true,
             items: outside,
             tone: 'warn',
+        });
+    }
+    const aoVivo = items.filter((i) => i.liveFixed);
+    if (aoVivo.length) {
+        notes.push({
+            id: 'corrigido-ao-vivo',
+            title: aoVivo.length === 1 ? 'Título corrigido no Sienge já entra na conta' : `${aoVivo.length} títulos corrigidos no Sienge já entram na conta`,
+            text: 'A conferência ao vivo confirmou o departamento do stand na API do Sienge. O espelho confirma na próxima carga diária; até lá eles aparecem com o selo "corrigido no Sienge".',
+            act: 'Nada a fazer.',
+            items: aoVivo,
+            tone: 'info',
+            counted: false,
         });
     }
     const semClasse = items.filter((i) => !i.kind);

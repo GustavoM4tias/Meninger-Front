@@ -172,7 +172,10 @@ async function conferir(continuar) {
     try {
         const offset = continuar ? (live.value?.offset || 0) + (live.value?.checked?.length || 0) : 0;
         const r = await store.revalidarConferencia({ limit: lote, offset, acumular: continuar });
-        toast.info(`${r.resolved} de ${r.checked.length} títulos já estão corrigidos no Sienge.`);
+        toast.info(r.resolved
+            ? `${r.resolved} de ${r.checked.length} títulos já estão corrigidos no Sienge e entraram nos relatórios dos stands.`
+            : `Nenhum dos ${r.checked.length} títulos conferidos foi corrigido no Sienge ainda.`);
+        if (r.resolved) store.fetchStands();
     } catch (e) {
         toast.error(e.message || 'Não foi possível consultar o Sienge agora.');
     }

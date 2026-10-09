@@ -52,6 +52,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
     // Títulos em conta de stand SEM o departamento do stand: pendência para o
     // administrativo acertar no Sienge. Não entram em nenhum total.
     const outside = ref([]);
+    const liveCheckingStand = ref(false);
     const detailLoading = ref(false);
 
     const modelOptions = computed(() => models.value
@@ -296,6 +297,18 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
         outside.value = [];
     }
 
+    /** Confere no Sienge, ao vivo, os títulos do stand fora do departamento e recarrega. */
+    async function liveCheckStand(id) {
+        liveCheckingStand.value = true;
+        try {
+            const r = await api.liveCheck(id);
+            await fetchDetail(id);
+            return r;
+        } finally {
+            liveCheckingStand.value = false;
+        }
+    }
+
     /** Classifica lançamentos em lote. payload: { keys, kind?, category_id?, reset? } */
     async function classify(id, payload) {
         saving.value = true;
@@ -388,7 +401,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
         stands, models, categories, contas, costCenters, settings, departments, autoRules,
         audit, auditLoading, liveCheck, liveChecking,
         spendUnavailable, loading, saving, error,
-        detail, expenses, summary, patterns, outside, detailLoading,
+        detail, expenses, summary, patterns, outside, detailLoading, liveCheckingStand, liveCheckStand,
         modelOptions, categoryOptions, costCenterOptions, costCenterCodeByOption, costCenterOptionByCode,
         fetchMeta, fetchStands, fetchModels, fetchCategories, fetchContas,
         fetchSettings, saveSettings, fetchAudit, revalidarConferencia,

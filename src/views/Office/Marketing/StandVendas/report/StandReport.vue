@@ -28,8 +28,9 @@ const props = defineProps({
     categoryOptions: { type: Array, default: () => [] },
     canManage: { type: Boolean, default: false },
     saving: { type: Boolean, default: false },
+    checking: { type: Boolean, default: false },
 });
-const emit = defineEmits(['classify', 'edit']);
+const emit = defineEmits(['classify', 'edit', 'live-check']);
 
 onMounted(loadReportFonts);
 
@@ -218,16 +219,69 @@ const opTotals = computed(() => opMonths.value.map((ym) => recorrentes.value.red
 const fFase = ref('');
 const fCat = ref('');
 const fBusca = ref('');
+const fDe = ref('');
+const fAte = ref('');
+const fMin = ref('');
+const fMax = ref('');
+const fOrigem = ref('');
+const ORIGENS = [
+    { v: '', l: 'Toda origem' },
+    { v: 'categoria', l: 'Pela conta do Sienge' },
+    { v: 'regra', l: 'Por regra de palavra' },
+    { v: 'janela', l: 'Ajustado pela janela de montagem' },
+    { v: 'manual', l: 'Classificado à mão' },
+    { v: 'live', l: 'Corrigido no Sienge (ao vivo)' },
+    { v: 'sem', l: 'Sem classificação' },
+];
+const casaOrigem = (i, v) => (!v ? true : v === 'live' ? !!i.liveFixed : v === 'sem' ? !i.kind
+    : v === 'janela' ? !!i.phase : i.source === v);
+// Atalhos de período: o stand tem um marco natural, a inauguração.
+const PERIODOS = computed(() => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    const tres = new Date(); tres.setMonth(tres.getMonth() - 3);
+    const list = [{ k: 'tudo', l: 'Tudo', de: '', ate: '' }];
+    if (openedAt.value) {
+        list.push({ k: 'antes', l: 'Até a inauguração', de: '', ate: openedAt.value });
+        list.push({ k: 'depois', l: 'Depois da inauguração', de: openedAt.value, ate: '' });
+    }
+    list.push({ k: '3m', l: 'Últimos 3 meses', de: tres.toISOString().slice(0, 10), ate: hoje });
+    return list;
+});
+const periodoAtivo = computed(() => PERIODOS.value.find((p) => p.de === fDe.value && p.ate === fAte.value)?.k || '');
+const usarPeriodo = (p) => { fDe.value = p.de; fAte.value = p.ate; };
+const ordemL = ref({ campo: 'paidAt', dir: 1 });
+function ordenarL(campo) {
+    ordemL.value = ordemL.value.campo === campo ? { campo, dir: -ordemL.value.dir } : { campo, dir: campo === 'amount' ? -1 : 1 };
+}
+const iconeL = (campo) => (ordemL.value.campo !== campo ? 'fas fa-sort' : ordemL.value.dir > 0 ? 'fas fa-sort-up' : 'fas fa-sort-down');
+const filtrosAtivos = computed(() => [fFase.value, fCat.value, fBusca.value, fDe.value, fAte.value, fMin.value, fMax.value, fOrigem.value].filter((x) => x !== '' && x !== null).length);
+function limparFiltros() {
+    fFase.value = ''; fCat.value = ''; fBusca.value = ''; fDe.value = ''; fAte.value = '';
+    fMin.value = ''; fMax.value = ''; fOrigem.value = '';
+}
 const fasesFiltro = computed(() => KIND_ORDER.filter((k) => items.value.some((i) => kindOf(i) === k)));
 const catsFiltro = computed(() => [...new Map(items.value.map((i) => [catKey(i), catLabel(i)])).entries()]
     .sort((a, b) => a[1].localeCompare(b[1])));
 const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const filtrados = computed(() => {
     const q = norm(fBusca.value);
+    const min = fMin.value === '' ? null : Number(fMin.value);
+    const max = fMax.value === '' ? null : Number(fMax.value);
+    const { campo, dir } = ordemL.value;
+    const valor = (i) => (campo === 'supplier' ? niceName(i.supplier) : campo === 'categoryName' ? catLabel(i) : i[campo]);
     return items.value.filter((i) => (!fFase.value || kindOf(i) === fFase.value)
         && (!fCat.value || catKey(i) === fCat.value)
+        && casaOrigem(i, fOrigem.value)
+        && (!fDe.value || (i.paidAt || '') >= fDe.value)
+        && (!fAte.value || (i.paidAt || '') <= fAte.value)
+        && (min === null || i.amount >= min)
+        && (max === null || i.amount <= max)
         && (!q || norm([i.supplier, niceName(i.supplier), i.contaCode, i.contaName, i.categoryName, i.billId, i.docNumber, i.notes].join(' ')).includes(q)))
-        .sort((a, b) => (a.paidAt || '').localeCompare(b.paidAt || '') || b.amount - a.amount);
+        .sort((a, b) => {
+            const x = valor(a); const y = valor(b);
+            const c = typeof x === 'number' ? x - y : String(x || '').localeCompare(String(y || ''));
+            return c * dir || (a.paidAt || '').localeCompare(b.paidAt || '');
+        });
 });
 const corGrupo = (i) => grupos.value.find((g) => g.key === groupOf(i))?.color || 'var(--sr-n2)';
 
@@ -485,22 +539,48 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
                     <button type="button" :aria-pressed="!fFase" data-tip="Mostra todas as fases" @click="fFase = ''">Todas</button>
                     <button v-for="k in fasesFiltro" :key="k" type="button" :aria-pressed="fFase === k" :data-tip="FASE[k].text" @click="fFase = k">{{ faseLabel(k) }}</button>
                 </div>
-                <select v-model="fCat" aria-label="Natureza">
-                    <option value="">Toda natureza</option>
-                    <option v-for="[k, l] in catsFiltro" :key="k" :value="k">{{ l }}</option>
-                </select>
-                <input v-model="fBusca" type="search" placeholder="Buscar fornecedor, conta ou título" aria-label="Buscar" />
+                <div class="seg" role="group" aria-label="Período">
+                    <button v-for="p in PERIODOS" :key="p.k" type="button" :aria-pressed="periodoAtivo === p.k"
+                        :data-tip="p.k === 'tudo' ? 'Sem limite de data' : `Pagamentos ${p.de ? 'de ' + fmtDate(p.de) : ''}${p.de && p.ate ? ' ' : ''}${p.ate ? 'até ' + fmtDate(p.ate) : ''}`"
+                        @click="usarPeriodo(p)">{{ p.l }}</button>
+                </div>
             </div>
-            <p class="fsum">{{ filtrados.length }} pagamento{{ filtrados.length === 1 ? '' : 's' }} · <b class="num">{{ fmtBRL(sumOf(filtrados)) }}</b></p>
-            <div class="table-scroll">
+            <div class="filters grid-f">
+                <label class="f" data-tip="Pago a partir desta data"><span>Pago de</span><input v-model="fDe" type="date" /></label>
+                <label class="f" data-tip="Pago até esta data"><span>até</span><input v-model="fAte" type="date" /></label>
+                <label class="f" data-tip="Valor mínimo do pagamento"><span>Valor de</span><input v-model="fMin" type="number" min="0" step="100" placeholder="R$ 0" /></label>
+                <label class="f" data-tip="Valor máximo do pagamento"><span>até</span><input v-model="fMax" type="number" min="0" step="100" placeholder="sem teto" /></label>
+                <label class="f" data-tip="A categoria do lançamento"><span>Natureza</span>
+                    <select v-model="fCat"><option value="">Toda natureza</option><option v-for="[k, l] in catsFiltro" :key="k" :value="k">{{ l }}</option></select>
+                </label>
+                <label class="f" data-tip="Como o lançamento ganhou a classificação"><span>Origem</span>
+                    <select v-model="fOrigem"><option v-for="o in ORIGENS" :key="o.v" :value="o.v">{{ o.l }}</option></select>
+                </label>
+                <label class="f busca" data-tip="Procura no fornecedor, conta, título, documento e observação"><span>Buscar</span>
+                    <input v-model="fBusca" type="search" placeholder="Fornecedor, conta ou título" />
+                </label>
+            </div>
+            <div class="fsum-row">
+                <p class="fsum">{{ filtrados.length }} de {{ items.length }} pagamento{{ items.length === 1 ? '' : 's' }} · <b class="num">{{ fmtBRL(sumOf(filtrados)) }}</b></p>
+                <button v-if="filtrosAtivos" type="button" class="limpar" data-tip="Tira todos os filtros" @click="limparFiltros">
+                    <i class="fas fa-xmark"></i>Limpar {{ filtrosAtivos }} filtro{{ filtrosAtivos === 1 ? '' : 's' }}
+                </button>
+            </div>
+            <div class="table-scroll lanc-scroll">
                 <table class="lanc">
-                    <thead><tr><th>Pago em</th><th>Fornecedor</th><th>Natureza</th><th>Fase</th><th>Documento</th><th class="r">Valor</th></tr></thead>
+                    <thead><tr>
+                        <th><button type="button" data-tip="Ordenar pela data do pagamento" @click="ordenarL('paidAt')">Pago em <i :class="iconeL('paidAt')"></i></button></th>
+                        <th><button type="button" data-tip="Ordenar pelo fornecedor" @click="ordenarL('supplier')">Fornecedor <i :class="iconeL('supplier')"></i></button></th>
+                        <th><button type="button" data-tip="Ordenar pela natureza" @click="ordenarL('categoryName')">Natureza <i :class="iconeL('categoryName')"></i></button></th>
+                        <th>Fase</th><th>Documento</th>
+                        <th class="r"><button type="button" data-tip="Ordenar pelo valor" @click="ordenarL('amount')">Valor <i :class="iconeL('amount')"></i></button></th>
+                    </tr></thead>
                     <tbody>
                         <tr v-if="!filtrados.length"><td colspan="6" class="muted">Nenhum pagamento com esses filtros.</td></tr>
                         <tr v-for="i in filtrados" :key="i.key" class="row" tabindex="0"
                             @click="abrir({ type: 'item', key: i.key })" @keydown.enter="abrir({ type: 'item', key: i.key })">
-                            <td class="num">{{ fmtDate(i.paidAt).slice(0, 5) }}</td>
-                            <td>{{ niceName(i.supplier) }}<span v-if="shortNote(i.notes)" class="sub">{{ shortNote(i.notes) }}</span></td>
+                            <td class="num">{{ fmtDate(i.paidAt) }}</td>
+                            <td>{{ niceName(i.supplier) }}<span v-if="i.liveFixed" class="tag ok" data-tip="A API do Sienge confirmou o departamento do stand; o espelho confirma na próxima carga">corrigido no Sienge</span><span v-if="shortNote(i.notes)" class="sub">{{ shortNote(i.notes) }}</span></td>
                             <td><span class="nat"><i class="sw" :style="{ background: corGrupo(i) }"></i>{{ catLabel(i) }}</span><span class="sub num">{{ i.contaCode }}</span></td>
                             <td><span class="pill" :data-tip="FASE[kindOf(i)]?.text"><i class="sw" :style="{ background: (FASE[kindOf(i)] || FASE.sem_classificacao).color }"></i>{{ faseLabel(kindOf(i)) }}</span></td>
                             <td class="num">{{ i.docType }} · {{ i.billId }}{{ i.installment > 1 ? '/' + i.installment : '' }}</td>
@@ -523,9 +603,17 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
                     <b>{{ n.title }}</b>
                     <p>{{ n.text }}</p>
                     <p class="act">{{ n.act }}</p>
-                    <button v-if="n.items.length" type="button" @click="lista(`note|${n.id}`)">
-                        Ver {{ n.items.length === 1 ? 'o pagamento' : `os ${n.items.length} pagamentos` }} · {{ fmtBRL(sumOf(n.items)) }}
-                    </button>
+                    <div class="note-acts">
+                        <button v-if="n.items.length" type="button" @click="lista(`note|${n.id}`)">
+                            Ver {{ n.items.length === 1 ? 'o pagamento' : `os ${n.items.length} pagamentos` }} · {{ fmtBRL(sumOf(n.items)) }}
+                        </button>
+                        <button v-if="n.liveCheck && canManage" type="button" class="primary" :disabled="checking"
+                            data-tip="Pergunta agora na API do Sienge em que departamento estão estes títulos. O que já estiver corrigido entra no relatório na hora. Só leitura no Sienge"
+                            @click="emit('live-check')">
+                            <i class="fas" :class="checking ? 'fa-spinner fa-spin' : 'fa-satellite-dish'"></i>
+                            {{ checking ? 'Consultando o Sienge…' : 'Já corrigi: conferir no Sienge' }}
+                        </button>
+                    </div>
                 </li>
             </ol>
         </section>
@@ -677,6 +765,22 @@ tr.total td { font-weight: 600; border-bottom: 0; }
 .cell { width: 100%; text-align: right; padding: 5px 8px; border: 0; background: none; border-radius: 6px; cursor: pointer; font-size: 13.5px; color: inherit; white-space: nowrap; }
 .cell:hover, .cell:focus-visible { background: var(--sr-hover); color: var(--sr-accent); }
 .lanc tr.row { cursor: pointer; transition: background 0.15s; }
+.lanc-scroll { max-height: 560px; overflow: auto; }
+.lanc thead th { position: sticky; top: 0; z-index: 1; background: var(--sr-paper); box-shadow: inset 0 -1px 0 var(--sr-line); }
+.lanc th button { border: 0; background: none; padding: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.lanc th button i { font-size: 10px; opacity: 0.7; }
+.lanc td .tag { margin-left: 6px; }
+.filters.grid-f { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(0, 2fr); gap: 8px; align-items: end; }
+.f { display: grid; gap: 4px; min-width: 0; }
+.f > span { font-size: 11.5px; color: var(--sr-muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.f input, .f select { width: 100%; font: inherit; font-size: 13.5px; padding: 7px 9px; min-height: 38px; border: 1px solid var(--sr-line); border-radius: 8px; background: var(--sr-paper); color: var(--sr-ink); }
+.fsum-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.limpar { border: 0; background: none; color: var(--sr-accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.note-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.notes li .note-acts button.primary { background: var(--sr-accent); border-color: var(--sr-accent); color: #fff; display: inline-flex; align-items: center; gap: 8px; }
+.notes li .note-acts button:disabled { opacity: 0.7; cursor: default; }
+@media (max-width: 1100px) { .filters.grid-f { grid-template-columns: repeat(4, minmax(0, 1fr)); } .grid-f .busca { grid-column: span 2; } }
+@media (max-width: 560px) { .filters.grid-f { grid-template-columns: 1fr 1fr; } .grid-f .busca { grid-column: 1 / -1; } .lanc-scroll { max-height: 70vh; } }
 .lanc tr.row:hover, .lanc tr.row:focus-visible { background: var(--sr-hover); outline: none; }
 .nat { display: inline-flex; align-items: center; gap: 6px; }
 .pill { font-size: 11.5px; padding: 1px 8px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--sr-line); color: var(--sr-muted); white-space: nowrap; }

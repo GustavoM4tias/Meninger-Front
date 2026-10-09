@@ -60,6 +60,8 @@ export default {
 
     // Classificação dos lançamentos e itens do stand
     classify: (id, payload) => req(`/${id}/expenses/classify`, { method: 'POST', ...body(payload) }),
+    // Confere na API do Sienge, agora, os títulos deste stand fora do departamento
+    liveCheck: (id) => req(`/${id}/live-check`, { method: 'POST', ...body({}) }),
     saveItems: (id, items) => req(`/${id}/items`, { method: 'PUT', ...body({ items }) }),
 
     // Fotos
