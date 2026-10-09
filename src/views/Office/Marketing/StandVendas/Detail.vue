@@ -3,7 +3,7 @@
         <PageContainer size="full">
 
             <PageHeader icon="fas fa-store" eyebrow="Stand de Vendas"
-                :title="stand?.name || 'Stand'"
+                :title="tab === 'relatorio' ? 'Relatório do stand' : (stand?.name || 'Stand')"
                 :subtitle="subtitulo">
                 <template #actions>
                     <PageHelp storage-key="marketing-sales-stand-detalhe" title="Como usar o detalhe do stand"

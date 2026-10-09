@@ -4,10 +4,19 @@
 // Tudo sai dos lançamentos que a API já classificou (tipo + categoria). O
 // relatório não reclassifica nada: se um número parece errado, o lugar de
 // acertar é a classificação (aba Custos ou o próprio modal do lançamento).
-import { kindMeta } from '@/stores/Marketing/SalesStand/salesStandStore';
 import { fmtYm } from '../standFormat';
 
 export const KIND_ORDER = ['construcao', 'esporadica', 'recorrencia', 'sem_classificacao'];
+
+// Como o relatório chama cada tipo: a fase do stand (o Office chama de
+// construção / esporádica / recorrência na classificação).
+export const FASE = {
+    construcao: { label: 'Implantação', color: 'var(--sr-c1)', text: 'Montar o stand: obra, móveis, comunicação visual e o que ficou nele.' },
+    esporadica: { label: 'Ajustes e eventuais', color: 'var(--sr-e1)', text: 'Depois de pronto: última medição, reparos, material avulso.' },
+    recorrencia: { label: 'Operação', color: 'var(--sr-r1)', text: 'Manter aberto: aluguel, energia, água, internet, café e limpeza.' },
+    sem_classificacao: { label: 'Sem classificação', color: 'var(--sr-n1)', text: 'Nenhuma regra pegou. Abra e classifique.' },
+};
+export const faseLabel = (k) => (FASE[k] || FASE.sem_classificacao).label;
 export const kindOf = (i) => i.kind || 'sem_classificacao';
 export const sumOf = (list) => list.reduce((s, i) => s + (Number(i.amount) || 0), 0);
 
@@ -65,7 +74,20 @@ export function scopeFor(key, ctx) {
     const all = ctx.items;
     const whole = (i) => Number(i.amount) || 0;
     if (tipo === 'all') return { eyebrow: 'Gasto total', title: 'Todos os lançamentos do stand', list: all, amountOf: whole };
-    if (tipo === 'kind') return { eyebrow: 'Tipo de gasto', title: kindMeta(a).label, list: all.filter((i) => kindOf(i) === a), amountOf: whole };
+    if (tipo === 'kind') return { eyebrow: 'Fase', title: faseLabel(a), list: all.filter((i) => kindOf(i) === a), amountOf: whole };
+    if (tipo === 'grp') {
+        const g = (ctx.grupos || []).find((x) => x.key === a);
+        return { eyebrow: 'Natureza', title: g?.label || 'Natureza', list: all.filter((i) => ctx.groupOf(i) === a), amountOf: whole };
+    }
+    if (tipo === 'mgrp') {
+        const g = (ctx.grupos || []).find((x) => x.key === b);
+        return {
+            eyebrow: g?.label || 'Natureza',
+            title: ymLong(a) + (a === currentYm() ? ' (em andamento)' : ''),
+            list: all.filter((i) => paidIn(i, a) && ctx.groupOf(i) === b),
+            amountOf: (i) => amountIn(i, a),
+        };
+    }
     if (tipo === 'cat') {
         const list = all.filter((i) => catKey(i) === a);
         return { eyebrow: 'Categoria', title: list[0] ? catLabel(list[0]) : 'Categoria', list, amountOf: whole };
@@ -73,7 +95,7 @@ export function scopeFor(key, ctx) {
     if (tipo === 'month') {
         const list = all.filter((i) => paidIn(i, a) && (!b || kindOf(i) === b));
         return {
-            eyebrow: b ? kindMeta(b).label : 'Mês',
+            eyebrow: b ? faseLabel(b) : 'Mês',
             title: ymLong(a) + (a === currentYm() ? ' (em andamento)' : ''),
             list, amountOf: (i) => amountIn(i, a),
         };
@@ -216,4 +238,50 @@ export function shortNote(notes) {
     if (/Reten[cç][aã]o de INSS/i.test(n)) return 'INSS retido de prestador';
     const s = n.length > 70 ? `${n.slice(0, 70)}…` : n;
     return s.charAt(0) + s.slice(1).toLowerCase();
+}
+
+// ── Natureza (agrupamento dos gráficos) ─────────────────────────────────────
+// O relatório pinta por NATUREZA: as maiores categorias, cada uma com um tom
+// da família do seu tipo (azuis = implantação, verde-água = operação, âmbar =
+// ajustes). Categoria pequena demais para ter cor própria vai para "Outras".
+export const TONS = {
+    construcao: ['var(--sr-c1)', 'var(--sr-c2)', 'var(--sr-c3)'],
+    recorrencia: ['var(--sr-r1)', 'var(--sr-r2)', 'var(--sr-r3)'],
+    esporadica: ['var(--sr-e1)', 'var(--sr-e2)'],
+    sem_classificacao: ['var(--sr-n1)'],
+};
+export const OUTRAS = { key: '__outras', label: 'Outras', color: 'var(--sr-n2)', kind: null };
+
+export function buildGroups(items, max = 6) {
+    const map = new Map();
+    for (const i of items) {
+        const k = catKey(i);
+        const g = map.get(k) || { key: k, label: catLabel(i), value: 0, n: 0, kinds: new Map() };
+        g.value += Number(i.amount) || 0;
+        g.n += 1;
+        g.kinds.set(kindOf(i), (g.kinds.get(kindOf(i)) || 0) + (Number(i.amount) || 0));
+        map.set(k, g);
+    }
+    const todas = [...map.values()].sort((a, b) => b.value - a.value)
+        .map((g) => ({ ...g, kind: [...g.kinds.entries()].sort((a, b) => b[1] - a[1])[0][0] }));
+    const proprias = todas.slice(0, todas.length > max ? max - 1 : max);
+    const usados = {};
+    const grupos = proprias.map((g) => {
+        const tons = TONS[g.kind] || TONS.sem_classificacao;
+        const idx = usados[g.kind] || 0;
+        usados[g.kind] = idx + 1;
+        return { key: g.key, label: g.label, kind: g.kind, value: g.value, n: g.n, color: tons[Math.min(idx, tons.length - 1)] };
+    });
+    const resto = todas.slice(proprias.length);
+    if (resto.length) {
+        grupos.push({ ...OUTRAS, value: resto.reduce((s, g) => s + g.value, 0), n: resto.reduce((s, g) => s + g.n, 0), members: resto.map((g) => g.key) });
+    }
+    const groupOf = (i) => {
+        const k = catKey(i);
+        return grupos.find((g) => g.key === k) ? k : OUTRAS.key;
+    };
+    // Ordem de leitura: implantação, ajustes, operação (o empilhamento segue).
+    const ordem = { construcao: 0, esporadica: 1, recorrencia: 2, sem_classificacao: 3 };
+    grupos.sort((a, b) => (a.key === OUTRAS.key) - (b.key === OUTRAS.key) || (ordem[a.kind] ?? 9) - (ordem[b.kind] ?? 9) || b.value - a.value);
+    return { grupos, groupOf };
 }
