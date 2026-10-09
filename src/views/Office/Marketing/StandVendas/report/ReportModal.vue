@@ -95,6 +95,20 @@ const head = computed(() => {
     };
 });
 
+// Por que o lançamento caiu onde caiu: a pergunta que todo mundo faz ao
+// ver um número estranho.
+function comoClassificou(i) {
+    if (i.outsideDepartment) return 'Fora dos totais até o título ganhar o departamento do stand no Sienge';
+    if (i.source === 'manual') return 'Classificado à mão neste stand';
+    if (!i.kind) return 'Sem classificação: nenhuma conta, regra ou janela de montagem pegou este lançamento';
+    const base = i.source === 'regra' ? `Pela regra "${i.rule}" (palavra no fornecedor ou na observação)`
+        : i.source === 'categoria' ? `Pela conta ${i.contaCode}, que está na categoria ${i.categoryName}`
+            : 'Pela janela de montagem';
+    if (i.phase === 'montagem') return `${base}; virou construção porque foi pago dentro da janela de montagem`;
+    if (i.phase === 'pos_montagem') return `${base}; virou esporádico porque foi pago depois da montagem`;
+    return base;
+}
+
 const kindLabel = (i) => (i.outsideDepartment ? 'Fora do departamento' : kindMeta(kindOf(i)).label);
 </script>
 
@@ -192,8 +206,7 @@ const kindLabel = (i) => (i.outsideDepartment ? 'Fora do departamento' : kindMet
                         ['Fornecedor no Sienge', item.supplier],
                         ['Conta', `${item.contaCode} · ${item.contaName || ''}`],
                         ['Categoria', item.categoryName || 'Sem categoria'],
-                        ['Classificação', item.outsideDepartment ? 'Fora dos totais até o título ganhar o departamento do stand'
-                            : item.source === 'manual' ? 'Classificado à mão neste stand' : item.kind ? 'Herdada da categoria da conta' : 'Sem classificação'],
+                        ['Classificação', comoClassificou(item)],
                         ['Documento', `${item.docType || ''} ${item.docNumber || ''} · título ${item.billId}/${item.installment}`],
                     ]" :key="row[0]">
                         <dt class="pt-2.5 sm:py-2.5 text-xs text-ink-muted sm:border-b border-line">{{ row[0] }}</dt>

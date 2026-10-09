@@ -32,6 +32,8 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
     const contas = ref([]); // contas para categorizar [{ code, name, standPlan, entries }]
     const settings = ref(null);      // { expense_source, department_id, conta_prefix }
     const departments = ref([]);     // departamentos do Sienge [{ id, name }]
+    // Classificação automática: { rules, is_default, assembly_days }
+    const autoRules = ref({ rules: [], is_default: true, assembly_days: 35 });
     const audit = ref(null);         // conferência departamento x plano
     const auditLoading = ref(false);
     const liveCheck = ref(null);     // resultado da conferência ao vivo no Sienge
@@ -122,6 +124,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
             const data = await api.settings();
             settings.value = data.settings || null;
             departments.value = data.departments || [];
+            if (data.auto) autoRules.value = data.auto;
         } catch (e) {
             console.error('[SalesStandStore] fetchSettings: erro', e);
         }
@@ -132,6 +135,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
         saving.value = true;
         try {
             settings.value = await api.saveSettings(payload);
+            await fetchSettings();
             // A régua mudou: os números de todo mundo mudaram junto.
             contas.value = [];
             audit.value = null;
@@ -381,7 +385,7 @@ export const useSalesStandStore = defineStore('marketingSalesStand', () => {
     const fetchSpend = (id) => api.spend(id);
 
     return {
-        stands, models, categories, contas, costCenters, settings, departments,
+        stands, models, categories, contas, costCenters, settings, departments, autoRules,
         audit, auditLoading, liveCheck, liveChecking,
         spendUnavailable, loading, saving, error,
         detail, expenses, summary, patterns, outside, detailLoading,

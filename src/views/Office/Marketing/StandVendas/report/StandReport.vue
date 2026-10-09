@@ -52,6 +52,8 @@ const dias = computed(() => daysSince(openedAt.value));
 const notes = computed(() => buildNotes({
     items: items.value, outside: props.outside, categories: props.categories, openedAt: openedAt.value,
 }));
+// Pendência é o que pede ação; observação (counted: false) só informa.
+const pendentes = computed(() => notes.value.filter((n) => n.counted !== false));
 
 // ── Números que contam ───────────────────────────────────────────────────────
 const cTotal = useCountUp(total, { duration: 850 });
@@ -245,9 +247,9 @@ const colunas = [
             </button>
             <button type="button" class="kpi focus-ring stagger-in" style="--i: 4" @click="irPendencias">
                 <span class="metric-label">Pendências</span>
-                <span class="metric text-metric-sm sm:text-metric xl:text-metric-lg whitespace-nowrap" :class="notes.length ? 'text-data-warn' : 'text-data-pos'">{{ notes.length }}</span>
-                <span class="text-xs text-ink-muted">{{ notes.length ? 'no Sienge e na classificação' : 'nada a acertar' }}</span>
-                <span class="kpi-go">{{ notes.length ? 'Ver o que acertar' : 'Ver detalhes' }}</span>
+                <span class="metric text-metric-sm sm:text-metric xl:text-metric-lg whitespace-nowrap" :class="pendentes.length ? 'text-data-warn' : 'text-data-pos'">{{ pendentes.length }}</span>
+                <span class="text-xs text-ink-muted">{{ pendentes.length ? 'no Sienge e na classificação' : 'nada a acertar' }}</span>
+                <span class="kpi-go">{{ pendentes.length ? 'Ver o que acertar' : 'Ver detalhes' }}</span>
             </button>
         </section>
 
@@ -457,9 +459,9 @@ const colunas = [
         <section ref="pendenciasEl" class="flex flex-col gap-3 scroll-mt-20">
             <div>
                 <p class="metric-label">Pendências</p>
-                <h3 class="text-lg font-semibold text-ink">{{ notes.length ? 'O que precisa de acerto' : 'Nada a acertar' }}</h3>
+                <h3 class="text-lg font-semibold text-ink">{{ pendentes.length ? 'O que precisa de acerto' : 'Nada a acertar' }}</h3>
                 <p class="text-sm text-ink-muted max-w-[70ch]">
-                    {{ notes.length
+                    {{ pendentes.length
                         ? 'Achadas sozinhas a cada abertura da tela. Resolvidas no Sienge ou na classificação, somem daqui.'
                         : 'Todos os lançamentos estão classificados, no departamento do stand, e as contas mensais apareceram em todos os meses.' }}
                 </p>

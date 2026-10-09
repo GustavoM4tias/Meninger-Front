@@ -1,83 +1,98 @@
 <template>
-    <Surface variant="raised" padding="none" interactive
-        class="overflow-hidden flex flex-col cursor-pointer group"
-        :title="`${stand.name} - ${stand.model?.name || 'sem modelo'} - ${fmtBRL(stand.spend_total)} no total`"
-        @click="$emit('open', stand)">
+    <article
+        class="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface-raised shadow-soft
+               transition-[transform,box-shadow,border-color] duration-200 ease-out-expo
+               hover:-translate-y-0.5 hover:shadow-overlay hover:border-line-strong focus-within:border-accent/50">
 
-        <!-- Capa: a foto do stand quando existe; senão a marca da casa. -->
-        <div class="relative aspect-[16/9] bg-surface-sunken overflow-hidden">
-            <img v-if="stand.cover_url" :src="stand.cover_url" :alt="`Foto do ${stand.name}`" loading="lazy"
-                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-            <div v-else class="w-full h-full grid place-items-center text-ink-subtle">
-                <i class="fas fa-store text-2xl"></i>
+        <!-- Foto: o stand se reconhece por ela antes de qualquer número. -->
+        <div class="relative aspect-[16/10] overflow-hidden bg-surface-sunken">
+            <img v-if="stand.cover_url" :src="stand.cover_url" :alt="`Fachada do ${stand.name}`" loading="lazy"
+                class="h-full w-full object-cover transition-transform duration-420 ease-out-expo group-hover:scale-[1.04]" />
+            <div v-else class="grid h-full w-full place-items-center text-ink-subtle">
+                <i class="fas fa-store text-3xl"></i>
             </div>
-            <div class="absolute top-2 right-2 flex items-center gap-1.5">
-                <Badge v-if="stand.images_count > 1" variant="neutral" size="sm"
-                    :title="`${stand.images_count} fotos deste stand`">
-                    <i class="fas fa-images mr-1 text-micro"></i>{{ stand.images_count }}
-                </Badge>
-                <Badge :variant="statusMeta.variant" size="sm" :title="statusHint">
-                    <i :class="statusMeta.icon" class="mr-1 text-micro"></i>{{ statusMeta.label }}
-                </Badge>
+
+            <div class="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+                <span class="selo" :class="statusMeta.variant === 'success' ? 'text-data-pos' : 'text-ink-muted'">
+                    <i :class="statusMeta.icon"></i>{{ statusMeta.label }}
+                </span>
+                <span v-if="stand.pending_count > 0" class="selo text-data-warn"
+                    :title="`${stand.pending_count} pendência(s) no relatório: classificação, departamento ou conta mensal`">
+                    <i class="fas fa-triangle-exclamation"></i>{{ stand.pending_count }} pendência{{ stand.pending_count > 1 ? 's' : '' }}
+                </span>
+                <span v-else class="selo text-data-pos"><i class="fas fa-circle-check"></i>Em dia</span>
             </div>
+            <span v-if="stand.images_count > 1" class="selo absolute bottom-3 right-3 text-ink-muted">
+                <i class="fas fa-images"></i>{{ stand.images_count }}
+            </span>
         </div>
 
-        <div class="p-4 flex flex-col gap-3 flex-1">
+        <div class="flex flex-1 flex-col gap-4 p-5">
             <div class="min-w-0">
-                <p class="font-semibold text-ink truncate">{{ stand.name }}</p>
-                <p class="text-micro text-ink-subtle truncate"
-                    :title="(stand.cost_center_names || []).join(', ')">
-                    {{ stand.model?.name || 'Sem modelo' }} · {{ (stand.cost_center_names || []).length }} centro(s) de custo
+                <p class="metric-label">{{ cidade }}</p>
+                <h3 class="mt-0.5 text-lg font-semibold leading-snug text-ink text-balance">{{ titulo }}</h3>
+                <p class="mt-1 text-xs text-ink-muted">
+                    {{ stand.model?.name || 'Sem modelo' }}
+                    <template v-if="dias !== null"> · no ar há {{ dias }} dias</template>
                 </p>
             </div>
 
-            <div>
-                <div class="flex items-baseline justify-between gap-2">
-                    <span class="text-micro font-mono uppercase tracking-wider text-ink-subtle">Gasto total</span>
-                    <span class="font-mono tabular-nums font-bold text-ink" :title="fmtBRL(stand.spend_total)">
-                        {{ fmtBRL(stand.spend_total) }}
+            <!-- O número do stand e o ritmo do gasto -->
+            <div class="flex items-end justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="metric-label">Gasto total</p>
+                    <p class="metric text-metric whitespace-nowrap">{{ fmtBRLShort(stand.spend_total) }}</p>
+                </div>
+                <div class="w-28 shrink-0 text-accent" :title="'Gasto por mês de pagamento'">
+                    <Sparkline :values="stand.month_series || []" mode="bars" :bars="12" height="h-10" />
+                </div>
+            </div>
+
+            <!-- Como o total se reparte -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex h-2 gap-0.5 overflow-hidden rounded-full bg-surface-sunken">
+                    <span v-for="f in fatias" :key="f.kind" class="h-full crescer" :class="kindMeta(f.kind).dot"
+                        :style="{ width: f.width }" :title="`${kindMeta(f.kind).label}: ${fmtBRL(f.value)}`"></span>
+                </div>
+                <div class="flex flex-wrap gap-x-3 gap-y-0.5">
+                    <span v-for="f in fatias" :key="f.kind" class="inline-flex items-center gap-1 text-micro text-ink-subtle">
+                        <span class="h-1.5 w-1.5 rounded-full" :class="kindMeta(f.kind).dot"></span>{{ kindMeta(f.kind).label }} {{ f.pctLabel }}
                     </span>
                 </div>
-                <!-- Como esse total se reparte: a leitura de um olho só. -->
-                <div class="flex items-center gap-0.5 mt-1.5" :title="composicao">
-                    <span v-for="f in fatias" :key="f.kind" class="h-1.5 first:rounded-l last:rounded-r"
-                        :class="kindMeta(f.kind).dot" :style="{ width: f.width }"></span>
-                    <span v-if="!fatias.length" class="h-1.5 w-full rounded bg-surface-sunken"></span>
-                </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 text-center border-t border-line pt-3 mt-auto">
-                <div :title="`Construção: ${fmtBRL(stand.construction_value)}`">
-                    <p class="text-micro text-ink-subtle">Construção</p>
-                    <p class="font-mono tabular-nums text-xs font-semibold text-series-1">{{ fmtBRLShort(stand.construction_value) }}</p>
+            <dl class="mt-auto grid grid-cols-2 gap-3 border-t border-line pt-4">
+                <div class="min-w-0">
+                    <dt class="metric-label">Construção</dt>
+                    <dd class="font-mono text-sm font-semibold tabular-nums text-ink">{{ fmtBRLShort(stand.construction_value) }}</dd>
+                    <dd v-if="faixa" class="text-micro" :class="faixa.cls">{{ faixa.txt }}</dd>
                 </div>
-                <div :title="`Recorrência acumulada: ${fmtBRL(stand.maintenance_value)}`">
-                    <p class="text-micro text-ink-subtle">Recorrência</p>
-                    <p class="font-mono tabular-nums text-xs font-semibold text-series-2">{{ fmtBRLShort(stand.maintenance_value) }}</p>
+                <div class="min-w-0">
+                    <dt class="metric-label">Para manter</dt>
+                    <dd class="font-mono text-sm font-semibold tabular-nums text-ink">{{ fmtBRLShort(stand.recurring_monthly) }}<span class="font-sans font-normal text-ink-subtle">/mês</span></dd>
+                    <dd class="text-micro text-ink-subtle">aluguel, contas e consumo</dd>
                 </div>
-                <div :title="`Média da recorrência nos 3 meses fechados: ${fmtBRL(stand.recurring_monthly)}`">
-                    <p class="text-micro text-ink-subtle">Por mês</p>
-                    <p class="font-mono tabular-nums text-xs font-semibold text-ink">{{ fmtBRLShort(stand.recurring_monthly) }}</p>
-                </div>
-            </div>
+            </dl>
 
-            <p v-if="stand.unclassified_value > 0" class="text-micro text-data-warn flex items-center gap-1.5"
-                :title="`${fmtBRL(stand.unclassified_value)} em lançamentos cuja conta não está em nenhuma categoria`">
-                <i class="fas fa-circle-question"></i>
-                {{ fmtBRLShort(stand.unclassified_value) }} sem classificação
-            </p>
+            <button type="button"
+                class="-mx-1 flex items-center justify-between rounded-lg px-1 py-1 text-sm font-semibold text-accent focus-ring after:absolute after:inset-0 after:content-['']"
+                :aria-label="`Abrir o relatório do ${stand.name}`" @click="$emit('open', stand)">
+                Abrir relatório
+                <i class="fas fa-arrow-right text-xs transition-transform duration-200 ease-out-expo group-hover:translate-x-1"></i>
+            </button>
         </div>
-    </Surface>
+    </article>
 </template>
 
 <script setup>
-// Cartão do stand: a mesma linha da tabela, com a cara do stand junto. Serve
-// para reconhecer o stand pela foto e ler o custo sem abrir.
+// Cartão do stand na tela inicial: a foto para reconhecer, o gasto total com o
+// ritmo mês a mês, como ele se reparte, e as duas perguntas da diretoria
+// (quanto custou montar e quanto custa manter). O cartão inteiro abre o
+// relatório; o botão é o alvo acessível e a área clicável cobre o cartão.
 import { computed } from 'vue';
 import { fmtBRL, fmtBRLShort } from '../standFormat';
 import { STATUS_META, kindMeta } from '@/stores/Marketing/SalesStand/salesStandStore';
-import Surface from '@/components/UI/Surface.vue';
-import Badge from '@/components/UI/Badge.vue';
+import Sparkline from '@/components/UI/Sparkline.vue';
 
 const props = defineProps({
     stand: { type: Object, required: true },
@@ -85,29 +100,63 @@ const props = defineProps({
 defineEmits(['open']);
 
 const statusMeta = computed(() => STATUS_META[props.stand.status] || STATUS_META.draft);
-const statusHint = computed(() => (props.stand.status === 'defined'
-    ? 'Custo de construção congelado'
-    : 'Em apuração: construção ainda soma ao vivo'));
+
+// "Ibitinga/SP - Residencial Três Marias" → cidade em cima, empreendimento em destaque.
+const partes = computed(() => {
+    const nome = String(props.stand.name || '');
+    const i = nome.indexOf(' - ');
+    return i > 0 ? [nome.slice(0, i), nome.slice(i + 3)] : ['Stand de vendas', nome];
+});
+const cidade = computed(() => partes.value[0]);
+const titulo = computed(() => partes.value[1]);
+
+const dias = computed(() => {
+    if (!props.stand.opened_at) return null;
+    const ini = new Date(`${String(props.stand.opened_at).slice(0, 10)}T00:00:00`);
+    const d = Math.round((Date.now() - ini.getTime()) / 86400000);
+    return d >= 0 ? d : null;
+});
 
 // A barra usa o valor AO VIVO da construção: num stand definido o congelado
 // pode não fechar com o total, e aí a barra passaria de 100%.
 const PARTES = [
     ['construcao', 'construction_live'],
-    ['recorrencia', 'maintenance_value'],
     ['esporadica', 'sporadic_value'],
+    ['recorrencia', 'maintenance_value'],
     ['sem_classificacao', 'unclassified_value'],
 ];
-
 const fatias = computed(() => {
     const total = Number(props.stand.spend_total) || 0;
     if (!total) return [];
     return PARTES
         .map(([kind, campo]) => ({ kind, value: Number(props.stand[campo]) || 0 }))
         .filter((f) => f.value > 0)
-        .map((f) => ({ ...f, width: `${Math.max(2, Math.round((f.value / total) * 100))}%` }));
+        .map((f) => {
+            const pct = (f.value / total) * 100;
+            return { ...f, pctLabel: pct < 1 ? 'menos de 1%' : `${Math.round(pct)}%`, width: `${Math.max(2, pct)}%` };
+        });
 });
 
-const composicao = computed(() => (fatias.value.length
-    ? fatias.value.map((f) => `${kindMeta(f.kind).label}: ${fmtBRL(f.value)}`).join(' · ')
-    : 'Sem gasto apurado'));
+// Construção contra a faixa do modelo.
+const faixa = computed(() => {
+    const m = props.stand.model;
+    const min = Number(m?.avg_value_min) || 0;
+    const max = Number(m?.avg_value_max) || 0;
+    const v = Number(props.stand.construction_value) || 0;
+    if (!m || (!min && !max) || !v) return null;
+    if (max && v > max) return { txt: `acima da faixa do ${m.name}`, cls: 'text-data-warn' };
+    if (v < min) return { txt: `abaixo da faixa do ${m.name}`, cls: 'text-ink-subtle' };
+    return { txt: `dentro da faixa do ${m.name}`, cls: 'text-data-pos' };
+});
 </script>
+
+<style scoped>
+.selo {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-surface-raised/90 px-2.5 py-1 text-micro font-medium shadow-soft backdrop-blur-sm;
+}
+.crescer { transform-origin: left center; animation: crescer 460ms cubic-bezier(0.16, 1, 0.3, 1) both 120ms; }
+@keyframes crescer { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+    .crescer { animation: none; }
+}
+</style>

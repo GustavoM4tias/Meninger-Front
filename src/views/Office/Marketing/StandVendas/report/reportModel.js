@@ -142,8 +142,8 @@ export function buildNotes({ items, outside, categories, openedAt, contaPrefix =
         notes.push({
             id: 'sem-classe',
             title: `${semClasse.length} lançamento${semClasse.length > 1 ? 's' : ''} sem classificação`,
-            text: 'A conta destes lançamentos não está em nenhuma categoria, então eles não somam em construção, recorrência nem esporádico.',
-            act: 'Abra cada um e classifique, ou marque vários de uma vez na aba Custos.',
+            text: 'Nenhuma conta, regra por palavra ou janela de montagem pegou estes lançamentos, então eles não somam em construção, recorrência nem esporádico.',
+            act: 'Abra cada um e classifique, ou crie uma regra em Categorias › Classificação automática para pegar os próximos sozinha.',
             items: semClasse,
             tone: 'warn',
         });
@@ -165,10 +165,12 @@ export function buildNotes({ items, outside, categories, openedAt, contaPrefix =
         notes.push({
             id: 'fora-plano',
             title: `${forado.length} lançamento${forado.length > 1 ? 's' : ''} fora do plano do stand`,
-            text: `Estão no departamento do stand, mas numa conta fora do plano ${contaPrefix.replace(/^(\d)(\d{2})(\d{2})$/, '$1.$2.$3')} (adiantamento, brindes, impostos retidos). Entram no gasto pela classificação, não pela conta.`,
-            act: 'Para os próximos stands: lançar móveis, comunicação visual e obra direto nas contas de stand.',
+            text: `Estão no departamento do stand, mas numa conta fora do plano ${contaPrefix.replace(/^(\d)(\d{2})(\d{2})$/, '$1.$2.$3')} (adiantamento, brindes, contas Adm e Obra). Entram no gasto pela classificação, não pela conta.`,
+            act: 'Já estão classificados pelas regras automáticas. Para os próximos stands: lançar direto nas contas de stand.',
             items: forado,
             tone: 'info',
+            // Observação, não pendência: a classificação já resolveu.
+            counted: false,
         });
     }
     return notes;
