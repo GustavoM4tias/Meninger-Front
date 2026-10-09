@@ -13,7 +13,8 @@
  */
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { fmtBRL, fmtDate } from '../standFormat';
-import { currentYm, ymShift, daysSince, noteParts, loadReportFonts } from './reportModel';
+import { currentYm, ymShift, daysSince, noteParts, loadReportFonts, escHtml } from './reportModel';
+import SrTip from './SrTip.vue';
 import './standReport.css';
 
 const props = defineProps({
@@ -29,6 +30,15 @@ const k = (v) => (Math.abs(v) >= 1e6
     ? `R$ ${(v / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} mi`
     : `R$ ${(v / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} mil`);
 const FASES = [['construcao', 'var(--sr-c1)'], ['esporadica', 'var(--sr-e1)'], ['recorrencia', 'var(--sr-r1)'], ['sem', 'var(--sr-n1)']];
+const FASE_NOME = { construcao: 'Implantação', esporadica: 'Ajustes e eventuais', recorrencia: 'Operação', sem: 'Sem classificação', c: 'Implantação', e: 'Ajustes', r: 'Operação', s: 'Sem classificação' };
+const FASE_TXT = {
+    construcao: 'montar o stand: obra, móveis, comunicação visual',
+    esporadica: 'depois de pronto: última medição, reparos, material avulso',
+    recorrencia: 'manter aberto: aluguel, energia, água, internet, café',
+    sem: 'nenhuma regra pegou; abra o relatório e classifique',
+};
+const tip = (titulo, linha) => `<b>${escHtml(titulo)}</b>${linha ? `<span class="t">${linha}</span>` : ''}`;
+const pctTxt = (v, t) => (t ? `${((v / t) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% do stand` : '');
 const MINI = [['c', 'var(--sr-c1)'], ['e', 'var(--sr-e1)'], ['r', 'var(--sr-r1)'], ['s', 'var(--sr-n1)']];
 
 // Cada stand com os números que a tela usa e o nome partido em cidade/empreendimento.
@@ -125,11 +135,11 @@ function spark(s, w = 180, h = 44) {
     vals.forEach((v, i) => {
         let acc = 0;
         const x = i * bw + 1.5;
-        if (!(v.c + v.e + v.r + v.s)) { rects.push({ x, y: h - 1.5, w: bw - 3, h: 1.5, fill: 'var(--sr-line)', d: i }); return; }
+        if (!(v.c + v.e + v.r + v.s)) { rects.push({ x, y: h - 1.5, w: bw - 3, h: 1.5, fill: 'var(--sr-line)', d: i, tip: tip(`${MES[Number(meses[i].slice(5)) - 1]}/${meses[i].slice(2, 4)}`, 'nenhum pagamento') }); return; }
         MINI.forEach(([f, col]) => {
             if (!v[f]) return;
             const bh = Math.max(1.5, (v[f] / max) * (h - 2));
-            rects.push({ x, y: h - acc - bh, w: bw - 3, h: bh, fill: col, d: i });
+            rects.push({ x, y: h - acc - bh, w: bw - 3, h: bh, fill: col, d: i, tip: tip(`${MES[Number(meses[i].slice(5)) - 1]}/${meses[i].slice(2, 4)} · ${FASE_NOME[f]}`, `<b>${fmtBRL(v[f])}</b>`) });
             acc += bh;
         });
     });
@@ -171,7 +181,7 @@ const previa = computed(() => {
         MINI.forEach(([f, col]) => {
             if (!v[f]) return;
             const bh = Math.max(1.5, (v[f] / max) * (H - PT - PB));
-            rects.push({ x: PL + i * bw + bw * 0.2, y: H - PB - acc - bh, w: bw * 0.6, h: bh, fill: col, d: i, tip: `${MES[Number(ult[i].slice(5)) - 1]}/${ult[i].slice(2, 4)}: ${fmtBRL(v[f])}` });
+            rects.push({ x: PL + i * bw + bw * 0.2, y: H - PB - acc - bh, w: bw * 0.6, h: bh, fill: col, d: i, tip: tip(`${MES[Number(ult[i].slice(5)) - 1]}/${ult[i].slice(2, 4)} · ${FASE_NOME[f]}`, `<b>${fmtBRL(v[f])}</b>`) });
             acc += bh;
         });
         labels.push({ x: PL + i * bw + bw / 2, t: MES[Number(ult[i].slice(5)) - 1] });
@@ -201,10 +211,10 @@ function irRelatorio() {
                 {{ maisCaro.emp }}<template v-if="maisCaro.cidade"> ({{ maisCaro.cidade }})</template>.
             </p>
             <div class="kpis">
-                <div class="kpi"><span class="eyebrow">Gasto total</span><span class="v display">{{ k(T.total) }}</span><span class="d">{{ T.n }} pagamentos no Sienge</span></div>
-                <div class="kpi"><span class="eyebrow">Implantação</span><span class="v display">{{ k(T.construcao) }}</span><span class="d">média de {{ k(T.construcao / comImpl) }} por stand</span></div>
-                <div class="kpi"><span class="eyebrow">Para manter</span><span class="v display">{{ k(T.monthly) }}<small>/mês</small></span><span class="d">todos os stands abertos</span></div>
-                <div class="kpi"><span class="eyebrow">Pendências</span><span class="v display" :class="T.pending ? 'warn' : 'ok'">{{ T.pending }}</span><span class="d">{{ T.pending ? `em ${S.filter((s) => s.pending > 0).length} stand(s)` : 'tudo em dia' }}</span></div>
+                <div class="kpi" :data-tip="tip('Gasto total', 'Tudo o que o Sienge pagou para os stands, na régua da aba Categorias, somando implantação, ajustes e operação')"><span class="eyebrow">Gasto total</span><span class="v display">{{ k(T.total) }}</span><span class="d">{{ T.n }} pagamentos no Sienge</span></div>
+                <div class="kpi" :data-tip="tip('Implantação', 'Quanto custou montar os stands: obra, móveis e comunicação visual pagos até o fim da janela de montagem')"><span class="eyebrow">Implantação</span><span class="v display">{{ k(T.construcao) }}</span><span class="d">média de {{ k(T.construcao / comImpl) }} por stand</span></div>
+                <div class="kpi" :data-tip="tip('Para manter', 'Soma do custo mensal de cada stand aberto: aluguel, contas e consumo, pela média dos últimos meses fechados')"><span class="eyebrow">Para manter</span><span class="v display">{{ k(T.monthly) }}<small>/mês</small></span><span class="d">todos os stands abertos</span></div>
+                <div class="kpi" :data-tip="tip('Pendências', 'Lançamento sem classificação ou conta mensal (aluguel, energia, água, internet) que não apareceu em algum mês. Cada relatório mostra as suas')"><span class="eyebrow">Pendências</span><span class="v display" :class="T.pending ? 'warn' : 'ok'">{{ T.pending }}</span><span class="d">{{ T.pending ? `em ${S.filter((s) => s.pending > 0).length} stand(s)` : 'tudo em dia' }}</span></div>
             </div>
         </header>
 
@@ -217,16 +227,13 @@ function irRelatorio() {
             </div>
             <div class="box">
                 <div class="legend">
-                    <span><i class="sw" style="background: var(--sr-c1)"></i>Implantação</span>
-                    <span><i class="sw" style="background: var(--sr-e1)"></i>Ajustes e eventuais</span>
-                    <span><i class="sw" style="background: var(--sr-r1)"></i>Operação</span>
-                    <span><i class="sw" style="background: var(--sr-n1)"></i>Sem classificação</span>
+                    <span v-for="[f, c] in FASES" :key="f" :data-tip="tip(FASE_NOME[f], FASE_TXT[f])"><i class="sw" :style="{ background: c }"></i>{{ FASE_NOME[f] }}</span>
                 </div>
                 <div class="rank">
-                    <button v-for="(r, idx) in rank" :key="r.s.id" type="button" @click="abrir(r.s)">
+                    <button v-for="(r, idx) in rank" :key="r.s.id" type="button" :aria-label="`${r.s.emp}: ${fmtBRL(r.s.total)}`" @click="abrir(r.s)">
                         <span class="who"><b>{{ r.s.emp }}</b><span>{{ r.s.cidade }}</span></span>
-                        <span class="bar"><i v-for="p in r.parts" :key="p.f" :style="{ width: p.w + '%', background: p.c, animationDelay: idx * 60 + 'ms' }" :title="fmtBRL(p.v)"></i></span>
-                        <span class="amt num">{{ k(r.s.total) }}</span>
+                        <span class="bar"><i v-for="p in r.parts" :key="p.f" :style="{ width: p.w + '%', background: p.c, animationDelay: idx * 60 + 'ms' }" :data-tip="tip(`${FASE_NOME[p.f]} · ${r.s.emp}`, `<b>${fmtBRL(p.v)}</b> · ${pctTxt(p.v, r.s.total)}`)"></i></span>
+                        <span class="amt num" :data-tip="tip(r.s.emp, `Gasto total <b>${fmtBRL(r.s.total)}</b> em ${r.s.n} pagamentos`)">{{ k(r.s.total) }}</span>
                     </button>
                 </div>
             </div>
@@ -238,8 +245,8 @@ function irRelatorio() {
                             <span class="lbl">{{ d.s.emp }}</span>
                             <span class="track">
                                 <span class="axis"></span>
-                                <span v-if="d.band" class="band" :style="d.band" :title="d.s.model?.name"></span>
-                                <span class="dot" :class="d.cls" :style="{ left: d.left }" :title="fmtBRL(d.s.construcao)"></span>
+                                <span v-if="d.band" class="band" :style="d.band" :data-tip="tip(`Faixa do ${d.s.model?.name}`, `O modelo prevê de ${k(d.s.model?.min || 0)} a ${d.s.model?.max ? k(d.s.model.max) : 'mais'} para montar`)"></span>
+                                <span class="dot" :class="d.cls" :style="{ left: d.left }" :data-tip="tip(d.s.emp, `Implantação <b>${fmtBRL(d.s.construcao)}</b> · ${faixa(d.s).txt}`)"></span>
                             </span>
                             <span class="v num">{{ d.s.construcao ? k(d.s.construcao) : 'sem dado' }}</span>
                         </button>
@@ -251,7 +258,7 @@ function irRelatorio() {
                     <div class="mon">
                         <button v-for="(m, idx) in mon" :key="m.s.id" type="button" @click="abrir(m.s)">
                             <span class="lbl">{{ m.s.emp }}</span>
-                            <span class="bar"><i :style="{ width: m.w + '%', animationDelay: idx * 60 + 'ms' }"></i></span>
+                            <span class="bar" :data-tip="tip(`${m.s.emp}: ${fmtBRL(m.s.monthly)} por mês`, m.s.top.map((t) => `${escHtml(t.name)} <b>${fmtBRL(t.amount)}</b>`).join('<br>') || 'sem conta de operação ainda')"><i :style="{ width: m.w + '%', animationDelay: idx * 60 + 'ms' }"></i></span>
                             <span class="v num">{{ k(m.s.monthly) }}</span>
                         </button>
                     </div>
@@ -267,7 +274,7 @@ function irRelatorio() {
                     <h2 class="display">Abra um stand para ver o relatório</h2>
                 </div>
                 <div class="seg" role="group" aria-label="Ordenar">
-                    <button v-for="o in ORDENS" :key="o.o" type="button" :aria-pressed="ordem === o.o" @click="ordem = o.o">{{ o.label }}</button>
+                    <button v-for="o in ORDENS" :key="o.o" type="button" :aria-pressed="ordem === o.o" :data-tip="`Ordenar os stands por ${o.label.toLowerCase()}`" @click="ordem = o.o">{{ o.label }}</button>
                 </div>
             </div>
             <div class="stands">
@@ -283,17 +290,17 @@ function irRelatorio() {
                             <span class="meta">{{ s.model ? s.model.name : 'Sem modelo' }}<template v-if="s.opened"> · inaugurado em {{ fmtDate(s.opened) }}, há {{ daysSince(s.opened) }} dias</template></span>
                         </span>
                         <span class="nums">
-                            <span><span class="k">Gasto total</span><span class="v">{{ k(s.total) }}</span><span class="h">{{ s.n }} pagamentos</span></span>
-                            <span><span class="k">Implantação</span><span class="v">{{ k(s.construcao) }}</span><span class="h" :class="faixa(s).cls">{{ faixa(s).txt }}</span></span>
-                            <span><span class="k">Para manter</span><span class="v">{{ k(s.monthly) }}<small>/mês</small></span><span class="h">aluguel e contas</span></span>
+                            <span :data-tip="tip('Gasto total', `<b>${fmtBRL(s.total)}</b> em ${s.n} pagamentos no Sienge`)"><span class="k">Gasto total</span><span class="v">{{ k(s.total) }}</span><span class="h">{{ s.n }} pagamentos</span></span>
+                            <span :data-tip="tip('Implantação', `<b>${fmtBRL(s.construcao)}</b> para montar · ${s.model ? `${escHtml(s.model.name)} prevê ${k(s.model.min)} a ${s.model.max ? k(s.model.max) : 'mais'}` : 'stand sem modelo'}`)"><span class="k">Implantação</span><span class="v">{{ k(s.construcao) }}</span><span class="h" :class="faixa(s).cls">{{ faixa(s).txt }}</span></span>
+                            <span :data-tip="tip(`Para manter: ${fmtBRL(s.monthly)} por mês`, s.top.map((t) => `${escHtml(t.name)} <b>${fmtBRL(t.amount)}</b>`).join('<br>') || 'sem conta de operação ainda')"><span class="k">Para manter</span><span class="v">{{ k(s.monthly) }}<small>/mês</small></span><span class="h">aluguel e contas</span></span>
                         </span>
-                        <span class="fbar"><i v-for="p in composicao(s)" :key="p.f" :style="{ width: p.w + '%', background: p.c }"></i></span>
+                        <span class="fbar"><i v-for="p in composicao(s)" :key="p.f" :style="{ width: p.w + '%', background: p.c }" :data-tip="tip(FASE_NOME[p.f], `<b>${fmtBRL(s[p.f])}</b> · ${pctTxt(s[p.f], s.total)}`)"></i></span>
                     </span>
                     <span class="side">
-                        <span v-if="s.pending" class="pill warn">{{ s.pending }} pendência{{ s.pending > 1 ? 's' : '' }}</span>
-                        <span v-else class="pill ok">Em dia</span>
-                        <svg class="spark" :viewBox="`0 0 ${spark(s).w} ${spark(s).h}`" preserveAspectRatio="none" aria-hidden="true">
-                            <rect v-for="(r, j) in spark(s).rects" :key="j" :x="r.x" :y="r.y" :width="r.w" :height="r.h" :fill="r.fill" :style="{ animationDelay: r.d * 30 + 'ms' }" />
+                        <span v-if="s.pending" class="pill warn" data-tip="Itens a acertar no relatório: classificação, departamento no Sienge ou conta mensal que faltou">{{ s.pending }} pendência{{ s.pending > 1 ? 's' : '' }}</span>
+                        <span v-else class="pill ok" data-tip="Tudo classificado e as contas mensais apareceram em todos os meses">Em dia</span>
+                        <svg class="spark" data-tip="Gasto dos últimos 12 meses, por fase. Passe o mouse em cada mês" :viewBox="`0 0 ${spark(s).w} ${spark(s).h}`" preserveAspectRatio="none" aria-hidden="true">
+                            <rect v-for="(r, j) in spark(s).rects" :key="j" :x="r.x" :y="r.y" :width="r.w" :height="r.h" :fill="r.fill" :style="{ animationDelay: r.d * 30 + 'ms' }" :data-tip="r.tip" />
                         </svg>
                         <span class="go">Abrir relatório <i>→</i></span>
                     </span>
@@ -301,13 +308,15 @@ function irRelatorio() {
             </div>
         </section>
 
+        <SrTip />
+
         <!-- ══ Prévia do stand ══ -->
         <Teleport to="body">
             <div v-if="previa" class="sr so-scrim" :class="{ closing: fechando }" @mousedown.self="fechar">
                 <div class="so-dlg" role="dialog" aria-modal="true" :aria-label="previa.s.emp">
                     <div class="hero">
                         <img v-if="previa.s.cover" :src="previa.s.cover" :alt="`Fachada do stand ${previa.s.emp}`" />
-                        <button type="button" class="x" aria-label="Fechar" @click="fechar"><i class="fas fa-xmark"></i></button>
+                        <button type="button" class="x" aria-label="Fechar" data-tip="Fechar (Esc)" @click="fechar"><i class="fas fa-xmark"></i></button>
                     </div>
                     <div class="body">
                         <div>
@@ -319,10 +328,10 @@ function irRelatorio() {
                             </div>
                         </div>
                         <div class="kp">
-                            <div><span class="eyebrow">Gasto total</span><span class="v display">{{ k(previa.s.total) }}</span></div>
-                            <div><span class="eyebrow">Implantação</span><span class="v display">{{ k(previa.s.construcao) }}</span><span class="h">{{ previa.f.txt }}</span></div>
-                            <div><span class="eyebrow">Para manter</span><span class="v display">{{ k(previa.s.monthly) }}</span><span class="h">por mês</span></div>
-                            <div><span class="eyebrow">Pendências</span><span class="v display" :class="previa.s.pending ? 'warn' : 'ok'">{{ previa.s.pending }}</span></div>
+                            <div :data-tip="tip('Gasto total', `<b>${fmtBRL(previa.s.total)}</b> em ${previa.s.n} pagamentos`)"><span class="eyebrow">Gasto total</span><span class="v display">{{ k(previa.s.total) }}</span></div>
+                            <div :data-tip="tip('Implantação', `<b>${fmtBRL(previa.s.construcao)}</b> · ${previa.f.txt}`)"><span class="eyebrow">Implantação</span><span class="v display">{{ k(previa.s.construcao) }}</span><span class="h">{{ previa.f.txt }}</span></div>
+                            <div :data-tip="tip('Para manter', `<b>${fmtBRL(previa.s.monthly)}</b> por mês, pela média dos últimos meses fechados`)"><span class="eyebrow">Para manter</span><span class="v display">{{ k(previa.s.monthly) }}</span><span class="h">por mês</span></div>
+                            <div data-tip="Itens a acertar: abra o relatório para ver cada um"><span class="eyebrow">Pendências</span><span class="v display" :class="previa.s.pending ? 'warn' : 'ok'">{{ previa.s.pending }}</span></div>
                         </div>
                         <div v-if="previa.rects.length">
                             <p class="eyebrow gap">Gasto por mês, por fase</p>
@@ -331,7 +340,7 @@ function irRelatorio() {
                                     <line class="grid" :x1="previa.PL" :x2="previa.W" :y1="g.y" :y2="g.y" />
                                     <text :x="previa.PL - 8" :y="g.y + 4" text-anchor="end">{{ g.t }}</text>
                                 </g>
-                                <rect v-for="(r, j) in previa.rects" :key="j" :x="r.x" :y="r.y" :width="r.w" :height="r.h" :fill="r.fill" :style="{ animationDelay: r.d * 40 + 'ms' }"><title>{{ r.tip }}</title></rect>
+                                <rect v-for="(r, j) in previa.rects" :key="j" :x="r.x" :y="r.y" :width="r.w" :height="r.h" :fill="r.fill" :style="{ animationDelay: r.d * 40 + 'ms' }" :data-tip="r.tip" />
                                 <text v-for="l in previa.labels" :key="l.x" :x="l.x" :y="previa.H - 6" text-anchor="middle">{{ l.t }}</text>
                             </svg>
                         </div>
@@ -343,7 +352,7 @@ function irRelatorio() {
                         </div>
                         <div class="cta">
                             <span>Gasto lançamento a lançamento, fotos, itens e pendências.</span>
-                            <button type="button" class="btn" @click="irRelatorio">Abrir relatório <i class="fas fa-arrow-right"></i></button>
+                            <button type="button" class="btn" data-tip="Abre o relatório completo deste stand" @click="irRelatorio">Abrir relatório <i class="fas fa-arrow-right"></i></button>
                         </div>
                     </div>
                 </div>

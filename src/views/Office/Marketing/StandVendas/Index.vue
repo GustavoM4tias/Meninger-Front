@@ -3,7 +3,7 @@
         <PageContainer size="full">
 
             <PageHeader icon="fas fa-store"
-                subtitle="Stands modelo com valor médio e itens, e os stands reais com o custo apurado do Sienge, separado entre construção e recorrência.">
+                subtitle="Os stands de vendas com o custo apurado do Sienge, os modelos de referência e a régua que separa implantação, ajustes e operação.">
                 <template #title>
                     Stand de Vendas
                     <Favorite :router="'/marketing/stand-vendas'" :section="'Stand de Vendas'" />
@@ -19,17 +19,10 @@
                         ]"
                         :tips="[
                             'Cada um enxerga os stands dos empreendimentos que estão na sua alçada, e o acesso é por inteiro: stand com um centro de custo fora da sua alçada não aparece.',
-                            'A aba Categorias diz, por conta do Sienge, o que é construção e o que é recorrência. Ela vale para todos os stands.',
+                            'A aba Categorias diz como cada lançamento ganha natureza e fase (implantação, ajustes ou operação): pela conta do Sienge, por palavra no fornecedor e pela janela de montagem. Vale para todos os stands.',
+                            'Passe o mouse sobre qualquer número, barra ou ponto para ver o que ele quer dizer.',
                         ]" />
-                    <Button v-if="tab === 'modelos' && canConfigure" variant="primary" size="sm" icon="fas fa-plus"
-                        @click="openNewModel">
-                        Novo modelo
-                    </Button>
-                    <Button v-else-if="tab === 'categorias' && canConfigure" variant="primary" size="sm"
-                        icon="fas fa-plus" @click="openNewCategory">
-                        Nova categoria
-                    </Button>
-                    <Button v-else-if="tab === 'stands' && canManage" variant="primary" size="sm" icon="fas fa-plus"
+                    <Button v-if="tab === 'stands' && canManage" variant="primary" size="sm" icon="fas fa-plus"
                         @click="openNewStand">
                         Novo stand
                     </Button>
@@ -64,121 +57,12 @@
             </template>
 
             <!-- ══ Aba Modelos ══ -->
-            <div v-else-if="tab === 'modelos'" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <Surface v-for="(m, i) in sortedModels" :key="m.id" variant="raised" padding="none"
-                    :interactive="canConfigure"
-                    class="overflow-hidden flex flex-col animate-fade-in [animation-fill-mode:backwards]"
-                    :class="canConfigure ? 'cursor-pointer' : ''"
-                    :style="{ animationDelay: Math.min(i, 12) * 30 + 'ms' }"
-                    @click="canConfigure && openEditModel(m)">
-
-                    <div class="p-4 sm:p-5">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <div class="w-9 h-9 rounded-lg bg-accent-soft text-accent flex items-center justify-center shrink-0">
-                                    <i class="fas fa-store text-sm"></i>
-                                </div>
-                                <div class="min-w-0">
-                                    <p class="font-semibold text-ink truncate">{{ m.name }}</p>
-                                    <p class="text-micro text-ink-subtle">
-                                        {{ m.stands_count }} stand{{ m.stands_count === 1 ? '' : 's' }} vinculado{{ m.stands_count === 1 ? '' : 's' }}
-                                    </p>
-                                </div>
-                            </div>
-                            <i v-if="canConfigure" class="fas fa-pen text-[11px] text-ink-subtle mt-1 shrink-0"></i>
-                        </div>
-                        <!-- Altura fixa (3 linhas) p/ as faixas de valor alinharem entre os cards. -->
-                        <p class="text-xs text-ink-muted leading-relaxed mt-3 line-clamp-3 min-h-[3.75rem]">{{ m.description }}</p>
-                    </div>
-
-                    <!-- Faixas em destaque -->
-                    <div class="grid grid-cols-2 divide-x divide-line border-y border-line bg-surface-sunken/60">
-                        <div class="px-3.5 py-3 min-w-0">
-                            <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Valor médio</p>
-                            <p class="font-mono tabular-nums font-bold text-[13px] leading-snug text-ink whitespace-nowrap"
-                                :class="fmtValueRange(m) ? '' : 'text-ink-subtle font-normal'">
-                                {{ fmtValueRange(m) || 'A definir' }}
-                            </p>
-                        </div>
-                        <div class="px-3.5 py-3 min-w-0">
-                            <p class="text-micro font-mono uppercase tracking-wider text-ink-subtle mb-0.5">Metragem</p>
-                            <p class="font-mono tabular-nums font-bold text-[13px] leading-snug text-ink whitespace-nowrap"
-                                :class="fmtAreaRange(m) ? '' : 'text-ink-subtle font-normal'">
-                                {{ fmtAreaRange(m) || 'A definir' }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="p-4 sm:px-5 pt-3 flex-1">
-                        <div v-if="m.items?.length" class="flex flex-wrap content-start gap-1.5">
-                            <span v-for="item in m.items.slice(0, 5)" :key="item"
-                                class="px-2 py-0.5 rounded-md bg-surface-sunken border border-line text-micro text-ink-muted">{{ item }}</span>
-                            <span v-if="m.items.length > 5"
-                                class="px-2 py-0.5 rounded-md border border-dashed border-line text-micro text-ink-subtle">
-                                +{{ m.items.length - 5 }} itens
-                            </span>
-                        </div>
-                        <p v-else class="text-xs text-ink-subtle">Sem itens cadastrados.</p>
-                    </div>
-                </Surface>
-
-                <div v-if="!store.models.length" class="sm:col-span-2 xl:col-span-4">
-                    <Surface variant="raised" padding="none">
-                        <EmptyState icon="fas fa-shapes" title="Nenhum modelo cadastrado"
-                            description="Cadastre os stands modelo (categorias) com o valor médio e os itens de cada padrão." />
-                    </Surface>
-                </div>
-            </div>
+            <ModelsBoard v-else-if="tab === 'modelos'" :models="sortedModels" :stands="store.stands"
+                :can-configure="canConfigure" @edit="openEditModel" @new="openNewModel" />
 
             <!-- ══ Aba Categorias de gasto ══ -->
-            <div v-else-if="tab === 'categorias'" class="flex flex-col gap-5">
-                <SourceSettingsCard :can-configure="canConfigure" />
-                <AutoRulesCard :can-configure="canConfigure" />
-
-                <Surface variant="raised" padding="sm">
-                    <p class="text-sm text-ink-muted">
-                        Cada conta do Sienge cai numa categoria (as do plano <span class="font-mono text-ink">2.02.07</span>
-                        e as equivalentes Adm e Obra que o administrativo usa no lugar delas), e a categoria PUXA o tipo do gasto: <span class="text-series-1 font-medium">construção</span>,
-                        <span class="text-series-2 font-medium">recorrência</span> ou
-                        <span class="text-series-3 font-medium">esporádica</span>. É o padrão de todos os stands, e o tipo
-                        se edita aqui — dentro de cada stand ainda dá para reclassificar um lançamento específico.
-                    </p>
-                </Surface>
-
-                <DataTable :columns="colunasCategoria" :rows="store.categories" row-key="id"
-                    :clickable="canConfigure" density="comfortable" sort-by="sort_order" sort-dir="asc"
-                    empty-icon="fas fa-tags" empty-title="Nenhuma categoria"
-                    empty-text="Sem categoria, todo lançamento fica sem tipo até alguém marcar um a um."
-                    @row-click="(row) => canConfigure && openEditCategory(row)">
-                    <template #cell-name="{ row }">
-                        <span class="inline-flex items-center gap-2 min-w-0" :title="row.description || row.name">
-                            <span class="w-2 h-2 rounded-full shrink-0" :class="kindMeta(row.kind).dot"></span>
-                            <span class="truncate font-medium text-ink">{{ row.name }}</span>
-                        </span>
-                    </template>
-                    <template #cell-kind="{ row }">
-                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-micro font-medium"
-                            :class="[kindMeta(row.kind).bg, kindMeta(row.kind).border, kindMeta(row.kind).text]"
-                            :title="kindMeta(row.kind).hint">
-                            <i :class="kindMeta(row.kind).icon" class="text-micro"></i>{{ kindMeta(row.kind).label }}
-                        </span>
-                    </template>
-                    <template #cell-conta_codes="{ row }">
-                        <span class="inline-flex flex-wrap gap-1"
-                            :title="`Contas do Sienge nesta categoria: ${(row.conta_codes || []).join(', ') || 'nenhuma'}`">
-                            <span v-for="code in row.conta_codes" :key="code"
-                                class="px-1.5 py-0.5 rounded-md bg-surface-sunken border border-line text-micro font-mono text-ink-muted">
-                                {{ code }}
-                            </span>
-                            <span v-if="!row.conta_codes?.length" class="text-micro text-ink-subtle">Sem conta</span>
-                        </span>
-                    </template>
-                    <template v-if="canConfigure" #actions="{ row }">
-                        <IconButton icon="fas fa-pen" size="sm" variant="ghost" label="Editar categoria"
-                            @click="openEditCategory(row)" />
-                    </template>
-                </DataTable>
-            </div>
+            <CategoriesBoard v-else-if="tab === 'categorias'" :categories="store.categories"
+                :can-configure="canConfigure" @edit="openEditCategory" @new="openNewCategory" />
 
             <!-- ══ Aba Conferência (departamento × plano do stand) ══ -->
             <AuditTab v-else :can-manage="canManage" />
@@ -194,9 +78,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSalesStandStore, kindMeta } from '@/stores/Marketing/SalesStand/salesStandStore';
+import { useSalesStandStore } from '@/stores/Marketing/SalesStand/salesStandStore';
 import { useCan } from '@/composables/useCan';
-import { fmtValueRange, fmtAreaRange, sortModelsByTier } from './standFormat';
+import { sortModelsByTier } from './standFormat';
 import Skeleton from '@/components/UI/Skeleton.vue';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
@@ -206,17 +90,15 @@ import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
-import DataTable from '@/components/UI/DataTable.vue';
-import IconButton from '@/components/UI/IconButton.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
 import ModelFormModal from './ModelFormModal.vue';
 import StandFormModal from './StandFormModal.vue';
 import CategoryFormModal from './CategoryFormModal.vue';
-import SourceSettingsCard from './components/SourceSettingsCard.vue';
 import StandsOverview from './report/StandsOverview.vue';
 import AuditTab from './components/AuditTab.vue';
-import AutoRulesCard from './components/AutoRulesCard.vue';
+import ModelsBoard from './report/ModelsBoard.vue';
+import CategoriesBoard from './report/CategoriesBoard.vue';
 
 const store = useSalesStandStore();
 const router = useRouter();
@@ -243,16 +125,7 @@ const tabs = computed(() => [
 // Modelos por porte (Standard → Premium), não alfabético.
 const sortedModels = computed(() => sortModelsByTier(store.models));
 
-const colunasCategoria = computed(() => [
-    { key: 'name', label: 'Categoria', priority: 1, sortable: true },
-    {
-        key: 'kind', label: 'Tipo', priority: 1, sortable: true, truncate: false,
-        sortValue: (r) => kindMeta(r.kind).label,
-    },
-    { key: 'conta_codes', label: 'Contas do Sienge', priority: 2, truncate: false },
-    { key: 'description', label: 'O que entra aqui', priority: 2 },
-    { key: 'sort_order', label: 'Ordem', priority: 3, numeric: true, sortable: true },
-]);
+
 
 const abrir = (s) => router.push(`/marketing/stand-vendas/${s.id}`);
 

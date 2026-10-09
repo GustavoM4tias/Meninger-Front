@@ -12,6 +12,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useCountUp } from '@/composables/useCountUp';
 import { STATUS_META } from '@/stores/Marketing/SalesStand/salesStandStore';
 import ReportDialog from './ReportDialog.vue';
+import SrTip from './SrTip.vue';
 import { fmtBRL, fmtDate, fmtYm, fmtValueRange, fmtAreaRange } from '../standFormat';
 import {
     KIND_ORDER, FASE, faseLabel, kindOf, sumOf, catKey, catLabel, reportMonths, amountIn, currentYm,
@@ -82,13 +83,7 @@ const dlgRoot = ref(null);
 const abrir = (view) => { dlgRoot.value = { ...view, n: Date.now() }; dlgOpen.value = true; };
 const lista = (key) => abrir({ type: 'list', key });
 
-// ── Dica flutuante dos gráficos ──────────────────────────────────────────────
-const tip = ref({ on: false, html: '', x: 0, y: 0 });
-function onMove(e) {
-    const el = e.target.closest?.('[data-tip]');
-    if (!el) { tip.value.on = false; return; }
-    tip.value = { on: true, html: el.dataset.tip, x: Math.min(e.clientX + 14, window.innerWidth - 240), y: e.clientY + 16 };
-}
+// ── Clique e teclado nos gráficos (a dica é o SrTip) ───────────────────────────
 function onKeyOpen(e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const el = e.target.closest?.('[data-open]');
@@ -255,7 +250,7 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
 </script>
 
 <template>
-    <div class="sr sr-page" @pointermove="onMove" @pointerleave="tip.on = false">
+    <div class="sr sr-page">
 
         <!-- ══ Capa ══ -->
         <header class="cover">
@@ -285,25 +280,25 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
 
         <!-- ══ Quatro números ══ -->
         <div class="kpis">
-            <button type="button" class="kpi" @click="lista('all')">
+            <button type="button" class="kpi" :data-tip="`<b>Gasto total</b><span class='t'>Tudo o que o Sienge pagou para o stand (${fmtBRL(total)}). Clique para ver os pagamentos</span>`" @click="lista('all')">
                 <span class="eyebrow">Gasto total</span>
                 <span class="v display" :class="{ counting: cTotal.counting.value }">{{ fmtK(cTotal.display.value) }}</span>
                 <span class="d">{{ items.length }} pagamentos no Sienge</span>
                 <span class="go">Ver todos</span>
             </button>
-            <button type="button" class="kpi" @click="lista('kind|construcao')">
+            <button type="button" class="kpi" :data-tip="`<b>Implantação</b><span class='t'>Montar o stand: ${fmtBRL(implantacaoKpi)}${faixa ? `. O ${esc(modelo?.name)} prevê ${faixa}` : ''}</span>`" @click="lista('kind|construcao')">
                 <span class="eyebrow">Implantação<i v-if="definido" class="fas fa-lock"></i></span>
                 <span class="v display" :class="{ counting: cImpl.counting.value }">{{ fmtK(cImpl.display.value) }}</span>
                 <span class="d">{{ definido ? `congelada em ${fmtDate(stand.defined_at)}` : 'obra, móveis e comunicação visual' }}</span>
                 <span class="go">Ver a implantação</span>
             </button>
-            <button type="button" class="kpi" @click="abrir({ type: 'run' })">
+            <button type="button" class="kpi" data-tip="<b>Para manter</b><span class='t'>Custo mensal conta a conta, pela média dos últimos meses fechados. Clique para ver a conta</span>" @click="abrir({ type: 'run' })">
                 <span class="eyebrow">Para manter</span>
                 <span class="v display" :class="{ counting: cMes.counting.value }">{{ fmtK(cMes.display.value) }}<small>/mês</small></span>
                 <span class="d">aluguel, contas e consumo</span>
                 <span class="go">Ver a conta</span>
             </button>
-            <button type="button" class="kpi" @click="$refs.ressalvas?.scrollIntoView({ behavior: 'smooth', block: 'start' })">
+            <button type="button" class="kpi" data-tip="<b>Pendências</b><span class='t'>O que falta acertar no Sienge ou na classificação. Clique para descer até elas</span>" @click="$refs.ressalvas?.scrollIntoView({ behavior: 'smooth', block: 'start' })">
                 <span class="eyebrow">Pendências</span>
                 <span class="v display" :class="pendentes.length ? 'warn' : 'ok'">{{ pendentes.length }}</span>
                 <span class="d">{{ pendentes.length ? 'no Sienge e na classificação' : 'nada a acertar' }}</span>
@@ -321,7 +316,7 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
             <div class="sr-panel">
                 <div class="sr-panel-head">
                     <div class="legend">
-                        <button v-for="g in grupos" :key="g.key" type="button" @click="lista(`grp|${g.key}`)"><i class="sw" :style="{ background: g.color }"></i>{{ g.label }}</button>
+                        <button v-for="g in grupos" :key="g.key" type="button" :data-tip="`<b>${esc(g.label)}</b><span class='t'>${fmtBRL(g.value)} em ${g.n} pagamentos. Clique para ver</span>`" @click="lista(`grp|${g.key}`)"><i class="sw" :style="{ background: g.color }"></i>{{ g.label }}</button>
                     </div>
                     <span class="hint">Clique num mês ou numa cor para ver os pagamentos</span>
                 </div>
@@ -366,7 +361,7 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
                             <text class="c2" x="85" y="106" text-anchor="middle">mil no total</text>
                         </svg>
                         <div class="dlist">
-                            <button v-for="s in donut" :key="s.key" type="button" :data-open="`grp|${s.key}`">
+                            <button v-for="s in donut" :key="s.key" type="button" :data-open="`grp|${s.key}`" :data-tip="`<b>${esc(s.label)}</b><span class='t'>${fmtBRL(s.value)} · ${s.n} pagamentos</span>`">
                                 <i class="sw" :style="{ background: s.color }"></i>
                                 <span>{{ s.label }} <span class="muted">· {{ s.n }}</span></span>
                                 <span class="pc num">{{ s.pct < 1 ? 'menos de 1' : s.pct.toFixed(1).replace('.', ',') }}%</span>
@@ -399,7 +394,7 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
                 </div>
             </div>
             <div class="phase-split" :class="{ four: fases.length > 3 }">
-                <button v-for="f in fases" :key="f.k" type="button" class="phase" :style="{ borderTopColor: FASE[f.k].color }" @click="lista(`kind|${f.k}`)">
+                <button v-for="f in fases" :key="f.k" type="button" class="phase" :style="{ borderTopColor: FASE[f.k].color }" :data-tip="`<b>${faseLabel(f.k)}</b><span class='t'>${FASE[f.k].text} Clique para ver os pagamentos</span>`" @click="lista(`kind|${f.k}`)">
                     <span class="eyebrow">{{ faseLabel(f.k) }}</span>
                     <span class="v num">{{ fmtBRL(f.v) }}</span>
                     <span class="t">{{ FASE[f.k].text }}</span>
@@ -447,7 +442,7 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
                         <tr v-for="r in opRows" :key="r.key">
                             <td>{{ r.label }}</td>
                             <td v-for="c in r.cells" :key="c.ym" class="r">
-                                <button v-if="c.v" type="button" class="cell num" @click="lista(`catmonth|${r.key}|${c.ym}`)">{{ fmtBRL(c.v) }}</button>
+                                <button v-if="c.v" type="button" class="cell num" :data-tip="`<b>${esc(r.label)} · ${fmtYm(c.ym)}</b><span class='t'>Clique para ver o pagamento</span>`" @click="lista(`catmonth|${r.key}|${c.ym}`)">{{ fmtBRL(c.v) }}</button>
                                 <span v-else class="muted">-</span>
                             </td>
                             <td class="r"><button type="button" class="cell num" @click="lista(`cat|${r.key}`)">{{ fmtBRL(r.total) }}</button></td>
@@ -487,8 +482,8 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
             </div>
             <div class="filters">
                 <div class="seg" role="group" aria-label="Fase">
-                    <button type="button" :aria-pressed="!fFase" @click="fFase = ''">Todas</button>
-                    <button v-for="k in fasesFiltro" :key="k" type="button" :aria-pressed="fFase === k" @click="fFase = k">{{ faseLabel(k) }}</button>
+                    <button type="button" :aria-pressed="!fFase" data-tip="Mostra todas as fases" @click="fFase = ''">Todas</button>
+                    <button v-for="k in fasesFiltro" :key="k" type="button" :aria-pressed="fFase === k" :data-tip="FASE[k].text" @click="fFase = k">{{ faseLabel(k) }}</button>
                 </div>
                 <select v-model="fCat" aria-label="Natureza">
                     <option value="">Toda natureza</option>
@@ -507,7 +502,7 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
                             <td class="num">{{ fmtDate(i.paidAt).slice(0, 5) }}</td>
                             <td>{{ niceName(i.supplier) }}<span v-if="shortNote(i.notes)" class="sub">{{ shortNote(i.notes) }}</span></td>
                             <td><span class="nat"><i class="sw" :style="{ background: corGrupo(i) }"></i>{{ catLabel(i) }}</span><span class="sub num">{{ i.contaCode }}</span></td>
-                            <td><span class="pill"><i class="sw" :style="{ background: (FASE[kindOf(i)] || FASE.sem_classificacao).color }"></i>{{ faseLabel(kindOf(i)) }}</span></td>
+                            <td><span class="pill" :data-tip="FASE[kindOf(i)]?.text"><i class="sw" :style="{ background: (FASE[kindOf(i)] || FASE.sem_classificacao).color }"></i>{{ faseLabel(kindOf(i)) }}</span></td>
                             <td class="num">{{ i.docType }} · {{ i.billId }}{{ i.installment > 1 ? '/' + i.installment : '' }}</td>
                             <td class="r num">{{ fmtBRL(i.amount) }}</td>
                         </tr>
@@ -549,7 +544,7 @@ onBeforeUnmount(() => { if (raf) cancelAnimationFrame(raf); });
             </div>
         </section>
 
-        <div class="tip" :class="{ on: tip.on }" :style="{ left: tip.x + 'px', top: tip.y + 'px' }" role="tooltip" v-html="tip.html"></div>
+        <SrTip />
 
         <ReportDialog :open="dlgOpen" :root="dlgRoot" :items="items" :outside="outside" :notes="notes"
             :grupos="grupos" :group-of="groupOf" :breakdown="stand.recurring_breakdown || []" :monthly="monthly"
@@ -723,9 +718,6 @@ tr.total td { font-weight: 600; border-bottom: 0; }
 .method { font-size: 13.5px; color: var(--sr-muted); display: grid; gap: 8px; max-width: 78ch; }
 .method b { color: var(--sr-ink); font-weight: 600; }
 
-.tip { position: fixed; pointer-events: none; background: var(--sr-ink); color: var(--sr-paper); font-size: 12.5px; padding: 6px 9px; border-radius: 6px; z-index: 50; white-space: nowrap; opacity: 0; transition: opacity 0.12s; }
-.tip.on { opacity: 1; }
-.tip :deep(b) { font-family: var(--sr-mono); font-weight: 500; }
 
 @media (max-width: 860px) {
     .two { grid-template-columns: 1fr; }

@@ -1,91 +1,78 @@
 <template>
-    <Panel title="Classificação automática" icon="fas fa-wand-magic-sparkles"
-        subtitle="Como cada lançamento ganha categoria e tipo sozinho, em todos os stands.">
-        <template v-if="canConfigure" #actions>
-            <Button v-if="!store.autoRules.is_default" variant="ghost" size="sm" icon="fas fa-rotate-left"
-                :loading="store.saving" @click="restaurar">
-                Voltar às regras padrão
-            </Button>
-            <Button variant="primary" size="sm" icon="fas fa-plus" @click="nova">Nova regra</Button>
-        </template>
+    <section class="sr-sec">
+        <div class="sr-head-row">
+            <div class="sr-head">
+                <p class="eyebrow">Classificação automática</p>
+                <h2 class="display">Como cada lançamento ganha natureza e fase sozinho</h2>
+            </div>
+            <div v-if="canConfigure" class="acts">
+                <button v-if="!store.autoRules.is_default" type="button" class="sr-btn ghost" :disabled="store.saving"
+                    data-tip="Troca as regras ajustadas aqui pelas padrão do sistema" @click="restaurar">
+                    <i class="fas fa-rotate-left"></i>Voltar às padrão
+                </button>
+                <button type="button" class="sr-btn" data-tip="Cria uma regra por palavra no fornecedor ou na observação do título" @click="nova">
+                    <i class="fas fa-plus"></i>Nova regra
+                </button>
+            </div>
+        </div>
 
-        <div class="flex flex-col gap-5">
-            <!-- A ordem de autoridade, em uma linha por passo. -->
-            <ol class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                <li v-for="(p, i) in PASSOS" :key="p.t"
-                    class="rounded-lg border border-line bg-surface-sunken/60 px-3 py-2.5 flex flex-col gap-0.5">
-                    <span class="metric-label">{{ i + 1 }}. {{ p.t }}</span>
-                    <span class="text-xs text-ink-muted leading-relaxed">{{ p.d }}</span>
+        <ol class="passos">
+            <li v-for="(p, i) in PASSOS" :key="p.t" :data-tip="tipPasso(p, i)">
+                <span class="n num">{{ i + 1 }}</span>
+                <span><b>{{ p.t }}</b><span>{{ p.d }}</span></span>
+            </li>
+        </ol>
+
+        <div class="sr-box">
+            <div class="janela">
+                <label class="sr-field" data-tip="Dias contados da inauguração. Pago até o fim da janela, e que não é conta mensal, vira implantação">
+                    <span>Janela de montagem (dias)</span>
+                    <input v-model="dias" type="number" min="0" max="365" class="sr-input num" :disabled="!canConfigure" />
+                </label>
+                <p class="expl">
+                    Pago até o fim da janela e que não é conta mensal vira <b :style="{ color: corFase('construcao') }">implantação</b>;
+                    obra paga depois dela vira <b :style="{ color: corFase('esporadica') }">ajuste</b>. Stand sem data de inauguração não usa a janela.
+                </p>
+                <button v-if="canConfigure" type="button" class="sr-btn ghost"
+                    :disabled="Number(dias) === Number(store.autoRules.assembly_days) || store.saving"
+                    data-tip="Grava a janela e reclassifica todos os stands" @click="salvarDias">
+                    <i class="fas fa-check"></i>Aplicar
+                </button>
+            </div>
+        </div>
+
+        <div class="sr-box">
+            <div class="rh">
+                <div><h3>Regras por palavra</h3><p class="sub">Só para o lançamento que a conta não categoriza (adiantamento, brindes, despesas diversas). Vale a primeira que casar, de cima para baixo.</p></div>
+                <span class="sr-chip" :data-tip="store.autoRules.is_default ? 'Ninguém ajustou as regras ainda: valem as do sistema' : 'As regras foram ajustadas nesta tela'">
+                    {{ store.autoRules.is_default ? 'Regras padrão do sistema' : 'Regras ajustadas na tela' }}
+                </span>
+            </div>
+            <ul class="regras">
+                <li v-for="(r, idx) in regras" :key="r.id" :class="{ off: r.is_active === false }" :style="{ animationDelay: idx * 40 + 'ms' }">
+                    <span class="ord num" :data-tip="`Ordem ${idx + 1}: é testada depois das de cima`">{{ idx + 1 }}</span>
+                    <div class="rb" :data-tip="tipRegra(r)">
+                        <div class="rt">
+                            <b>{{ r.name }}</b>
+                            <i class="fas fa-arrow-right"></i>
+                            <span class="cat"><i class="sw" :style="{ background: corFase(categoria(r)?.kind) }"></i>{{ categoria(r)?.name || 'Categoria removida' }}</span>
+                            <span v-if="r.is_active === false" class="sr-chip">desligada</span>
+                        </div>
+                        <div class="terms"><span v-for="t in r.terms" :key="t" class="sr-chip mono">{{ t }}</span></div>
+                    </div>
+                    <div v-if="canConfigure" class="ra">
+                        <button type="button" class="sr-icon-btn" :disabled="idx === 0" aria-label="Subir" data-tip="Subir: testar antes" @click="mover(idx, -1)"><i class="fas fa-arrow-up"></i></button>
+                        <button type="button" class="sr-icon-btn" :disabled="idx === regras.length - 1" aria-label="Descer" data-tip="Descer: testar depois" @click="mover(idx, 1)"><i class="fas fa-arrow-down"></i></button>
+                        <button type="button" class="sr-icon-btn" :aria-label="r.is_active === false ? 'Ligar' : 'Desligar'"
+                            :data-tip="r.is_active === false ? 'Ligar a regra' : 'Desligar sem apagar'" @click="alternar(idx)">
+                            <i :class="r.is_active === false ? 'fas fa-toggle-off' : 'fas fa-toggle-on'"></i>
+                        </button>
+                        <button type="button" class="sr-icon-btn" aria-label="Editar" data-tip="Editar nome, categoria e palavras" @click="editar(idx)"><i class="fas fa-pen"></i></button>
+                    </div>
                 </li>
-            </ol>
-
-            <!-- Janela de montagem -->
-            <div class="flex flex-col sm:flex-row sm:items-end gap-3">
-                <div class="w-full sm:w-48">
-                    <Input v-model="dias" type="number" size="sm" label="Janela de montagem (dias)"
-                        :disabled="!canConfigure" placeholder="35" />
-                </div>
-                <p class="text-xs text-ink-muted leading-relaxed flex-1">
-                    Contados da inauguração. Pago até o fim da janela e que não é conta mensal vira
-                    <b class="text-series-1">construção</b>; obra paga depois dela vira <b class="text-series-3">esporádico</b>.
-                    Stand sem data de inauguração não usa a janela.
-                </p>
-                <Button v-if="canConfigure" variant="secondary" size="sm" icon="fas fa-check"
-                    :disabled="Number(dias) === Number(store.autoRules.assembly_days)" :loading="store.saving"
-                    @click="salvarDias">
-                    Aplicar
-                </Button>
-            </div>
-
-            <!-- Regras -->
-            <div class="flex flex-col gap-2">
-                <div class="flex items-baseline justify-between gap-2">
-                    <p class="text-sm font-semibold text-ink">Regras por palavra</p>
-                    <p class="text-micro text-ink-subtle">
-                        {{ store.autoRules.is_default ? 'Regras padrão do sistema' : 'Regras ajustadas na tela' }} · vale a primeira que casar
-                    </p>
-                </div>
-                <p class="text-xs text-ink-muted">
-                    Só para lançamento que a conta não categoriza (adiantamento a fornecedor, brindes, despesas diversas).
-                    Olham o nome do fornecedor e a observação do título.
-                </p>
-                <ul class="flex flex-col divide-y divide-line-subtle rounded-lg border border-line bg-surface-raised">
-                    <li v-for="(r, idx) in regras" :key="r.id"
-                        class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 py-2.5 stagger-in"
-                        :class="{ 'opacity-50': r.is_active === false }" :style="{ '--i': idx }">
-                        <span class="font-mono text-xs text-ink-subtle w-5 shrink-0">{{ idx + 1 }}</span>
-                        <div class="flex-1 min-w-0 flex flex-col gap-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="text-sm font-medium text-ink">{{ r.name }}</span>
-                                <i class="fas fa-arrow-right text-micro text-ink-subtle"></i>
-                                <span class="inline-flex items-center gap-1.5 text-xs text-ink-muted">
-                                    <span class="w-2 h-2 rounded-full" :class="kindMeta(categoria(r)?.kind).dot"></span>
-                                    {{ categoria(r)?.name || 'Categoria removida' }}
-                                </span>
-                            </div>
-                            <div class="flex flex-wrap gap-1">
-                                <span v-for="t in r.terms" :key="t"
-                                    class="px-1.5 py-0.5 rounded bg-surface-sunken border border-line text-micro font-mono text-ink-muted">{{ t }}</span>
-                            </div>
-                        </div>
-                        <div v-if="canConfigure" class="flex items-center gap-1 shrink-0 self-end sm:self-auto">
-                            <IconButton icon="fas fa-arrow-up" size="sm" variant="ghost" label="Subir" :disabled="idx === 0"
-                                @click="mover(idx, -1)" />
-                            <IconButton icon="fas fa-arrow-down" size="sm" variant="ghost" label="Descer"
-                                :disabled="idx === regras.length - 1" @click="mover(idx, 1)" />
-                            <IconButton :icon="r.is_active === false ? 'fas fa-toggle-off' : 'fas fa-toggle-on'" size="sm"
-                                variant="ghost" :label="r.is_active === false ? 'Ligar regra' : 'Desligar regra'"
-                                @click="alternar(idx)" />
-                            <IconButton icon="fas fa-pen" size="sm" variant="ghost" label="Editar regra" @click="editar(idx)" />
-                        </div>
-                    </li>
-                    <li v-if="!regras.length" class="px-3 py-4 text-sm text-ink-muted">Nenhuma regra. Lançamento sem categoria pela conta fica sem classificação.</li>
-                </ul>
-            </div>
-
-            <div v-if="errorMsg" class="text-sm text-data-neg flex items-center gap-2">
-                <i class="fas fa-circle-exclamation"></i>{{ errorMsg }}
-            </div>
+                <li v-if="!regras.length" class="vazio">Nenhuma regra. Lançamento sem categoria pela conta fica sem classificação.</li>
+            </ul>
+            <p v-if="errorMsg" class="sr-note warn"><i class="fas fa-circle-exclamation"></i>{{ errorMsg }}</p>
         </div>
 
         <Modal :open="modal.open" size="md" :title="modal.idx === null ? 'Nova regra' : 'Editar regra'"
@@ -119,8 +106,44 @@
                 </div>
             </template>
         </Modal>
-    </Panel>
+    </section>
 </template>
+
+<style scoped>
+.acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.passos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 0; margin: 0; list-style: none; border-top: 2px solid var(--sr-ink); border-bottom: 1px solid var(--sr-line); }
+.passos li { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 14px 14px 16px; }
+.passos li:first-child { padding-left: 0; }
+.passos li + li { border-left: 1px solid var(--sr-line); }
+.passos .n { font-family: var(--sr-display); font-size: 26px; font-weight: 700; line-height: 1; color: var(--sr-accent); }
+.passos b { display: block; font-size: 14px; }
+.passos span span { display: block; font-size: 13px; color: var(--sr-muted); }
+.janela { display: grid; grid-template-columns: 200px minmax(0, 1fr) auto; gap: 16px; align-items: end; }
+.expl { font-size: 13.5px; color: var(--sr-muted); }
+.rh { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
+.regras { display: grid; padding: 0; margin: 0; list-style: none; border-top: 1px solid var(--sr-line); }
+.regras li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--sr-line); animation: sr-rise 0.35s ease both; }
+.regras li.off { opacity: 0.5; }
+.regras .ord { font-size: 13px; color: var(--sr-muted); }
+.rb { display: grid; gap: 6px; min-width: 0; }
+.rt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rt b { font-size: 14.5px; }
+.rt > i { font-size: 11px; color: var(--sr-muted); }
+.cat { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sr-muted); }
+.terms { display: flex; flex-wrap: wrap; gap: 4px; }
+.ra { display: flex; gap: 2px; }
+.vazio { color: var(--sr-muted); font-size: 14px; }
+@media (max-width: 860px) {
+    .passos { grid-template-columns: 1fr 1fr; }
+    .passos li:nth-child(odd) { padding-left: 0; border-left: 0; }
+    .passos li:nth-child(n+3) { border-top: 1px solid var(--sr-line); }
+    .janela { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+    .regras li { grid-template-columns: 24px minmax(0, 1fr); }
+    .ra { grid-column: 2; }
+}
+</style>
 
 <script setup>
 // As regras que classificam sozinhas. Mexer aqui reclassifica TODOS os stands
@@ -128,14 +151,14 @@
 // mão continua valendo sobre a regra).
 import { ref, computed, watch } from 'vue';
 import { useToast } from 'vue-toastification';
-import { useSalesStandStore, kindMeta } from '@/stores/Marketing/SalesStand/salesStandStore';
+import { useSalesStandStore } from '@/stores/Marketing/SalesStand/salesStandStore';
 import { pedirConfirmacao } from '@/composables/useConfirm';
-import Panel from '@/components/UI/Panel.vue';
 import Button from '@/components/UI/Button.vue';
-import IconButton from '@/components/UI/IconButton.vue';
 import Input from '@/components/UI/Input.vue';
 import Select from '@/components/UI/Select.vue';
 import Modal from '@/components/UI/Modal.vue';
+import { FASE, faseLabel, escHtml } from '../report/reportModel';
+import '../report/standReport.css';
 
 defineProps({
     canConfigure: { type: Boolean, default: false },
@@ -161,6 +184,12 @@ watch(() => store.autoRules, (a) => {
 
 const catById = computed(() => new Map(store.categories.map((c) => [Number(c.id), c])));
 const categoria = (r) => catById.value.get(Number(r.category_id));
+const corFase = (k) => (FASE[k] || FASE.sem_classificacao).color;
+const tipPasso = (p, i) => `<b>${i + 1}. ${p.t}</b><span class="t">${p.d}</span>`;
+const tipRegra = (r) => {
+    const c = categoria(r);
+    return `<b>${escHtml(r.name)}</b><span class="t">Fornecedor ou observação com ${r.terms.map(escHtml).join(', ')} vira ${escHtml(c?.name || 'categoria removida')} (${faseLabel(c?.kind)}).${r.is_active === false ? ' Desligada.' : ''}</span>`;
+};
 
 async function gravar(lista, msg) {
     errorMsg.value = '';

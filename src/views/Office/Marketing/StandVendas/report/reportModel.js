@@ -295,3 +295,6 @@ export function loadReportFonts() {
     l.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap';
     document.head.appendChild(l);
 }
+
+// Texto que vai para dica em HTML (data-tip): o que vem do cadastro é escapado.
+export const escHtml = (t) => String(t ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
