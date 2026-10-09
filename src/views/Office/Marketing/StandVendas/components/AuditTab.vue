@@ -1,5 +1,7 @@
 <template>
-    <div class="sr sr-wrap">
+    <SrSkeleton v-if="store.auditLoading && !store.audit" variant="audit" :rows="8"
+        label="Conferindo departamento e conta dos títulos no espelho do Sienge…" />
+    <div v-else class="sr sr-wrap">
         <header class="sr-head">
             <div class="sr-head-row">
                 <div class="sr-head">
@@ -47,6 +49,8 @@
                     <i class="fas fa-satellite-dish"></i>{{ store.liveChecking ? 'Consultando…' : (live ? 'Conferir de novo' : 'Conferir agora') }}
                 </button>
             </div>
+            <SrSkeleton v-if="store.liveChecking && !live" variant="rows" :rows="4"
+                :label="`Consultando ${lote} títulos na API do Sienge, um a um…`" />
             <div v-if="live" class="sr-box">
                 <div class="sr-kpis" :style="{ '--cols': live.errors ? 4 : 3 }">
                     <div class="sr-kpi" data-tip="Já corrigidos no Sienge, esperando só a próxima carga do backup"><span class="eyebrow">Já corrigidos</span><span class="v num" style="color: var(--sr-ok)">{{ live.resolved }}</span></div>
@@ -89,7 +93,7 @@
                     <button v-for="s in situacoes" :key="s.key" type="button" :aria-pressed="filtro === s.key" :data-tip="s.hint" @click="filtro = s.key">{{ s.curto }}</button>
                 </div>
             </div>
-            <p v-if="store.auditLoading" class="sr-empty">Carregando a conferência do Sienge…</p>
+            <SrSkeleton v-if="store.auditLoading" variant="rows" :rows="6" label="Atualizando a conferência…" />
             <div v-else-if="ordenadas.length" class="sr-table-wrap">
                 <table class="sr-table">
                     <thead>
@@ -146,6 +150,7 @@ import { useSalesStandStore } from '@/stores/Marketing/SalesStand/salesStandStor
 import { fmtBRL } from '../standFormat';
 
 import SrTip from '../report/SrTip.vue';
+import SrSkeleton from '../report/SrSkeleton.vue';
 import { loadReportFonts } from '../report/reportModel';
 import '../report/standReport.css';
 

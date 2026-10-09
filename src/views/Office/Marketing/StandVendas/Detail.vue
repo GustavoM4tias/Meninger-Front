@@ -38,22 +38,16 @@
                 </template>
             </PageHeader>
 
-            <Surface v-if="store.error" variant="raised" padding="sm" class="mb-5 border-data-neg/30 bg-data-neg/10">
-                <div class="text-sm text-data-neg flex items-center gap-2">
-                    <i class="fas fa-circle-exclamation"></i>{{ store.error }}
-                </div>
-            </Surface>
-            <Surface v-if="store.spendUnavailable" variant="raised" padding="sm"
-                class="mb-5 border-data-warn/30 bg-data-warn/10">
-                <div class="text-sm text-data-warn flex items-center gap-2">
-                    <i class="fas fa-triangle-exclamation"></i>
-                    Sienge indisponível no momento — os valores de gasto estão zerados e voltam quando a base responder.
-                </div>
-            </Surface>
+            <p v-if="store.error" class="sr sr-note warn sr-banner">
+                <i class="fas fa-circle-exclamation"></i><span>{{ store.error }}</span>
+            </p>
+            <p v-if="store.spendUnavailable" class="sr sr-note warn sr-banner">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>O Sienge não respondeu agora: os valores de gasto aparecem zerados e voltam sozinhos quando a base responder.</span>
+            </p>
 
             <template v-if="store.detailLoading && !stand">
-                <Skeleton variant="stat" :lines="4" class="mb-5" />
-                <Skeleton variant="table" :lines="6" />
+                <SrSkeleton variant="report" label="Carregando o relatório do stand e os pagamentos do Sienge…" />
             </template>
 
             <template v-else-if="stand">
@@ -85,10 +79,14 @@
                     @upload="subirFoto" @remove="removerFoto" @caption="salvarLegenda" @reorder="reordenarFotos" />
             </template>
 
-            <Surface v-else variant="raised" padding="none">
-                <EmptyState icon="fas fa-store-slash" title="Stand não encontrado"
-                    description="Ele pode ter sido excluído ou ser de um empreendimento fora da sua alçada." />
-            </Surface>
+            <div v-else class="sr sr-wrap">
+                <div class="sr-head sr-vazio">
+                    <p class="eyebrow">Stand de Vendas</p>
+                    <h1 class="display">Stand não encontrado</h1>
+                    <p class="lede">Ele pode ter sido excluído ou ser de um empreendimento fora da sua alçada. Volte para a lista e abra outro.</p>
+                    <button type="button" class="sr-btn ghost" @click="voltar"><i class="fas fa-arrow-left"></i>Voltar para os stands</button>
+                </div>
+            </div>
 
         </PageContainer>
 
@@ -98,6 +96,7 @@
 </template>
 
 <script setup>
+import './report/standReport.css';
 // Detalhe do stand em TELA CHEIA (a navegação continua na lateral). Era um
 // modal flutuante: com lançamento a lançamento, itens e fotos na mesma tela,
 // não cabia mais numa caixinha.
@@ -112,11 +111,9 @@ import { fmtBRL } from './standFormat';
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
-import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
-import Skeleton from '@/components/UI/Skeleton.vue';
+import SrSkeleton from './report/SrSkeleton.vue';
 
 import StandFormModal from './StandFormModal.vue';
 import ExpenseTab from './components/ExpenseTab.vue';

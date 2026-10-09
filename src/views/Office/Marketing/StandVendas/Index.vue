@@ -33,34 +33,35 @@
                 <SegmentedControl v-model="tab" :options="tabs" />
             </div>
 
-            <Surface v-if="store.error" variant="raised" padding="sm" class="mb-5 border-data-neg/30 bg-data-neg/10">
-                <div class="text-sm text-data-neg flex items-center gap-2">
-                    <i class="fas fa-circle-exclamation"></i>{{ store.error }}
-                </div>
-            </Surface>
-            <Surface v-if="tab === 'stands' && store.spendUnavailable" variant="raised" padding="sm"
-                class="mb-5 border-data-warn/30 bg-data-warn/10">
-                <div class="text-sm text-data-warn flex items-center gap-2">
-                    <i class="fas fa-triangle-exclamation"></i>
-                    Sienge indisponível no momento — os valores de gasto estão zerados e voltam quando a base responder.
-                </div>
-            </Surface>
+            <p v-if="store.error" class="sr sr-note warn sr-banner">
+                <i class="fas fa-circle-exclamation"></i><span>{{ store.error }}</span>
+            </p>
+            <p v-if="tab === 'stands' && store.spendUnavailable" class="sr sr-note warn sr-banner">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>O Sienge não respondeu agora: os valores de gasto aparecem zerados e voltam sozinhos quando a base responder.</span>
+            </p>
 
             <!-- ══ Aba Stands ══ -->
             <template v-if="tab === 'stands'">
-                <Skeleton v-if="store.loading && !store.stands.length" variant="chart" height="h-96" />
+                <SrSkeleton v-if="carregando || (store.loading && !store.stands.length)" variant="overview"
+                    label="Carregando os stands e o gasto do Sienge…" />
                 <StandsOverview v-else-if="store.stands.length" :stands="store.stands" @open="abrir" />
-                <Surface v-else variant="raised" padding="none">
-                    <EmptyState icon="fas fa-store" title="Nenhum stand cadastrado"
-                        description="Crie os modelos na aba ao lado e cadastre aqui os stands reais com seus centros de custo." />
-                </Surface>
+                <div v-else class="sr sr-wrap">
+                    <div class="sr-head sr-vazio">
+                        <p class="eyebrow">Stand de Vendas</p>
+                        <h1 class="display">Nenhum stand cadastrado ainda</h1>
+                        <p class="lede">Cadastre o primeiro stand em "Novo stand", com os centros de custo do Sienge dele. O gasto aparece sozinho, já separado em implantação, ajustes e operação.</p>
+                    </div>
+                </div>
             </template>
 
             <!-- ══ Aba Modelos ══ -->
+            <SrSkeleton v-else-if="carregando && tab === 'modelos'" variant="models" label="Carregando os modelos…" />
             <ModelsBoard v-else-if="tab === 'modelos'" :models="sortedModels" :stands="store.stands"
                 :can-configure="canConfigure" @edit="openEditModel" @new="openNewModel" />
 
             <!-- ══ Aba Categorias de gasto ══ -->
+            <SrSkeleton v-else-if="carregando && tab === 'categorias'" variant="categories" label="Carregando a régua e as categorias…" />
             <CategoriesBoard v-else-if="tab === 'categorias'" :categories="store.categories"
                 :can-configure="canConfigure" @edit="openEditCategory" @new="openNewCategory" />
 
@@ -76,20 +77,19 @@
 </template>
 
 <script setup>
+import './report/standReport.css';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSalesStandStore } from '@/stores/Marketing/SalesStand/salesStandStore';
 import { useCan } from '@/composables/useCan';
 import { sortModelsByTier } from './standFormat';
-import Skeleton from '@/components/UI/Skeleton.vue';
+import SrSkeleton from './report/SrSkeleton.vue';
 
 import PageContainer from '@/components/UI/PageContainer.vue';
 import PageHeader from '@/components/UI/PageHeader.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
-import Surface from '@/components/UI/Surface.vue';
 import Button from '@/components/UI/Button.vue';
 import SegmentedControl from '@/components/UI/SegmentedControl.vue';
-import EmptyState from '@/components/UI/EmptyState.vue';
 import Favorite from '@/components/config/Favorite.vue';
 
 import ModelFormModal from './ModelFormModal.vue';
@@ -135,9 +135,16 @@ function openNewStand() { editingStand.value = null; standModalOpen.value = true
 function openNewCategory() { editingCategory.value = null; categoryModalOpen.value = true; }
 function openEditCategory(c) { editingCategory.value = c; categoryModalOpen.value = true; }
 
+// Primeira carga da tela: sem isto, entre o fetchMeta e o fetchStands a aba
+// mostrava "Nenhum stand cadastrado" por um instante.
+const carregando = ref(true);
 onMounted(async () => {
-    await store.fetchMeta();
-    await Promise.all([store.fetchStands(), store.fetchSettings()]);
+    try {
+        await store.fetchMeta();
+        await Promise.all([store.fetchStands(), store.fetchSettings()]);
+    } finally {
+        carregando.value = false;
+    }
 });
 </script>
 
