@@ -193,6 +193,14 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         }
     }
 
+    /** Resumo dos cartões por e-mail, com os MESMOS filtros da listagem. */
+    async function enviarResumoEmail({ para, observacao }) {
+        return requestWithAuth(`/cobranca-ato/resumo-email?${buildHistoryParams()}`, {
+            method: 'POST',
+            body: JSON.stringify({ para, observacao }),
+        });
+    }
+
     // ── KPIs / Stats agregados (mesmos filtros do history) ───────────────────
     const stats = ref(null);
     const statsLoading = ref(false);
@@ -541,6 +549,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         simulateWebhook,
         // history
         history, historyTotal, historyPage, historyLimit, historyLoadingMore, loadMoreHistory,
+        enviarResumoEmail,
         historyLoading, historyError, historyFilter,
         sortBy, sortDir, setSort,
         fetchHistory, setPage, totalPages, retryHistoryItem, regenerateHistoryItem, markCancelled, fetchTitularContact, resendHistoryItem,
