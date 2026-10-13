@@ -65,7 +65,10 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
     const history = ref([]);
     const historyTotal = ref(0);
     const historyPage = ref(1);
-    const historyLimit = ref(100);
+    /* O período inteiro de uma vez ('all'). Os cartões do topo recortam a
+       lista em memória (Com erro, Pagos...): com só 100 carregados, o recorte
+       mostrava parte do período e escondia o resto. */
+    const historyLimit = ref('all');
     const historyLoading = ref(false);
     const historyLoadingMore = ref(false);
     const historyError = ref(null);
@@ -144,7 +147,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         // pode encolher o que já está na tela: se a pessoa rolou até a página 3,
         // pede as 3 páginas de uma vez em vez de voltar pra primeira.
         const carregadas = history.value.length;
-        const paginacao = silent && !opts.keepPage && carregadas > historyLimit.value
+        const paginacao = silent && !opts.keepPage && historyLimit.value !== 'all' && carregadas > historyLimit.value
             ? { page: 1, limit: carregadas }
             : undefined;
         try {
@@ -258,7 +261,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         historyPage.value = 1;
     }
 
-    const totalPages = computed(() => Math.ceil(historyTotal.value / historyLimit.value));
+    const totalPages = computed(() => (historyLimit.value === 'all' ? 1 : Math.ceil(historyTotal.value / historyLimit.value)));
 
     function setPage(p) {
         historyPage.value = p;
