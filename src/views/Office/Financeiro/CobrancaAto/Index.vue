@@ -30,7 +30,7 @@
             title="Como usar - Ato e Parcelas"
             intro="Esta tela cuida da cobrança da venda antes do Sienge assumir: a entrada (o ato) e as parcelas mensais. Quando uma reserva entra na situação combinada no CV, o sistema emite sozinho o boleto Caixa ou o link de cartão do ato. Pago o ato, nasce o plano de parcelas: o Office emite cada mensal com antecedência, avisa o cliente quando vence, reemite a pedido (sem multa nem juros) e para sozinho quando o Financeiro fatura a venda no Sienge. A aba Conciliação mostra se o que o cliente pagou já foi lançado no ERP."
             :steps="[
-              { title: 'Histórico: acompanhe as cobranças do ato', text: 'Lista o que foi emitido no período. O filtro tem dois períodos independentes: “Emitido de/até” e “Pago de/até”. Preencha só o de pagamento para ver o que entrou no período, venha de que emissão vier; os dois juntos respondem “do que saiu em agosto, o que foi pago em setembro”. Os cartões do topo contam quantos foram pagos, quantos ainda esperam e quantos falharam. Clique em um cartão para recortar a tabela (clicar de novo desfaz) e na linha para abrir o detalhe, com a linha do tempo e o PDF. O botão “Enviar resumo por e-mail” manda esses números, com os mesmos filtros, para quem você digitar: pagos, a receber (separando o que já venceu), evasão, o que entrou de caixa no período e o quadro por empreendimento.' },
+              { title: 'Histórico: acompanhe as cobranças do ato', text: 'Lista o que foi emitido no período. O filtro tem dois períodos independentes: “Emitido de/até” e “Pago de/até”. Preencha só o de pagamento para ver o que entrou no período, venha de que emissão vier; os dois juntos respondem “do que saiu em agosto, o que foi pago em setembro”. Os cartões do topo contam quantos foram pagos, quantos ainda esperam e quantos falharam. Clique em um cartão para recortar a tabela (clicar de novo desfaz) e na linha para abrir o detalhe, com a linha do tempo e o PDF. O botão “Enviar resumo por e-mail” manda esses números, com os mesmos filtros, para quem você digitar (ou, em “Abrir no Outlook”, baixa o e-mail pronto para você revisar e enviar da sua conta): pagos, a receber (separando o que já venceu), evasão, o que entrou de caixa no período e o quadro por empreendimento.' },
               { title: 'Parcelas: as mensais depois do ato', text: 'Uma linha por reserva com plano: quantas parcelas foram pagas, qual é a próxima, o que está em atraso e se o Sienge já faturou. Abra a linha para ver parcela a parcela, emitir ou reemitir um boleto, marcar como paga, pausar ou encerrar o plano. O plano nasce sozinho quando o ato é pago e encerra sozinho quando a venda é faturada no Sienge.' },
               { title: 'Parcelas: o que saiu e o que entrou', text: 'O filtro tem os mesmos “Emitido de/até” e “Pago de/até” da aba Histórico. Com período preenchido, a lista fica só com as reservas que tiveram boleto emitido ou parcela paga nele; a coluna “No período” e os cartões “Emitidas” e “Pagas” dizem quantos e quanto (sem período, valem 30 dias). Em Últimas rodadas, abaixo da lista, está o que cada ciclo fez e onde caiu. Os canais de envio e o motivo de cada boleto ficam no detalhe do plano.' },
               { title: 'Conciliação: confira o que entrou', text: 'É o relatório “Contas Recebidas” do Sienge no documento AVC, lido ao vivo da API, com filtro de período (data do recebimento), empresa e empreendimento. Serve para bater com o ERP sem abrir o ERP.' },
@@ -1014,7 +1014,7 @@
                      transition-all duration-150 ease-out-expo outline-none
                      focus:border-accent-ring focus:ring-2 focus:ring-accent-ring/20"
               placeholder="nome@menin.com.br, outro@menin.com.br"></textarea>
-            <p class="mt-1 text-xs text-ink-muted">Separe os e-mails por vírgula. Até 20 por envio.</p>
+            <p class="mt-1 text-xs text-ink-muted">Separe os e-mails por vírgula. Até 20 por envio. Para abrir no Outlook pode deixar vazio e escolher lá.</p>
           </div>
           <div>
             <label class="block text-xs font-medium text-ink-muted mb-1.5">Observação (opcional)</label>
@@ -1028,6 +1028,11 @@
         </div>
         <template #footer>
           <Button variant="ghost" @click="resumoEmail.open = false">Cancelar</Button>
+          <!-- Baixa o rascunho .eml: abre no Outlook para revisar e enviar da própria conta. -->
+          <Button variant="outline" icon="fas fa-envelope-open-text" :loading="resumoEmail.baixando"
+            :disabled="resumoEmail.baixando" @click="abrirNoOutlook">
+            Abrir no Outlook
+          </Button>
           <Button icon="fas fa-paper-plane" :loading="resumoEmail.enviando"
             :disabled="resumoEmail.enviando || !resumoEmail.para.trim()" @click="enviarResumoEmail">
             Enviar
@@ -1495,7 +1500,7 @@ function onFiltersChanged() {
    de trabalho, e count-up em "3 com erro" é comemorar o que não deve. */
 /* ── Resumo por e-mail ───────────────────────────────────────────────── */
 const toast = useToast();
-const resumoEmail = ref({ open: false, para: '', observacao: '', enviando: false });
+const resumoEmail = ref({ open: false, para: '', observacao: '', enviando: false, baixando: false });
 const brData = (iso) => (iso ? String(iso).split('-').reverse().join('/') : '');
 const periodoResumo = computed(() => {
   const p = store.historyFilter?.periodo || {};
@@ -1517,6 +1522,17 @@ const linhasResumo = computed(() => {
 });
 function abrirResumoEmail() {
   resumoEmail.value = { ...resumoEmail.value, open: true, enviando: false };
+}
+async function abrirNoOutlook() {
+  resumoEmail.value.baixando = true;
+  try {
+    await store.baixarResumoEml({ para: resumoEmail.value.para, observacao: resumoEmail.value.observacao });
+    toast.success('Rascunho baixado: abra o arquivo .eml para editar e enviar pelo Outlook.');
+  } catch (err) {
+    toast.error(err.message || 'Não foi possível montar o e-mail.');
+  } finally {
+    resumoEmail.value.baixando = false;
+  }
 }
 async function enviarResumoEmail() {
   resumoEmail.value.enviando = true;

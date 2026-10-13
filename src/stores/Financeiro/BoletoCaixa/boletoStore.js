@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
+import API_URL from '@/config/apiUrl';
 import { periodoParaQuery } from '@/views/Office/Financeiro/CobrancaAto/components/periodo';
 
 export const useBoletoStore = defineStore('boletoCaixa', () => {
@@ -199,6 +200,26 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
             method: 'POST',
             body: JSON.stringify({ para, observacao }),
         });
+    }
+
+    /* O mesmo resumo como rascunho .eml: o Outlook abre como mensagem nova e
+       a pessoa envia da própria conta. O endpoint exige Bearer, então é
+       fetch + blob + download programático (mesmo jeito do CSV da Conciliação). */
+    async function baixarResumoEml({ para, observacao }) {
+        const token = localStorage.getItem('token');
+        const r = await fetch(`${API_URL}/cobranca-ato/resumo-email/eml?${buildHistoryParams()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
+            body: JSON.stringify({ para, observacao }),
+        });
+        if (!r.ok) throw new Error(`Falha ao montar o e-mail (${r.status}).`);
+        const nome = /filename="([^"]+)"/.exec(r.headers.get('content-disposition') || '')?.[1] || 'resumo-ato.eml';
+        const url = URL.createObjectURL(await r.blob());
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nome;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     // ── KPIs / Stats agregados (mesmos filtros do history) ───────────────────
@@ -549,7 +570,7 @@ export const useBoletoStore = defineStore('boletoCaixa', () => {
         simulateWebhook,
         // history
         history, historyTotal, historyPage, historyLimit, historyLoadingMore, loadMoreHistory,
-        enviarResumoEmail,
+        enviarResumoEmail, baixarResumoEml,
         historyLoading, historyError, historyFilter,
         sortBy, sortDir, setSort,
         fetchHistory, setPage, totalPages, retryHistoryItem, regenerateHistoryItem, markCancelled, fetchTitularContact, resendHistoryItem,
