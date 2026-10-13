@@ -1363,21 +1363,27 @@ const listaRecortada = computed(() => (recorteAtivo.value
   : (store.history || [])));
 
 /* ── Ordenação + scroll incremental ──────────────────────────────────── */
+/* Quem ordena é o SERVIDOR. A lista em memória é só a primeira página (100 de
+   770): ordenar aqui deixava fora quem estava na página seguinte, e o ato de
+   R$ 40 mil do Antônio (reserva 8659, linha 113) sumia do "Valor" decrescente.
+   A coluna da tabela vira a chave que a API entende e a lista recarrega. */
+const ORDEM_SERVIDOR = {
+  idreserva: 'reserva', forma: 'forma', titular_nome: 'titular', status: 'status',
+  valor: 'valor', payment_status: 'pagamento', vencimento: 'vencimento', created_at: 'data',
+};
 const ordem = ref({ by: '', dir: 'asc' });
+// A store sobrevive à troca de tela: a tabela nasce sem coluna ordenada, então
+// o servidor também volta ao padrão (emissão mais recente primeiro).
+store.sortBy = 'data';
+store.sortDir = 'desc';
 
-const ordenada = computed(() => {
-  const { by, dir } = ordem.value;
-  const base = listaRecortada.value;
-  if (!by) return base;
-  const mul = dir === 'asc' ? 1 : -1;
-  return [...base].sort((a, b) => {
-    const va = a[by], vb = b[by];
-    if (va == null || va === '') return 1;
-    if (vb == null || vb === '') return -1;
-    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mul;
-    return String(va).localeCompare(String(vb), 'pt-BR', { numeric: true, sensitivity: 'base' }) * mul;
-  });
-});
+watch(ordem, ({ by, dir }) => {
+  store.sortBy = ORDEM_SERVIDOR[by] || 'data';
+  store.sortDir = by ? dir : 'desc';
+  store.fetchHistory();
+}, { deep: true });
+
+const ordenada = listaRecortada;
 
 const faltaNoServidor = computed(() =>
   Math.max(0, (store.historyTotal || 0) - (store.history?.length || 0)));
