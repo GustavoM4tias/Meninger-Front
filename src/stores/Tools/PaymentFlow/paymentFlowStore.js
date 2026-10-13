@@ -109,6 +109,9 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
        cliente ordena o que já carregou. Com 20, ordenar por valor mostraria o
        maior de vinte, não o maior do período. */
     const pagination = ref({ total: 0, page: 1, limit: 100, pages: 1 });
+    /* Ordenação da tabela, aplicada pelo SERVIDOR: a lista chega em lotes de
+       100, e ordenar só o lote escondia quem estava no seguinte. */
+    const ordenacao = ref({ by: '', dir: 'asc' });
     // ── Período padrão: início do mês anterior → fim do mês atual ────────────
     function _prevMonthStart() {
         const d = new Date();
@@ -222,6 +225,10 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         if (f.search) p.set('search', f.search);
         if (f.dateFrom) p.set('dateFrom', f.dateFrom);
         if (f.dateTo) p.set('dateTo', f.dateTo);
+        if (ordenacao.value.by) {
+            p.set('sortBy', ordenacao.value.by);
+            p.set('sortDir', ordenacao.value.dir);
+        }
         if (tudoQueJaCarregou) {
             /* Recarregar SEM acumular (live refresh, ação que muda um
                lançamento) tem que trazer de volta tudo que já estava na tela.
@@ -676,6 +683,11 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         pagination.value.page = pg.page + 1;
         await fetchLaunches(true, { append: true });
     }
+    function ordenar(by, dir) {
+        ordenacao.value = { by: by || '', dir: dir || 'asc' };
+        pagination.value.page = 1;
+        fetchLaunches();
+    }
     function applyFilters(newF) {
         filters.value = { ...filters.value, ...newF };
         pagination.value.page = 1;
@@ -944,7 +956,7 @@ export const usePaymentFlowStore = defineStore('paymentFlow', () => {
         uploadNfFile, uploadBoletoFile, uploadExtraFile,
 
         // Actions: CRUD
-        fetchLaunches, carregarMais, fetchSummary, fetchLaunch,
+        fetchLaunches, carregarMais, ordenar, ordenacao, fetchSummary, fetchLaunch,
         createLaunch, updateLaunch, cancelConflictAndCreate,
         cancelLaunch, markPaid, advanceStage,
 

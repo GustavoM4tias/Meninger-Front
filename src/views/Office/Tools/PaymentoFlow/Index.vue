@@ -209,9 +209,13 @@ const kpiCards = computed(() => [
 ]);
 
 /* ── Tabela ───────────────────────────────────────────────────────────────
-   Ordenar aqui (`manual-sort`): a tabela recebe a lista já fatiada pelo
-   scroll. Ordem: filtrar (servidor) -> ordenar -> fatiar. */
+   Quem ordena é o SERVIDOR (`manual-sort`): a lista chega em lotes de 100 e
+   ordenar só o lote deixava fora quem estava no seguinte (o maior valor podia
+   não aparecer no topo). A tabela avisa coluna e direção e a lista recarrega. */
 const ordem = ref({ by: '', dir: 'asc' });
+// A store sobrevive à troca de tela; a tabela nasce sem coluna ordenada.
+store.ordenacao = { by: '', dir: 'asc' };
+watch(ordem, ({ by, dir }) => store.ordenar(by, dir), { deep: true });
 
 const COLUNAS = computed(() => [
     { key: 'launchType', label: 'Tipo', priority: 1, sortable: true, width: '8rem' },
@@ -229,21 +233,7 @@ const COLUNAS = computed(() => [
         : []),
 ]);
 
-const ordenada = computed(() => {
-    const { by, dir } = ordem.value;
-    const base = store.launches || [];
-    if (!by) return base;
-    const col = COLUNAS.value.find((c) => c.key === by);
-    const mul = dir === 'asc' ? 1 : -1;
-    const valor = (l) => (col?.value ? col.value(l) : l[by]);
-    return [...base].sort((a, b) => {
-        const va = valor(a), vb = valor(b);
-        if (va == null || va === '-') return 1;
-        if (vb == null || vb === '-') return -1;
-        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mul;
-        return String(va).localeCompare(String(vb), 'pt-BR', { numeric: true, sensitivity: 'base' }) * mul;
-    });
-});
+const ordenada = computed(() => store.launches || []);
 
 const inc = useIncrementalList(ordenada, { step: 50 });
 
