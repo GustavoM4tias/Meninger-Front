@@ -352,6 +352,9 @@ export default [
                             // alçada do usuário permite.
                             { path: '', redirect: () => ({ path: primeiroRelatorioPermitido() }) },
                             ...relatorioRoutes,
+                            // Extrato do Cliente nasceu aqui e foi para o
+                            // Financeiro no mesmo dia (2026-10-15).
+                            { path: 'extrato-cliente', redirect: to => ({ path: '/financeiro/extrato-cliente', query: to.query }) },
                         ],
                     },
                     // Consolidadas nos Relatórios Comerciais em 2026-08-17. As
@@ -466,6 +469,14 @@ export default [
                     {
                         path: 'recebimentos-ato',
                         redirect: to => ({ path: '/financeiro/cobranca/ato', query: { ...to.query, tab: 'conciliacao' } }),
+                    },
+                    {
+                        // Extrato do cliente (Sienge ao vivo): lista dos contratos
+                        // da alçada, extrato por contrato e PDF oficial.
+                        path: 'extrato-cliente',
+                        name: 'Extrato do Cliente',
+                        component: () => import('@/views/Office/Financeiro/ExtratoCliente/Index.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Extrato do cliente - parcelas, pagamentos, saldo em aberto, vencidos e PDF oficial do extrato do Sienge por contrato' },
                     },
                     {
                         path: 'consulta-cef',

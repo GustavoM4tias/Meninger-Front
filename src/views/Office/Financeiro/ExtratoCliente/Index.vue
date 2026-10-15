@@ -1,5 +1,5 @@
 <script setup>
-// Extrato do cliente (/comercial/relatorios/extrato-cliente).
+// Extrato do cliente (/financeiro/extrato-cliente, Financeiro > Contas a Receber).
 //
 // A lista é a dos contratos de venda do Sienge que a pessoa pode consultar:
 // o servidor já recorta pela alçada (empreendimentos liberados), então a tela
@@ -14,6 +14,9 @@ import { requestWithAuth } from '@/utils/Auth/requestWithAuth';
 import { fmtMoney, fmtDate } from '@/utils/format';
 import { useIncrementalList } from '@/composables/useIncrementalList';
 
+import PageContainer from '@/components/UI/PageContainer.vue';
+import PageHeader from '@/components/UI/PageHeader.vue';
+import Favorite from '@/components/config/Favorite.vue';
 import PageHelp from '@/components/UI/PageHelp.vue';
 import MultiSelector from '@/components/UI/MultiSelector.vue';
 import Input from '@/components/UI/Input.vue';
@@ -220,8 +223,14 @@ watch(aberto, (v) => { if (!v) sincronizarUrl({ titulo: undefined, cliente: unde
 </script>
 
 <template>
-  <div class="space-y-4">
-    <Teleport to="#relatorio-acoes" defer>
+  <PageContainer size="full">
+    <PageHeader icon="fas fa-receipt"
+      subtitle="Parcelas, pagamentos e saldo de cada contrato, direto do Sienge, com o PDF oficial.">
+      <template #title>
+        Extrato do Cliente
+        <Favorite :router="'/financeiro/extrato-cliente'" :section="'Extrato do Cliente'" />
+      </template>
+      <template #actions>
       <PageHelp
         storage-key="relatorio-extrato-cliente"
         title="Como usar o Extrato do Cliente"
@@ -240,7 +249,10 @@ watch(aberto, (v) => { if (!v) sincronizarUrl({ titulo: undefined, cliente: unde
           'Contrato com mais de um comprador: escolha o cliente no topo do extrato.',
         ]"
       />
-    </Teleport>
+      </template>
+    </PageHeader>
+
+    <div class="space-y-4">
 
     <!-- Filtros: os dois que importam, sempre à vista -->
     <div class="flex flex-col sm:flex-row sm:items-end gap-3">
@@ -336,5 +348,6 @@ watch(aberto, (v) => { if (!v) sincronizarUrl({ titulo: undefined, cliente: unde
     </template>
 
     <ExtratoModal v-model:open="aberto" :contrato="selecionado" />
-  </div>
+    </div>
+  </PageContainer>
 </template>
