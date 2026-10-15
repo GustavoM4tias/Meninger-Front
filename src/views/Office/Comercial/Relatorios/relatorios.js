@@ -85,6 +85,18 @@ export const RELATORIOS = [
     content: 'Relatório de recurso próprio por cliente - ato, parcelas, subsídios, % da renda, recebido no Sienge e conferência com a ficha comercial',
   },
   {
+    key: 'extrato-cliente',
+    route: '/comercial/relatorios/extrato-cliente',
+    label: 'Extrato do Cliente',
+    pageTitle: 'Extrato do Cliente',
+    icon: 'fas fa-receipt',
+    load: () => import('@/views/Office/Comercial/ExtratoCliente/Index.vue'),
+    subtitle: 'Parcelas, pagamentos e saldo de cada contrato, direto do Sienge, com o PDF oficial.',
+    // Traz o proprio "Como usar" pelo Teleport.
+    ajudaPropria: true,
+    content: 'Extrato do cliente - parcelas, pagamentos, saldo em aberto, vencidos e PDF oficial do extrato do Sienge por contrato',
+  },
+  {
     key: 'leads',
     route: '/comercial/relatorios/leads',
     label: 'Leads',
