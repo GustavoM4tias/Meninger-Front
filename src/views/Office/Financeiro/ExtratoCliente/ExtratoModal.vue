@@ -110,9 +110,14 @@ const ficha = computed(() => {
   if (!d) return [];
   return [
     { k: 'Empreendimento', v: `${d.empreendimento.nome} · ${d.empreendimento.id}`, largo: true },
-    { k: 'Contrato', v: d.contrato.numero },
-    { k: 'Data do contrato', v: fmtDate(d.contrato.data) },
-    { k: 'Valor do contrato', v: fmtMoney(d.contrato.valor) },
+    // Título sem contrato de venda (AVC, taxa...): mostra o documento do título.
+    ...(d.contrato.numero
+      ? [{ k: 'Contrato', v: d.contrato.numero },
+         { k: 'Data do contrato', v: fmtDate(d.contrato.data) },
+         { k: 'Valor do contrato', v: fmtMoney(d.contrato.valor) }]
+      : [{ k: 'Documento', v: `${d.contrato.documento} · sem contrato` },
+         { k: 'Emissão', v: fmtDate(d.contrato.data) },
+         { k: 'Valor do título', v: fmtMoney(d.contrato.valor) }]),
     { k: 'Multa / juros', v: `${d.contrato.multaPct || 0}% / ${d.contrato.jurosPct || 0}% a.m.` },
   ];
 });
@@ -263,8 +268,9 @@ function exportarCsv() {
           <h2 class="text-base font-semibold text-ink truncate">{{ titulo }}</h2>
           <p class="text-xs text-ink-muted mt-0.5 truncate tabular-nums">{{ subtitulo }}</p>
         </div>
-        <Badge v-if="dados" size="sm" :variant="dados.contrato.situacao === 'Cancelado' ? 'warning' : 'success'" class="shrink-0">
-          {{ dados.contrato.situacao === 'Cancelado' ? 'Cancelado' : 'Ativo' }}
+        <Badge v-if="dados" size="sm" class="shrink-0"
+          :variant="dados.contrato.situacao === 'Cancelado' ? 'warning' : dados.contrato.numero ? 'success' : 'info'">
+          {{ dados.contrato.situacao === 'Cancelado' ? 'Cancelado' : dados.contrato.numero ? 'Ativo' : `Sem contrato · ${dados.contrato.tipoDocumento}` }}
         </Badge>
         <IconButton class="hidden sm:inline-flex shrink-0" :icon="ampliado ? 'fas fa-compress' : 'fas fa-expand'"
           :label="ampliado ? 'Reduzir' : 'Ampliar'" :title="ampliado ? 'Reduzir' : 'Ampliar para a tela inteira'"

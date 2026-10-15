@@ -129,20 +129,32 @@ onMounted(async () => {
 
 // ── Recorte e busca local ───────────────────────────────────────────────────
 const recorte = ref('todos');
-const ativos = (c) => c.situacao !== 'Cancelado';
+const cancelado = (c) => c.situacao === 'Cancelado';
+// Título sem contrato de venda: adiantamento (AVC) de quem pagou o ato antes de
+// o contrato sair, taxas, IPTU... Contrato antigo (CT) do backup é contrato.
+const semContrato = (c) => c.tipoDocumento !== 'CT';
+const RECORTES = {
+  ativos: (c) => !cancelado(c) && !semContrato(c),
+  semcontrato: (c) => !cancelado(c) && semContrato(c),
+  cancelados: cancelado,
+};
 
 const kpis = computed(() => {
   const L = contratos.value;
-  const nAtivos = L.filter(ativos).length;
+  const n = (k) => L.filter(RECORTES[k]).length;
+  const nSem = n('semcontrato');
+  const nCanc = n('cancelados');
   const clientes = new Set(L.map((c) => c.clienteId)).size;
   const nEmps = new Set(L.map((c) => c.empreendimento.id)).size;
   return [
-    { key: 'todos', label: 'Contratos', raw: L.length, icon: 'fas fa-file-contract', tone: 'accent',
+    { key: 'todos', label: 'Títulos', raw: L.length, icon: 'fas fa-file-contract', tone: 'accent',
       hint: `${clientes} ${clientes === 1 ? 'cliente' : 'clientes'} · ${nEmps} ${nEmps === 1 ? 'empreendimento' : 'empreendimentos'}`,
-      tooltip: 'Clique para ver todos os contratos' },
-    { key: 'ativos', label: 'Ativos', raw: nAtivos, icon: 'fas fa-circle-check', tone: 'pos',
-      hint: 'contratos emitidos', tooltip: 'Clique para ver só os ativos' },
-    { key: 'cancelados', label: 'Cancelados', raw: L.length - nAtivos, icon: 'fas fa-ban', tone: L.length - nAtivos ? 'warn' : 'neutral',
+      tooltip: 'Clique para ver todos os títulos' },
+    { key: 'ativos', label: 'Contratos ativos', raw: n('ativos'), icon: 'fas fa-circle-check', tone: 'pos',
+      hint: 'contratos de venda emitidos', tooltip: 'Clique para ver só os contratos ativos' },
+    { key: 'semcontrato', label: 'Sem contrato', raw: nSem, icon: 'fas fa-hand-holding-dollar', tone: nSem ? 'accent' : 'neutral',
+      hint: 'adiantamento, taxas e outros títulos', tooltip: 'Clique para ver os títulos de quem ainda não tem contrato emitido' },
+    { key: 'cancelados', label: 'Cancelados', raw: nCanc, icon: 'fas fa-ban', tone: nCanc ? 'warn' : 'neutral',
       hint: 'distrato ou cancelamento', tooltip: 'Clique para ver só os cancelados' },
   ];
 });
@@ -156,10 +168,9 @@ const visiveis = computed(() => {
   const q = busca.value.trim();
   const termo = q && !ehDocumento(q) ? normalizar(q) : '';
   return contratos.value.filter((c) => {
-    if (recorte.value === 'ativos' && !ativos(c)) return false;
-    if (recorte.value === 'cancelados' && ativos(c)) return false;
+    if (RECORTES[recorte.value] && !RECORTES[recorte.value](c)) return false;
     if (termo) {
-      const alvo = normalizar(`${c.clientes.map((x) => x.nome).join(' ')} ${c.contrato} ${c.titulo} ${c.unidades.map((u) => u.nome).join(' ')} ${c.empreendimento.nome}`);
+      const alvo = normalizar(`${c.clientes.map((x) => x.nome).join(' ')} ${c.contrato || ''} ${c.documento} ${c.titulo} ${c.unidades.map((u) => u.nome).join(' ')} ${c.empreendimento.nome}`);
       if (!alvo.includes(termo)) return false;
     }
     return true;
@@ -171,10 +182,10 @@ const COLUNAS = [
   { key: 'cliente', label: 'Cliente', priority: 1, sortable: true },
   { key: 'unidade', label: 'Unidade', priority: 2, sortable: true, width: '10rem' },
   { key: 'empreendimento', label: 'Empreendimento', priority: 2, sortable: true, value: (c) => c.empreendimento.nome },
-  { key: 'contrato', label: 'Contrato', priority: 3, sortable: true, width: '9rem' },
+  { key: 'contrato', label: 'Contrato', priority: 3, sortable: true, width: '9rem', value: (c) => c.contrato || c.documento },
   { key: 'data', label: 'Data', priority: 3, sortable: true, width: '7rem' },
   { key: 'valor', label: 'Valor', priority: 2, numeric: true, sortable: true, width: '8.5rem' },
-  { key: 'situacao', label: 'Situação', priority: 1, sortable: true, width: '7.5rem' },
+  { key: 'situacao', label: 'Situação', priority: 1, sortable: true, width: '10rem' },
 ];
 
 const ordenadas = computed(() => {
@@ -193,11 +204,11 @@ const ordenadas = computed(() => {
 
 const inc = useIncrementalList(ordenadas, { step: 50 });
 
-const ROTULO_RECORTE = { ativos: 'só ativos', cancelados: 'só cancelados' };
+const ROTULO_RECORTE = { ativos: 'só contratos ativos', semcontrato: 'só sem contrato', cancelados: 'só cancelados' };
 const linhaEstado = computed(() => {
   const V = visiveis.value;
   const total = V.reduce((s, c) => s + (c.valor || 0), 0);
-  return `${V.length} de ${contratos.value.length} contratos · ${fmtMoney(total, { casas: 0 })}`;
+  return `${V.length} de ${contratos.value.length} títulos · ${fmtMoney(total, { casas: 0 })}`;
 });
 
 // ── Extrato (modal) ─────────────────────────────────────────────────────────
@@ -236,7 +247,7 @@ watch(aberto, (v) => { if (!v) sincronizarUrl({ titulo: undefined, cliente: unde
         title="Como usar o Extrato do Cliente"
         intro="Consulta o extrato financeiro de cada contrato direto do Sienge: parcelas, pagamentos, saldo em aberto e o PDF oficial do extrato."
         :steps="[
-          { title: 'Encontre o contrato', text: 'A lista traz só os contratos dos empreendimentos liberados para você. Escolha o empreendimento ou digite o nome do cliente, a unidade, o número do contrato ou o CPF/CNPJ.' },
+          { title: 'Encontre o contrato', text: 'A lista traz os contratos e os títulos sem contrato (adiantamento, taxas) dos empreendimentos liberados para você. Escolha o empreendimento ou digite o nome do cliente, a unidade, o número do contrato ou o CPF/CNPJ.' },
           { title: 'Abra o extrato', text: 'Clique no cliente. O extrato é lido na hora do Sienge: cada parcela com vencimento, valor, saldo atualizado e os pagamentos dela.' },
           { title: 'Confira os números do topo', text: 'Recebido, em aberto, vencido e outras baixas. Clique num cartão para ver só aquelas parcelas; clique de novo para voltar a todas.' },
           { title: 'Veja ou baixe o PDF', text: 'Ver PDF abre o extrato oficial do Sienge em tela cheia; Baixar PDF salva o arquivo para enviar ao cliente.' },
@@ -247,6 +258,7 @@ watch(aberto, (v) => { if (!v) sincronizarUrl({ titulo: undefined, cliente: unde
           'Clique numa parcela para ver cada pagamento dela: data, juros, acréscimo, desconto e valor líquido.',
           'O filtro e o extrato aberto ficam no endereço da página: copie o link para mandar a mesma consulta a um colega com a mesma alçada.',
           'Contrato com mais de um comprador: escolha o cliente no topo do extrato.',
+          'Sem contrato: quem pagou o ato (adiantamento) ou taxas antes de o contrato de venda sair também aparece. Esses títulos vêm do backup do Sienge e entram no dia seguinte ao lançamento.',
         ]"
       />
       </template>
@@ -276,8 +288,8 @@ watch(aberto, (v) => { if (!v) sincronizarUrl({ titulo: undefined, cliente: unde
     </div>
 
     <div v-else-if="!carregou" class="space-y-4">
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
-        <Skeleton v-for="i in 3" :key="i" variant="stat" />
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <Skeleton v-for="i in 4" :key="i" variant="stat" />
       </div>
       <Skeleton variant="table" :lines="8" />
     </div>
@@ -286,10 +298,10 @@ watch(aberto, (v) => { if (!v) sincronizarUrl({ titulo: undefined, cliente: unde
       description="Você ainda não tem empreendimentos liberados para consulta. Peça a liberação na tela de Alçadas." />
 
     <EmptyState v-else-if="precisaFiltro" icon="fas fa-filter" title="Escolha um empreendimento ou busque um cliente"
-      description="São muitos contratos para listar de uma vez. Escolha o empreendimento acima ou digite o nome, a unidade ou o CPF do cliente." />
+      description="São muitos títulos para listar de uma vez. Escolha o empreendimento acima ou digite o nome, a unidade ou o CPF do cliente." />
 
     <template v-else>
-      <StatRow :items="kpis" :cols="{ sm: 3, md: 3, lg: 3 }" selectable :active-key="recorte" @select="escolherKpi" />
+      <StatRow :items="kpis" :cols="{ sm: 2, md: 4, lg: 4 }" selectable :active-key="recorte" @select="escolherKpi" />
 
       <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-ink-muted">
         <span class="tabular-nums">{{ linhaEstado }}</span>
@@ -301,10 +313,10 @@ watch(aberto, (v) => { if (!v) sincronizarUrl({ titulo: undefined, cliente: unde
         <span v-if="aviso" class="text-data-warn"><i class="fas fa-triangle-exclamation mr-1"></i>{{ aviso }}</span>
       </div>
 
-      <DataTable :columns="COLUNAS" :rows="inc.visiveis.value" row-key="id" :loading="carregando" manual-sort clickable
+      <DataTable :columns="COLUNAS" :rows="inc.visiveis.value" row-key="chave" :loading="carregando" manual-sort clickable
         sticky-header density="compact" more-label="Ver mais campos"
         v-model:sort-by="ordem.by" v-model:sort-dir="ordem.dir"
-        empty-icon="fas fa-magnifying-glass" empty-title="Nenhum contrato encontrado"
+        empty-icon="fas fa-magnifying-glass" empty-title="Nenhum título encontrado"
         empty-text="Confira a busca, troque o empreendimento ou clique de novo no cartão do topo."
         @row-click="(c) => abrirExtrato(c)">
         <template #cell-cliente="{ row }">
@@ -323,15 +335,17 @@ watch(aberto, (v) => { if (!v) sincronizarUrl({ titulo: undefined, cliente: unde
           <span class="text-xs text-ink-muted line-clamp-2" :title="row.empreendimento.nome">{{ row.empreendimento.nome }}</span>
         </template>
         <template #cell-contrato="{ row }">
-          <span class="tabular-nums text-sm">{{ row.contrato }}</span>
+          <span class="tabular-nums text-sm">{{ row.contrato || row.documento }}</span>
           <p class="text-micro text-ink-subtle tabular-nums">título {{ row.titulo }}</p>
         </template>
         <template #cell-data="{ row }"><span class="tabular-nums text-sm">{{ fmtDate(row.data) }}</span></template>
         <template #cell-valor="{ row }"><span class="metric tabular-nums">{{ fmtMoney(row.valor) }}</span></template>
         <template #cell-situacao="{ row }">
-          <Badge size="sm" :variant="row.situacao === 'Cancelado' ? 'warning' : 'success'">
-            {{ row.situacao === 'Cancelado' ? 'Cancelado' : 'Ativo' }}
+          <Badge v-if="row.situacao === 'Cancelado'" size="sm" variant="warning">Cancelado</Badge>
+          <Badge v-else-if="semContrato(row)" size="sm" variant="info" :title="`Título ${row.documento}, sem contrato de venda`">
+            Sem contrato · {{ row.tipoDocumento }}
           </Badge>
+          <Badge v-else size="sm" variant="success">Ativo</Badge>
         </template>
         <template #actions="{ row }">
           <Button size="sm" variant="ghost" icon="fas fa-file-invoice-dollar" @click.stop="abrirExtrato(row)">
