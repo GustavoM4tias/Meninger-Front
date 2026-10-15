@@ -190,6 +190,13 @@ export const navRegistry = [
                     // Renomeado em 08/09/2026: a tela cobra o ato E as parcelas
                     // mensais até o Sienge faturar. A rota continua a mesma.
                     { route: '/financeiro/cobranca/ato', name: 'Ato e Parcelas', icon: 'fas fa-file-invoice-dollar' },
+                    // ATALHO (15/10/2026): o Extrato do Cliente mora nos
+                    // Relatórios do Comercial e é de lá que vem a alçada; aqui
+                    // é só a porta de entrada de quem trabalha no Contas a
+                    // Receber. `atalho` tira o item da tela de Alçadas (senão a
+                    // mesma tela teria dois interruptores) e o `section`
+                    // próprio faz só este item acender quando se entra por aqui.
+                    { route: '/comercial/relatorios/extrato-cliente', section: 'Contas a Receber', name: 'Extrato do Cliente', icon: 'fas fa-receipt', atalho: true },
                 ],
             },
         ],
@@ -493,7 +500,8 @@ export function getDeptManagedPages(cat) {
     const seen = new Set();
     const result = [];
     const add = (page) => {
-        if (page.adminOnly || page.permissionManaged === false) return;
+        // Atalho repete uma tela que já está em outra categoria: a alçada é a de lá.
+        if (page.adminOnly || page.permissionManaged === false || page.atalho) return;
         if (!seen.has(page.route)) {
             seen.add(page.route);
             result.push(page);
@@ -547,7 +555,7 @@ export function getAlwaysFreePages() {
     for (const cat of navRegistry) {
         const catFree = cat.permissionManaged === false;
         for (const p of categoryItems(cat)) {
-            if (p.adminOnly) continue;
+            if (p.adminOnly || p.atalho) continue;
             if (!(catFree || p.permissionManaged === false)) continue;
             if (seen.has(p.route)) continue;
             seen.add(p.route);
