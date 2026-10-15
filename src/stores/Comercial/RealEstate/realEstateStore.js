@@ -190,6 +190,52 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         return data;
     }
 
+    // ── Robô do painel do CV ─────────────────────────────────────────────────
+    // Sessão colada por uma pessoa (o login do painel tem CAPTCHA), mantida
+    // viva pelo Office, e a reaprovação automática de reservas. O cookie
+    // NUNCA volta do servidor - só o estado da sessão.
+    const cvRobo = ref(null);
+    const cvRoboLoading = ref(false);
+
+    async function fetchCvRobo() {
+        cvRoboLoading.value = true;
+        try {
+            cvRobo.value = await requestWithAuth('/realestate/cv-robo');
+        } finally {
+            cvRoboLoading.value = false;
+        }
+    }
+
+    async function conectarCvRobo(cookie) {
+        const data = await requestWithAuth('/realestate/cv-robo/sessao', {
+            method: 'PUT',
+            body: JSON.stringify({ cookie }),
+        });
+        cvRobo.value = data;
+        return data;
+    }
+
+    async function desconectarCvRobo() {
+        const data = await requestWithAuth('/realestate/cv-robo/sessao', { method: 'DELETE' });
+        cvRobo.value = data;
+        return data;
+    }
+
+    async function salvarCvRoboConfig(patch) {
+        const data = await requestWithAuth('/realestate/cv-robo/config', {
+            method: 'PUT',
+            body: JSON.stringify(patch),
+        });
+        cvRobo.value = data;
+        return data;
+    }
+
+    async function simularCvRobo() {
+        const data = await requestWithAuth('/realestate/cv-robo/simular', { method: 'POST' });
+        cvRobo.value = data;
+        return data;
+    }
+
     // A integração por webhook (endpoints, tokens e histórico) tem store
     // própria: stores/Cv/cvIntegrationStore.js, da tela CV CRM > Integrações.
 
@@ -244,6 +290,13 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         testCvPanel,
         testCvApi,
         fetchOfficeUsers,
+        cvRobo,
+        cvRoboLoading,
+        fetchCvRobo,
+        conectarCvRobo,
+        desconectarCvRobo,
+        salvarCvRoboConfig,
+        simularCvRobo,
         cvJobs,
         cvJobsLoading,
         fetchCvJobs,
