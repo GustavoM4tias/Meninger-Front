@@ -49,7 +49,7 @@ const indicadores = computed(() => {
   const m = mod.value
   return [
     { label: 'Comissão',       value: fmtPct(m.operacional?.comissao_pct ?? f.comissao_pct) },
-    { label: 'Entrada máx.',   value: m.negociacao?.entrada_maxima != null ? fmtBRL(m.negociacao.entrada_maxima) : '—' },
+    { label: 'Parcelado máx.', value: (m.negociacao?.parcelado_max_pct_vgv ?? m.negociacao?.entrada_maxima) != null ? `${m.negociacao.parcelado_max_pct_vgv ?? m.negociacao.entrada_maxima}% do VGV` : '-' },
     { label: 'Máx. parcelas',  value: m.negociacao?.max_parcelas ?? '—' },
     { label: 'Prazo entrega',  value: (m.operacional?.prazo_entrega_meses ?? f.prazo_entrega_meses) != null ? `${m.operacional?.prazo_entrega_meses ?? f.prazo_entrega_meses} meses` : '—' },
   ]
@@ -75,9 +75,14 @@ const docItems = computed(() => {
 const negItems = computed(() => {
   const n = mod.value.negociacao || {}
   const items = []
-  if (n.parcela_ato != null)    items.push({ label: 'Parcela do Ato', value: fmtBRL(n.parcela_ato) })
-  if (n.parcela_rp != null)     items.push({ label: 'Parcela RP', value: fmtBRL(n.parcela_rp) })
-  if (n.parcela_minima != null) items.push({ label: 'Parcela mínima', value: fmtBRL(n.parcela_minima) })
+  // Chaves novas (regra do CV) com as antigas de reserva, para cartões já salvos no histórico.
+  const ato = n.ato_minimo ?? n.parcela_ato
+  const rp = n.parcela_rp_minima ?? n.parcela_rp
+  if (ato != null) items.push({ label: 'Ato mínimo', value: fmtBRL(ato) })
+  if (rp != null)  items.push({ label: 'Parcela mínima', value: fmtBRL(rp) })
+  if (n.parcela_max_pct_renda != null) items.push({ label: 'Parcela x renda', value: `até ${n.parcela_max_pct_renda}%` })
+  if (n.parcelado_max_valor != null)   items.push({ label: 'Parcelado até', value: fmtBRL(n.parcelado_max_valor) })
+  if (n.fonte) items.push({ label: 'Fonte', value: n.fonte })
   if (n.correcao_ate_habite_se) items.push({ label: 'Até habite-se', value: n.correcao_ate_habite_se })
   if (n.correcao_pos_habite_se) items.push({ label: 'Pós habite-se', value: n.correcao_pos_habite_se })
   return items
