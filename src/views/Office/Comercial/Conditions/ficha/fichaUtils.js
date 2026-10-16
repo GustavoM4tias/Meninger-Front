@@ -74,7 +74,8 @@ export function regrasDoCv(regra) {
         if (s.valor_min) partes.push(`mínimo ${brl(s.valor_min)}`);
         if (s.valor_max) partes.push(`máximo ${brl(s.valor_max)}`);
         if (s.parcelas_max) partes.push(`até ${s.parcelas_max}x`);
-        if (s.linhas_max) partes.push(`até ${s.linhas_max} ${s.linhas_max > 1 ? 'linhas' : 'linha'}`);
+        // Uma linha só é o normal (ato, financiamento): só vale dizer quando é mais.
+        if (s.linhas_max > 1) partes.push(`até ${s.linhas_max} linhas`);
         const nota = [s.renda_pct ? `parcela até ${num(s.renda_pct)}% da renda` : null, s.bloqueia_minimo ? 'abaixo do mínimo não entra' : null].filter(Boolean).join(' · ');
         if (!partes.length && !nota) continue;
         out.push({ chave: `s${s.idserie}`, rotulo: s.nome, valor: partes.join(' · ') || 'liberada', nota });
