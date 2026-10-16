@@ -196,7 +196,27 @@ export default [
                         path: 'configuracoes',
                         name: 'CV CRM',
                         component: () => import('@/views/Office/Cv/Central/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Painel do CV CRM: credencial da integração, quem é avisado quando ela cai e estado do espelho de imobiliárias e vínculos' },
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Credenciais do CV: chave de integração, login do usuário da API, quem é avisado quando cai e a sessão do robô no painel' },
+                    },
+                    {
+                        // Robô que reaprova reservas no painel do CV. Saiu de
+                        // Configurações (out/2026): regra, frequência e histórico
+                        // são assunto próprio. Admin-only como o cartão era - a
+                        // API dele exige a capacidade configure (admin).
+                        path: 'robo',
+                        name: 'CV CRM - Robo de aprovacao',
+                        component: () => import('@/views/Office/Cv/Robo/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Robô de aprovação do CV: reaprova reservas que voltaram para dentro da regra, com frequência, regra por empreendimento e histórico' },
+                    },
+                    {
+                        // Quais motivos de bloqueio do CV seguem sendo estoque.
+                        // Saiu de Configurações (out/2026). Admin-only como o
+                        // cartão era; mudar a regra é a capacidade configure de
+                        // /crm/buildings (admin).
+                        path: 'estoque-bloqueado',
+                        name: 'CV CRM - Estoque bloqueado',
+                        component: () => import('@/views/Office/Cv/Estoque/Index.vue'),
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Estoque bloqueado: quais motivos de bloqueio do CV contam como estoque a vender, leitura dos motivos e total por empreendimento' },
                     },
                     {
                         // Integracoes: webhooks do CV + endpoints do Office + historico.
@@ -208,7 +228,7 @@ export default [
                         path: 'integracoes',
                         name: 'CV CRM - Integracoes',
                         component: () => import('@/views/Office/Cv/Integracoes/Index.vue'),
-                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Webhooks do CV CRM: o que o CV avisa em tempo real, os endpoints que recebem no Office, tokens e historico da integracao' },
+                        meta: { requiresAuth: true, requiresAdmin: true, allowedRole: 'admin', searchable: true, content: 'Integracoes do CV CRM: webhooks em tempo real, sincronizacoes automaticas (crons), endpoints do Office, tokens e historico da integracao' },
                     },
                     {
                         path: 'imobiliarias',

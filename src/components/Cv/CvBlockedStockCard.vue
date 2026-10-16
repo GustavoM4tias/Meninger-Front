@@ -80,7 +80,7 @@ async function lerAgora() {
         await carregar();
         toast.success(`Leitura concluída: ${r.unidades} unidade(s) bloqueada(s) em ${r.empreendimentos} empreendimento(s).`);
     } catch (err) {
-        toast.error(err?.message || 'A leitura do painel do CV falhou.');
+        toast.error(err?.message || 'A leitura do CV falhou.');
     } finally {
         lendo.value = false;
     }
@@ -119,8 +119,8 @@ onMounted(carregar);
             </div>
 
             <p v-if="!leitura?.lido" class="text-xs text-data-warn">
-                O Office ainda não leu os motivos no painel do CV. Até ler, toda unidade bloqueada
-                conta como bloqueada, e a Projeção usa o número digitado à mão.
+                O Office ainda não leu os motivos no CV. Até ler, só as unidades marcadas à mão
+                contam como estoque - use "Ler o CV agora" ou ligue a leitura automática.
             </p>
 
             <!-- Regra por motivo -->

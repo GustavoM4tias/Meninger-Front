@@ -345,8 +345,11 @@ export const navRegistry = [
             // Tela única com abas internas (Geral/Lançamentos/Em Obras/…) → um só item.
             { route: '/crm/buildings', name: 'Empreendimentos', icon: 'fas fa-building' },
             { route: '/crm/workflow/groups', section: 'Grupos Workflow', name: 'Grupos de Workflow', icon: 'fas fa-chart-diagram' },
-            { route: '/crm/configuracoes', section: 'Configurações', name: 'Configurações', icon: 'fas fa-sliders', adminOnly: true },
+            // Saíram de Configurações (out/2026), que ficou só com as credenciais.
+            { route: '/crm/estoque-bloqueado', section: 'Estoque bloqueado', name: 'Estoque bloqueado', icon: 'fas fa-hand-holding-dollar', adminOnly: true },
+            { route: '/crm/robo', section: 'Robô de aprovação', name: 'Robô de aprovação', icon: 'fas fa-robot', adminOnly: true },
             { route: '/crm/integracoes', section: 'Integrações', name: 'Integrações', icon: 'fas fa-bolt', adminOnly: true },
+            { route: '/crm/configuracoes', section: 'Configurações', name: 'Configurações', icon: 'fas fa-sliders', adminOnly: true },
         ],
     },
 

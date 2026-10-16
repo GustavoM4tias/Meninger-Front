@@ -236,6 +236,22 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         return data;
     }
 
+    // Regra de um empreendimento lida no CV, como o robô vai cobrar. Não guarda
+    // na store: é consulta pontual da tela, e a regra muda no CV sem avisar.
+    async function lerRegraCvRobo(idempreendimento) {
+        const data = await requestWithAuth(`/realestate/cv-robo/regra/${idempreendimento}`);
+        return data?.regra || null;
+    }
+
+    // Confere reservas escolhidas contra a regra, sem aprovar nem gravar nada.
+    async function avaliarCvRobo(ids) {
+        const data = await requestWithAuth('/realestate/cv-robo/avaliar', {
+            method: 'POST',
+            body: JSON.stringify({ ids }),
+        });
+        return data?.resultado || null;
+    }
+
     // A integração por webhook (endpoints, tokens e histórico) tem store
     // própria: stores/Cv/cvIntegrationStore.js, da tela CV CRM > Integrações.
 
@@ -297,6 +313,8 @@ export const useRealEstateStore = defineStore('realEstate', () => {
         desconectarCvRobo,
         salvarCvRoboConfig,
         simularCvRobo,
+        lerRegraCvRobo,
+        avaliarCvRobo,
         cvJobs,
         cvJobsLoading,
         fetchCvJobs,

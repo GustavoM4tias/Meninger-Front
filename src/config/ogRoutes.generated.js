@@ -24,6 +24,12 @@ export const OG_ROUTES = {
     "group": "OPERAÇÃO",
     "subcategory": null
   },
+  "/marketing/projecao-investimentos": {
+    "name": "Projeção de Investimentos",
+    "category": "Marketing",
+    "group": "OPERAÇÃO",
+    "subcategory": null
+  },
   "/marketing/events": {
     "name": "Eventos",
     "category": "Marketing",
@@ -62,6 +68,12 @@ export const OG_ROUTES = {
   },
   "/comercial/relatorios/reservas": {
     "name": "Reservas",
+    "category": "Comercial",
+    "group": "OPERAÇÃO",
+    "subcategory": "Relatórios"
+  },
+  "/comercial/relatorios/recurso-proprio": {
+    "name": "Recurso Próprio",
     "category": "Comercial",
     "group": "OPERAÇÃO",
     "subcategory": "Relatórios"
@@ -115,7 +127,13 @@ export const OG_ROUTES = {
     "subcategory": "Contas a Receber"
   },
   "/financeiro/cobranca/ato": {
-    "name": "Ato",
+    "name": "Ato e Parcelas",
+    "category": "Financeiro",
+    "group": "OPERAÇÃO",
+    "subcategory": "Contas a Receber"
+  },
+  "/financeiro/extrato-cliente": {
+    "name": "Extrato do Cliente",
     "category": "Financeiro",
     "group": "OPERAÇÃO",
     "subcategory": "Contas a Receber"
@@ -252,14 +270,26 @@ export const OG_ROUTES = {
     "group": "RECURSOS",
     "subcategory": null
   },
-  "/crm/configuracoes": {
-    "name": "Configurações",
+  "/crm/estoque-bloqueado": {
+    "name": "Estoque bloqueado",
+    "category": "CV CRM",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
+  "/crm/robo": {
+    "name": "Robô de aprovação",
     "category": "CV CRM",
     "group": "RECURSOS",
     "subcategory": null
   },
   "/crm/integracoes": {
     "name": "Integrações",
+    "category": "CV CRM",
+    "group": "RECURSOS",
+    "subcategory": null
+  },
+  "/crm/configuracoes": {
+    "name": "Configurações",
     "category": "CV CRM",
     "group": "RECURSOS",
     "subcategory": null
@@ -336,6 +366,12 @@ export const OG_ROUTES = {
     "group": "SISTEMA",
     "subcategory": null
   },
+  "/settings/ia": {
+    "name": "Conexões de IA",
+    "category": "Administração",
+    "group": "SISTEMA",
+    "subcategory": null
+  },
   "/settings/integrity": {
     "name": "Integridade",
     "category": "Administração",
@@ -368,6 +404,12 @@ export const OG_ROUTES = {
   },
   "/tools/eme-brain": {
     "name": "Cérebro da Eme",
+    "category": "Administração",
+    "group": "SISTEMA",
+    "subcategory": null
+  },
+  "/tools/eme-processos": {
+    "name": "Processos da Eme",
     "category": "Administração",
     "group": "SISTEMA",
     "subcategory": null

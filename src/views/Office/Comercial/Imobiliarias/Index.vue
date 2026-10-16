@@ -41,6 +41,15 @@ const createOpen = ref(false);
 const credencialCaida = computed(() =>
     can('configure') && store.cvPanel && store.cvPanel.configurado && !store.cvPanel.saudavel);
 
+// Estado do espelho (o que o Office já leu do CV e quando). Morava em CV CRM >
+// Configurações, longe de quem olha a lista; aqui responde "esta lista está
+// atualizada?" na própria tela. Vem do mesmo /cv-panel, então só quem
+// configura enxerga.
+const espelho = computed(() => (can('configure') ? store.cvPanel?.espelho || null : null));
+const fmtData = (d) => d
+    ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+    : 'nunca';
+
 const pendentes = computed(() =>
     store.registrations.filter(r => r.status === 'invite' || r.status === 'error' || r.status === 'processing').length);
 
@@ -52,6 +61,7 @@ const tabOptions = computed(() => [
 async function syncNow() {
     try {
         await store.syncImobiliarias();
+        if (can('configure')) store.fetchCvPanel().catch(() => {});
         toast.success('Imobiliárias sincronizadas com o CV!');
     } catch (err) {
         toast.error(err?.message || 'Erro ao sincronizar.');
@@ -115,6 +125,15 @@ onMounted(() => {
                 </span>
             </span>
         </RouterLink>
+
+        <div v-if="espelho"
+            class="mb-4 rounded-xl border border-line bg-surface-sunken px-3.5 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
+            <span><i class="fas fa-database mr-1 text-ink-subtle"></i>Espelho do CV</span>
+            <span><b class="text-ink tabular-nums">{{ espelho.imobiliarias }}</b> imobiliárias ({{ espelho.ativas }} ativas)</span>
+            <span><b class="text-ink tabular-nums">{{ espelho.vinculos }}</b> vínculos, {{ espelho.com_vinculo }} atendidas</span>
+            <span>Cadastro lido em {{ fmtData(espelho.last_sync) }}</span>
+            <span :class="store.cvPanel?.saudavel ? '' : 'text-data-neg'">Vínculos lidos em {{ fmtData(espelho.last_sync_vinculos) }}</span>
+        </div>
 
         <div class="mb-4">
             <SegmentedControl v-model="tab" :options="tabOptions" />

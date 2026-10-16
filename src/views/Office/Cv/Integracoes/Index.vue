@@ -18,6 +18,7 @@
 //   o id de várias formas em vez de depender de um formato.
 
 import { computed, onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { pedirConfirmacao } from '@/composables/useConfirm';
 import { useCvIntegrationStore } from '@/stores/Cv/cvIntegrationStore';
@@ -34,6 +35,7 @@ import Switch from '@/components/UI/Switch.vue';
 import Modal from '@/components/UI/Modal.vue';
 import Skeleton from '@/components/UI/Skeleton.vue';
 import EmptyState from '@/components/UI/EmptyState.vue';
+import CvJobsCard from '@/components/Cv/CvJobsCard.vue';
 
 const store = useCvIntegrationStore();
 const toast = useToast();
@@ -290,19 +292,20 @@ onMounted(() => {
     <PageContainer>
         <PageHeader
             title="Integrações"
-            subtitle="Os webhooks cadastrados no CV e os endpoints que recebem no Office"
+            subtitle="Como o dado chega do CV: na hora (webhooks) e de tempos em tempos (sincronizações)"
             icon-img="/CVLogo.png"
         >
             <template #actions>
                 <PageHelp
                     storage-key="cv-integracoes"
                     title="Como usar a tela de Integrações"
-                    intro="Webhook é o CV avisando o Office na hora em que algo muda, em vez de o Office perguntar de tempos em tempos. Esta tela mostra os dois lados: o que o CV tem cadastrado e o que o Office aceita receber."
+                    intro="O dado do CV chega por dois caminhos. Webhook é o CV avisando o Office na hora em que algo muda; sincronização automática é o Office perguntando de tempos em tempos. Esta tela mostra os dois, e o histórico de tudo."
                     :steps="[
                         { title: 'Ligar uma entrada nova', text: 'Ligue primeiro o endpoint do Office na seção de baixo, copie a URL, e então use Novo webhook para cadastrá-la no CV escolhendo a funcionalidade e o gatilho.' },
                         { title: 'Qual gatilho escolher', text: 'Alteração de situação cobre qualquer mudança de etapa com um cadastro só. Os outros gatilhos são um por situação e servem para automações específicas, como o cancelamento e o boleto do ato.' },
                         { title: 'Modo escuta', text: 'Endpoint ligado mas sem Sincronizar de verdade apenas guarda o que o CV mandou, sem alterar nada. Serve para conferir o formato do aviso antes de deixar o Office agir sobre ele.' },
                         { title: 'Nomes padronizados', text: 'O padrão é office-funcionalidade-gatilho. Como a API do CV não tem edição, renomear recria o webhook com um id novo - por isso é uma ação explícita e nunca automática.' },
+                        { title: 'Sincronizações automáticas', text: 'Cada linha é um dado que o Office puxa do CV sozinho. O interruptor liga e desliga; o horário usa formato cron e a tela traduz embaixo o que você digitou. Aplicar reagenda na hora, sem reiniciar o sistema; Rodar agora executa sem esperar o horário.' },
                         { title: 'Histórico', text: 'Registra todas as execuções, de webhook, de cron e de disparo manual. É por ele que se acompanha se o CV está mesmo entregando os avisos.' },
                     ]"
                     :tips="[
@@ -488,6 +491,19 @@ onMounted(() => {
                     </p>
                 </template>
             </Panel>
+
+            <!-- ── Sincronizações automáticas ────────────────────────────── -->
+            <!-- O robô e a leitura de motivos de bloqueio têm cron próprio, mas
+                 ficam nas telas deles: lá está a regra que dá sentido ao horário. -->
+            <CvJobsCard :exceto="['robo_painel', 'motivos_bloqueio']">
+                <template #rodape>
+                    <p class="text-xs text-ink-muted mb-1">
+                        A frequência do robô e a da leitura de motivos de bloqueio ficam nas telas
+                        <RouterLink to="/crm/robo" class="text-accent hover:underline">Robô de aprovação</RouterLink> e
+                        <RouterLink to="/crm/estoque-bloqueado" class="text-accent hover:underline">Estoque bloqueado</RouterLink>.
+                    </p>
+                </template>
+            </CvJobsCard>
 
             <!-- ── Histórico ────────────────────────────────────────────── -->
             <Panel title="Histórico da integração" icon="fas fa-list-timeline"

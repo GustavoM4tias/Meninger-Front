@@ -10,6 +10,11 @@
 // A coluna de última execução é o que transforma esta tela de "configuração"
 // em "diagnóstico": sem ela, um sync que quebrou há dois dias tem exatamente a
 // mesma aparência de um saudável.
+//
+// O mesmo cartão serve três telas: Integrações mostra os crons de dado, e o
+// Robô de aprovação e o Estoque bloqueado mostram só o seu (somente/exceto).
+// Cada tela controla a frequência do que é dela, sem uma lista única que
+// misture assunto.
 
 import { computed, onMounted, ref } from 'vue';
 import { useToast } from 'vue-toastification';
@@ -21,6 +26,14 @@ import Button from '@/components/UI/Button.vue';
 import Input from '@/components/UI/Input.vue';
 import Switch from '@/components/UI/Switch.vue';
 
+const props = defineProps({
+    // Chaves de cv_sync_jobs: mostrar só estas / esconder estas.
+    somente: { type: Array, default: null },
+    exceto: { type: Array, default: () => [] },
+    titulo: { type: String, default: 'Sincronizações automáticas' },
+    subtitulo: { type: String, default: 'O que o Office puxa do CV sozinho, de quanto em quanto tempo, e como foi a última vez' },
+});
+
 const store = useRealEstateStore();
 const toast = useToast();
 
@@ -29,7 +42,11 @@ const rascunho = ref({});
 const salvando = ref(null);
 const rodando = ref(null);
 
-const jobs = computed(() => store.cvJobs);
+// `todos` resolve o "depende de" (o nome do job de que este depende pode estar
+// fora do recorte da tela).
+const todos = computed(() => store.cvJobs);
+const jobs = computed(() => todos.value.filter(j =>
+    (!props.somente || props.somente.includes(j.key)) && !props.exceto.includes(j.key)));
 
 // Tradução do essencial. Não cobre tudo que cron aceita, e não precisa: serve
 // para conferir "é isso mesmo que eu quis dizer" antes de salvar.
@@ -103,12 +120,17 @@ async function rodarAgora(j) {
         rodando.value = null;
     }
 }
+
+// Esta busca tinha saído por engano no commit 7a58505 ("rodar agora"), e desde
+// então o cartão abria vazio: ninguém mais carregava a lista.
+onMounted(() => {
+    store.fetchCvJobs().catch(err => toast.error(err?.message || 'Não foi possível carregar as sincronizações.'));
+});
 </script>
 
 <template>
-    <Panel title="Sincronizações automáticas" icon="fas fa-clock"
-        subtitle="O que o Office puxa do CV sozinho, de quanto em quanto tempo, e como foi a última vez"
-        :loading="store.cvJobsLoading && !jobs.length" loading-variant="row">
+    <Panel :title="titulo" icon="fas fa-clock" :subtitle="subtitulo"
+        :loading="store.cvJobsLoading && !todos.length" loading-variant="row">
         <div class="space-y-2.5">
             <div v-for="j in jobs" :key="j.key"
                 class="rounded-xl border border-line bg-surface-sunken p-3.5">
@@ -124,7 +146,7 @@ async function rodarAgora(j) {
                         <p class="text-xs text-ink-muted mt-0.5">{{ j.descricao }}</p>
                         <p v-if="j.bloqueado_por_dependencia" class="text-xs text-data-warn mt-1">
                             <i class="fas fa-link-slash mr-1"></i>
-                            Está ligado, mas não roda enquanto "{{ jobs.find(x => x.key === j.depende_de)?.label }}"
+                            Está ligado, mas não roda enquanto "{{ todos.find(x => x.key === j.depende_de)?.label }}"
                             estiver desligado - ele é o complemento daquele.
                         </p>
                     </div>
@@ -169,6 +191,7 @@ async function rodarAgora(j) {
         </div>
 
         <template #footer>
+            <slot name="rodape" />
             <p class="text-xs text-ink-muted">
                 Salvar reagenda na hora, sem reiniciar o sistema, e não dispara sincronização - para isso existe
                 o "Rodar agora". Execução interrompida por reinício aparece como "interrompido".
