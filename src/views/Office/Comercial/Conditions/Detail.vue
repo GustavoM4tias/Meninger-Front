@@ -395,7 +395,20 @@
 
         <!-- Resumo / PDF -->
         <div v-show="activeTab === 'summary'">
+          <!-- Ficha ligada ao CV: resumo novo, montado das fontes (CV manda).
+               Avulsa (sem CV) segue no resumo antigo, que lê só o digitado. -->
+          <FichaResumo
+            v-if="detail.idempreendimento"
+            ref="summaryRef"
+            :detail="detail"
+            v-model:active-index="activeModuleIndex"
+            :modules="localModules"
+            :office-users="store.officeUsers"
+            :correspondents="store.correspondents"
+            :can-edit="canEdit"
+          />
           <SummaryExport
+            v-else
             ref="summaryRef"
             :detail="detail"
             v-model:active-index="activeModuleIndex"
@@ -555,6 +568,7 @@ import { useConditionsStore } from '@/stores/Comercial/Conditions/conditionsStor
 import { useCan } from '@/composables/useCan';
 import ModuleSection from './components/ModuleSection.vue';
 import SummaryExport from './components/SummaryExport.vue';
+import FichaResumo from './ficha/FichaResumo.vue';
 import SignaturePanel from './components/SignaturePanel.vue';
 
 import Modal from '@/components/UI/Modal.vue';

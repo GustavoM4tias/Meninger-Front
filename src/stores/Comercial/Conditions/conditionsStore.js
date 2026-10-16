@@ -232,6 +232,23 @@ export const useConditionsStore = defineStore('conditions', () => {
         return await requestWithAuth(`${API_URL}/conditions/enterprise/${idempreendimento}/stages/${idetapa}/units`);
     }
 
+    // ─── Fontes do módulo (o que a ficha mostra sem digitação) ───────────────
+    // Cache por módulo enquanto a tela está aberta; `force` relê do servidor.
+    const fontes = ref({});
+    async function fetchFontes(conditionId, moduleId, { force = false, live = false } = {}) {
+        const key = `${conditionId}:${moduleId}`;
+        if (!force && !live && fontes.value[key]) return fontes.value[key];
+        const q = live ? '?live=1' : '';
+        const data = await requestWithAuth(`${API_URL}/conditions/${conditionId}/modules/${moduleId}/fontes${q}`);
+        fontes.value = { ...fontes.value, [key]: data };
+        return data;
+    }
+    async function refreshRegraCv(conditionId, moduleId) {
+        const data = await requestWithAuth(`${API_URL}/conditions/${conditionId}/modules/${moduleId}/fontes/regra`, { method: 'POST' });
+        fontes.value = { ...fontes.value, [`${conditionId}:${moduleId}`]: data };
+        return data;
+    }
+
     // ─── DocuSign: settings (admin) + assinatura por ficha ───────────────────
 
     async function fetchDocusignSettings() {
@@ -427,6 +444,7 @@ export const useConditionsStore = defineStore('conditions', () => {
         fetchCorrespondents, fetchOfficeUsers, fetchCorrespondentCompanies,
         fetchSettings, updateSettings, fetchMyPermissions,
         fetchUnitsForStage,
+        fontes, fetchFontes, refreshRegraCv,
         linkSeriesToCv, fetchCvEnterprises,
         campaignTemplates, fetchCampaignTemplates, createCampaignTemplate, updateCampaignTemplate, fetchCampaignTemplateUsage,
         fetchDocusignSettings, updateDocusignSettings, fetchDocusignConsentUrl, testDocusign,
