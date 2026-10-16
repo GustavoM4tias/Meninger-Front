@@ -454,6 +454,12 @@ export default [
                         meta: { requiresAuth: true, requiresAdmin: true, searchable: false, content: 'Configurações e importação da tabela MCMV' },
                     },
                     {
+                        path: 'conditions/cadastros',
+                        name: 'Fichas Comerciais Cadastros',
+                        component: () => import('@/views/Office/Comercial/Conditions/Cadastros.vue'),
+                        meta: { requiresAuth: true, searchable: true, content: 'Cadastros das fichas comerciais: custos de documentação por cidade, programas estaduais, CCA e certificadora' },
+                    },
+                    {
                         path: 'conditions/settings',
                         name: 'Fichas Comerciais Configurações',
                         component: () => import('@/views/Office/Comercial/Conditions/Settings.vue'),

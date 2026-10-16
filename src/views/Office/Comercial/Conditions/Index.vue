@@ -369,11 +369,17 @@ onMounted(async () => {
             :tips="[
               'Ficha avulsa é produto sem cadastro no CV: leva o ícone de cubo e também evolui sozinha todo mês.',
               'O número no chip de módulo é a quantidade de unidades daquele módulo.',
-              'O gestor responsável aparece no cartão e recorta a lista pelo filtro — ele é definido dentro da ficha, na aba Módulos > Operacional.',
+              'O gestor responsável aparece no cartão e recorta a lista pelo filtro. Ele é definido dentro da ficha, na aba Módulos > Responsáveis.',
+              'Preço, fluxo, regra de reservas, estoque e avaliação vêm do CV e não se digitam: a ficha só pede o que o Office decide.',
               'Nome de gestor em laranja é quem já saiu do Office: a ficha ainda aponta para ele, mas ele não recebe notificação nenhuma.',
               'Quem define quem edita e quem autoriza é a tela de Configurações, no canto superior.',
             ]"
           />
+          <RouterLink to="/comercial/conditions/cadastros">
+            <Button variant="ghost" size="sm" icon="fas fa-database">
+              <span class="hidden sm:inline">Cadastros</span>
+            </Button>
+          </RouterLink>
           <RouterLink v-if="can('configure')" to="/comercial/conditions/settings">
             <Button variant="ghost" size="sm" icon="fas fa-cog">
               <span class="hidden sm:inline">Configurações</span>

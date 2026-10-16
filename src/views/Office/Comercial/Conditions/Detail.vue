@@ -367,7 +367,23 @@
 
         <!-- Módulos -->
         <div v-show="activeTab === 'modules'">
+          <!-- Ficha ligada ao CV: cadastro novo, só com o que o Office decide.
+               Avulsa (sem CV) segue no formulário antigo. -->
+          <FichaCadastro
+            v-if="detail.idempreendimento"
+            :detail="detail"
+            :modules="localModules"
+            v-model:active-index="activeModuleIndex"
+            :readonly="isLocked"
+            :saving="saving"
+            :office-users="store.officeUsers"
+            :correspondents="store.correspondents"
+            @update:modules="onModulesChange"
+            @save="handleSaveModules"
+            @template-propagated="handleTemplatePropagated"
+          />
           <ModuleSection
+            v-else
             :modules="localModules"
             v-model:active-index="activeModuleIndex"
             :condition-id="detail.id"
@@ -569,6 +585,7 @@ import { useCan } from '@/composables/useCan';
 import ModuleSection from './components/ModuleSection.vue';
 import SummaryExport from './components/SummaryExport.vue';
 import FichaResumo from './ficha/FichaResumo.vue';
+import FichaCadastro from './ficha/FichaCadastro.vue';
 import SignaturePanel from './components/SignaturePanel.vue';
 
 import Modal from '@/components/UI/Modal.vue';
@@ -777,7 +794,17 @@ const ALL_SECTIONS = [
     { id: 'operational', label: 'Operacional',   icon: 'fas fa-gears' },
     { id: 'units',       label: 'Unidades',      icon: 'fas fa-layer-group' },
 ];
+// Seções do cadastro novo (ficha ligada ao CV): o que vem do CV e o que o Office decide.
+const FICHA_SECTIONS = [
+    { id: 'cv',         label: 'Vem do CV',      icon: 'fas fa-link' },
+    { id: 'docs',       label: 'Documentação',   icon: 'fas fa-file-signature' },
+    { id: 'commission', label: 'Comissão',       icon: 'fas fa-handshake' },
+    { id: 'office',     label: 'Condições',      icon: 'fas fa-sliders' },
+    { id: 'campaigns',  label: 'Campanhas',      icon: 'fas fa-bullhorn' },
+    { id: 'people',     label: 'Responsáveis',   icon: 'fas fa-id-card' },
+];
 const moduleSections = computed(() => {
+    if (detail.value?.idempreendimento) return FICHA_SECTIONS;
     const hasUnits = !!activeModule.value?.idetapa;
     return ALL_SECTIONS.filter(s => s.id !== 'units' || hasUnits);
 });
@@ -789,6 +816,15 @@ const availableStages = computed(() => {
 });
 
 function moduleCompleteness(mod) {
+    // Cadastro novo: só o que o Office decide (o resto vem do CV).
+    if (detail.value?.idempreendimento) {
+        return [
+            !!(mod.cef_package_paid_by || mod.cartorio_paid_by),
+            mod.commission_pct != null,
+            !!(mod.indexer_after || mod.deadline_milestone),
+            !!mod.manager_user_id,
+        ];
+    }
     return [
         !!(mod.module_name && mod.total_units),
         (mod.price_table_ids?.length > 0) || (mod.manual_price_tables?.length > 0),

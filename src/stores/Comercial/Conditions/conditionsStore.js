@@ -243,6 +243,23 @@ export const useConditionsStore = defineStore('conditions', () => {
         fontes.value = { ...fontes.value, [key]: data };
         return data;
     }
+    // ─── Cadastros únicos (programa, custos por cidade, prestadores) ─────────
+    const cadastros = ref({ programas: [], cidades: [], prestadores: [] });
+    async function fetchCadastros() {
+        cadastros.value = await requestWithAuth(`${API_URL}/conditions/cadastros`);
+        return cadastros.value;
+    }
+    async function saveCadastro(tipo, payload, id = null) {
+        const url = id ? `${API_URL}/conditions/cadastros/${tipo}/${id}` : `${API_URL}/conditions/cadastros/${tipo}`;
+        const row = await requestWithAuth(url, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
+        await fetchCadastros();
+        return row;
+    }
+    async function removeCadastro(tipo, id) {
+        await requestWithAuth(`${API_URL}/conditions/cadastros/${tipo}/${id}`, { method: 'DELETE' });
+        await fetchCadastros();
+    }
+
     async function refreshRegraCv(conditionId, moduleId) {
         const data = await requestWithAuth(`${API_URL}/conditions/${conditionId}/modules/${moduleId}/fontes/regra`, { method: 'POST' });
         fontes.value = { ...fontes.value, [`${conditionId}:${moduleId}`]: data };
@@ -445,6 +462,7 @@ export const useConditionsStore = defineStore('conditions', () => {
         fetchSettings, updateSettings, fetchMyPermissions,
         fetchUnitsForStage,
         fontes, fetchFontes, refreshRegraCv,
+        cadastros, fetchCadastros, saveCadastro, removeCadastro,
         linkSeriesToCv, fetchCvEnterprises,
         campaignTemplates, fetchCampaignTemplates, createCampaignTemplate, updateCampaignTemplate, fetchCampaignTemplateUsage,
         fetchDocusignSettings, updateDocusignSettings, fetchDocusignConsentUrl, testDocusign,
