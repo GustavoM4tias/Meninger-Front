@@ -80,7 +80,15 @@ const modo = ref('simular');
 const situacoes = ref([]);
 const seriesPs = ref([]);
 const seriesBloq = ref([]);
-const tolerancia = ref('1');
+const tolerancia = ref('0');
+const empFora = ref([]);
+const mensagemCv = ref(true);
+const minutosReprovacao = ref('10');
+const rotuloEmp = (id) => {
+    const e = store.enterprises.find((x) => Number(x.id) === Number(id));
+    return `${e?.nome || 'Empreendimento'} (${id})`;
+};
+const opcoesEmpFora = computed(() => store.enterprises.map((e) => `${e.nome} (${e.id})`));
 const maxPorRodada = ref('40');
 const comentario = ref('');
 
@@ -92,7 +100,10 @@ function preencher() {
     situacoes.value = (c.situacoes || []).map((id) => `${nomes[id] || 'Situação'} (${id})`);
     seriesPs.value = (c.series_pro_soluto || []).map(rotuloSerie);
     seriesBloq.value = (c.series_bloqueiam || []).map(rotuloSerie);
-    tolerancia.value = String(c.tolerancia_reais ?? 1);
+    tolerancia.value = String(c.tolerancia_reais ?? 0);
+    empFora.value = (c.empreendimentos_fora || []).map(rotuloEmp);
+    mensagemCv.value = c.mensagem_cv !== false;
+    minutosReprovacao.value = String(c.mensagem_reprovacao_minutos ?? 10);
     maxPorRodada.value = String(c.max_por_rodada ?? 40);
     comentario.value = c.comentario || '';
 }
@@ -117,6 +128,9 @@ async function salvar() {
             series_bloqueiam: ids(seriesBloq.value),
             tolerancia_reais: Number(String(tolerancia.value).replace(',', '.')),
             max_por_rodada: Number(maxPorRodada.value),
+            empreendimentos_fora: ids(empFora.value),
+            mensagem_cv: mensagemCv.value,
+            mensagem_reprovacao_minutos: Number(minutosReprovacao.value),
             comentario: comentario.value,
         });
         preencher();
@@ -182,20 +196,45 @@ async function conferir() {
 
 // ── Histórico ────────────────────────────────────────────────────────────────
 const filtroDecisao = ref('todas');
+const buscaReserva = ref('');
 const mostrar = ref(20);
 const opcoesDecisao = [{ value: 'todas', label: 'Todas as decisões' }, ...Object.entries(DECISOES).map(([v, d]) => ({ value: v, label: d.rotulo }))];
-const historicoFiltrado = computed(() => (r.value?.historico || []).filter(h => filtroDecisao.value === 'todas' || h.decisao === filtroDecisao.value));
+const historicoFiltrado = computed(() => {
+    const busca = String(buscaReserva.value).replace(/\D/g, '');
+    return (r.value?.historico || []).filter((h) => (filtroDecisao.value === 'todas' || h.decisao === filtroDecisao.value)
+        && (!busca || String(h.idreserva).includes(busca)));
+});
 const historico = computed(() => historicoFiltrado.value.slice(0, mostrar.value));
 const resumo7 = computed(() => r.value?.ultimos7dias || {});
 
+// ── Fila de agora ────────────────────────────────────────────────────────────
+const fila = computed(() => r.value?.fila || []);
+const minutosDesde = (d) => (d ? Math.max(0, Math.round((Date.now() - new Date(d).getTime()) / 60000)) : null);
+const espera = (d) => {
+    const m = minutosDesde(d);
+    if (m == null) return '-';
+    if (m < 60) return `${m} min`;
+    if (m < 1440) return `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}`;
+    return `${Math.floor(m / 1440)} dia(s)`;
+};
+
+/** Situação da mensagem no CV de uma linha do histórico ou da fila. */
+function estadoMensagem(h) {
+    if (h.mensagem_cv_em) return { texto: `Mensagem no CV ${fmt(h.mensagem_cv_em)}`, variant: 'success' };
+    if (h.mensagem_cv_erro) return { texto: `Mensagem no CV falhou: ${h.mensagem_cv_erro}`, variant: 'danger' };
+    if (h.decisao === 'fora_da_regra' && cfg.value.mensagem_cv && cfg.value.modo === 'aprovar') {
+        return { texto: `Mensagem no CV depois de ${cfg.value.mensagem_reprovacao_minutos} min sem mudança`, variant: 'neutral' };
+    }
+    return null;
+}
+
 async function recarregar() {
-    await store.fetchCvRobo();
+    await Promise.all([store.fetchCvRobo(), store.fetchEnterprises().catch(() => {})]);
     preencher();
 }
 
 onMounted(() => {
     recarregar().catch((err) => toast.error(err?.message || 'Não foi possível carregar o robô do CV.'));
-    store.fetchEnterprises().catch(() => {});
 });
 </script>
 
@@ -217,10 +256,14 @@ onMounted(() => {
                         { title: 'Frequência', text: 'O cartão Frequência liga, desliga e muda o horário da rodada. Sem ele ligado, nada roda sozinho - nem a simulação.' },
                         { title: 'Regra do empreendimento', text: 'A regra de valores (desconto aceito, pró-soluto, limites de cada série) é a cadastrada no próprio CV. Escolha um empreendimento e leia para ver exatamente o que o robô vai cobrar.' },
                         { title: 'Conferir reservas', text: 'Digite números de reserva para ver na hora se estão dentro da regra e por quê. Não aprova nem grava nada.' },
-                        { title: 'Histórico', text: 'Cada decisão fica registrada com o motivo. Uma reserva só ganha linha nova quando o resultado muda.' },
+                        { title: 'Fila de agora', text: 'Mostra as reservas paradas nas situações do robô, há quanto tempo, a última decisão e o motivo. O botão Abrir no CV leva direto para a reserva.' },
+                        { title: 'Mensagem no CV', text: 'Ao aprovar, o robô escreve na reserva quais condições conferiu, contra qual regra e qual tabela. Fora da regra, ele espera os minutos configurados sem mudança na condição antes de escrever o motivo, para não poluir a reserva enquanto alguém ainda está ajustando.' },
+                        { title: 'Histórico', text: 'Cada decisão fica registrada com o motivo e o que foi conferido. Uma reserva só ganha linha nova quando o resultado muda. Busque pelo número da reserva.' },
                     ]"
                     :tips="[
                         'Qualquer coisa que o robô não saiba avaliar fica para o aprovador, com o motivo escrito.',
+                        'A reserva é conferida assim que entra na situação (aviso do CV) e de novo a cada rodada, então ajustes de condição também são pegos.',
+                        'Empreendimentos fora do robô (os 30/70, por exemplo) vão sempre para o aprovador.',
                         'Ligar Aprovar de verdade pede confirmação: a partir daí ele aprova no CV em nome do usuário do robô.',
                     ]"
                 />
@@ -260,12 +303,16 @@ onMounted(() => {
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Input v-model="tolerancia" label="Tolerância (R$)"
-                            hint="Arredondamento aceito abaixo da tabela." />
+                            hint="Arredondamento aceito abaixo da tabela. 0 = nenhum centavo abaixo." />
                         <Input v-model="maxPorRodada" type="number" label="Reservas por rodada"
                             hint="Teto de reservas olhadas a cada rodada (1 a 200)." />
                     </div>
+                    <MultiSelector v-model="empFora" :options="opcoesEmpFora" label="Empreendimentos fora do robô (sempre no aprovador)" />
                     <Input v-model="comentario" label="Comentário gravado no CV"
                         hint="Fica no histórico da aprovação da reserva." />
+                    <Switch v-model="mensagemCv" label="Escrever o resultado como mensagem na reserva do CV" />
+                    <Input v-if="mensagemCv" v-model="minutosReprovacao" type="number" label="Espera da mensagem de reprovação (min)"
+                        hint="Só escreve o motivo depois desse tempo sem mudança na condição. A aprovação é escrita na hora." />
 
                     <div class="flex flex-wrap justify-end gap-2">
                         <Button variant="ghost" icon="fas fa-flask" :loading="simulando"
@@ -334,6 +381,36 @@ onMounted(() => {
                 </div>
             </Panel>
 
+            <!-- Fila de agora -->
+            <Panel class="lg:col-span-2" title="Fila de agora" icon="fas fa-hourglass-half"
+                :subtitle="`${fila.length} reserva(s) nas situações do robô, da que espera há mais tempo para a mais nova`">
+                <p v-if="!fila.length" class="text-xs text-ink-muted">Nenhuma reserva esperando.</p>
+                <ul v-else class="space-y-2">
+                    <li v-for="f in fila" :key="f.idreserva" class="rounded-xl border border-line bg-surface p-3 space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <Badge v-if="f.fora_do_robo" variant="neutral" size="sm">Fora do robô</Badge>
+                            <Badge v-else-if="f.decisao" :variant="DECISOES[f.decisao]?.variant || 'neutral'" size="sm">{{ DECISOES[f.decisao]?.rotulo || f.decisao }}</Badge>
+                            <Badge v-else variant="info" size="sm">Aguardando conferência</Badge>
+                            <span class="text-sm font-medium text-ink">Reserva {{ f.idreserva }}</span>
+                            <span class="text-xs text-ink-muted">{{ f.empreendimento || '-' }} · {{ f.situacao || '-' }}</span>
+                            <a :href="linkReserva(f.idreserva)" target="_blank" rel="noopener"
+                                class="ml-auto inline-flex items-center gap-1 min-h-[40px] px-3 rounded-lg border border-line text-xs text-accent hover:bg-surface-raised">
+                                <i class="fas fa-arrow-up-right-from-square"></i>Abrir no CV
+                            </a>
+                        </div>
+                        <p class="text-micro text-ink-subtle">
+                            Na situação há {{ espera(f.na_situacao_desde) }} · última conferência {{ f.conferida_em ? `há ${espera(f.conferida_em)}` : '-' }}
+                        </p>
+                        <ul v-if="f.decisao === 'fora_da_regra' && f.motivos?.length" class="text-xs text-ink-muted list-disc pl-4">
+                            <li v-for="(m, i) in f.motivos" :key="i">{{ m }}</li>
+                        </ul>
+                        <p v-if="estadoMensagem(f)" class="text-micro" :class="estadoMensagem(f).variant === 'danger' ? 'text-data-neg' : 'text-ink-subtle'">
+                            {{ estadoMensagem(f).texto }}
+                        </p>
+                    </li>
+                </ul>
+            </Panel>
+
             <!-- Conferir reservas avulsas -->
             <Panel class="lg:col-span-2" title="Conferir reservas" icon="fas fa-list-check"
                 subtitle="Diz na hora se a reserva está dentro da regra e por quê. Não aprova nem grava nada.">
@@ -369,8 +446,13 @@ onMounted(() => {
             <Panel class="lg:col-span-2" title="O que o robô decidiu" icon="fas fa-clock-rotate-left"
                 subtitle="Uma linha por mudança de resultado de cada reserva">
                 <template #actions>
-                    <div class="w-48">
-                        <Select v-model="filtroDecisao" :options="opcoesDecisao" size="sm" />
+                    <div class="flex flex-wrap gap-2">
+                        <div class="w-32">
+                            <Input v-model="buscaReserva" placeholder="Nº da reserva" size="sm" />
+                        </div>
+                        <div class="w-48">
+                            <Select v-model="filtroDecisao" :options="opcoesDecisao" size="sm" />
+                        </div>
                     </div>
                 </template>
                 <div class="space-y-3">
@@ -390,14 +472,24 @@ onMounted(() => {
                                 <Badge :variant="DECISOES[h.decisao]?.variant || 'neutral'" size="sm">
                                     {{ DECISOES[h.decisao]?.rotulo || h.decisao }}
                                 </Badge>
-                                <a :href="linkReserva(h.idreserva)" target="_blank" rel="noopener"
-                                    class="text-sm font-medium text-ink hover:underline">Reserva {{ h.idreserva }}</a>
+                                <span class="text-sm font-medium text-ink">Reserva {{ h.idreserva }}</span>
                                 <span class="text-xs text-ink-muted">{{ h.empreendimento || '-' }} · {{ h.situacao || '-' }}</span>
-                                <span class="text-micro text-ink-subtle ml-auto">{{ fmt(h.created_at) }}</span>
+                                <span class="text-micro text-ink-subtle">{{ fmt(h.created_at) }}</span>
+                                <a :href="linkReserva(h.idreserva)" target="_blank" rel="noopener"
+                                    class="ml-auto inline-flex items-center gap-1 min-h-[40px] px-3 rounded-lg border border-line text-xs text-accent hover:bg-surface-raised">
+                                    <i class="fas fa-arrow-up-right-from-square"></i>Abrir no CV
+                                </a>
                             </div>
+                            <p v-if="h.detalhes?.tabela" class="text-micro text-ink-subtle">Tabela: {{ h.detalhes.tabela }}</p>
                             <ul v-if="h.motivos?.length" class="text-xs text-ink-muted list-disc pl-4">
                                 <li v-for="(m, i) in h.motivos" :key="i">{{ m }}</li>
                             </ul>
+                            <ul v-else-if="h.detalhes?.conferencias?.length" class="text-xs text-ink-muted list-disc pl-4">
+                                <li v-for="(m, i) in h.detalhes.conferencias" :key="i">{{ m }}</li>
+                            </ul>
+                            <p v-if="estadoMensagem(h)" class="text-micro" :class="estadoMensagem(h).variant === 'danger' ? 'text-data-neg' : 'text-ink-subtle'">
+                                {{ estadoMensagem(h).texto }}
+                            </p>
                         </li>
                     </ul>
 
